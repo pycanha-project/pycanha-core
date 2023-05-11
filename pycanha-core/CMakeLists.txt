@@ -45,12 +45,12 @@ target_set_warnings(
     TARGET
     ${LIB_NAME}
     ENABLE
-    ${LIB_OPTION_WARNINGS}
+    ${PYCANHA_OPTION_WARNINGS}
     AS_ERRORS
-    ${LIB_OPTION_WARNINGS_AS_ERRORS})
+    ${PYCANHA_OPTION_WARNINGS_AS_ERRORS})
 
 
-if(${LIB_OPTION_LTO})
+if(${PYCANHA_OPTION_LTO})
     target_enable_lto(${LIB_NAME} optimized)
 endif()
 

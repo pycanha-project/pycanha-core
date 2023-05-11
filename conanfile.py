@@ -31,31 +31,31 @@ class Recipe_pycanha_core(ConanFile):
     # Binary configuration
     settings = "os", "compiler", "build_type", "arch"
     options = {
-        "LIB_OPTION_LIBRARY": [True, False],
-        "LIB_OPTION_LTO": [True, False],
-        "LIB_OPTION_DOCS": [True, False],
-        "LIB_OPTION_WARNINGS": [True, False],
-        "LIB_OPTION_WARNINGS_AS_ERRORS": [True, False],
-        "LIB_OPTION_COVERAGE": [True, False],
-        "LIB_OPTION_INCLUDE_WHAT_YOU_USE": [True, False],
-        "LIB_OPTION_CLANG_TIDY": [True, False],
-        "LIB_OPTION_CPPCHECK": [True, False],
-        "LIB_OPTION_SANITIZE_ADDR": [True, False],
-        "LIB_OPTION_SANITIZE_UNDEF": [True, False],
+        "PYCANHA_OPTION_LIBRARY": [True, False],
+        "PYCANHA_OPTION_LTO": [True, False],
+        "PYCANHA_OPTION_DOCS": [True, False],
+        "PYCANHA_OPTION_WARNINGS": [True, False],
+        "PYCANHA_OPTION_WARNINGS_AS_ERRORS": [True, False],
+        "PYCANHA_OPTION_COVERAGE": [True, False],
+        "PYCANHA_OPTION_INCLUDE_WHAT_YOU_USE": [True, False],
+        "PYCANHA_OPTION_CLANG_TIDY": [True, False],
+        "PYCANHA_OPTION_CPPCHECK": [True, False],
+        "PYCANHA_OPTION_SANITIZE_ADDR": [True, False],
+        "PYCANHA_OPTION_SANITIZE_UNDEF": [True, False],
     }
 
     default_options = {
-        "LIB_OPTION_LIBRARY": True,
-        "LIB_OPTION_LTO": True,
-        "LIB_OPTION_DOCS": False,
-        "LIB_OPTION_WARNINGS": False,
-        "LIB_OPTION_WARNINGS_AS_ERRORS": False,
-        "LIB_OPTION_COVERAGE": False,
-        "LIB_OPTION_INCLUDE_WHAT_YOU_USE": False,
-        "LIB_OPTION_CLANG_TIDY": False,
-        "LIB_OPTION_CPPCHECK": False,
-        "LIB_OPTION_SANITIZE_ADDR": False,
-        "LIB_OPTION_SANITIZE_UNDEF": False,
+        "PYCANHA_OPTION_LIBRARY": True,
+        "PYCANHA_OPTION_LTO": True,
+        "PYCANHA_OPTION_DOCS": False,
+        "PYCANHA_OPTION_WARNINGS": False,
+        "PYCANHA_OPTION_WARNINGS_AS_ERRORS": False,
+        "PYCANHA_OPTION_COVERAGE": False,
+        "PYCANHA_OPTION_INCLUDE_WHAT_YOU_USE": False,
+        "PYCANHA_OPTION_CLANG_TIDY": False,
+        "PYCANHA_OPTION_CPPCHECK": False,
+        "PYCANHA_OPTION_SANITIZE_ADDR": False,
+        "PYCANHA_OPTION_SANITIZE_UNDEF": False,
     }
 
     # Sources are located in the same place as this recipe, copy them to the recipe
@@ -73,7 +73,7 @@ class Recipe_pycanha_core(ConanFile):
         self.test_requires("catch2/3.3.2")
 
         # Conditional dependencies. Depending on the option selected
-        if self.options.LIB_OPTION_DOCS:
+        if self.options.PYCANHA_OPTION_DOCS:
             # This mean build doxygen!! It takes to long. Install it with other tool.
             # self.requires("doxygen/1.9.4")
             pass
@@ -82,7 +82,7 @@ class Recipe_pycanha_core(ConanFile):
         # Raise an error for non-supported configurations.
         check_min_cppstd(self, "23")
 
-        if self.options.LIB_OPTION_INCLUDE_WHAT_YOU_USE:
+        if self.options.PYCANHA_OPTION_INCLUDE_WHAT_YOU_USE:
             raise ConanInvalidConfiguration(
                 "IWYU (Include what you use) is broken right now. Set to OFF."
             )

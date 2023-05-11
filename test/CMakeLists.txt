@@ -1,8 +1,8 @@
 
 
 set(TEST_SOURCES 
-      "${CMAKE_CURRENT_SOURCE_DIR}/mytest1.cpp"
-      "${CMAKE_CURRENT_SOURCE_DIR}/mytest2.cpp"
+      "${CMAKE_CURRENT_SOURCE_DIR}/test_parameters.cpp"
+      "${CMAKE_CURRENT_SOURCE_DIR}/gmm/test_primitives.cpp"
 )
 
 set(TEST_HEADERS "")
@@ -26,27 +26,27 @@ target_set_warnings(
   TARGET
   ${TEST_TARGET_NAME}
   ENABLE
-  ${LIB_OPTION_WARNINGS}
+  ${PYCANHA_OPTION_WARNINGS}
   AS_ERRORS
-  ${LIB_OPTION_WARNINGS_AS_ERRORS})
+  ${PYCANHA_OPTION_WARNINGS_AS_ERRORS})
 
 target_set_warnings(
     TARGET
     ${TEST_TARGET_NAME}_lib
     ENABLE
-    ${LIB_OPTION_WARNINGS}
+    ${PYCANHA_OPTION_WARNINGS}
     AS_ERRORS
-    ${LIB_OPTION_WARNINGS_AS_ERRORS})
+    ${PYCANHA_OPTION_WARNINGS_AS_ERRORS})
   
 
 
 
 
-if (LIB_OPTION_CLANG_TIDY)
+if (PYCANHA_OPTION_CLANG_TIDY)
   add_clang_tidy_to_target(${TEST_TARGET_NAME})
 endif()
 
-if (LIB_OPTION_INCLUDE_WHAT_YOU_USE)
+if (PYCANHA_OPTION_INCLUDE_WHAT_YOU_USE)
   add_iwyu_to_target(${TEST_TARGET_NAME})
 endif()
 
@@ -57,7 +57,7 @@ include(CTest) #TODO: Is it really necessary to use CTest?
 include(Catch)
 catch_discover_tests(${TEST_TARGET_NAME})
 
-if(LIB_OPTION_COVERAGE)
+if(PYCANHA_OPTION_COVERAGE)
   set(COVERAGE_MAIN "coverage")
   set(COVERAGE_EXCLUDES
       "${PROJECT_SOURCE_DIR}/benchmarks/*"
@@ -84,7 +84,7 @@ endif()
 
 
 #CPPCHECK
-if (LIB_OPTION_CPPCHECK)
+if (PYCANHA_OPTION_CPPCHECK)
     if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
         message(
             "==> Cppcheck, IWYU and Clang-Tidy Targets do not work with MSVC")
@@ -92,8 +92,8 @@ if (LIB_OPTION_CPPCHECK)
     endif()
     find_program(CPPCHECK cppcheck)
 
-    # Exit with error if warnings found and if LIB_OPTION_WARNINGS_AS_ERRORS is set
-    if(LIB_OPTION_WARNINGS_AS_ERRORS)
+    # Exit with error if warnings found and if PYCANHA_OPTION_WARNINGS_AS_ERRORS is set
+    if(PYCANHA_OPTION_WARNINGS_AS_ERRORS)
       set(CPP_CHECK_WARNING_AS_ERRORS --error-exitcode=1)
     else()
       set(CPP_CHECK_WARNING_AS_ERRORS )

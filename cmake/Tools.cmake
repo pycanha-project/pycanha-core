@@ -54,8 +54,8 @@ function(add_clang_tidy_to_target target)
             return()
         endif()
 
-        # Exit with error if warnings found and if LIB_OPTION_WARNINGS_AS_ERRORS is set
-        if(LIB_OPTION_WARNINGS_AS_ERRORS)
+        # Exit with error if warnings found and if PYCANHA_OPTION_WARNINGS_AS_ERRORS is set
+        if(PYCANHA_OPTION_WARNINGS_AS_ERRORS)
         set(CLANG_TIDY_WARNING_AS_ERRORS --warnings-as-errors=*)
         else()
         set(CLANG_TIDY_WARNING_AS_ERRORS )
@@ -88,7 +88,7 @@ function(add_iwyu_to_target target)
         return()
     endif()
 
-    if(LIB_OPTION_INCLUDE_WHAT_YOU_USE)
+    if(PYCANHA_OPTION_INCLUDE_WHAT_YOU_USE)
         if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
             find_program(INCLUDE_WHAT_YOU_USE include-what-you-use)
             if(INCLUDE_WHAT_YOU_USE)

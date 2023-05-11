@@ -186,17 +186,17 @@ But in you own system, you probably just want one configuration, and to do so, t
 ```
 # This is the content of the .conan/profiles/options-lib-warns file
 [options]
-LIB_OPTION_LIBRARY = True
-LIB_OPTION_LTO = True
-LIB_OPTION_DOCS = False
-LIB_OPTION_WARNINGS = True
-LIB_OPTION_WARNINGS_AS_ERRORS = False
-LIB_OPTION_COVERAGE = False
-LIB_OPTION_INCLUDE_WHAT_YOU_USE = False
-LIB_OPTION_CLANG_TIDY = False
-LIB_OPTION_CPPCHECK = False
-LIB_OPTION_SANITIZE_ADDR = False
-LIB_OPTION_SANITIZE_UNDEF = False
+PYCANHA_OPTION_LIBRARY = True
+PYCANHA_OPTION_LTO = True
+PYCANHA_OPTION_DOCS = False
+PYCANHA_OPTION_WARNINGS = True
+PYCANHA_OPTION_WARNINGS_AS_ERRORS = False
+PYCANHA_OPTION_COVERAGE = False
+PYCANHA_OPTION_INCLUDE_WHAT_YOU_USE = False
+PYCANHA_OPTION_CLANG_TIDY = False
+PYCANHA_OPTION_CPPCHECK = False
+PYCANHA_OPTION_SANITIZE_ADDR = False
+PYCANHA_OPTION_SANITIZE_UNDEF = False
 
 ```
 You can check what each option is intended for here in the root `CMakeList.txt` file.

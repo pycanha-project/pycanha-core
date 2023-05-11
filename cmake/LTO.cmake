@@ -1,6 +1,6 @@
 # Usage :
 #
-# Variable : LIB_OPTION_LTO | Enable or disable LTO support for this build
+# Variable : PYCANHA_OPTION_LTO | Enable or disable LTO support for this build
 #
 # find_lto(lang) - lang is C or CXX (the language to test LTO for) - call it
 # after project() so that the compiler is already detected
@@ -11,7 +11,7 @@
 # configurations 'debug' is by default the Debug configuration, and 'optimized'
 # all the other configurations
 #
-# if LIB_OPTION_LTO is set to false, an empty macro will be generated
+# if PYCANHA_OPTION_LTO is set to false, an empty macro will be generated
 #
 # Then to enable LTO for your target use
 #
@@ -46,7 +46,7 @@
 # SOFTWARE.
 
 macro(find_lto lang)
-    if(LIB_OPTION_LTO AND NOT LTO_${lang}_CHECKED)
+    if(PYCANHA_OPTION_LTO AND NOT LTO_${lang}_CHECKED)
 
         # LTO support was added for clang/gcc in 3.9
         if(${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION} VERSION_LESS 3.9)
@@ -221,9 +221,9 @@ macro(find_lto lang)
                     CACHE FILEPATH "Forcing gcc-ranlib instead of ranlib" FORCE)
             endif()
         endif(${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION} VERSION_LESS 3.9)
-    endif(LIB_OPTION_LTO AND NOT LTO_${lang}_CHECKED)
+    endif(PYCANHA_OPTION_LTO AND NOT LTO_${lang}_CHECKED)
 
-    if(LIB_OPTION_LTO)
+    if(PYCANHA_OPTION_LTO)
         # Special case for cmake older than 3.9, using a library for gcc/clang,
         # but could setup the flags directly. Taking advantage of the
         # [debug,optimized] parameter of target_link_libraries

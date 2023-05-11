@@ -19,7 +19,7 @@
 # ----------------------------------------------------------------------------------------------------------
 
 function(add_sanitizer_flags)
-    if(NOT LIB_OPTION_SANITIZE_ADDR AND NOT LIB_OPTION_SANITIZE_UNDEF)
+    if(NOT PYCANHA_OPTION_SANITIZE_ADDR AND NOT PYCANHA_OPTION_SANITIZE_UNDEF)
         return()
     endif()
 
@@ -28,12 +28,12 @@ function(add_sanitizer_flags)
         add_compile_options("-fno-omit-frame-pointer")
         add_link_options("-fno-omit-frame-pointer")
 
-        if(LIB_OPTION_SANITIZE_ADDR)
+        if(PYCANHA_OPTION_SANITIZE_ADDR)
             add_compile_options("-fsanitize=address")
             add_link_options("-fsanitize=address")
         endif()
 
-        if(LIB_OPTION_SANITIZE_UNDEF)
+        if(PYCANHA_OPTION_SANITIZE_UNDEF)
             add_compile_options("-fsanitize=undefined")
             add_link_options("-fsanitize=undefined")
         endif()
