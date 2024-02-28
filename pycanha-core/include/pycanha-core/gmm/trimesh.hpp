@@ -952,11 +952,15 @@ inline TriMesh create_2d_rectangular_mesh(const Eigen::VectorXd& dir1_mesh,
             const MeshIndex num_edge_points =
                 additional_points_dir1[i_dir1] + 2;
             Edges edge(num_edge_points);
+#if defined(__GNUC__)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wnull-dereference"
+#endif
             // num_edge_points where a compiled constant, it would be fine
             edge[0] = p_idx;
+#if defined(__GNUC__)
 #pragma GCC diagnostic pop
+#endif
 
             for (MeshIndex i_add1 = 0; i_add1 <= additional_points_dir1[i_dir1];
                  ++i_add1) {
@@ -979,11 +983,15 @@ inline TriMesh create_2d_rectangular_mesh(const Eigen::VectorXd& dir1_mesh,
             const MeshIndex num_edge_points =
                 additional_points_dir2[i_dir2] + 2;
             Edges edge(num_edge_points);
+#if defined(__GNUC__)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wnull-dereference"
+#endif
             // num_edge_points where a compiled constant, it would be fine
             edge[0] = p_idx;
+#if defined(__GNUC__)
 #pragma GCC diagnostic pop
+#endif
             for (MeshIndex i_add2 = 0; i_add2 <= additional_points_dir2[i_dir2];
                  ++i_add2) {
                 edge[i_add2 + 1] = p_idx + (i_add2 + 1) * num_points_dir1;
@@ -1301,11 +1309,15 @@ inline TriMesh create_2d_quadrilateral_mesh(
         for (MeshIndex i = 0; i < dir1_size - 1; ++i) {
             const MeshIndex num_edge_points = additional_points_dir1[j][i] + 2;
             Edges edge(num_edge_points);
+#if defined(__GNUC__)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wnull-dereference"
+#endif
             // num_edge_points where a compiled constant, it would be fine
             edge[0] = p_idx;
+#if defined(__GNUC__)
 #pragma GCC diagnostic pop
+#endif
             for (MeshIndex i_add = 0; i_add <= additional_points_dir1[j][i];
                  ++i_add) {
                 edge[i_add + 1] = p_idx + i_add + 1;
@@ -1324,11 +1336,15 @@ inline TriMesh create_2d_quadrilateral_mesh(
             const MeshIndex upper_edge_idx = (dir1_size - 1) * (i + 1) + j;
             const MeshIndex num_edge_points = additional_points_dir2[j][i] + 2;
             Edges edge(num_edge_points);
+#if defined(__GNUC__)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wnull-dereference"
+#endif
             // num_edge_points where a compiled constant, it would be fine
             edge[0] = edges[lower_edge_idx][0];
+#if defined(__GNUC__)
 #pragma GCC diagnostic pop
+#endif
             edge[num_edge_points - 1] = edges[upper_edge_idx][0];
             for (MeshIndex i_add = 0; i_add < additional_points_dir2[j][i];
                  ++i_add) {
@@ -1347,10 +1363,14 @@ inline TriMesh create_2d_quadrilateral_mesh(
         const MeshIndex num_edge_points =
             additional_points_dir2[dir1_size - 1][i] + 2;
         Edges edge(num_edge_points);
+#if defined(__GNUC__)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wnull-dereference"
+#endif
         edge[0] = edges[lower_edge_idx][edges[lower_edge_idx].size() - 1];
+#if defined(__GNUC__)
 #pragma GCC diagnostic pop
+#endif
         edge[num_edge_points - 1] =
             edges[upper_edge_idx][edges[upper_edge_idx].size() - 1];
         for (MeshIndex i_add = 0;
@@ -1569,12 +1589,16 @@ inline TriMesh create_2d_triangular_only_mesh(const Eigen::VectorXd& dir2_mesh,
     MeshIndex p_idx = 0;
 
     // Add p1
+#if defined(__GNUC__)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wnull-dereference"
+#endif
     points(p_idx, 0) = p1.x();
     points(p_idx, 1) = p1.y();
     points(p_idx, 2) = 0.0;
+#if defined(__GNUC__)
 #pragma GCC diagnostic pop
+#endif
     ++p_idx;
 
     // Loop over dir1 lines
@@ -1619,10 +1643,14 @@ inline TriMesh create_2d_triangular_only_mesh(const Eigen::VectorXd& dir2_mesh,
     for (MeshIndex j = 0; j < dir2_size; ++j) {
         const MeshIndex num_edge_points = additional_points_dir1[j] + 2;
         Edges edge(num_edge_points);
+#if defined(__GNUC__)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wnull-dereference"
+#endif
         edge[0] = 0;
+#if defined(__GNUC__)
 #pragma GCC diagnostic pop
+#endif
         for (MeshIndex i_add = 1; i_add <= additional_points_dir1[j] + 1;
              ++i_add) {
             p_idx++;
@@ -1641,11 +1669,15 @@ inline TriMesh create_2d_triangular_only_mesh(const Eigen::VectorXd& dir2_mesh,
         end_p_idx += additional_points_dir1[i + 1] + 1;
         const MeshIndex num_edge_points = additional_points_dir2[i] + 2;
         Edges edge(num_edge_points);
+#if defined(__GNUC__)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wnull-dereference"
+#endif
         edge[0] = start_p_idx;
         edge.tail<1>()(0) = end_p_idx;
+#if defined(__GNUC__)
 #pragma GCC diagnostic pop
+#endif
         for (MeshIndex i_add = 0; i_add < additional_points_dir2[i]; ++i_add) {
             edge[i_add + 1] = start_padd_idx;
             start_padd_idx++;
@@ -1658,11 +1690,15 @@ inline TriMesh create_2d_triangular_only_mesh(const Eigen::VectorXd& dir2_mesh,
     // -> dir1 edge
     const MeshIndex num_perimeter_edges = dir2_size - 1 + 2;
     EdgesIdsList perimeter_edges(num_perimeter_edges);
+#if defined(__GNUC__)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wnull-dereference"
+#endif
     perimeter_edges[0] = 0;
     perimeter_edges.tail<1>()(0) = dir2_size - 1;
+#if defined(__GNUC__)
 #pragma GCC diagnostic pop
+#endif
     for (MeshIndex i = 0; i < dir2_size - 1; ++i) {
         perimeter_edges[i + 1] = perimeter_edges.tail<1>()(0) + i + 1;
     }
@@ -1758,7 +1794,7 @@ inline TriMesh create_2d_triangular_mesh(const Eigen::VectorXd& dir1_mesh,
     // Otherwise we need to create a meshed triangle and a meshed quadrilateral
     // and join them together
     const Eigen::VectorXd triangle_dir1_mesh = dir1_mesh.head(2);
-    const auto &triangle_p1 = p1;
+    const auto& triangle_p1 = p1;
     const auto triangle_p2 = p1 + v21 * dir1_mesh_normalized[1];
     const auto triangle_p3 = p1 + v31 * dir1_mesh_normalized[1];
     const Eigen::VectorXd triangle_dir2_mesh =
@@ -1771,10 +1807,10 @@ inline TriMesh create_2d_triangular_mesh(const Eigen::VectorXd& dir1_mesh,
     }
 
     const Eigen::VectorXd& quad_dir2_mesh = dir2_mesh;
-    const auto &quad_p1 = triangle_p2;
-    const auto &quad_p2 = p2;
-    const auto &quad_p3 = p3;
-    const auto &quad_p4 = triangle_p3;
+    const auto& quad_p1 = triangle_p2;
+    const auto& quad_p2 = p2;
+    const auto& quad_p3 = p3;
+    const auto& quad_p4 = triangle_p3;
 
     // Create the triangular mesh
     TriMesh tri_mesh = create_2d_triangular_only_mesh(
@@ -1831,12 +1867,12 @@ inline TriMesh create_2d_triangular_mesh(const Eigen::VectorXd& dir1_mesh,
     MeshIndex new_row = 0;
 
     for (MeshIndex row = 0; row < num_rows_original_matrix; ++row) {
-        if (quad_edges_to_remove_set.find(row) == quad_edges_to_remove_set.end()) {
+        if (quad_edges_to_remove_set.find(row) ==
+            quad_edges_to_remove_set.end()) {
             reduced_quad_vertices.row(new_row) = quad_vertices.row(row);
             ++new_row;
         }
     }
-
 
     // Remove the contact edges
     quad_edges.erase(quad_edges.begin() + quad_edges_to_remove[0],
@@ -2136,7 +2172,8 @@ inline TriMesh create_2d_disc_mesh(const Eigen::VectorXd& dir1_mesh_normalized,
                 (dir2_mesh_normalized[i + 1] - dir2_mesh_normalized[i]) * 2 *
                 pi;
             for (MeshIndex j = dir1_start; j < dir1_size; ++j) {
-                const double distance = angle_i * dir1_mesh_normalized[j] * radius;
+                const double distance =
+                    angle_i * dir1_mesh_normalized[j] * radius;
                 const auto num_additional_points = static_cast<MeshIndex>(
                     std::floor(distance / max_distance_points_dir2));
                 num_points_dir2 += num_additional_points;
@@ -2363,7 +2400,8 @@ inline TriMesh create_2d_disc_mesh(const Eigen::VectorXd& dir1_mesh_normalized,
     p_idx = 0;
     for (MeshIndex i_dir2 = 0; i_dir2 < dir2_stop; ++i_dir2) {
         for (MeshIndex i_dir1 = 0; i_dir1 < dir1_size - 1; ++i_dir1) {
-            const MeshIndex num_edge_points = additional_points_dir1[i_dir1] + 2;
+            const MeshIndex num_edge_points =
+                additional_points_dir1[i_dir1] + 2;
 
             Edges edge(num_edge_points);
             if (!inner_radius && i_dir1 == 0) {
@@ -2398,10 +2436,14 @@ inline TriMesh create_2d_disc_mesh(const Eigen::VectorXd& dir1_mesh_normalized,
             const MeshIndex num_edge_points =
                 additional_points_dir2[i_dir1][j_dir2] + 2;
             Edges edge(num_edge_points);
+#if defined(__GNUC__)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wnull-dereference"
+#endif
             edge[0] = end_idx;
+#if defined(__GNUC__)
 #pragma GCC diagnostic pop
+#endif
             for (MeshIndex i_add2 = 0;
                  i_add2 < additional_points_dir2[i_dir1][j_dir2]; ++i_add2) {
                 edge[i_add2 + 1] = p_idx;

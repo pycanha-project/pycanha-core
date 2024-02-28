@@ -3706,12 +3706,13 @@ inline TriMesh Sphere::create_mesh1(const ThermalMesh& thermal_mesh,
         // Update the latitude edges that close the sphere
         for (MeshIndex i = 0; i < dir1_size - (dir1_start + dir1_end); ++i) {
             const MeshIndex index = (dir1_size - 1) * (dir2_size - 1) +
-                              (dir2_size - 1) * i + dir2_size - 2;
+                                    (dir2_size - 1) * i + dir2_size - 2;
             edges[index][edges[index].size() - 1] += (num_points - dir1_start);
         }
     }
 
-    trimesh.set_vertices(points_2d); // points 2D are used later, don't know why. Can't move them.
+    trimesh.set_vertices(points_2d);  // points 2D are used later, don't know
+                                      // why. Can't move them.
     trimesh.set_edges(std::move(edges));
     trimesh.set_perimeter_edges(std::move(perimeter_edges));
 
@@ -3726,7 +3727,7 @@ inline TriMesh Sphere::create_mesh1(const ThermalMesh& thermal_mesh,
         // Update the latitude edges that close the sphere
         for (MeshIndex i = 0; i < dir1_size - (dir1_start + dir1_end); ++i) {
             const MeshIndex index = (dir1_size - 1) * (dir2_size - 1) +
-                              (dir2_size - 1) * i + dir2_size - 2;
+                                    (dir2_size - 1) * i + dir2_size - 2;
             trimesh.get_edges()[index][trimesh.get_edges()[index].size() - 1] -=
                 (num_points - dir1_start);
         }
@@ -4257,12 +4258,16 @@ inline TriMesh Sphere::create_mesh2(const ThermalMesh& thermal_mesh,
             const MeshIndex num_edge_points =
                 additional_points_dir2[i_dir1][j_dir2] + 2;
             Edges edge(num_edge_points);
+#if defined(__GNUC__)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wnull-dereference"
+#endif
             // GCC doesn't like additional_points_dir2[i_dir1][j_dir2]. If
             // num_edge_points where a compiled constant, it would be fine
             edge[0] = end_idx;
+#if defined(__GNUC__)
 #pragma GCC diagnostic pop
+#endif
             for (MeshIndex i_add2 = 0;
                  i_add2 < additional_points_dir2[i_dir1][j_dir2]; ++i_add2) {
                 edge[i_add2 + 1] = p_idx;
@@ -4447,7 +4452,8 @@ inline TriMesh Sphere::create_mesh2(const ThermalMesh& thermal_mesh,
         }
     }
 
-    trimesh.set_vertices(points_2d); // points 2D are used later, don't know why. Can't move them.
+    trimesh.set_vertices(points_2d);  // points 2D are used later, don't know
+                                      // why. Can't move them.
     trimesh.set_edges(std::move(edges));
     trimesh.set_perimeter_edges(std::move(perimeter_edges));
 
