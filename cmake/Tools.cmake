@@ -38,7 +38,7 @@ function(add_clang_tidy_to_target target)
         ".*.(cc|h|cpp|hpp)")
 
     # Try to find specific versions of clang-tidy starting from 16, if not, check "clang-tidy"
-    find_program(CLANG_TIDY_EXE NAMES clang-tidy-16 clang-tidy-15 clang-tidy)
+    find_program(CLANG_TIDY_EXE NAMES clang-tidy-17 clang-tidy-16 clang-tidy-15 clang-tidy)
     if(CLANG_TIDY_EXE)
         # Check version of clang-tidy. It should be >=14
         execute_process(
@@ -62,11 +62,10 @@ function(add_clang_tidy_to_target target)
         endif()
 
         message("==> Added Clang Tidy version ${CLANG_TIDY_VERSION} for Target: ${target}")
-        set(CLANG_TIDY_COMMAND "${CLANG_TIDY_EXE}" "-checks=-*,modernize-*")
         add_custom_target(
             ${target}_clangtidy
             COMMAND
-                clang-tidy
+                ${CLANG_TIDY_EXE}
                 --config-file ${CMAKE_SOURCE_DIR}/.clang-tidy
                 --extra-arg-before=-std=${CMAKE_CXX_STANDARD}
                 --header-filter=.*

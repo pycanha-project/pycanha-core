@@ -66,7 +66,7 @@ option(PYCANHA_OPTION_SANITIZE_UNDEF       "Enable to sanitize undefined (Unix o
 
 
 project(
-    "modern-cpp-lib-template"
+    "pycanha-core"
     VERSION ${CONAN_PROJECT_VERSION}
     LANGUAGES CXX)
 
@@ -82,6 +82,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # CMake target names
 set(LIB_NAME "pycanha-core")
 set(TEST_TARGET_NAME "tests")
+set(EXAMPLES_TARGET_PREFIX "example")
 set(BENCHMARK_TARGET_NAME "benchmarks")
 
 
@@ -133,5 +134,40 @@ if (NOT BUILD_TESTING STREQUAL OFF)
     add_subdirectory(test)
 endif()
 
+# EXAMPLES
+#add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/examples)
+
+
 # No installation. I don't know how to do it with cmake.
 # But using conan works fine.
+
+install(TARGETS ${LIB_NAME} 
+        EXPORT ${LIB_NAME}Export
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+        INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+
+install(DIRECTORY ${LIB_NAME}/include/ 
+        DESTINATION include)
+
+# Generate and install export file
+install(EXPORT ${LIB_NAME}Export
+        FILE my_libTargets.cmake
+        NAMESPACE ${LIB_NAME}::
+        DESTINATION lib/cmake/${LIB_NAME})
+
+# Generate and install config file
+#include(CMakePackageConfigHelpers)
+#write_basic_package_version_file("${PROJECT_BINARY_DIR}/my_libConfigVersion.cmake"
+#                                 VERSION ${PROJECT_VERSION}
+#                                 COMPATIBILITY AnyNewerVersion)
+#
+#configure_package_config_file(${CMAKE_CURRENT_SOURCE_DIR}/Config.cmake.in
+#                              "${PROJECT_BINARY_DIR}/my_libConfig.cmake"
+#                              INSTALL_DESTINATION lib/cmake/my_lib)
+#
+#install(FILES "${PROJECT_BINARY_DIR}/my_libConfig.cmake"
+#              "${PROJECT_BINARY_DIR}/my_libConfigVersion.cmake"
+#        DESTINATION lib/cmake/my_lib)
+#

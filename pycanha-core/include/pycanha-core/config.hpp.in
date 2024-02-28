@@ -40,3 +40,7 @@ constexpr int LIB_CPP_STANDARD = __cplusplus;
 #else
 constexpr int LIB_CPP_STANDARD = -1;
 #endif
+
+// Ensure size of float
+// Use C++23 std::float32_t in the future.
+static_assert(sizeof(float) == 4, "float is not 32 bits on this system");

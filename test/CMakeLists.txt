@@ -3,6 +3,11 @@
 set(TEST_SOURCES 
       "${CMAKE_CURRENT_SOURCE_DIR}/test_parameters.cpp"
       "${CMAKE_CURRENT_SOURCE_DIR}/gmm/test_primitives.cpp"
+      "${CMAKE_CURRENT_SOURCE_DIR}/gmm/test_trimesh.cpp"
+      "${CMAKE_CURRENT_SOURCE_DIR}/gmm/test_geometryutils.cpp"
+      "${CMAKE_CURRENT_SOURCE_DIR}/gmm/test_transformations.cpp"
+      "${CMAKE_CURRENT_SOURCE_DIR}/gmm/test_geometry.cpp"
+      "${CMAKE_CURRENT_SOURCE_DIR}/gmm/test_geometrymodel.cpp"
 )
 
 set(TEST_HEADERS "")

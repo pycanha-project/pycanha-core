@@ -18,28 +18,74 @@ configure_file(
 )
 
 #set(LIBRARY_INCLUDES "./" "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_BINARY_DIR}/configured_files/include")
-set(LIBRARY_INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/include")
+#set(LIBRARY_INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/include")
 
 # External dependencies
-find_package(Eigen3 REQUIRED)
+#-----------------------------
+
+# Eigen3
+find_package(Eigen3 REQUIRED) # Managed by conan
+
+
+# CDT: https://github.com/artem-ogre/CDT
+# CDT is a header-only library, so we can use FetchContent
+include(FetchContent)
+FetchContent_Declare(
+    cdt
+    GIT_REPOSITORY
+    https://github.com/artem-ogre/CDT.git
+    GIT_TAG
+    1.3.0
+) 
+FetchContent_GetProperties(cdt)
+if(NOT cdt_POPULATED)
+  FetchContent_Populate(cdt)
+  add_subdirectory(${cdt_SOURCE_DIR}/CDT ${cdt_BINARY_DIR}/CDT)
+endif()
+
+#find_package(CDT REQUIRED CONFIG) # Use this if managed by conan
 
 
 # MyLib Library
-# For a compiled library:
+## For a compiled library:
 #add_library(${LIB_NAME} STATIC ${LIBRARY_SOURCES} ${LIBRARY_HEADERS})
 #target_include_directories(${LIB_NAME} PUBLIC ${LIBRARY_INCLUDES})
 #target_link_libraries( ${LIB_NAME} PRIVATE 
 #    Eigen3::Eigen
 #)
 
-# For a header-only library:
-add_library(${LIB_NAME} INTERFACE)
-target_include_directories(${LIB_NAME} INTERFACE ${LIBRARY_INCLUDES})
-
-
-target_link_libraries( ${LIB_NAME} INTERFACE 
-    Eigen3::Eigen
+# Change from INTERFACE to STATIC or SHARED, depending on your needs
+# Add all source files after the library name
+add_library(${LIB_NAME} STATIC 
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/triangulation.cpp
 )
+target_include_directories(${LIB_NAME} 
+    PUBLIC 
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
+    PRIVATE
+    $<BUILD_INTERFACE:${cdt_SOURCE_DIR}> # This adds the parent directory of CDT. So  #include <CDT/include/CDT.h> will work
+)
+
+target_link_libraries( ${LIB_NAME} 
+    PUBLIC 
+    Eigen3::Eigen  
+    PRIVATE
+    CDT::CDT
+)
+
+# For a header-only library:
+#add_library(${LIB_NAME} INTERFACE)
+#target_include_directories(${LIB_NAME} 
+#    INTERFACE 
+#    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+#    $<INSTALL_INTERFACE:include>
+#)
+
+#target_link_libraries( ${LIB_NAME} INTERFACE 
+#    Eigen3::Eigen  
+#    CDT::CDT
+#)
 
 target_set_warnings(
     TARGET

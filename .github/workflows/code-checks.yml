@@ -1,0 +1,63 @@
+name: Code Checks
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  check-code-cpplint:
+    name: Check code with cpplint
+    runs-on: [self-hosted, Linux, X64, gpu]
+    steps:
+    - name: Check out repo's default branch
+      uses: actions/checkout@v3
+    - name: Install cpplint
+      run: |
+        pip install cpplint
+    - name: Check code style with cpplint
+      run: |
+        cpplint --recursive ./pycanha-core ./test
+ 
+#  check-code-clang-format:
+#    name: Check format with clang-format
+#    runs-on: [self-hosted, Linux, X64, gpu]
+#    strategy:
+#      matrix:
+#        path:
+#          - 'pycanha-core'
+#          - 'test'
+#    steps:
+#    - uses: actions/checkout@v3
+#    - name: Run clang-format style check.
+#      uses: jidicula/clang-format-action@v4.11.0
+#      with:
+#        clang-format-version: '15'
+#        check-path: ${{ matrix.path}}
+#        fallback-style: 'Google' # optional
+        
+  static_analysis:
+    runs-on: [self-hosted, Linux, X64, gpu]
+
+    steps:
+    - name: Check out repo's default branch
+      uses: actions/checkout@v3
+    - name: Install conan, cmake and cppcheck
+      run: |
+        pip install conan
+        pip install cmake
+        sudo apt-get install cppcheck
+    - name: Install with conan
+      run: |
+        conan config install .conan
+        conan install . --build=missing  -pr:h=ubuntu-gcc12-amd64 -pr:h=build-debug -pr:h=options-ci  -pr:b=ubuntu-gcc12-amd64 -pr:b=build-debug -pr:b=options-ci
+        cmake --preset=conan-debug
+
+    - name: Run cppcheck
+      run: cmake --build build/Debug  --target tests_lib_cppcheck
+
+    - name: Run clang-tidy
+      run: cmake --build build/Debug  --target tests_clangtidy
+
+        
+        

@@ -68,6 +68,7 @@ class Recipe_pycanha_core(ConanFile):
 
         # Library dependencies
         self.requires("eigen/3.4.0")
+        # self.requires("cdt/1.3.0") # This is a header-only library. No need for complicated build. Can be fetched by CMake directly.
 
         # Test dependencies
         self.test_requires("catch2/3.3.2")
@@ -142,16 +143,18 @@ class Recipe_pycanha_core(ConanFile):
 
     def package(self):
         # Because pycanha-core is header only, we just need to copy the headers
-        copy(self, "*.hpp", self.source_folder, self.package_folder)
+        # copy(self, "*.hpp", self.source_folder, self.package_folder)
 
         # Alternatively we could use the installation with cmake, but I don't know how to do it
         # For this to work, all the install() commands in the CMakeLists.txt must be defined correctly
-        # cmake = CMake(self)
-        # cmake.install()
+        cmake = CMake(self)
+        cmake.install()
 
     def package_info(self):
         # This line is necessary because the headers are not in the "include" folder. By default, conan will look for the headers in the "include" folder
         # See: https://docs.conan.io/2/tutorial/creating_packages/define_package_information.html?highlight=also%20copy%20include%20folder#define-information-for-consumers-the-package-info-method
-        self.cpp_info.includedirs = ["pycanha-core/include"]
+        # self.cpp_info.includedirs = ["pycanha-core/include"]
+        # -- Now this is not necessary. Because I'm using CMake install() to copy pycanha-core/include to the package/include folder
+        #    So now the headers are in the include folder, and conan will find them automatically.
 
         self.cpp_info.libs = ["pycanha-core"]

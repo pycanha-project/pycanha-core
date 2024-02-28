@@ -1,4 +1,3 @@
-# pycanha-core
-Future placeholder for the C++ PyCanha-core package
+# pycanha-core-dev
+Private repository for pycanha-core development until releasing v1.0.0
 
-The python bindings are here: https://github.com/pycanha-project/pycanha-core-python

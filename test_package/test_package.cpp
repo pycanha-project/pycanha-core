@@ -1,3 +1,3 @@
-#include "pycanha-core/my_lib.hpp"
+#include "pycanha-core/pycanha-core.hpp"
 
 int main() { print_package_info(); }

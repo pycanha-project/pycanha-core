@@ -15,7 +15,18 @@ Checks: "*,
         -misc-non-private-member-variables-in-classes,
         -cppcoreguidelines-avoid-magic-numbers,
         -readability-magic-numbers,
+        -bugprone-easily-swappable-parameters,
+        -bugprone-misplaced-widening-cast,
+        -bugprone-implicit-widening-of-multiplication-result
 "
+# Because we mix in many places uint32_t and size_t (uint64_t), for
+# example, in std::vector and triangles and points indices,
+# we need to disable these checks to avoid been too verbose 
+# using static_cast<uint32_t> or static_cast<size_t> in many places:
+#
+# bugprone-misplaced-widening-cast
+# bugprone-implicit-widening-of-multiplication-result
+
 WarningsAsErrors: ''
 CheckOptions:
   - key: 'bugprone-argument-comment.StrictMode'
@@ -80,9 +91,9 @@ CheckOptions:
     value: '^LIB.*'
 
   - key: 'readability-identifier-naming.EnumCase'
-    value: 'lower_case'
+    value: 'CamelCase'
   - key: 'readability-identifier-naming.EnumConstantCase'
-    value: 'lower_case'
+    value: 'UPPER_CASE'
   - key: 'readability-identifier-naming.FunctionCase'
     value: 'lower_case'
   - key: 'readability-identifier-naming.GlobalConstantCase'
@@ -141,7 +152,7 @@ CheckOptions:
   - key: 'readability-identifier-naming.PublicMethodCase'
     value: 'lower_case'
   - key: 'readability-identifier-naming.ScopedEnumConstantCase'
-    value: 'lower_case'
+    value: 'UPPER_CASE'
   - key: 'readability-identifier-naming.StaticConstantCase'
     value: 'lower_case'
   - key: 'readability-identifier-naming.StaticVariableCase'
@@ -153,7 +164,7 @@ CheckOptions:
   - key: 'readability-identifier-naming.TemplateTemplateParameterCase'
     value: 'CamelCase'
   - key: 'readability-identifier-naming.TypeAliasCase'
-    value: 'lower_case'
+    value: 'CamelCase'
   - key: 'readability-identifier-naming.TypedefCase'
     value: 'lower_case'
   - key: 'readability-identifier-naming.TypeTemplateParameterCase'
@@ -173,9 +184,11 @@ CheckOptions:
     value: 'lower_case'
   - key: 'readability-identifier-naming.VirtualMethodCase'
     value: 'lower_case'
-# Don't create warnings for these short variables:
-# Typical variable names in linalg: A, x, b, B. Match with: [xABb]
-# Points: p1, p7, etc. Match with: p[0-9]
-  - key: 'readability-identifier-length.IgnoredVariableNames'
-    value: '[xABb]|p[0-9]'
+# Don't create warnings for short variables:
+  - key: 'readability-identifier-length.MinimumVariableNameLength'
+    value: '1'
+  - key: 'readability-identifier-length.MinimumParameterNameLength'
+    value: '1'
+  - key: 'readability-identifier-length.MinimumLoopCounterNameLength'
+    value: '1'
 ...

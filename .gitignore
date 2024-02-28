@@ -2,3 +2,4 @@ build
 CMakeUserPresets.json
 .vscode/*
 pycanha-core/include/pycanha-core/config.hpp
+pycanha-core/include/pycanha-core/.vscode/*
