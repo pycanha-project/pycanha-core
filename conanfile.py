@@ -19,7 +19,10 @@ class Recipe_pycanha_core(ConanFile):
     # I've followed the instructions from https://docs.conan.io/2/tutorial/creating_packages/other_types_of_packages/header_only_packages.html
     # but without adding the "header-only" keyword to the recipe, it doesn't work. The use of the "header-only" is from here:
     # https://github.com/hobbeshunter/json2cpp/tree/conan-2-export-tool-and-lib
-    package_type = "header-library"
+    # package_type = "header-library"
+
+    # Now we are using a static library, because we build some functions separately.
+    package_type = "static-library"
 
     # Optional metadata
     license = "MIT"
@@ -60,14 +63,16 @@ class Recipe_pycanha_core(ConanFile):
 
     # Sources are located in the same place as this recipe, copy them to the recipe
     exports_sources = "CMakeLists.txt", "pycanha-core/*", "cmake/*", "test/*"
-    no_copy_source = True
+    # no_copy_source = True # Not needed
 
     def requirements(self):
         # Dependencies can be defined also with a version range.
         # For now, hard-coding an specific version, so we know exactly what version is used in the build.
 
         # Library dependencies
-        self.requires("eigen/3.4.0")
+        self.requires("eigen/3.4.0", transitive_headers=True)
+        # transitive_headers=True is used when the dependencies of the library are headers needed by the consumer.
+
         # self.requires("cdt/1.3.0") # This is a header-only library. No need for complicated build. Can be fetched by CMake directly.
 
         # Test dependencies
@@ -144,11 +149,46 @@ class Recipe_pycanha_core(ConanFile):
     def package(self):
         # Because pycanha-core is header only, we just need to copy the headers
         # copy(self, "*.hpp", self.source_folder, self.package_folder)
+        copy(
+            self,
+            pattern="*.hpp",
+            src=os.path.join(self.source_folder, "pycanha-core/include"),
+            dst=os.path.join(self.package_folder, "include"),
+        )
+        copy(
+            self,
+            pattern="*.a",
+            src=self.build_folder,
+            dst=os.path.join(self.package_folder, "lib"),
+            keep_path=False,
+        )
+
+        copy(
+            self,
+            pattern="*.so",
+            src=self.build_folder,
+            dst=os.path.join(self.package_folder, "lib"),
+            keep_path=False,
+        )
+        copy(
+            self,
+            pattern="*.lib",
+            src=self.build_folder,
+            dst=os.path.join(self.package_folder, "lib"),
+            keep_path=False,
+        )
+        copy(
+            self,
+            pattern="*.dll",
+            src=self.build_folder,
+            dst=os.path.join(self.package_folder, "bin"),
+            keep_path=False,
+        )
 
         # Alternatively we could use the installation with cmake, but I don't know how to do it
         # For this to work, all the install() commands in the CMakeLists.txt must be defined correctly
-        cmake = CMake(self)
-        cmake.install()
+        # cmake = CMake(self)
+        # cmake.install()
 
     def package_info(self):
         # This line is necessary because the headers are not in the "include" folder. By default, conan will look for the headers in the "include" folder
