@@ -201,14 +201,14 @@ class Primitive : public UniqueID, public GeometryUpdateCallback {
                 try {
                     p1_faces[i] =
                         get_faceid_from_uv(thermal_mesh, p1 + offsets[i]);
-                } catch (const std::exception& e) {
+                } catch (const std::exception& /*e*/) {
                     // p1_faces[i] = -1
                 }
 
                 try {
                     p2_faces[i] =
                         get_faceid_from_uv(thermal_mesh, p2 + offsets[i]);
-                } catch (const std::exception& e) {
+                } catch (const std::exception& /*e*/) {
                     // p2_faces[i] = -1
                 }
                 // NOLINTEND(cppcoreguidelines-pro-bounds-constant-array-index)
