@@ -3,6 +3,7 @@
 #include <Eigen/Dense>
 #include <algorithm>
 #include <iostream>
+#include <limits>
 #include <memory>
 #include <numbers>
 #include <numeric>
