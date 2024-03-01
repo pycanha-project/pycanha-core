@@ -27,12 +27,13 @@ class GeometryUpdateCallback {
     }
     void add_callback(const std::function<void(GeometryIdType)>& callback,
                       GeometryIdType geometry_model_id) {
-        // Check if the id already exists
-        for (const auto& id : _ids) {
-            if (id == geometry_model_id) {
-                // Callback already added, so return
-                return;
-            }
+        // Use std::any_of to check if the id already exists
+        if (std::any_of(_ids.begin(), _ids.end(),
+                        [geometry_model_id](const auto& id) {
+                            return id == geometry_model_id;
+                        })) {
+            // Callback already added, so return
+            return;
         }
         _callbacks.push_back(callback);
         _ids.push_back(geometry_model_id);

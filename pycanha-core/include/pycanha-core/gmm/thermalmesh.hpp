@@ -118,12 +118,12 @@ class ThermalMesh : public UniqueID {
     }
 
     void set_side1_color(Color side1_color) {
-        _side1_color = side1_color;
+        _side1_color = std::move(side1_color);
         validate();
     }
 
     void set_side2_color(Color side2_color) {
-        _side2_color = side2_color;
+        _side2_color = std::move(side2_color);
         validate();
     }
 

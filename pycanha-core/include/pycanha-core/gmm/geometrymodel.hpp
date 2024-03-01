@@ -1,4 +1,5 @@
 #pragma once
+#include <algorithm>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -242,14 +243,13 @@ class GeometryModel : public UniqueID,
         // TODO: Implement geometry iterator like:
         // for (auto geo_ptr : item->get_geometries()) {...}
         for (const auto& geoitem : item->get_geometry_items()) {
-            bool found = false;
-            for (const auto& root_geoitem :
-                 _root_geometry_group->get_geometry_items()) {
-                if (geoitem->get_id() == root_geoitem->get_id()) {
-                    found = true;
-                    break;
-                }
-            }
+            bool found = std::any_of(
+                _root_geometry_group->get_geometry_items().begin(),
+                _root_geometry_group->get_geometry_items().end(),
+                [&geoitem](const auto& root_geoitem) {
+                    return geoitem->get_id() == root_geoitem->get_id();
+                });
+
             if (!found) {
                 throw std::runtime_error(
                     "Geometry not in the root node. Cannot create group.");
@@ -257,14 +257,13 @@ class GeometryModel : public UniqueID,
         }
 
         for (const auto& geogroup : item->get_geometry_groups()) {
-            bool found = false;
-            for (const auto& root_geogroup :
-                 _root_geometry_group->get_geometry_groups()) {
-                if (geogroup->get_id() == root_geogroup->get_id()) {
-                    found = true;
-                    break;
-                }
-            }
+            bool found = std::any_of(
+                _root_geometry_group->get_geometry_groups().begin(),
+                _root_geometry_group->get_geometry_groups().end(),
+                [&geogroup](const auto& root_geogroup) {
+                    return geogroup->get_id() == root_geogroup->get_id();
+                });
+
             if (!found) {
                 throw std::runtime_error(
                     "Geometry not in the root node. Cannot create group.");

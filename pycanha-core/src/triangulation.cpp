@@ -3,11 +3,13 @@
 #include "pycanha-core/gmm/triangulation.hpp"
 
 // #include "CDT/include/CDT.h"
+// cppcheck-suppress *
 #include <CDT/include/Triangulation.h>
 
 #include <array>
 #include <cstdint>
 #include <iostream>
+#include <numeric>
 #include <unordered_set>
 #include <utility>
 #include <vector>
@@ -57,9 +59,17 @@ void cdt_trimesher(TriMesh& trimesh) {
     pycanha::MeshIndex num_bound_edges_pairs = 0;
 
     // Count the perimeter edges
-    for (const auto& edge_idx : trimesh.get_perimeter_edges()) {
-        num_bound_edges_pairs += trimesh.get_edges()[edge_idx].size() - 1;
-    }
+    num_bound_edges_pairs = std::accumulate(
+        trimesh.get_perimeter_edges().begin(),  // start iterator
+        trimesh.get_perimeter_edges().end(),    // end iterator
+        num_bound_edges_pairs,  // initial value for the accumulation
+        [&trimesh](const auto& sum, const auto& edge_idx) {
+            return sum + trimesh.get_edges()[edge_idx].size() - 1;
+        });
+    // Same as:
+    // for (const auto& edge_idx : trimesh.get_perimeter_edges()) {
+    //    num_bound_edges_pairs += trimesh.get_edges()[edge_idx].size() - 1;
+    //}
 
     std::cout << "Boundary edges: " << num_bound_edges_pairs << "\n";
     // Create and fill the boundary edges vector
@@ -109,9 +119,18 @@ void cdt_trimesher(TriMesh& trimesh) {
 
     // Count the interior edges
     pycanha::MeshIndex num_interior_edges_pairs = 0;
-    for (const auto& edge_idx : set_interior_edges) {
-        num_interior_edges_pairs += trimesh.get_edges()[edge_idx].size() - 1;
-    }
+    num_interior_edges_pairs = std::accumulate(
+        set_interior_edges.begin(),  // start iterator
+        set_interior_edges.end(),    // end iterator
+        num_interior_edges_pairs,    // initial value for the accumulation
+        [&trimesh](const auto& sum, const auto& edge_idx) {
+            return sum + trimesh.get_edges()[edge_idx].size() - 1;
+        });
+
+    // Same as:
+    // for (const auto& edge_idx : set_interior_edges) {
+    //    num_interior_edges_pairs += trimesh.get_edges()[edge_idx].size() - 1;
+    //}
 
     std::cout << "Interior edges: " << num_interior_edges_pairs << '\n';
     // Create and fill the interior edges vector

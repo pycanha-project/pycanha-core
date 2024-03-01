@@ -46,9 +46,9 @@ class CoordinateTransformation : public UniqueID {
      */
     explicit CoordinateTransformation(Vector3D translation, Vector3D rotation,
                                       TransformOrder order)
-        : _translation(std::move(translation)), _order(order) {
-        _rotation_matrix = create_rotation_matrix(std::move(rotation));
-    }
+        : _translation(std::move(translation)),
+          _rotation_matrix(create_rotation_matrix(std::move(rotation))),
+          _order(order) {}
 
     /**
      * @brief Constructor for CoordinateTransformation class.
