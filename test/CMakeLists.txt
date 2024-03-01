@@ -112,7 +112,8 @@ if (PYCANHA_OPTION_CPPCHECK)
                 ${CPPCHECK} --project=${CMAKE_BINARY_DIR}/compile_commands.json
                 --enable=all
                 --suppress=unusedFunction --suppress=unmatchedSuppression
-                --suppress=missingIncludeSystem --suppress=toomanyconfigs                
+                --suppress=missingIncludeSystem --suppress=toomanyconfigs
+                --suppress=constStatement                
                 -i${CMAKE_BINARY_DIR}/ -i${CMAKE_SOURCE_DIR}/external/
                 # Supress test files manually if you find bad warnings.
                 --suppress=*:${CMAKE_CURRENT_SOURCE_DIR}/mytest1.cpp

@@ -8,7 +8,7 @@ on:
 jobs:
   check-code-cpplint:
     name: Check code with cpplint
-    runs-on: [self-hosted, Linux, X64, gpu]
+    runs-on: ubuntu-latest
     steps:
     - name: Check out repo's default branch
       uses: actions/checkout@v3
@@ -21,7 +21,7 @@ jobs:
  
 #  check-code-clang-format:
 #    name: Check format with clang-format
-#    runs-on: [self-hosted, Linux, X64, gpu]
+#    runs-on: ubuntu-latest
 #    strategy:
 #      matrix:
 #        path:
@@ -37,7 +37,7 @@ jobs:
 #        fallback-style: 'Google' # optional
         
   static_analysis:
-    runs-on: [self-hosted, Linux, X64, gpu]
+    runs-on: ubuntu-latest
 
     steps:
     - name: Check out repo's default branch
@@ -52,12 +52,13 @@ jobs:
         conan config install .conan
         conan install . --build=missing  -pr:h=ubuntu-gcc12-amd64 -pr:h=build-debug -pr:h=options-ci  -pr:b=ubuntu-gcc12-amd64 -pr:b=build-debug -pr:b=options-ci
         cmake --preset=conan-debug
-
+        
+    - name: Run clang-tidy
+      run: cmake --build build/Debug  --target tests_clangtidy
+      
     - name: Run cppcheck
       run: cmake --build build/Debug  --target tests_lib_cppcheck
 
-    - name: Run clang-tidy
-      run: cmake --build build/Debug  --target tests_clangtidy
 
         
         

@@ -2083,7 +2083,7 @@ inline TriMesh create_2d_disc_mesh(const Eigen::VectorXd& dir1_mesh_normalized,
     // Assert preconditions (only in debug mode)
     assert(dir1_mesh_normalized.size() >= 2);
     assert(dir2_mesh_normalized.size() >= 2);
-    assert(2 * dir1_mesh.size() * dir2_mesh.size() <=
+    assert(2 * dir1_mesh_normalized.size() * dir2_mesh_normalized.size() <=
            std::numeric_limits<MeshIndex>::max());
     assert(utils::is_sorted(dir1_mesh_normalized));
     assert(utils::is_sorted(dir2_mesh_normalized));
@@ -2093,7 +2093,7 @@ inline TriMesh create_2d_disc_mesh(const Eigen::VectorXd& dir1_mesh_normalized,
     // double max_angle =
     //     dir2_mesh_normalized[dir2_mesh_normalized.size() - 1] * 2 * pi;
 
-    assert(max_angle <= 2 * pi);
+    // assert(max_angle <= 2 * pi);
 
     // Set the conditions for the mesh
     const bool inner_radius = (dir1_mesh_normalized[0] != 0.0);
