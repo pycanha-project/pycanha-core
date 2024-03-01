@@ -8,7 +8,7 @@ on:
 jobs:
   check-code-cpplint:
     name: Check code with cpplint
-    runs-on: [self-hosted, Linux, X64, gpu]
+    runs-on: ubuntu-latest
     steps:
     - name: Check out repo's default branch
       uses: actions/checkout@v3
@@ -21,7 +21,7 @@ jobs:
  
 #  check-code-clang-format:
 #    name: Check format with clang-format
-#    runs-on: [self-hosted, Linux, X64, gpu]
+#    runs-on: ubuntu-latest
 #    strategy:
 #      matrix:
 #        path:
@@ -37,7 +37,7 @@ jobs:
 #        fallback-style: 'Google' # optional
         
   static_analysis:
-    runs-on: [self-hosted, Linux, X64, gpu]
+    runs-on: ubuntu-latest
 
     steps:
     - name: Check out repo's default branch

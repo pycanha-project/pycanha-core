@@ -198,3 +198,13 @@ class Recipe_pycanha_core(ConanFile):
         #    So now the headers are in the include folder, and conan will find them automatically.
 
         self.cpp_info.libs = ["pycanha-core"]
+
+        # Without adding the link flags, the sanitizers libraries are not linked (for the consumer).
+        link_flags = []
+        if self.options.PYCANHA_SANITIZER_ADDRESS:
+            link_flags.append("-fsanitize=address")
+        if self.options.PYCANHA_SANITIZER_UNDEFINED:
+            link_flags.append("-fsanitize=undefined")
+
+        # See: https://docs.conan.io/2/reference/conanfile/methods/package_info.html#conan-conanfile-model-cppinfo-attributes
+        self.cpp_info.exelinkflags = link_flags  # linker flags
