@@ -201,9 +201,9 @@ class Recipe_pycanha_core(ConanFile):
 
         # Without adding the link flags, the sanitizers libraries are not linked (for the consumer).
         link_flags = []
-        if self.options.PYCANHA_SANITIZER_ADDRESS:
+        if self.options.PYCANHA_OPTION_SANITIZE_ADDR:
             link_flags.append("-fsanitize=address")
-        if self.options.PYCANHA_SANITIZER_UNDEFINED:
+        if self.options.PYCANHA_OPTION_SANITIZE_UNDEF:
             link_flags.append("-fsanitize=undefined")
 
         # See: https://docs.conan.io/2/reference/conanfile/methods/package_info.html#conan-conanfile-model-cppinfo-attributes
