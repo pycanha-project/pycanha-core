@@ -1677,7 +1677,7 @@ inline TriMesh create_2d_triangular_only_mesh(const Eigen::VectorXd& dir2_mesh,
     MeshIndex end_p_idx = additional_points_dir1[0] + 1;
     MeshIndex start_padd_idx = additional_points_dir2_start;
     for (MeshIndex i = 0; i < dir2_size - 1; ++i) {
-        MeshIndex start_p_idx = end_p_idx;
+        const MeshIndex start_p_idx = end_p_idx;
         end_p_idx += additional_points_dir1[i + 1] + 1;
         const MeshIndex num_edge_points = additional_points_dir2[i] + 2;
         Edges edge(num_edge_points);

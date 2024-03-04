@@ -243,7 +243,7 @@ class GeometryModel : public UniqueID,
         // TODO: Implement geometry iterator like:
         // for (auto geo_ptr : item->get_geometries()) {...}
         for (const auto& geoitem : item->get_geometry_items()) {
-            bool found = std::any_of(
+            const bool found = std::any_of(
                 _root_geometry_group->get_geometry_items().begin(),
                 _root_geometry_group->get_geometry_items().end(),
                 [&geoitem](const auto& root_geoitem) {
@@ -257,7 +257,7 @@ class GeometryModel : public UniqueID,
         }
 
         for (const auto& geogroup : item->get_geometry_groups()) {
-            bool found = std::any_of(
+            const bool found = std::any_of(
                 _root_geometry_group->get_geometry_groups().begin(),
                 _root_geometry_group->get_geometry_groups().end(),
                 [&geogroup](const auto& root_geogroup) {
