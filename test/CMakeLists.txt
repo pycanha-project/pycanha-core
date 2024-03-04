@@ -109,15 +109,16 @@ if (PYCANHA_OPTION_CPPCHECK)
         add_custom_target(
           ${TEST_TARGET_NAME}_lib_cppcheck
             COMMAND
-                ${CPPCHECK} --project=${CMAKE_BINARY_DIR}/compile_commands.json
+                ${CPPCHECK} 
+                --project=${CMAKE_BINARY_DIR}/compile_commands.json
                 --enable=all
                 --suppress=unusedFunction --suppress=unmatchedSuppression
                 --suppress=missingIncludeSystem --suppress=toomanyconfigs
                 --suppress=constStatement          
-                --inline-suppr      
-                -i${CMAKE_BINARY_DIR}/ -i${CMAKE_SOURCE_DIR}/external/
+                --inline-suppr                   
                 # Supress test files manually if you find bad warnings.
                 --suppress=*:${CMAKE_CURRENT_SOURCE_DIR}/mytest1.cpp
+                --suppress=*:${CMAKE_BINARY_DIR}/_deps/cdt-src/CDT/include/Triangulation.hpp
                 ${CPP_CHECK_WARNING_AS_ERRORS}
             USES_TERMINAL)
     else()
