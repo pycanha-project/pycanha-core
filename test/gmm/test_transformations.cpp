@@ -75,7 +75,7 @@ TEST_CASE("CoordinateTransformation", "[gmm][coordinate_transformation]") {
 
         transform1.transform_point_list_inplace(&points);
         Point3D transformed_point1 = points.row(0);
-        Point3D transformed_point2 = points.row(1);
+        // Point3D transformed_point2 = points.row(1);
 
         REQUIRE(
             transformed_point1.isApprox(expected_point1, pycanha::LENGTH_TOL));
@@ -92,7 +92,6 @@ TEST_CASE("CoordinateTransformation", "[gmm][coordinate_transformation]") {
 
         transform2.transform_point_list_inplace(&points);
         transformed_point1 = points.row(0);
-        transformed_point2 = points.row(1);
         REQUIRE(
             transformed_point1.isApprox(expected_point2, pycanha::LENGTH_TOL));
 

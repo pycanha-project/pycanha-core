@@ -611,9 +611,11 @@ class TriMeshModel {
         // 11) Aggregate edges
         EdgesList adjusted_edges = trimesh.get_edges();
         for (auto& edge : adjusted_edges) {
-            for (auto& index : edge) {
-                index += current_n_points;
-            }
+            // Use std::transform to increment each element in the collection
+            std::transform(edge.begin(), edge.end(), edge.begin(),
+                           [current_n_points](auto index) {
+                               return index + current_n_points;
+                           });
         }
         _edges.insert(_edges.end(), adjusted_edges.begin(),
                       adjusted_edges.end());
@@ -621,9 +623,12 @@ class TriMeshModel {
         // 12) Aggregate perimeter_edges
         Edges adjusted_perimeter_edges = trimesh.get_perimeter_edges();
 
-        for (auto& index : adjusted_perimeter_edges) {
-            index += current_n_edges;
-        }
+        // for index: adjusted_perimeter_edges) { index += current_n_edges; }
+        std::transform(
+            adjusted_perimeter_edges.begin(), adjusted_perimeter_edges.end(),
+            adjusted_perimeter_edges.begin(),
+            [current_n_edges](auto index) { return index + current_n_edges; });
+
         // Calculate the total size needed
         const Index previous_number_of_perimeter_edges =
             _perimeter_edges.rows();
@@ -643,10 +648,13 @@ class TriMeshModel {
         // 12) Aggregate faces_edges
         FaceEdges adjusted_faces_edges = trimesh.get_faces_edges();
         for (auto& face : adjusted_faces_edges) {
-            for (auto& index : face) {
-                index += current_n_edges;
-            }
+            // for index: face) { index += current_n_edges; }
+            std::transform(face.begin(), face.end(), face.begin(),
+                           [current_n_edges](auto index) {
+                               return index + current_n_edges;
+                           });
         }
+
         std::cout << "_faces_edges: " << _faces_edges.size() << "\n";
         std::cout << "Adjusted faces edges: " << adjusted_faces_edges.size()
                   << "\n";
@@ -690,9 +698,11 @@ class TriMeshModel {
         EdgesList new_edges(_edges.begin() + start_edges,
                             _edges.begin() + end_edges);
         for (auto& edge : new_edges) {
-            for (auto& index : edge) {
-                index -= start_vertices;
-            }
+            // for index: edge) { index -= start_vertices; }
+            std::transform(edge.begin(), edge.end(), edge.begin(),
+                           [start_vertices](auto index) {
+                               return index - start_vertices;
+                           });
         }
 
         // Perimeter edges
@@ -719,11 +729,13 @@ class TriMeshModel {
         std::cout << "New faces edges: " << new_faces_edges.size() << '\n';
         std::cout << "faces_idx_start: " << face_idx_start << '\n';
         std::cout << "faces_idx_end: " << face_idx_end + 1 << '\n';
+
         // Correct the idx of the edges
         for (auto& face_edges : new_faces_edges) {
-            for (auto& edge : face_edges) {
-                edge -= start_edges;
-            }
+            // for edge: face_edges) { edge -= start_edges; }
+            std::transform(
+                face_edges.begin(), face_edges.end(), face_edges.begin(),
+                [start_edges](auto edge) { return edge - start_edges; });
         }
 
         // Color
@@ -1539,7 +1551,7 @@ inline TriMesh create_2d_triangular_only_mesh(const Eigen::VectorXd& dir2_mesh,
 
     // We also create a vector of vectors to store the dir_mesh of each line in
     // dir1 direction
-    const std::vector<Eigen::VectorXd> dir1_meshes(dir2_size);
+    // const std::vector<Eigen::VectorXd> dir1_meshes(dir2_size);
 
     // Now check if additional points are needed based on
     // max_distance_points If max_distance is negative or zero, then we
@@ -1662,11 +1674,10 @@ inline TriMesh create_2d_triangular_only_mesh(const Eigen::VectorXd& dir2_mesh,
     }
 
     // Loop over dir2 line
-    MeshIndex start_p_idx = 0;
     MeshIndex end_p_idx = additional_points_dir1[0] + 1;
     MeshIndex start_padd_idx = additional_points_dir2_start;
     for (MeshIndex i = 0; i < dir2_size - 1; ++i) {
-        start_p_idx = end_p_idx;
+        const MeshIndex start_p_idx = end_p_idx;
         end_p_idx += additional_points_dir1[i + 1] + 1;
         const MeshIndex num_edge_points = additional_points_dir2[i] + 2;
         Edges edge(num_edge_points);
@@ -1803,9 +1814,11 @@ inline TriMesh create_2d_triangular_mesh(const Eigen::VectorXd& dir1_mesh,
 
     Eigen::VectorXd quad_dir1_mesh = dir1_mesh(seq(1, dir1_mesh.size() - 1));
     auto quad_dir1_mesh_0 = quad_dir1_mesh[0];
-    for (auto& quad_dir1 : quad_dir1_mesh) {
-        quad_dir1 = quad_dir1 - quad_dir1_mesh_0;
-    }
+    // for (quad_dir1:quad_dir1_mesh){quad_dir1=quad_dir1-quad_dir1_mesh_0;}
+    std::transform(quad_dir1_mesh.begin(), quad_dir1_mesh.end(),
+                   quad_dir1_mesh.begin(), [quad_dir1_mesh_0](auto quad_dir1) {
+                       return quad_dir1 - quad_dir1_mesh_0;
+                   });
 
     const Eigen::VectorXd& quad_dir2_mesh = dir2_mesh;
     const auto& quad_p1 = triangle_p2;
@@ -2187,8 +2200,8 @@ inline TriMesh create_2d_disc_mesh(const Eigen::VectorXd& dir1_mesh_normalized,
     // Determine if there are interior points. For the disc
     // only the dir1 points generate interior points and only
     // they are the same for a given radius
-    std::vector<std::vector<MeshIndex>> interior_points_dir2(
-        dir1_size - 1, std::vector<MeshIndex>(dir2_size - 1));
+    // std::vector<std::vector<MeshIndex>> interior_points_dir2(
+    //    dir1_size - 1, std::vector<MeshIndex>(dir2_size - 1));
     MeshIndex num_interior_points = 0;
     for (MeshIndex i_dir1 = 0; i_dir1 < dir1_size - 1; ++i_dir1) {
         if (additional_points_dir1[i_dir1] > 0) {
@@ -2203,7 +2216,7 @@ inline TriMesh create_2d_disc_mesh(const Eigen::VectorXd& dir1_mesh_normalized,
                         add_pi1 * additional_points_dir2[i_dir1 + 1][j_dir2];
                 }
                 num_interior_points += num_interior_points_i;
-                interior_points_dir2[i_dir1][j_dir2] = num_interior_points_i;
+                // interior_points_dir2[i_dir1][j_dir2] = num_interior_points_i;
             }
         }
     }
@@ -2373,11 +2386,12 @@ inline TriMesh create_2d_disc_mesh(const Eigen::VectorXd& dir1_mesh_normalized,
                         ++p_idx;
                     }
                 }
-                const MeshIndex num_interior_points_i =
-                    add_pi1 *
-                    additional_points_dir2[i_dir1 + extra_start][j_dir2];
-                num_interior_points += num_interior_points_i;
-                interior_points_dir2[i_dir1][j_dir2] = num_interior_points_i;
+                // const MeshIndex num_interior_points_i =
+                //     add_pi1 *
+                //     additional_points_dir2[i_dir1 + extra_start][j_dir2];
+                //  num_interior_points += num_interior_points_i;
+                //  interior_points_dir2[i_dir1][j_dir2] =
+                //  num_interior_points_i;
             }
         }
     }
