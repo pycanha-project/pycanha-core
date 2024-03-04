@@ -1,0 +1,6 @@
+<map id="pycanha::gmm::GeometryGroup" name="pycanha::gmm::GeometryGroup">
+<area shape="rect" id="node1" title="Class representing a group of geometric items. Inherits from Geometry." alt="" coords="5,155,236,181"/>
+<area shape="rect" id="node4" href="$classpycanha_1_1gmm_1_1GeometryGroupCutted.html" title="Class representing a cutted geometry." alt="" coords="5,229,236,271"/>
+<area shape="rect" id="node2" href="$classpycanha_1_1gmm_1_1Geometry.html" title="Base class for geometric items." alt="" coords="25,80,217,107"/>
+<area shape="rect" id="node3" href="$classpycanha_1_1gmm_1_1UniqueID.html" title="Provides a unique integer id." alt="" coords="27,5,214,32"/>
+</map>

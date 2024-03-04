@@ -1,0 +1,19 @@
+<map id="pycanha::gmm::Triangle::create_mesh" name="pycanha::gmm::Triangle::create_mesh">
+<area shape="rect" id="node1" title="Creates the triangular mesh from the primitive." alt="" coords="5,455,184,496"/>
+<area shape="rect" id="node2" href="$classpycanha_1_1gmm_1_1Triangle.html#ad8405cc3fb6b587860fd4df1813ae6c1" title="3D coordinates of a point ON the primitive surface from 2D coordinates. Note: The method is not valid..." alt="" coords="471,5,649,47"/>
+<area shape="rect" id="node3" href="$classpycanha_1_1gmm_1_1Triangle.html#af4f67a2841391839a57889d67443ef0c" title="Returns the first direction v1 = p2 &#45; p1." alt="" coords="709,101,912,127"/>
+<area shape="rect" id="node4" href="$classpycanha_1_1gmm_1_1Triangle.html#a63ee40470d93361a8c4462b4fdde2127" title="2D coordinates of a point ON the primitive surface from 3D coordinates. Note: It is assumed that the ..." alt="" coords="471,123,649,164"/>
+<area shape="rect" id="node5" href="$classpycanha_1_1gmm_1_1TriMesh.html#a81f6628b978aaeac9d36fafc63e0eead" title="Get face ids vector." alt="" coords="233,173,410,215"/>
+<area shape="rect" id="node6" href="$classpycanha_1_1gmm_1_1Triangle.html#a691cd31a1c3f5de250e32ed063eb5496" title="Returns the ID of the face in the thermal mesh that contains the given UV coordinates...." alt="" coords="232,239,411,280"/>
+<area shape="rect" id="node7" href="$classpycanha_1_1gmm_1_1Triangle.html#a113cd18f27bd12d15681af628524300c" title="Returns the second direction v2 = p3 &#45; p2." alt="" coords="459,275,661,302"/>
+<area shape="rect" id="node8" href="$classpycanha_1_1gmm_1_1TriMesh.html#ac519c05be1a8304a4674b79c5a827551" title="Get faces edges vector of indices." alt="" coords="233,356,410,397"/>
+<area shape="rect" id="node9" href="$classpycanha_1_1gmm_1_1Triangle.html#a9ceec935ef361eb7735ee96da585fe46" title="Returns the first vertex of the triangle." alt="" coords="232,421,411,463"/>
+<area shape="rect" id="node10" href="$classpycanha_1_1gmm_1_1Triangle.html#aac62eb826a36358ad9811172d0825979" title="Returns the second vertex of the triangle." alt="" coords="232,487,411,528"/>
+<area shape="rect" id="node11" href="$classpycanha_1_1gmm_1_1Triangle.html#a99ffbb35ea0374cc0fcbd44b62b05bf3" title="Returns the third vertex of the triangle." alt="" coords="232,552,411,593"/>
+<area shape="rect" id="node12" href="$classpycanha_1_1gmm_1_1Color.html#a6b0ff80336dd7c71b042dd65fb5534da" title="Get the RGB values." alt="" coords="241,617,402,659"/>
+<area shape="rect" id="node13" href="$classpycanha_1_1gmm_1_1TriMesh.html#a113cdc2728d6b47e8841ef9732ebd9b2" title="Get triangles matrix." alt="" coords="233,683,410,724"/>
+<area shape="rect" id="node14" href="$classpycanha_1_1gmm_1_1TriMesh.html#a5e7a2cc9ec97ba48a13277d2c391e928" title="Get vertices matrix." alt="" coords="233,748,410,789"/>
+<area shape="rect" id="node15" href="$classpycanha_1_1gmm_1_1TriMesh.html#a27e1232524b78c47b58b8d4d45d8172d" title="Set the surface 1 color." alt="" coords="233,813,410,855"/>
+<area shape="rect" id="node16" href="$classpycanha_1_1gmm_1_1TriMesh.html#a331d5c97a882188d4454694b4a2a4af9" title="Set the surface 2 color." alt="" coords="233,879,410,920"/>
+<area shape="rect" id="node17" href="$classpycanha_1_1gmm_1_1TriMesh.html#a7f0a8a501de5c2d065f71e164b956b39" title="Sort the triangles according to the face ids." alt="" coords="233,944,410,985"/>
+</map>

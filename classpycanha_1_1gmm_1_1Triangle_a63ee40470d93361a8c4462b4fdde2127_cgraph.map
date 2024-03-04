@@ -1,0 +1,4 @@
+<map id="pycanha::gmm::Triangle::from_3d_to_2d" name="pycanha::gmm::Triangle::from_3d_to_2d">
+<area shape="rect" id="node1" title="2D coordinates of a point ON the primitive surface from 3D coordinates. Note: It is assumed that the ..." alt="" coords="5,5,184,47"/>
+<area shape="rect" id="node2" href="$classpycanha_1_1gmm_1_1Triangle.html#af4f67a2841391839a57889d67443ef0c" title="Returns the first direction v1 = p2 &#45; p1." alt="" coords="232,13,435,39"/>
+</map>

@@ -1,0 +1,4 @@
+<map id="pycanha::gmm::GeometryGroup::iterate_create_cut_groups" name="pycanha::gmm::GeometryGroup::iterate_create_cut_groups">
+<area shape="rect" id="node1" title="Recursively iterates over all geometry below a GeometryGroupCutted. Call this function only from top ..." alt="" coords="5,5,236,47"/>
+<area shape="rect" id="node2" href="$classpycanha_1_1gmm_1_1CoordinateTransformation.html#a2223d8c13985136ad110d1cb4126f9d9" title="Creates a new transformation equivalent to applying other and then this." alt="" coords="284,5,483,47"/>
+</map>

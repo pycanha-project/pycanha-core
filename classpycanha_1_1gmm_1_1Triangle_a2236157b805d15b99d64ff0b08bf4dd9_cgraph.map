@@ -1,0 +1,4 @@
+<map id="pycanha::gmm::Triangle::transform" name="pycanha::gmm::Triangle::transform">
+<area shape="rect" id="node1" title="Creates a new transformed primitive." alt="" coords="5,5,184,47"/>
+<area shape="rect" id="node2" href="$classpycanha_1_1gmm_1_1CoordinateTransformation.html#a1665c98196f9775e18cfcbbe5083097a" title="Transforms a point using the stored translation and rotation vectors." alt="" coords="232,5,464,47"/>
+</map>

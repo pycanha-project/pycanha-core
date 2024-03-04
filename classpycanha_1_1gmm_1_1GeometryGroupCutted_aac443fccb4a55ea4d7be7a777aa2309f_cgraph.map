@@ -1,0 +1,6 @@
+<map id="pycanha::gmm::GeometryGroupCutted::create_cutted_mesh" name="pycanha::gmm::GeometryGroupCutted::create_cutted_mesh">
+<area shape="rect" id="node1" title="Creates the cutted mesh." alt="" coords="5,39,236,80"/>
+<area shape="rect" id="node2" href="$classpycanha_1_1gmm_1_1GeometryGroupCutted.html#ad4999df9e16d08d9623bd9e5aa8c9195" title="Clears the resultant cutting meshes." alt="" coords="284,5,515,47"/>
+<area shape="rect" id="node3" href="$classpycanha_1_1gmm_1_1GeometryGroup.html#a7624420810302a53a00c84ae60ea27a0" title="Recursively iterates over all geometry below a GeometryGroupCutted. Call this function only from top ..." alt="" coords="284,71,515,112"/>
+<area shape="rect" id="node4" href="$classpycanha_1_1gmm_1_1CoordinateTransformation.html#a2223d8c13985136ad110d1cb4126f9d9" title="Creates a new transformation equivalent to applying other and then this." alt="" coords="563,71,761,112"/>
+</map>

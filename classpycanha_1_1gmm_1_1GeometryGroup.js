@@ -1,0 +1,26 @@
+var classpycanha_1_1gmm_1_1GeometryGroup =
+[
+    [ "GeometryGroup", "classpycanha_1_1gmm_1_1GeometryGroup.html#a63e6b7fe798947ee148e6bf382b4d090", null ],
+    [ "GeometryGroup", "classpycanha_1_1gmm_1_1GeometryGroup.html#ae7b08718163e8fc1bf909a23183e71fc", null ],
+    [ "GeometryGroup", "classpycanha_1_1gmm_1_1GeometryGroup.html#ae75f44503092e1037b27deee59b9ecd4", null ],
+    [ "add_geometry_group", "classpycanha_1_1gmm_1_1GeometryGroup.html#a071de3df4d9d83e3edf221cf8d3ad7a7", null ],
+    [ "add_geometry_group_cutted", "classpycanha_1_1gmm_1_1GeometryGroup.html#a66e6e5add5684119ef38d21f70484d4b", null ],
+    [ "add_geometry_item", "classpycanha_1_1gmm_1_1GeometryGroup.html#af310e7c7fa1034f186f9983724fd3771", null ],
+    [ "create_meshes", "classpycanha_1_1gmm_1_1GeometryGroup.html#a9c15849c84e60802d17b940812aa05e8", null ],
+    [ "get_geometry_groups", "classpycanha_1_1gmm_1_1GeometryGroup.html#a044ba647320773c9859260a037f7094e", null ],
+    [ "get_geometry_groups_cutted", "classpycanha_1_1gmm_1_1GeometryGroup.html#a444d848e86278a4356fddb5b6b7a2d39", null ],
+    [ "get_geometry_items", "classpycanha_1_1gmm_1_1GeometryGroup.html#ad4fca6a9c3acff12becab304e2c44c50", null ],
+    [ "iterate_all_cutting_geometries", "classpycanha_1_1gmm_1_1GeometryGroup.html#a28b1c53096c94993984fce9ec817370e", null ],
+    [ "iterate_all_geometry_meshed_items", "classpycanha_1_1gmm_1_1GeometryGroup.html#ae2fe8903dd24822356874491adf96020", null ],
+    [ "iterate_create_cut_groups", "classpycanha_1_1gmm_1_1GeometryGroup.html#a7624420810302a53a00c84ae60ea27a0", null ],
+    [ "iterate_geometry_meshed_items", "classpycanha_1_1gmm_1_1GeometryGroup.html#a8ebc317880b601b10ca3e167063afe51", null ],
+    [ "remove_geometry_group", "classpycanha_1_1gmm_1_1GeometryGroup.html#ab7517117ce583f1f4eb19fa3f57647df", null ],
+    [ "remove_geometry_group_cutted", "classpycanha_1_1gmm_1_1GeometryGroup.html#ab08976887dcff7f3235e821b196e9e8d", null ],
+    [ "remove_geometry_item", "classpycanha_1_1gmm_1_1GeometryGroup.html#a98e9b312fff6d63ce606ab663d7d04d0", null ],
+    [ "set_geometry_groups", "classpycanha_1_1gmm_1_1GeometryGroup.html#a68123ca3311adab8c0471c255cae8699", null ],
+    [ "set_geometry_groups_cutted", "classpycanha_1_1gmm_1_1GeometryGroup.html#ac58d8a751a5a5718a58b55b1a132f0b4", null ],
+    [ "set_geometry_items", "classpycanha_1_1gmm_1_1GeometryGroup.html#a93607bd8d206a993e93edd4cb2366bfd", null ],
+    [ "_geometry_groups", "classpycanha_1_1gmm_1_1GeometryGroup.html#a7d3af73c3d43170d2a564365ea1b2e76", null ],
+    [ "_geometry_groups_cutted", "classpycanha_1_1gmm_1_1GeometryGroup.html#a73c9ce5a83210998bd29819c33105594", null ],
+    [ "_geometry_items", "classpycanha_1_1gmm_1_1GeometryGroup.html#ae3e0f9527302292f954337ab0dc5b3cf", null ]
+];

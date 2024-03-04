@@ -1,0 +1,6 @@
+<map id="pycanha::gmm::GeometryItem" name="pycanha::gmm::GeometryItem">
+<area shape="rect" id="node1" title="The base class for all geometry items." alt="" coords="31,155,253,181"/>
+<area shape="rect" id="node4" href="$classpycanha_1_1gmm_1_1GeometryMeshedItem.html" title="A geometry item that contains mesh data." alt="" coords="5,229,279,256"/>
+<area shape="rect" id="node2" href="$classpycanha_1_1gmm_1_1Geometry.html" title="Base class for geometric items." alt="" coords="46,80,238,107"/>
+<area shape="rect" id="node3" href="$classpycanha_1_1gmm_1_1UniqueID.html" title="Provides a unique integer id." alt="" coords="49,5,235,32"/>
+</map>

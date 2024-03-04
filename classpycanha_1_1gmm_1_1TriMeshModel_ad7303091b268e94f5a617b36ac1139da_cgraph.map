@@ -1,0 +1,13 @@
+<map id="pycanha::gmm::TriMeshModel::add_mesh" name="pycanha::gmm::TriMeshModel::add_mesh">
+<area shape="rect" id="node1" title="Aggregate the contents of a Trimesh to this one." alt="" coords="5,300,223,341"/>
+<area shape="rect" id="node2" href="$classpycanha_1_1gmm_1_1TriMesh.html#a1c18146513be80ad67217cfdb36c7601" title="Get cummulative area vector." alt="" coords="271,5,448,47"/>
+<area shape="rect" id="node3" href="$classpycanha_1_1gmm_1_1TriMesh.html#ac96e1edfa90d2ef931bfb038d9eeede3" title="Get edges." alt="" coords="271,71,448,112"/>
+<area shape="rect" id="node4" href="$classpycanha_1_1gmm_1_1TriMesh.html#a81f6628b978aaeac9d36fafc63e0eead" title="Get face ids vector." alt="" coords="271,136,448,177"/>
+<area shape="rect" id="node5" href="$classpycanha_1_1gmm_1_1TriMesh.html#ac519c05be1a8304a4674b79c5a827551" title="Get faces edges vector of indices." alt="" coords="271,201,448,243"/>
+<area shape="rect" id="node6" href="$classpycanha_1_1gmm_1_1TriMesh.html#a9738f0ec5e4816d990b04a54e3081ced" title="Get the number of faces." alt="" coords="271,267,448,308"/>
+<area shape="rect" id="node7" href="$classpycanha_1_1gmm_1_1TriMesh.html#ae06f494211f1c8d830818babc1e79b3e" title="Get perimeter edges indices." alt="" coords="271,332,448,373"/>
+<area shape="rect" id="node8" href="$classpycanha_1_1gmm_1_1TriMesh.html#a363615026bd82597d9dfccf5f562acd1" title="Get the surface 1 color." alt="" coords="271,397,448,439"/>
+<area shape="rect" id="node9" href="$classpycanha_1_1gmm_1_1TriMesh.html#a375ef908d3a6b26b69aebeaf7832b627" title="Get the surface 2 color." alt="" coords="271,463,448,504"/>
+<area shape="rect" id="node10" href="$classpycanha_1_1gmm_1_1TriMesh.html#a113cdc2728d6b47e8841ef9732ebd9b2" title="Get triangles matrix." alt="" coords="271,528,448,569"/>
+<area shape="rect" id="node11" href="$classpycanha_1_1gmm_1_1TriMesh.html#a5e7a2cc9ec97ba48a13277d2c391e928" title="Get vertices matrix." alt="" coords="271,593,448,635"/>
+</map>

@@ -1,0 +1,11 @@
+<map id="pycanha::gmm::GeometryUpdateCallback" name="pycanha::gmm::GeometryUpdateCallback">
+<area shape="rect" id="node1" title=" " alt="" coords="5,150,244,191"/>
+<area shape="rect" id="node2" href="$classpycanha_1_1gmm_1_1Primitive.html" title="A geometry primitive." alt="" coords="292,157,479,184"/>
+<area shape="rect" id="node3" href="$classpycanha_1_1gmm_1_1Cone.html" title="A class representing a cone in 3D space." alt="" coords="553,5,713,32"/>
+<area shape="rect" id="node4" href="$classpycanha_1_1gmm_1_1Cylinder.html" title="A class representing a cylinder in 3D space." alt="" coords="542,56,723,83"/>
+<area shape="rect" id="node5" href="$classpycanha_1_1gmm_1_1Disc.html" title="A class representing a disc in 3D space." alt="" coords="555,107,710,133"/>
+<area shape="rect" id="node6" href="$classpycanha_1_1gmm_1_1Quadrilateral.html" title="A class representing a quadrilateral in 3D space." alt="" coords="527,157,739,184"/>
+<area shape="rect" id="node7" href="$classpycanha_1_1gmm_1_1Rectangle.html" title="A class representing a rectangle in 3D space." alt="" coords="537,208,729,235"/>
+<area shape="rect" id="node8" href="$classpycanha_1_1gmm_1_1Sphere.html" title="A class representing a sphere in 3D space." alt="" coords="547,259,719,285"/>
+<area shape="rect" id="node9" href="$classpycanha_1_1gmm_1_1Triangle.html" title="A class representing a triangle in 3D space." alt="" coords="543,309,722,336"/>
+</map>

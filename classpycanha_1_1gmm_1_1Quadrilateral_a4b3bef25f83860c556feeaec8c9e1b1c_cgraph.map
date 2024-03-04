@@ -1,0 +1,6 @@
+<map id="pycanha::gmm::Quadrilateral::distance" name="pycanha::gmm::Quadrilateral::distance">
+<area shape="rect" id="node1" title="Calculates the minimum distance from a point to the surface of the primitive. The distance is calcula..." alt="" coords="5,23,217,65"/>
+<area shape="rect" id="node2" href="$classpycanha_1_1gmm_1_1Triangle.html#ad348acf4e7e9c7d83340d3ec7f626a2f" title="Calculates the minimum distance from a point to the surface of the primitive. The distance is calcula..." alt="" coords="265,23,444,65"/>
+<area shape="rect" id="node3" href="$classpycanha_1_1gmm_1_1Triangle.html#af4f67a2841391839a57889d67443ef0c" title="Returns the first direction v1 = p2 &#45; p1." alt="" coords="492,5,695,32"/>
+<area shape="rect" id="node4" href="$classpycanha_1_1gmm_1_1Triangle.html#a113cd18f27bd12d15681af628524300c" title="Returns the second direction v2 = p3 &#45; p2." alt="" coords="492,56,695,83"/>
+</map>
