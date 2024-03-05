@@ -23,8 +23,6 @@
 #include "./transformations.hpp"
 #include "./trimesh.hpp"
 
-// #pragma warning(disable: 4068)
-
 using std::numbers::pi;
 
 using namespace pycanha;  // NOLINT
@@ -1331,23 +1329,28 @@ class Sphere : public Primitive {
      */
     [[nodiscard]] bool is_valid() const override {
         if (_p1 == _p2 || _p1 == _p3 || _p2 == _p3) {
-            std::cout << "Same points in sphere definition" << "\n";
+            std::cout << "Same points in sphere definition"
+                      << "\n";
             throw std::logic_error("Same points in sphere definition");
         }
         if ((_p2 - _p1).cross(_p3 - _p1).norm() < 1e-6) {
-            std::cout << "Points are collinear" << "\n";
+            std::cout << "Points are collinear"
+                      << "\n";
             throw std::logic_error("Points are collinear");
         }
         if (_radius <= 0) {
-            std::cout << "Radius is not positive" << "\n";
+            std::cout << "Radius is not positive"
+                      << "\n";
             throw std::logic_error("Radius is not positive");
         }
         if (_base_truncation < -_radius) {
-            std::cout << "Base truncation is smaller than -radius" << "\n";
+            std::cout << "Base truncation is smaller than -radius"
+                      << "\n";
             throw std::logic_error("Base truncation is smaller than -radius");
         }
         if (_apex_truncation > _radius) {
-            std::cout << "Apex truncation is greater than radius" << "\n";
+            std::cout << "Apex truncation is greater than radius"
+                      << "\n";
             throw std::logic_error("Apex truncation is greater than radius");
         }
         if (_base_truncation >= _apex_truncation) {
@@ -1358,7 +1361,8 @@ class Sphere : public Primitive {
                 "Base truncation is greater or equal to apex truncation");
         }
         if (_start_angle < 0 || _start_angle >= 2.0 * pi) {
-            std::cout << "Start angle is not in [0, 2*pi)" << "\n";
+            std::cout << "Start angle is not in [0, 2*pi)"
+                      << "\n";
             throw std::logic_error("Start angle is not in [0, 2*pi)");
         }
         if (_end_angle < 0 || _end_angle > 2 * pi) {
@@ -2515,7 +2519,6 @@ inline MeshIndex Cone::get_faceid_from_uv(const ThermalMesh& thermal_mesh,
     // NOLINTBEGIN(hicpp-use-auto,modernize-use-auto)
     const std::vector<double>::iterator r_it = std::lower_bound(
         dir1_mesh.begin(), dir1_mesh.end(), r_uv / outer_radius);
-
 
     const std::vector<double>::iterator angle_it = std::lower_bound(
         dir2_mesh.begin(), dir2_mesh.end(), angle_uv / (2 * pi));
