@@ -23,7 +23,7 @@
 #include "./transformations.hpp"
 #include "./trimesh.hpp"
 
-#pragma warning(disable: 4068)
+// #pragma warning(disable: 4068)
 
 using std::numbers::pi;
 
