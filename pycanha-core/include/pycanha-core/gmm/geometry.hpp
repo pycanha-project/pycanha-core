@@ -629,7 +629,7 @@ class GeometryGroupCutted : public GeometryGroup {
         std::cout << "Creating cutted mesh (experimental)" << tol << '\n';
 
         // TODO:
-        // Reset all the cuuting information vectors
+        // Reset all the cutting information vectors
 
         //  Iterate over all geometry items in and below this group
         //  For each item, create a new geometry item with an identity

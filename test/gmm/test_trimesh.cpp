@@ -243,7 +243,7 @@ TEST_CASE("Create triangle only 2D mesh", "[gmm][trimesh]") {
 }
 
 // NOLINTBEGIN(readability-function-cognitive-complexity)
-TEST_CASE("Create triangle 2D mesh", "[gmm][trimesh]") {
+TEST_CASE("Mesh a triangle", "[gmm][trimesh]") {
     using pycanha::gmm::Edges;
     using pycanha::gmm::TriMesh;
     using pycanha::gmm::VerticesList;
@@ -261,10 +261,10 @@ TEST_CASE("Create triangle 2D mesh", "[gmm][trimesh]") {
         const double max_length_dir2 = 0.7;
 
         Eigen::VectorXd dir1_mesh(dir1_size);
-        dir1_mesh << 0.0, 1.0, 2.0;
+        dir1_mesh << 0.0, 0.5, 1.0;
 
         Eigen::VectorXd dir2_mesh(dir2_size);
-        dir2_mesh << 0.0, 1.0, 2.0;
+        dir2_mesh << 0.0, 0.5, 1.0;
 
         TriMesh trimesh = create_2d_triangular_mesh(
             dir1_mesh, dir2_mesh, p1, p2, p3, max_length_dir1, max_length_dir2);
@@ -282,9 +282,6 @@ TEST_CASE("Create triangle 2D mesh", "[gmm][trimesh]") {
             0., 1.5, 0.375, 0., 1.33333, 1., 0., 1.66667, 1.25, 0.;
 
         // First row
-        for (int i = 0; i < trimesh.get_vertices().rows(); ++i) {
-            print_point3d(trimesh.get_vertices().row(i));
-        }
         REQUIRE(trimesh.get_vertices().isApprox(expected_points, 1.0E-5));
 
         // First check size

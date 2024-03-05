@@ -56,7 +56,7 @@ void cdt_trimesher(TriMesh& trimesh) {
     // Boundary edges
 
     // Create a temporary vector to store the boundary edges
-    pycanha::MeshIndex num_bound_edges_pairs = 0;
+    MeshIndex num_bound_edges_pairs = 0;
 
     // Count the perimeter edges
     num_bound_edges_pairs = std::accumulate(
@@ -71,7 +71,6 @@ void cdt_trimesher(TriMesh& trimesh) {
     //    num_bound_edges_pairs += trimesh.get_edges()[edge_idx].size() - 1;
     //}
 
-    std::cout << "Boundary edges: " << num_bound_edges_pairs << "\n";
     // Create and fill the boundary edges vector
     std::vector<std::array<MeshIndex, 2>> boundary_edges(num_bound_edges_pairs);
     pycanha::MeshIndex idx = 0;
@@ -108,7 +107,6 @@ void cdt_trimesher(TriMesh& trimesh) {
     // in the set_bound_edges
     std::unordered_set<uint32_t> set_interior_edges;
 
-    std::cout << "Interior edges" << '\n';
     for (int edge_idx = 0; edge_idx < trimesh.get_edges().size(); ++edge_idx) {
         if (set_bound_edges.find(edge_idx) == set_bound_edges.end()) {
             set_interior_edges.insert(edge_idx);
@@ -132,7 +130,6 @@ void cdt_trimesher(TriMesh& trimesh) {
     //    num_interior_edges_pairs += trimesh.get_edges()[edge_idx].size() - 1;
     //}
 
-    std::cout << "Interior edges: " << num_interior_edges_pairs << '\n';
     // Create and fill the interior edges vector
     std::vector<std::array<MeshIndex, 2>> interior_edges(
         num_interior_edges_pairs);
@@ -146,7 +143,6 @@ void cdt_trimesher(TriMesh& trimesh) {
         }
     }
 
-    std::cout << "Insert edges" << '\n';
     // As for CDT design, they need to be inserted twice.
     cdt.insertEdges(
         interior_edges.begin(), interior_edges.end(),
@@ -162,7 +158,6 @@ void cdt_trimesher(TriMesh& trimesh) {
 
     TrianglesList triangles(cdt.triangles.size(), 3);
 
-    std::cout << "Set triangles" << '\n';
     for (pycanha::MeshIndex i = 0;
          i < static_cast<pycanha::MeshIndex>(cdt.triangles.size()); i++) {
         auto& cdt_triangles = cdt.triangles[i].vertices;
@@ -170,7 +165,6 @@ void cdt_trimesher(TriMesh& trimesh) {
             cdt_triangles[2];
     }
 
-    std::cout << "Set info" << '\n';
     trimesh.set_triangles(std::move(triangles));
 
     trimesh.set_face_ids(Eigen::Matrix<MeshIndex, Eigen::Dynamic, 1>::Zero(
