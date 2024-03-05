@@ -3436,7 +3436,7 @@ inline TriMesh Sphere::create_mesh1(const ThermalMesh& thermal_mesh,
                         ? add_pi1 * additional_points_dir2[i_dir1 - 1][j_dir2]
                         : add_pi1 * additional_points_dir2[i_dir1][j_dir2];
                 num_interior_points += num_interior_points_i;
-                interior_points_dir2[i_dir1][j_dir2] = num_interior_points_i;
+                // interior_points_dir2[i_dir1][j_dir2] = num_interior_points_i;
             }
         }
     }
@@ -4096,7 +4096,7 @@ inline TriMesh Sphere::create_mesh2(const ThermalMesh& thermal_mesh,
                         : (add_pi1 + 1) *
                               (additional_points_dir2[i_dir1][j_dir2] + 1);
                 num_interior_points += num_interior_points_i;
-                interior_points_dir2[i_dir1][j_dir2] = num_interior_points_i;
+                // interior_points_dir2[i_dir1][j_dir2] = num_interior_points_i;
             }
         } else {
             num_interior_points =
@@ -4474,10 +4474,10 @@ inline TriMesh Sphere::create_mesh2(const ThermalMesh& thermal_mesh,
     // 5. Create the faces edges
     const MeshIndex num_faces = (dir1_size - 1) * (dir2_size - 1);
     FaceEdges faces_edges(num_faces);
-    MeshIndex face_idx = 0;
     const MeshIndex skip_horizontal_edges =
         (dir2_size - dir2_end) * (dir1_size - 1);
     if (!single_node) {
+        MeshIndex face_idx = 0;
         for (MeshIndex i_dir1 = 0; i_dir1 < dir1_size - 1; ++i_dir1) {
             for (MeshIndex j_dir2 = 0; j_dir2 < dir2_size - 1; ++j_dir2) {
                 if (_base_truncation == -_radius && (i_dir1 == 0)) {

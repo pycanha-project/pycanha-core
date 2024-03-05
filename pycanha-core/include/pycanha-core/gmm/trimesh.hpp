@@ -1945,10 +1945,6 @@ inline TriMesh create_2d_triangular_only_mesh(
     // For each of the divisions in dir2, additional points to be placed
     std::vector<MeshIndex> additional_points_dir2(dir2_size - 1, 0);
 
-    // We also create a vector of vectors to store the dir_mesh of each line in
-    // dir1 direction
-    const std::vector<Eigen::VectorXd> dir1_meshes(dir2_size);
-
     // Now check if additional points are needed based on
     // max_distance_points If max_distance is negative or zero, then we
     // don't add additional points
@@ -2070,7 +2066,7 @@ inline TriMesh create_2d_triangular_only_mesh(
     }
 
     // Loop over dir2 line
-    MeshIndex start_p_idx = 0;
+    MeshIndex start_p_idx;
     MeshIndex end_p_idx = additional_points_dir1[0] + 1;
     MeshIndex start_padd_idx = additional_points_dir2_start;
     for (MeshIndex i = 0; i < dir2_size - 1; ++i) {
@@ -2218,6 +2214,10 @@ inline TriMesh create_2d_triangular_mesh(
     for (auto& quad_dir1 : quad_dir1_mesh) {
         quad_dir1 = quad_dir1 - quad_dir1_mesh_0;
     }
+
+    std::transform(
+        quad_dir1_mesh.begin(), quad_dir1_mesh.end(), quad_dir1_mesh.begin(),
+        [&quad_dir1_mesh](auto& quad_dir1) { quad_dir1 -= quad_dir1_mesh[0]; });
 
     const Eigen::VectorXd& quad_dir2_mesh = dir2_mesh;
     const auto& quad_p1 = triangle_p2;
@@ -2790,11 +2790,11 @@ inline TriMesh create_2d_disc_mesh(const Eigen::VectorXd& dir1_mesh_normalized,
                         ++p_idx;
                     }
                 }
-                const MeshIndex num_interior_points_i =
-                    add_pi1 *
-                    additional_points_dir2[i_dir1 + extra_start][j_dir2];
-                num_interior_points += num_interior_points_i;
-                interior_points_dir2[i_dir1][j_dir2] = num_interior_points_i;
+                // const MeshIndex num_interior_points_i =
+                //     add_pi1 *
+                //     additional_points_dir2[i_dir1 + extra_start][j_dir2];
+                // num_interior_points += num_interior_points_i;
+                // interior_points_dir2[i_dir1][j_dir2] = num_interior_points_i;
             }
         }
     }
