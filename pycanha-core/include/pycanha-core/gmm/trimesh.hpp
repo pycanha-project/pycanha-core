@@ -2095,7 +2095,8 @@ inline TriMesh create_2d_triangular_only_mesh(
     MeshIndex start_p_idx = additional_points_dir1[0] + 1;
     MeshIndex start_padd_idx = additional_points_dir2_start;
     for (MeshIndex i = 0; i < dir2_size - 1; ++i) {
-        MeshIndex end_p_idx = start_p_idx + additional_points_dir1[i + 1] + 1;
+        const MeshIndex end_p_idx =
+            start_p_idx + additional_points_dir1[i + 1] + 1;
         const MeshIndex num_edge_points = additional_points_dir2[i] + 2;
         Edges edge(num_edge_points);
         edge[0] = start_p_idx;
