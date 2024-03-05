@@ -2826,7 +2826,7 @@ inline TriMesh Quadrilateral::create_mesh(const ThermalMesh& thermal_mesh,
         //                      2);
         // Because get_vertices is column major
         const Point2D point2d{trimesh.get_vertices()(i, 0),
-                        trimesh.get_vertices()(i, 1)};
+                              trimesh.get_vertices()(i, 1)};
         trimesh.get_vertices().row(i) = quad.from_2d_to_3d(point2d);
     }
 
@@ -3109,7 +3109,7 @@ inline TriMesh Cone::create_mesh(const ThermalMesh& thermal_mesh,
     }
 
     const Point2D center = (_radius1 < _radius2) ? cone.from_3d_to_2d(_p1)
-                                           : cone.from_3d_to_2d(_p2);
+                                                 : cone.from_3d_to_2d(_p2);
     // Rotate p3-p1 start angle rads around p2-p1
     Point2D outer_point = (_radius1 < _radius2)
                               ? cone.from_3d_to_2d(vx * _radius2 + _p2)
