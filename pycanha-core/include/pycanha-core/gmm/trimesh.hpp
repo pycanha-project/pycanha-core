@@ -2210,14 +2210,16 @@ inline TriMesh create_2d_triangular_mesh(
         dir2_mesh_normalized * (triangle_p3 - triangle_p2).norm();
 
     Eigen::VectorXd quad_dir1_mesh = dir1_mesh(seq(1, dir1_mesh.size() - 1));
-    auto quad_dir1_mesh_0 = quad_dir1_mesh[0];
-    for (auto& quad_dir1 : quad_dir1_mesh) {
-        quad_dir1 = quad_dir1 - quad_dir1_mesh_0;
-    }
+    // auto quad_dir1_mesh_0 = quad_dir1_mesh[0];
+    // for (auto& quad_dir1 : quad_dir1_mesh) {
+    //     quad_dir1 = quad_dir1 - quad_dir1_mesh_0;
+    // }
+    quad_dir1_mesh.array() -= dir1_mesh[0];
 
-    std::transform(
-        quad_dir1_mesh.begin(), quad_dir1_mesh.end(), quad_dir1_mesh.begin(),
-        [&quad_dir1_mesh](auto& quad_dir1) { quad_dir1 -= quad_dir1_mesh[0]; });
+    // auto first_value = quad_dir1_mesh[0];
+    // std::transform(
+    //     quad_dir1_mesh.begin(), quad_dir1_mesh.end(), quad_dir1_mesh.begin(),
+    //     [first_value](auto quad_dir1) { return quad_dir1 - first_value; });
 
     const Eigen::VectorXd& quad_dir2_mesh = dir2_mesh;
     const auto& quad_p1 = triangle_p2;
