@@ -2214,7 +2214,7 @@ inline TriMesh create_2d_triangular_mesh(
     // for (auto& quad_dir1 : quad_dir1_mesh) {
     //     quad_dir1 = quad_dir1 - quad_dir1_mesh_0;
     // }
-    quad_dir1_mesh.array() -= dir1_mesh[0];
+    quad_dir1_mesh.array() -= quad_dir1_mesh[0];
 
     // auto first_value = quad_dir1_mesh[0];
     // std::transform(
