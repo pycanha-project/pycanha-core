@@ -21,6 +21,8 @@ TEST_CASE("Geometry Items and Groups",
     using pycanha::gmm::Quadrilateral;
     using pycanha::gmm::Rectangle;
     using pycanha::gmm::Triangle;
+    using pycanha::gmm::Sphere;
+    using pycanha::gmm::Cone;
 
     using pycanha::gmm::GeometryPtrList;
 
@@ -47,6 +49,8 @@ TEST_CASE("Geometry Items and Groups",
     auto quad = std::make_shared<Quadrilateral>(p1, p2, p3, p4);
     auto cyl = std::make_shared<Cylinder>(p1, p2, p4, 1.0, 0.0, pi * 2.0);
     auto disc = std::make_shared<Disc>(p1, p5, p3, 0.5, 1.0, 0.0, pi * 2.0);
+    auto sph = std::make_shared<Sphere>(p1, p5, p2, 1.0, -1.0, 1.0, 0.0, pi * 2.0);
+    auto cone = std::make_shared<Cone>(p1, p5, p2, 0.0, 1.0, 0.0, pi * 2.0);
 
     // Transformation
     auto transf_1 = std::make_shared<pycanha::gmm::CoordinateTransformation>(

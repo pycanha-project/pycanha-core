@@ -23,6 +23,10 @@
 #include "./transformations.hpp"
 #include "./trimesh.hpp"
 
+#pragma warning(disable: 4068)
+
+using std::numbers::pi;
+
 using namespace pycanha;  // NOLINT
 // using pycanha::gmm::trimesher::print_point3d;
 // using pycanha::gmm::trimesher::print_point2d;
@@ -613,18 +617,12 @@ class Quadrilateral : public Primitive {
 
     [[nodiscard]] Point3D from_2d_to_3d(const Point2D& p2d) const override;
 
-    // TODO(IMPLEMENTATION)
-    [[nodiscard]] TriMesh create_mesh(const ThermalMesh& /*thermal_mesh*/,
-                                      double /*tolerance*/) const override {
-        throw std::logic_error("Not implemented");
-    };
+    [[nodiscard]] TriMesh create_mesh(const ThermalMesh& thermal_mesh,
+                                      double tolerance) const override;
 
-    // TODO(IMPLEMENTATION)
     [[nodiscard]] MeshIndex get_faceid_from_uv(
-        const ThermalMesh& /*thermal_mesh*/,
-        const Point2D& /*uv*/) const override {
-        throw std::logic_error("Not implemented");
-    }
+        const ThermalMesh& thermal_mesh,
+        const Point2D& point_uv) const override;
 
     [[nodiscard]] std::shared_ptr<Primitive> transform(
         const CoordinateTransformation& transformation) const override {
@@ -1332,7 +1330,48 @@ class Sphere : public Primitive {
      * @return `true` if the sphere is valid, `false` otherwise.
      */
     [[nodiscard]] bool is_valid() const override {
-        throw std::logic_error("Not implemented");
+        if (_p1 == _p2 || _p1 == _p3 || _p2 == _p3) {
+            std::cout << "Same points in sphere definition" << "\n";
+            throw std::logic_error("Same points in sphere definition");
+        }
+        if ((_p2 - _p1).cross(_p3 - _p1).norm() < 1e-6) {
+            std::cout << "Points are collinear" << "\n";
+            throw std::logic_error("Points are collinear");
+        }
+        if (_radius <= 0) {
+            std::cout << "Radius is not positive" << "\n";
+            throw std::logic_error("Radius is not positive");
+        }
+        if (_base_truncation < -_radius) {
+            std::cout << "Base truncation is smaller than -radius" << "\n";
+            throw std::logic_error("Base truncation is smaller than -radius");
+        }
+        if (_apex_truncation > _radius) {
+            std::cout << "Apex truncation is greater than radius" << "\n";
+            throw std::logic_error("Apex truncation is greater than radius");
+        }
+        if (_base_truncation >= _apex_truncation) {
+            std::cout
+                << "Base truncation is greater or equal to apex truncation"
+                << "\n";
+            throw std::logic_error(
+                "Base truncation is greater or equal to apex truncation");
+        }
+        if (_start_angle < 0 || _start_angle >= 2.0 * pi) {
+            std::cout << "Start angle is not in [0, 2*pi)" << "\n";
+            throw std::logic_error("Start angle is not in [0, 2*pi)");
+        }
+        if (_end_angle < 0 || _end_angle > 2 * pi) {
+            // std::cout << "End angle is not in [0, 2*pi]" << "\n";
+            throw std::logic_error("End angle is not in [0, 2*pi]");
+        }
+        if (_start_angle >= _end_angle) {
+            std::cout << "Start angle is greater or equal to end angle"
+                      << "\n";
+            throw std::logic_error(
+                "Start angle is greater or equal to end angle");
+        }
+        return true;
     };
 
     [[nodiscard]] double distance(const Point3D& /*point*/) const override {
@@ -1452,6 +1491,7 @@ class Sphere : public Primitive {
     double _apex_truncation;  ///< Apex truncation of the sphere.
     double _start_angle;      ///< Start angle of the sphere.
     double _end_angle;        ///< End angle of the sphere.
+    bool valid = is_valid();
 };
 
 // Distance methods
@@ -2300,6 +2340,41 @@ inline MeshIndex Rectangle::get_faceid_from_uv(const ThermalMesh& thermal_mesh,
            2;
 }
 
+inline MeshIndex Quadrilateral::get_faceid_from_uv(
+    const ThermalMesh& thermal_mesh, const Point2D& point_uv) const {
+    const auto* dir1_mesh_ptr = thermal_mesh.get_dir1_mesh_ptr();
+    const auto* dir2_mesh_ptr = thermal_mesh.get_dir2_mesh_ptr();
+
+    const auto& dir1_mesh = *dir1_mesh_ptr;
+    const auto& dir2_mesh = *dir2_mesh_ptr;
+
+    const double length_dir1 = v1().norm();
+    const double length_dir2 = v2().norm();
+
+    auto x_it = std::lower_bound(dir1_mesh.begin(), dir1_mesh.end(),
+                                 point_uv.x() / length_dir1);
+    auto y_it = std::lower_bound(dir2_mesh.begin(), dir2_mesh.end(),
+                                 point_uv.y() / length_dir2);
+
+    // If x_it or y_it are at the beginning or end of the vector, throw
+    // exception
+    if (x_it == dir1_mesh.begin() || x_it == dir1_mesh.end() ||
+        y_it == dir2_mesh.begin() || y_it == dir2_mesh.end()) {
+        throw std::out_of_range("UV point is outside the rectangle.");
+    }
+
+    // Calculate indices
+    const auto x_index =
+        static_cast<MeshIndex>(std::distance(dir1_mesh.begin(), x_it) - 1);
+    const auto y_index =
+        static_cast<MeshIndex>(std::distance(dir2_mesh.begin(), y_it) - 1);
+
+    // Compute face_id
+    return (y_index * (static_cast<MeshIndex>(dir1_mesh.size()) - 1) +
+            x_index) *
+           2;
+}
+
 inline MeshIndex Disc::get_faceid_from_uv(const ThermalMesh& thermal_mesh,
                                           const Point2D& point_uv) const {
     using std::numbers::pi;
@@ -2318,14 +2393,11 @@ inline MeshIndex Disc::get_faceid_from_uv(const ThermalMesh& thermal_mesh,
         }
     }
 
-    // std::cout << "Point " << point_uv.x() << ", " << point_uv.y() <<
-    // '\n';
     auto r_uv = point_uv.norm();
     if (r_uv < _inner_radius) {
         r_uv = _inner_radius + (dir1_mesh[1] - dir1_mesh[0]) * outer_radius / 2;
     }
     auto angle_uv = std::atan2(point_uv.y(), point_uv.x());
-    // std::cout << "atan2 " << angle_uv << '\n';
     if (angle_uv < 0) {
         angle_uv += 2 * pi;
     }
@@ -2334,8 +2406,6 @@ inline MeshIndex Disc::get_faceid_from_uv(const ThermalMesh& thermal_mesh,
     // NOLINTBEGIN(hicpp-use-auto,modernize-use-auto)
     const std::vector<double>::iterator r_it = std::lower_bound(
         dir1_mesh.begin(), dir1_mesh.end(), r_uv / outer_radius);
-
-    // std::cout << "r_it: " << *r_it << " r_uv: " << r_uv << '\n';
 
     const std::vector<double>::iterator angle_it = std::lower_bound(
         dir2_mesh.begin(), dir2_mesh.end(), angle_uv / (2 * pi));
@@ -2432,14 +2502,11 @@ inline MeshIndex Cone::get_faceid_from_uv(const ThermalMesh& thermal_mesh,
         }
     }
 
-    // std::cout << "Point " << point_uv.x() << ", " << point_uv.y() <<
-    // '\n';
     auto r_uv = point_uv.norm();
     if (r_uv < inner_radius) {
         r_uv = inner_radius + (dir1_mesh[1] - dir1_mesh[0]) * outer_radius / 2;
     }
     auto angle_uv = std::atan2(point_uv.y(), point_uv.x());
-    // std::cout << "atan2 " << angle_uv << '\n';
     if (angle_uv < 0) {
         angle_uv += 2 * pi;
     }
@@ -2449,12 +2516,9 @@ inline MeshIndex Cone::get_faceid_from_uv(const ThermalMesh& thermal_mesh,
     const std::vector<double>::iterator r_it = std::lower_bound(
         dir1_mesh.begin(), dir1_mesh.end(), r_uv / outer_radius);
 
-    // std::cout << "r_it: " << *r_it << " r_uv: " << r_uv << '\n';
 
     const std::vector<double>::iterator angle_it = std::lower_bound(
         dir2_mesh.begin(), dir2_mesh.end(), angle_uv / (2 * pi));
-    // std::cout << "angle_it: " << *angle_it << " angle_uv: " << angle_uv <<
-    // '\n';
 
     // NOLINTEND(hicpp-use-auto,modernize-use-auto)
 
@@ -2479,13 +2543,10 @@ inline MeshIndex Cone::get_faceid_from_uv(const ThermalMesh& thermal_mesh,
 inline MeshIndex Sphere::get_faceid_from_uv(const ThermalMesh& thermal_mesh,
                                             const Point2D& point_uv) const {
     using std::numbers::pi;
-    std::ofstream archivo("centroids.txt", std::ios::app);  // WTF?
 
     // Latitude and longitude of the point
     const double lon = point_uv.x();
     const double lat = point_uv.y();
-
-    archivo << "lon: " << lon << " lat: " << lat << '\n';
 
     auto dir1_mesh = thermal_mesh.get_dir1_mesh();
     auto dir2_mesh = thermal_mesh.get_dir2_mesh();
@@ -2493,8 +2554,8 @@ inline MeshIndex Sphere::get_faceid_from_uv(const ThermalMesh& thermal_mesh,
     const double lon_start = _start_angle - pi;
     const double lon_end = _end_angle - pi;
 
-    const double lat_start = asin(_base_truncation / _radius);
-    const double lat_end = asin(_apex_truncation / _radius);
+    // const double lat_start = asin(_base_truncation / _radius);
+    // const double lat_end = asin(_apex_truncation / _radius);
 
     // Remap dir1_mesh to latitude instead of z
     std::transform(
@@ -2511,13 +2572,8 @@ inline MeshIndex Sphere::get_faceid_from_uv(const ThermalMesh& thermal_mesh,
     //         _base_truncation)) / _radius);
     // }
 
-    archivo << "lon_start: " << lon_start << " lon_end: " << lon_end << '\n';
-    archivo << "lat_start: " << lat_start << " lat_end: " << lat_end << '\n';
-
     const double lon_uv = (lon - lon_start) / (lon_end - lon_start);
     const double lat_uv = lat;
-
-    archivo << "lon_uv: " << lon_uv << " lat_uv: " << lat_uv << '\n';
 
     auto lat_it = std::lower_bound(dir1_mesh.begin(), dir1_mesh.end(), lat_uv);
 
@@ -2535,14 +2591,7 @@ inline MeshIndex Sphere::get_faceid_from_uv(const ThermalMesh& thermal_mesh,
     const auto lon_index =
         static_cast<MeshIndex>(std::distance(dir2_mesh.begin(), lon_it) - 1);
 
-    archivo << "lat_index: " << static_cast<int>(lat_index)
-            << " lon_index: " << static_cast<int>(lon_index) << '\n';
-
-    archivo.close();
-
     // Compute face_id
-    // std::cout << static_cast<int>((lon_index * (dir1_mesh.size() - 1) +
-    // lat_index) * 2) << '\n';
     return (lon_index * (static_cast<MeshIndex>(dir1_mesh.size()) - 1) +
             lat_index) *
            2;
@@ -2555,8 +2604,8 @@ inline TriMesh Triangle::create_mesh(const ThermalMesh& thermal_mesh,
     // Get the triangle
     const Triangle& triangle = *this;
 
-    const double length_dir1 = triangle.v1().norm();
-    const double length_dir2 = triangle.v2().norm();
+    // const double length_dir1 = triangle.v1().norm();
+    // const double length_dir2 = triangle.v2().norm();
 
     // Copy the mesh vectors
     Eigen::VectorXd dir1_mesh = Eigen::Map<const Eigen::VectorXd>(
@@ -2567,16 +2616,22 @@ inline TriMesh Triangle::create_mesh(const ThermalMesh& thermal_mesh,
         thermal_mesh.get_dir2_mesh().data(),
         static_cast<Eigen::Index>(thermal_mesh.get_dir2_mesh().size()));
 
-    // Scale the vectors with the size of the triangle
-    dir1_mesh *= length_dir1;
-    dir2_mesh *= length_dir2;
+    // Check that dir1_mesh and dir2_mesh are normalized
+    if (dir1_mesh[dir1_mesh.size() - 1] != 1.0) {
+        throw std::invalid_argument("dir1_mesh is not normalized.");
+    }
+    if (dir2_mesh[dir2_mesh.size() - 1] != 1.0) {
+        throw std::invalid_argument("dir2_mesh is not normalized.");
+    }
+
+    // // Scale the vectors with the size of the triangle
+    // dir1_mesh *= length_dir1;
+    // dir2_mesh *= length_dir2;
 
     TriMesh trimesh = trimesher::create_2d_triangular_mesh(
         dir1_mesh, dir2_mesh, triangle.from_3d_to_2d(triangle.get_p1()),
         triangle.from_3d_to_2d(triangle.get_p2()),
         triangle.from_3d_to_2d(triangle.get_p3()), tolerance, tolerance);
-
-    std::cout << trimesh.get_faces_edges().size() << '\n';
 
     // Triangulate the mesh. TODO: This triangulation is trivial. Should be done
     // differently.
@@ -2643,7 +2698,15 @@ inline TriMesh Rectangle::create_mesh(const ThermalMesh& thermal_mesh,
         thermal_mesh.get_dir2_mesh().data(),
         static_cast<Eigen::Index>(thermal_mesh.get_dir2_mesh().size()));
 
-    // Scale the vectors with the size of the rectangle
+    // Check that dir1_mesh and dir2_mesh are normalized
+    if (dir1_mesh[dir1_mesh.size() - 1] != 1.0) {
+        throw std::invalid_argument("dir1_mesh is not normalized.");
+    }
+    if (dir2_mesh[dir2_mesh.size() - 1] != 1.0) {
+        throw std::invalid_argument("dir2_mesh is not normalized.");
+    }
+
+    // Scale the mesh vectors
     dir1_mesh *= length_dir1;
     dir2_mesh *= length_dir2;
 
@@ -2674,11 +2737,11 @@ inline TriMesh Rectangle::create_mesh(const ThermalMesh& thermal_mesh,
 
     // Transform 2D points to 3D
     for (int i = 0; i < trimesh.get_vertices().rows(); i++) {
-        // Be careful with the order of the _vertices matrix
+        // Be careful with the order of the get_vertices matrix
         // This would fail: Point2D point2d = trimesh.get_vertices().row(i)
         //                      Eigen::Map<Point2D>(trimesh.get_vertices().row(i).data(),
         //                      2);
-        // Because _vertices is column major
+        // Because get_vertices is column major
         const Point2D point2d{trimesh.get_vertices()(i, 0),
                               trimesh.get_vertices()(i, 1)};
         trimesh.get_vertices().row(i) = rectangle.from_2d_to_3d(point2d);
@@ -2697,6 +2760,87 @@ inline TriMesh Rectangle::create_mesh(const ThermalMesh& thermal_mesh,
     return trimesh;
 }
 
+// Quadrilateral
+inline TriMesh Quadrilateral::create_mesh(const ThermalMesh& thermal_mesh,
+                                          double tolerance) const {
+    // Get the rectangle
+    const Quadrilateral& quad = *this;
+
+    // double length_dir1 = quad.v1().norm();
+    // double length_dir2 = quad.v2().norm();
+
+    // Copy the mesh vectors
+    Eigen::VectorXd dir1_mesh = Eigen::Map<const Eigen::VectorXd>(
+        thermal_mesh.get_dir1_mesh().data(),
+        static_cast<Eigen::Index>(thermal_mesh.get_dir1_mesh().size()));
+
+    Eigen::VectorXd dir2_mesh = Eigen::Map<const Eigen::VectorXd>(
+        thermal_mesh.get_dir2_mesh().data(),
+        static_cast<Eigen::Index>(thermal_mesh.get_dir2_mesh().size()));
+
+    // Check that dir1_mesh and dir2_mesh are normalized
+    if (dir1_mesh[dir1_mesh.size() - 1] != 1.0) {
+        throw std::invalid_argument("dir1_mesh is not normalized.");
+    }
+    if (dir2_mesh[dir2_mesh.size() - 1] != 1.0) {
+        throw std::invalid_argument("dir2_mesh is not normalized.");
+    }
+
+    auto p1 = quad.from_3d_to_2d(quad.get_p1());
+    auto p2 = quad.from_3d_to_2d(quad.get_p2());
+    auto p3 = quad.from_3d_to_2d(quad.get_p3());
+    auto p4 = quad.from_3d_to_2d(quad.get_p4());
+
+    TriMesh trimesh = trimesher::create_2d_quadrilateral_mesh(
+        dir1_mesh, dir2_mesh, p1, p2, p3, p4, tolerance, tolerance);
+
+    // Triangulate the mesh. TODO: This triangulation is trivial. Should be done
+    // differently.
+    trimesher::cdt_trimesher(trimesh);
+
+    // Assign face ids
+    for (Eigen::Index i = 0; i < trimesh.get_triangles().rows(); i++) {
+        auto tri = trimesh.get_triangles().row(i);
+        const Point2D p0_2d{trimesh.get_vertices()(tri[0], 0),
+                            trimesh.get_vertices()(tri[0], 1)};
+        const Point2D p1_2d{trimesh.get_vertices()(tri[1], 0),
+                            trimesh.get_vertices()(tri[1], 1)};
+        const Point2D p2_2d{trimesh.get_vertices()(tri[2], 0),
+                            trimesh.get_vertices()(tri[2], 1)};
+
+        const Point2D centroid = (p0_2d + p1_2d + p2_2d) / 3.0;
+
+        // Get the face id
+        trimesh.get_face_ids()[i] =
+            quad.get_faceid_from_uv(thermal_mesh, centroid);
+    }
+
+    // Transform 2D points to 3D
+    for (int i = 0; i < trimesh.get_vertices().rows(); i++) {
+        // Be careful with the order of the get_vertices matrix
+        // This would fail: Point2D point2d = trimesh.get_vertices().row(i)
+        //                      Eigen::Map<Point2D>(trimesh.get_vertices().row(i).data(),
+        //                      2);
+        // Because get_vertices is column major
+        Point2D point2D{trimesh.get_vertices()(i, 0),
+                        trimesh.get_vertices()(i, 1)};
+        trimesh.get_vertices().row(i) = quad.from_2d_to_3d(point2D);
+    }
+
+    // Common operations for all meshes. TODO: create a dedicated function
+    trimesh.set_surface1_color(thermal_mesh.get_side1_color().get_rgb());
+    trimesh.set_surface2_color(thermal_mesh.get_side2_color().get_rgb());
+
+    // TODO(PERFORMANCE): The mesh should be sorted during creation
+    //  sort the mesh
+    trimesh.sort_triangles();
+    // compute areas
+    trimesh.compute_areas();
+
+    return trimesh;
+}
+
+// Disc
 inline TriMesh Disc::create_mesh(const ThermalMesh& thermal_mesh,
                                  double tolerance) const {
     // Get the disc
@@ -2711,10 +2855,6 @@ inline TriMesh Disc::create_mesh(const ThermalMesh& thermal_mesh,
     const double max_length_points_dir2 =
         std::sqrt(tolerance * (2 * disc.get_end_angle() - tolerance));
 
-    std::cout << "Max length points dir1: " << max_length_points_dir1
-              << '\n';  // Copy the mesh vectors
-    std::cout << "Max length points dir2: " << max_length_points_dir2
-              << '\n';  // Copy the mesh vectors
     Eigen::VectorXd dir1_mesh = Eigen::Map<const Eigen::VectorXd>(
         thermal_mesh.get_dir1_mesh().data(),
         static_cast<Eigen::Index>(thermal_mesh.get_dir1_mesh().size()));
@@ -2722,6 +2862,14 @@ inline TriMesh Disc::create_mesh(const ThermalMesh& thermal_mesh,
     const Eigen::VectorXd dir2_mesh = Eigen::Map<const Eigen::VectorXd>(
         thermal_mesh.get_dir2_mesh().data(),
         static_cast<Eigen::Index>(thermal_mesh.get_dir2_mesh().size()));
+
+    // Check that dir1_mesh and dir2_mesh are normalized
+    if (dir1_mesh[dir1_mesh.size() - 1] != 1.0) {
+        throw std::invalid_argument("dir1_mesh is not normalized.");
+    }
+    if (dir2_mesh[dir2_mesh.size() - 1] != 1.0) {
+        throw std::invalid_argument("dir2_mesh is not normalized.");
+    }
 
     Point2D center = disc.from_3d_to_2d(disc.get_p1());
     // Calculate the 2D coordinates of p3 in the local disc plane
@@ -2755,30 +2903,14 @@ inline TriMesh Disc::create_mesh(const ThermalMesh& thermal_mesh,
         }
     }
 
-    std::cout << "Creating mesh" << '\n';
-    std::cout << "dir1_mesh" << '\n';
-    for (const auto& i : dir1_mesh) {
-        std::cout << i << " ";
-    }
-    std::cout << '\n';
-    std::cout << "dir2_mesh" << '\n';
-    for (const auto& i : dir2_mesh) {
-        std::cout << i << " ";
-    }
-    std::cout << '\n';
-    std::cout << "Center: " << center.x() << ", " << center.y() << '\n';
-    std::cout << "Outer point: " << outer_point.x() << ", " << outer_point.y()
-              << '\n';
     TriMesh trimesh = trimesher::create_2d_disc_mesh(
         dir1_mesh, dir2_mesh, center, outer_point, max_length_points_dir1,
         max_length_points_dir2);
     // Triangulate the mesh. TODO: This triangulation is trivial. Should be done
     // differently.
 
-    std::cout << "Triangulating mesh" << '\n';
     trimesher::cdt_trimesher(trimesh);
 
-    std::cout << "Assigning face ids" << '\n';
     // Assign face ids
     for (Eigen::Index i = 0; i < trimesh.get_triangles().rows(); i++) {
         auto tri = trimesh.get_triangles().row(i);
@@ -2790,22 +2922,11 @@ inline TriMesh Disc::create_mesh(const ThermalMesh& thermal_mesh,
                             trimesh.get_vertices()(tri[2], 1)};
 
         const Point2D centroid = (p0_2d + p1_2d + p2_2d) / 3.0;
-        // std::cout << "[" << centroid.x() << ", " << centroid.y() << "]" <<
-        // '\n';
-
-        // if (centroid.norm() <= inner_radius) {
-        //     std::cout << "[" << p0_2d.x() << ", " << p0_2d.y() << "]," <<
-        //     '\n'; std::cout << "[" << p1_2d.x() << ", " << p1_2d.y() <<
-        //     "]," << '\n'; std::cout << "[" << p2_2d.x() << ", " <<
-        //     p2_2d.y() << "]," << '\n';
-        // }
 
         // Get the face id
         // i >= 0, so it is safe to cast to VectorIndex
         trimesh.get_face_ids()[i] =
             disc.get_faceid_from_uv(thermal_mesh, centroid);
-        std::cout << "Face " << i << " id: " << trimesh.get_face_ids()[i]
-                  << '\n';
     }
 
     // Transform 2D points to 3D
@@ -2830,6 +2951,7 @@ inline TriMesh Disc::create_mesh(const ThermalMesh& thermal_mesh,
     return trimesh;
 }
 
+// Cylinder
 inline TriMesh Cylinder::create_mesh(const ThermalMesh& thermal_mesh,
                                      double tolerance) const {
     // Get the cylinder
@@ -2856,7 +2978,15 @@ inline TriMesh Cylinder::create_mesh(const ThermalMesh& thermal_mesh,
         thermal_mesh.get_dir2_mesh().data(),
         static_cast<Eigen::Index>(thermal_mesh.get_dir2_mesh().size()));
 
-    // Scale the vectors with the size of the rectangle
+    // Check that dir1_mesh and dir2_mesh are normalized
+    if (dir1_mesh[dir1_mesh.size() - 1] != 1.0) {
+        throw std::invalid_argument("dir1_mesh is not normalized.");
+    }
+    if (dir2_mesh[dir2_mesh.size() - 1] != 1.0) {
+        throw std::invalid_argument("dir2_mesh is not normalized.");
+    }
+
+    // Scale the mesh vectors to the cylinder dimensions
     dir1_mesh *= length_dir1;
     dir2_mesh *= length_dir2;
 
@@ -2886,10 +3016,10 @@ inline TriMesh Cylinder::create_mesh(const ThermalMesh& thermal_mesh,
 
     // Transform 2D points to 3D
     for (int i = 0; i < trimesh.get_vertices().rows(); i++) {
-        // Be careful with the order of the _vertices matrix
+        // Be careful with the order of the get_vertices matrix
         // This would fail: Eigen::Map<Point2D>
-        // point2d(trimesh.get_vertices().row(i).data(), 2);; Because _vertices
-        // is column major
+        // point2d(trimesh.get_vertices().row(i).data(), 2);; Because
+        // get_vertices is column major
         const Point2D point2d{trimesh.get_vertices()(i, 0),
                               trimesh.get_vertices()(i, 1)};
         trimesh.get_vertices().row(i) = cylinder.from_2d_to_3d(point2d);
@@ -2950,6 +3080,14 @@ inline TriMesh Cone::create_mesh(const ThermalMesh& thermal_mesh,
         thermal_mesh.get_dir2_mesh().data(),
         static_cast<Eigen::Index>(thermal_mesh.get_dir2_mesh().size()));
 
+    // Check that dir1_mesh and dir2_mesh are normalized
+    if (dir1_mesh[dir1_mesh.size() - 1] != 1.0) {
+        throw std::invalid_argument("dir1_mesh is not normalized.");
+    }
+    if (dir2_mesh[dir2_mesh.size() - 1] != 1.0) {
+        throw std::invalid_argument("dir2_mesh is not normalized.");
+    }
+
     // Remap dir1_mesh to the 2D plane
     std::transform(dir1_mesh.begin(), dir1_mesh.end(), dir1_mesh.begin(),
                    [s1, s2, s](auto value) { return (value * s1 + s2) / s; });
@@ -2985,23 +3123,6 @@ inline TriMesh Cone::create_mesh(const ThermalMesh& thermal_mesh,
 
     // TODO: Check if when using start and end angle the mesh takes them into
     // account
-
-    std::cout << "Center: " << center.x() << ", " << center.y() << '\n';
-    std::cout << "Outer point: " << outer_point.x() << ", " << outer_point.y()
-              << '\n';
-    std::cout << "Max length points dir1: " << max_length_points_dir1 << '\n';
-    std::cout << "Max length points dir2: " << max_length_points_dir2 << '\n';
-
-    std::cout << "dir1_mesh: [";
-    for (const auto& i : dir1_mesh) {
-        std::cout << i << ", ";
-    }
-    std::cout << "]" << '\n';
-    std::cout << "dir2_mesh: [";
-    for (const auto& i : dir2_mesh) {
-        std::cout << i << ", ";
-    }
-    std::cout << "]" << '\n';
 
     TriMesh trimesh = trimesher::create_2d_disc_mesh(
         dir1_mesh, dir2_mesh, center, outer_point, max_length_points_dir1,
@@ -3158,10 +3279,10 @@ inline TriMesh Cone::create_mesh(const ThermalMesh& thermal_mesh,
 
     // Transform 2D points to 3D
     for (int i = 0; i < trimesh.get_vertices().rows(); i++) {
-        // Be careful with the order of the _vertices matrix
+        // Be careful with the order of the get_vertices matrix
         // This would fail: Eigen::Map<Point2D>
-        // point2d(trimesh.get_vertices().row(i).data(), 2);; Because _vertices
-        // is column major
+        // point2d(trimesh.get_vertices().row(i).data(), 2); Because
+        // get_vertices is column major
         const Point2D point2d{trimesh.get_vertices()(i, 0),
                               trimesh.get_vertices()(i, 1)};
         trimesh.get_vertices().row(i) = cone.from_2d_to_3d(point2d);
@@ -3207,6 +3328,14 @@ inline TriMesh Sphere::create_mesh1(const ThermalMesh& thermal_mesh,
     Eigen::VectorXd dir2_mesh = Eigen::Map<const Eigen::VectorXd>(
         thermal_mesh.get_dir2_mesh().data(),
         static_cast<Eigen::Index>(thermal_mesh.get_dir2_mesh().size()));
+
+    // Check that dir1_mesh and dir2_mesh are normalized
+    if (dir1_mesh[dir1_mesh.size() - 1] != 1.0) {
+        throw std::invalid_argument("dir1_mesh is not normalized.");
+    }
+    if (dir2_mesh[dir2_mesh.size() - 1] != 1.0) {
+        throw std::invalid_argument("dir2_mesh is not normalized.");
+    }
 
     std::vector<double> dir2_mesh_normalized(
         static_cast<VectorIndex>(dir2_mesh.size()));
@@ -3291,8 +3420,8 @@ inline TriMesh Sphere::create_mesh1(const ThermalMesh& thermal_mesh,
     // Determine if there are interior points. For the disc
     // only the dir1 points generate interior points and only
     // they are the same for a given radius
-    // std::vector<std::vector<MeshIndex>> interior_points_dir2(
-    //    dir1_size - 1, std::vector<MeshIndex>(dir2_size - 1));
+    std::vector<std::vector<MeshIndex>> interior_points_dir2(
+        dir1_size - 1, std::vector<MeshIndex>(dir2_size - 1));
     MeshIndex num_interior_points = 0;
     for (MeshIndex i_dir1 = 0; i_dir1 < dir1_size - 1; ++i_dir1) {
         if (additional_points_dir1[i_dir1] > 0) {
@@ -3304,7 +3433,7 @@ inline TriMesh Sphere::create_mesh1(const ThermalMesh& thermal_mesh,
                         ? add_pi1 * additional_points_dir2[i_dir1 - 1][j_dir2]
                         : add_pi1 * additional_points_dir2[i_dir1][j_dir2];
                 num_interior_points += num_interior_points_i;
-                // interior_points_dir2[i_dir1][j_dir2] = num_interior_points_i;
+                interior_points_dir2[i_dir1][j_dir2] = num_interior_points_i;
             }
         }
     }
@@ -3822,9 +3951,9 @@ inline TriMesh Sphere::create_mesh2(const ThermalMesh& thermal_mesh,
     using std::numbers::pi;
 
     // Main directions of the 3D cone
-    // Eigen::Vector3d vx = (_p3 - _p1).normalized();
-    // Eigen::Vector3d vz = (_p2 - _p1).normalized();
-    // Eigen::Vector3d vy = (vz.cross(vx)).normalized();
+    Eigen::Vector3d vx = (_p3 - _p1).normalized();
+    Eigen::Vector3d vz = (_p2 - _p1).normalized();
+    Eigen::Vector3d vy = (vz.cross(vx)).normalized();
 
     // TODO Add checks to validate tolerance and have a minimum/maximum
     // tolerance
@@ -3842,6 +3971,14 @@ inline TriMesh Sphere::create_mesh2(const ThermalMesh& thermal_mesh,
     Eigen::VectorXd dir2_mesh = Eigen::Map<const Eigen::VectorXd>(
         thermal_mesh.get_dir2_mesh().data(),
         static_cast<Eigen::Index>(thermal_mesh.get_dir2_mesh().size()));
+
+    // Check that dir1_mesh and dir2_mesh are normalized
+    if (dir1_mesh[dir1_mesh.size() - 1] != 1.0) {
+        throw std::invalid_argument("dir1_mesh is not normalized.");
+    }
+    if (dir2_mesh[dir2_mesh.size() - 1] != 1.0) {
+        throw std::invalid_argument("dir2_mesh is not normalized.");
+    }
 
     std::vector<double> dir2_mesh_normalized(
         static_cast<VectorIndex>(dir2_mesh.size()));
@@ -3868,7 +4005,6 @@ inline TriMesh Sphere::create_mesh2(const ThermalMesh& thermal_mesh,
     // Dir2 end is 0 if the end angle is not 2*pi
     const MeshIndex dir2_end = (_end_angle - _start_angle != 2 * pi) ? 0 : 1;
 
-    std::cout << "add2" << '\n';
     // Dir2 is the angular direction. Because the length of the circumference
     // changes for each of the divisions in dir1, a different number of points
     // might be needed
@@ -3935,23 +4071,11 @@ inline TriMesh Sphere::create_mesh2(const ThermalMesh& thermal_mesh,
         }
     }
 
-    for (const auto& v : additional_points_dir2) {
-        for (const auto& v2 : v) {
-            std::cout << v2 << " ";
-        }
-        std::cout << '\n';
-    }
-    // } else {
-    //     // std::vector<std::vector<int>> additional_points_dir2(1,
-    //     std::vector<int>(1)); additional_points_dir2[0][0] = 0;
-    // }
-
     // Determine if there are interior points. For the disc
     // only the dir1 points generate interior points and only
     // they are the same for a given radius
-    std::cout << "interior pts" << '\n';
-    // std::vector<std::vector<MeshIndex>> interior_points_dir2(
-    //     dir1_size - 1, std::vector<MeshIndex>(dir2_size - 1));
+    std::vector<std::vector<MeshIndex>> interior_points_dir2(
+        dir1_size - 1, std::vector<MeshIndex>(dir2_size - 1));
     MeshIndex num_interior_points = 0;
     for (MeshIndex i_dir1 = 0; i_dir1 < dir1_size - 1; ++i_dir1) {
         auto add_pi1 = additional_points_dir1[i_dir1];
@@ -3969,7 +4093,7 @@ inline TriMesh Sphere::create_mesh2(const ThermalMesh& thermal_mesh,
                         : (add_pi1 + 1) *
                               (additional_points_dir2[i_dir1][j_dir2] + 1);
                 num_interior_points += num_interior_points_i;
-                // interior_points_dir2[i_dir1][j_dir2] = num_interior_points_i;
+                interior_points_dir2[i_dir1][j_dir2] = num_interior_points_i;
             }
         } else {
             num_interior_points =
@@ -3978,7 +4102,6 @@ inline TriMesh Sphere::create_mesh2(const ThermalMesh& thermal_mesh,
         }
     }
 
-    std::cout << "total pts" << '\n';
     // Calculate the total number of points
     MeshIndex num_points_dir1 = num_points_row_dir1;
     num_points_dir1 =
@@ -4050,13 +4173,12 @@ inline TriMesh Sphere::create_mesh2(const ThermalMesh& thermal_mesh,
         }
     }
 
-    std::cout << "fill pts" << '\n';
     // Fill the points array in dir1
     p_idx = 0;
     if (_base_truncation == -_radius) {
-        points(0, 0) = 0.0;
-        points(0, 1) = 0.0;
-        points(0, 2) = -_radius;
+        points(p_idx, 0) = _p1.x();
+        points(p_idx, 1) = _p1.y();
+        points(p_idx, 2) = _p1.z() - _radius;
         ++p_idx;
     }
     const auto full_dir1_mesh_size =
@@ -4080,13 +4202,13 @@ inline TriMesh Sphere::create_mesh2(const ThermalMesh& thermal_mesh,
 
     const MeshIndex north_pole_idx = p_idx;
     if (_apex_truncation == _radius) {
-        points(p_idx, 0) = 0.0;
-        points(p_idx, 1) = 0.0;
-        points(p_idx, 2) = _radius;
+        points(p_idx, 0) = _p1.x();
+        points(p_idx, 1) = _p1.y();
+        points(p_idx, 2) = _p1.z() + _radius;
         ++p_idx;
     }
 
-    std::cout << "fill pts2" << '\n';
+    // std::cout << "fill pts2" << '\n';
     // Fill the points array in dir2
     MeshIndex dir2_idx = 0;
     for (MeshIndex i_dir1 = 0; i_dir1 < dir1_size - (dir1_start + dir1_end);
@@ -4112,7 +4234,6 @@ inline TriMesh Sphere::create_mesh2(const ThermalMesh& thermal_mesh,
         }
     }
 
-    std::cout << "fill pts3" << '\n';
     for (MeshIndex i_dir1 = 0; i_dir1 < dir1_size - 1; ++i_dir1) {
         auto add_pi1 = additional_points_dir1[i_dir1];
         MeshIndex a_i = 0;
@@ -4135,14 +4256,11 @@ inline TriMesh Sphere::create_mesh2(const ThermalMesh& thermal_mesh,
         for (MeshIndex j_dir2 = 0; j_dir2 < dir2_size - 1; ++j_dir2) {
             const double d_angle = (dir2_mesh_normalized[j_dir2 + 1] -
                                     dir2_mesh_normalized[j_dir2]);
-            std::cout << "inline pts" << '\n';
             for (MeshIndex p = 1; p <= add_pi1; ++p) {
                 const double phi_i =
                     ph1 + p * d_ph / (additional_points_dir1[i_dir1] + 1);
                 const double z = _radius * sin(phi_i);
-                // double z = _base_truncation + (dir1_mesh[i_dir1]+
-                //     (dir1_mesh[i_dir1+1]-dir1_mesh[i_dir1])*p/(1+add_pi1))*(_apex_truncation-_base_truncation);
-                // std::cout << "a_i: " << a_i << '\n';
+
                 for (MeshIndex a = 1; a <= additional_points_dir2[a_i][j_dir2];
                      ++a) {
                     auto angle_a =
@@ -4180,7 +4298,7 @@ inline TriMesh Sphere::create_mesh2(const ThermalMesh& thermal_mesh,
                              2) *
                         2 * pi;
                     const double phi = acos(z / _radius);
-                    // std::cout << "p_idx: " << p_idx << '\n';
+
                     points(p_idx, 0) =
                         _p1.x() +
                         round(_radius * sin(phi) * cos(angle_a) / LENGTH_TOL) *
@@ -4190,20 +4308,14 @@ inline TriMesh Sphere::create_mesh2(const ThermalMesh& thermal_mesh,
                         round(_radius * sin(phi) * sin(angle_a) / LENGTH_TOL) *
                             LENGTH_TOL;
                     points(p_idx, 2) = _p1.z() + z;
-                    // std::cout << "p_idx: " << p_idx << '\n';
                     ++p_idx;
                 }
             }
-            // int num_interior_points_i =
-            // add_pi1*additional_points_dir2[a_i][j_dir2]; num_interior_points
-            // += num_interior_points_i; interior_points_dir2[i_dir1][j_dir2] =
-            // num_interior_points_i;
         }
     }
 
     // 3. Create the edges
 
-    std::cout << "edges" << '\n';
     // Reserve space for the edges
     MeshIndex edges_size =
         (dir1_size - 1) * (dir2_size) + (dir1_size) * (dir2_size - 1);
@@ -4359,10 +4471,10 @@ inline TriMesh Sphere::create_mesh2(const ThermalMesh& thermal_mesh,
     // 5. Create the faces edges
     const MeshIndex num_faces = (dir1_size - 1) * (dir2_size - 1);
     FaceEdges faces_edges(num_faces);
+    MeshIndex face_idx = 0;
     const MeshIndex skip_horizontal_edges =
         (dir2_size - dir2_end) * (dir1_size - 1);
     if (!single_node) {
-        MeshIndex face_idx = 0;
         for (MeshIndex i_dir1 = 0; i_dir1 < dir1_size - 1; ++i_dir1) {
             for (MeshIndex j_dir2 = 0; j_dir2 < dir2_size - 1; ++j_dir2) {
                 if (_base_truncation == -_radius && (i_dir1 == 0)) {
@@ -4505,9 +4617,6 @@ inline TriMesh Sphere::create_mesh2(const ThermalMesh& thermal_mesh,
         }
     }
 
-    // Set points to 3D
-    trimesh.set_vertices(points);
-
     // Assign face ids
     for (MeshIndex i = 0; i < trimesh.get_triangles().rows(); i++) {
         auto tri = trimesh.get_triangles().row(i);
@@ -4538,6 +4647,14 @@ inline TriMesh Sphere::create_mesh2(const ThermalMesh& thermal_mesh,
         // Get the face id
         trimesh.get_face_ids()[i] = get_faceid_from_uv(thermal_mesh, centroid);
     }
+
+    // Rotate the points to the true position
+    for (int i = 0; i < points.rows(); ++i) {
+        auto p = points.row(i);
+        points.row(i) = _p1 + vx * p[0] + vy * p[1] + vz * p[2];
+    }
+    // Set points to 3D
+    trimesh.set_vertices(points);
 
     // Common operations for all meshes. TODO: create a dedicated function
     trimesh.set_surface1_color(thermal_mesh.get_side1_color().get_rgb());
