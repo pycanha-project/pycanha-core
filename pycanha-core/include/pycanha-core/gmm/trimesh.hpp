@@ -2642,7 +2642,7 @@ inline TriMesh create_2d_disc_mesh(const Eigen::VectorXd& dir1_mesh_normalized,
                         add_pi1 * additional_points_dir2[i_dir1 + 1][j_dir2];
                 }
                 num_interior_points += num_interior_points_i;
-                interior_points_dir2[i_dir1][j_dir2] = num_interior_points_i;
+                // interior_points_dir2[i_dir1][j_dir2] = num_interior_points_i;
             }
         }
     }
