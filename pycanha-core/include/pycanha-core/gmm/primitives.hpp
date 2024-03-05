@@ -3423,7 +3423,7 @@ inline TriMesh Sphere::create_mesh1(const ThermalMesh& thermal_mesh,
     // Determine if there are interior points. For the disc
     // only the dir1 points generate interior points and only
     // they are the same for a given radius
-    std::vector<std::vector<MeshIndex>> interior_points_dir2(
+    const std::vector<std::vector<MeshIndex>> interior_points_dir2(
         dir1_size - 1, std::vector<MeshIndex>(dir2_size - 1));
     MeshIndex num_interior_points = 0;
     for (MeshIndex i_dir1 = 0; i_dir1 < dir1_size - 1; ++i_dir1) {
@@ -4077,7 +4077,7 @@ inline TriMesh Sphere::create_mesh2(const ThermalMesh& thermal_mesh,
     // Determine if there are interior points. For the disc
     // only the dir1 points generate interior points and only
     // they are the same for a given radius
-    std::vector<std::vector<MeshIndex>> interior_points_dir2(
+    const std::vector<std::vector<MeshIndex>> interior_points_dir2(
         dir1_size - 1, std::vector<MeshIndex>(dir2_size - 1));
     MeshIndex num_interior_points = 0;
     for (MeshIndex i_dir1 = 0; i_dir1 < dir1_size - 1; ++i_dir1) {
