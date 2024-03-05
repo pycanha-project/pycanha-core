@@ -1502,8 +1502,8 @@ inline TriMesh create_2d_quadrilateral_mesh(
     auto v14 = p4 - p1;
     auto v43 = p3 - p4;
 
-    Eigen::VectorXd dir1_mesh = dir1_mesh_normalized * v12.norm();
-    Eigen::VectorXd dir2_mesh = dir2_mesh_normalized * v23.norm();
+    const Eigen::VectorXd dir1_mesh = dir1_mesh_normalized * v12.norm();
+    const Eigen::VectorXd dir2_mesh = dir2_mesh_normalized * v23.norm();
 
     // 1. Determine the number of points to reserve space
     const auto dir1_size = static_cast<MeshIndex>(dir1_mesh.size());
@@ -2196,9 +2196,9 @@ inline TriMesh create_2d_triangular_mesh(
     // auto v23 = p3 - p2;
     auto v31 = p3 - p1;
     // Scale the mesh
-    Eigen::VectorXd dir1_mesh =
+    const Eigen::VectorXd dir1_mesh =
         dir1_mesh_normalized * v21.norm();  // Mesh of the current line
-    Eigen::VectorXd dir2_mesh =
+    const Eigen::VectorXd dir2_mesh =
         dir2_mesh_normalized * v31.norm();  // Mesh of the current line
 
     auto dir1_size = static_cast<MeshIndex>(dir1_mesh.size());
@@ -2226,12 +2226,12 @@ inline TriMesh create_2d_triangular_mesh(
     const auto& quad_p4 = triangle_p3;
 
     // Normalize the meshes
-    Eigen::VectorXd triangle_dir2_mesh_normalized =
+    const Eigen::VectorXd triangle_dir2_mesh_normalized =
         triangle_dir2_mesh /
         (triangle_dir2_mesh[triangle_dir2_mesh.size() - 1]);
-    Eigen::VectorXd quad_dir1_mesh_normalized =
+    const Eigen::VectorXd quad_dir1_mesh_normalized =
         quad_dir1_mesh / (quad_dir1_mesh[quad_dir1_mesh.size() - 1]);
-    Eigen::VectorXd quad_dir2_mesh_normalized =
+    const Eigen::VectorXd quad_dir2_mesh_normalized =
         quad_dir2_mesh / (quad_dir2_mesh[quad_dir2_mesh.size() - 1]);
 
     // Create the triangular mesh

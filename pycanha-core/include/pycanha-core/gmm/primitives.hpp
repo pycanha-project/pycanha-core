@@ -1495,7 +1495,7 @@ class Sphere : public Primitive {
     double _apex_truncation;  ///< Apex truncation of the sphere.
     double _start_angle;      ///< Start angle of the sphere.
     double _end_angle;        ///< End angle of the sphere.
-    bool valid = is_valid();
+    bool _valid = is_valid();
 };
 
 // Distance methods
@@ -2825,9 +2825,9 @@ inline TriMesh Quadrilateral::create_mesh(const ThermalMesh& thermal_mesh,
         //                      Eigen::Map<Point2D>(trimesh.get_vertices().row(i).data(),
         //                      2);
         // Because get_vertices is column major
-        Point2D point2D{trimesh.get_vertices()(i, 0),
+        const Point2D point2d{trimesh.get_vertices()(i, 0),
                         trimesh.get_vertices()(i, 1)};
-        trimesh.get_vertices().row(i) = quad.from_2d_to_3d(point2D);
+        trimesh.get_vertices().row(i) = quad.from_2d_to_3d(point2d);
     }
 
     // Common operations for all meshes. TODO: create a dedicated function
@@ -2874,7 +2874,7 @@ inline TriMesh Disc::create_mesh(const ThermalMesh& thermal_mesh,
         throw std::invalid_argument("dir2_mesh is not normalized.");
     }
 
-    Point2D center = disc.from_3d_to_2d(disc.get_p1());
+    const Point2D center = disc.from_3d_to_2d(disc.get_p1());
     // Calculate the 2D coordinates of p3 in the local disc plane
 
     auto start_angle = disc.get_start_angle();
@@ -3108,7 +3108,7 @@ inline TriMesh Cone::create_mesh(const ThermalMesh& thermal_mesh,
             (_radius1 < _radius2) ? value * _radius2 / s : value * _radius1 / s;
     }
 
-    Point2D center = (_radius1 < _radius2) ? cone.from_3d_to_2d(_p1)
+    const Point2D center = (_radius1 < _radius2) ? cone.from_3d_to_2d(_p1)
                                            : cone.from_3d_to_2d(_p2);
     // Rotate p3-p1 start angle rads around p2-p1
     Point2D outer_point = (_radius1 < _radius2)
@@ -3954,9 +3954,9 @@ inline TriMesh Sphere::create_mesh2(const ThermalMesh& thermal_mesh,
     using std::numbers::pi;
 
     // Main directions of the 3D cone
-    Eigen::Vector3d vx = (_p3 - _p1).normalized();
-    Eigen::Vector3d vz = (_p2 - _p1).normalized();
-    Eigen::Vector3d vy = (vz.cross(vx)).normalized();
+    const Eigen::Vector3d vx = (_p3 - _p1).normalized();
+    const Eigen::Vector3d vz = (_p2 - _p1).normalized();
+    const Eigen::Vector3d vy = (vz.cross(vx)).normalized();
 
     // TODO Add checks to validate tolerance and have a minimum/maximum
     // tolerance
