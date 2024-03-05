@@ -499,13 +499,11 @@ class TriMeshModel {
      *
      * @return  VerticesListFloat& Vertices matrix
      */
-    [[nodiscard]] VerticesListFloat& get_vertices() {
-        return _vertices;
-    }
+    [[nodiscard]] VerticesListFloat& get_vertices() { return _vertices; }
 
     /**
      * @brief Get the vertices matrix
-     * 
+     *
      * @return VerticesListFloat& Vertices matrix
      */
     void set_vertices(VerticesListFloat vertices) {
@@ -526,9 +524,7 @@ class TriMeshModel {
      *
      * @return TrianglesList& Triangles matrix
      */
-    TrianglesList& get_triangles() {
-        return _triangles;
-    }
+    TrianglesList& get_triangles() { return _triangles; }
 
     /**
      * @brief Set the triangles matrix
@@ -541,30 +537,24 @@ class TriMeshModel {
 
     /**
      * @brief Get the face ids vector
-     *  
+     *
      * @return const FaceIdsList& Face ids vector
      */
-    [[nodiscard]] const FaceIdsList& get_face_ids() const {
-        return _face_ids;
-    }
+    [[nodiscard]] const FaceIdsList& get_face_ids() const { return _face_ids; }
 
     /**
      * @brief Get the non-const face ids vector
      *
      * @return FaceIdsList& Face ids vector
      */
-    FaceIdsList& get_face_ids() {
-        return _face_ids;
-    }
+    FaceIdsList& get_face_ids() { return _face_ids; }
 
     /**
      * @brief Set the face ids vector
      *
      * @param face_ids Input face ids vector
      */
-    void set_face_ids(FaceIdsList face_ids) {
-        _face_ids = std::move(face_ids);
-    }
+    void set_face_ids(FaceIdsList face_ids) { _face_ids = std::move(face_ids); }
 
     /**
      * @brief Get the cumulative area vector
@@ -577,7 +567,7 @@ class TriMeshModel {
 
     /**
      * @brief Get the face activity vector
-     * 
+     *
      * @return const std::vector<int8_t>& Face activity vector
      */
     [[nodiscard]] const std::vector<int8_t>& get_face_activity() const {
@@ -586,16 +576,14 @@ class TriMeshModel {
 
     /**
      * @brief Get the non-const face activity vector
-     * 
+     *
      * @return std::vector<int8_t>& Face activity vector
      */
-    std::vector<int8_t>& get_face_activity() {
-        return _face_activity;
-    }
+    std::vector<int8_t>& get_face_activity() { return _face_activity; }
 
     /**
      * @brief Set the face activity vector
-     * 
+     *
      * @param face_activity Input face activity vector
      */
     void set_face_activity(std::vector<int8_t> face_activity) {
@@ -605,24 +593,24 @@ class TriMeshModel {
     /**
      * @brief Get the optical properties vector
      *
-     * @return const std::vector<std::array<float, 6>>& Optical properties vector
+     * @return const std::vector<std::array<float, 6>>& Optical properties
+     * vector
      */
-    [[nodiscard]] const std::vector<std::array<float, 6>>& get_opticals() const {
+    [[nodiscard]] const std::vector<std::array<float, 6>>& get_opticals()
+        const {
         return _opticals;
     }
 
     /**
      * @brief Get the non-const optical properties vector
-     * 
+     *
      * @return std::vector<std::array<float, 6>>& Optical properties vector
      */
-    std::vector<std::array<float, 6>>& get_opticals() {
-        return _opticals;
-    }
+    std::vector<std::array<float, 6>>& get_opticals() { return _opticals; }
 
     /**
      * @brief Set the optical properties vector
-     * 
+     *
      * @param opticals Input optical properties vector
      */
     void set_opticals(std::vector<std::array<float, 6>> opticals) {
@@ -634,18 +622,14 @@ class TriMeshModel {
      *
      * @return MeshIndex Number of faces
      */
-    [[nodiscard]] MeshIndex get_number_of_faces() const {
-        return _n_faces;
-    }
+    [[nodiscard]] MeshIndex get_number_of_faces() const { return _n_faces; }
 
     /**
      * @brief Set the number of faces
      *
      * @param n_faces Number of faces
      */
-    void set_number_of_faces(MeshIndex n_faces) {
-        _n_faces = n_faces;
-    }
+    void set_number_of_faces(MeshIndex n_faces) { _n_faces = n_faces; }
 
     /**
      * @brief Get the number of geometries
@@ -679,9 +663,7 @@ class TriMeshModel {
      *
      * @return std::vector<ColorRGB>& Front colors vector
      */
-    std::vector<ColorRGB>& get_front_colors() {
-        return _front_colors;
-    }
+    std::vector<ColorRGB>& get_front_colors() { return _front_colors; }
 
     /**
      * @brief Set the front colors vector
@@ -706,9 +688,7 @@ class TriMeshModel {
      *
      * @return std::vector<ColorRGB>& Back colors vector
      */
-    std::vector<ColorRGB>& get_back_colors() {
-        return _back_colors;
-    }
+    std::vector<ColorRGB>& get_back_colors() { return _back_colors; }
 
     /**
      * @brief Set the back colors vector
@@ -724,7 +704,8 @@ class TriMeshModel {
      *
      * @return const std::vector<MeshIndex>& Geometries triangles vector
      */
-    [[nodiscard]] const std::vector<MeshIndex>& get_geometries_triangles() const {
+    [[nodiscard]] const std::vector<MeshIndex>& get_geometries_triangles()
+        const {
         return _geometries_triangles;
     }
 
@@ -751,7 +732,8 @@ class TriMeshModel {
      *
      * @return const std::vector<MeshIndex>& Geometries vertices vector
      */
-    [[nodiscard]] const std::vector<MeshIndex>& get_geometries_vertices() const {
+    [[nodiscard]] const std::vector<MeshIndex>& get_geometries_vertices()
+        const {
         return _geometries_vertices;
     }
 
@@ -787,9 +769,7 @@ class TriMeshModel {
      *
      * @return std::vector<MeshIndex>& Geometries edges vector
      */
-    std::vector<MeshIndex>& get_geometries_edges() {
-        return _geometries_edges;
-    }
+    std::vector<MeshIndex>& get_geometries_edges() { return _geometries_edges; }
 
     /**
      * @brief Set the geometries edges vector
@@ -805,7 +785,8 @@ class TriMeshModel {
      *
      * @return const std::vector<MeshIndex>& Geometries perimeter edges vector
      */
-    [[nodiscard]] const std::vector<MeshIndex>& get_geometries_perimeter_edges() const {
+    [[nodiscard]] const std::vector<MeshIndex>& get_geometries_perimeter_edges()
+        const {
         return _geometries_perimeter_edges;
     }
 
@@ -823,7 +804,8 @@ class TriMeshModel {
      *
      * @param geometries_perimeter_edges Input geometries perimeter edges vector
      */
-    void set_geometries_perimeter_edges(std::vector<MeshIndex> geometries_perimeter_edges) {
+    void set_geometries_perimeter_edges(
+        std::vector<MeshIndex> geometries_perimeter_edges) {
         _geometries_perimeter_edges = std::move(geometries_perimeter_edges);
     }
 
@@ -841,9 +823,7 @@ class TriMeshModel {
      *
      * @return std::vector<GeometryIdType>& Geometries id vector
      */
-    std::vector<GeometryIdType>& get_geometries_id() {
-        return _geometries_id;
-    }
+    std::vector<GeometryIdType>& get_geometries_id() { return _geometries_id; }
 
     /**
      * @brief Set the geometries id vector
@@ -859,27 +839,21 @@ class TriMeshModel {
      *
      * @return const EdgesList& Edges
      */
-    [[nodiscard]] const EdgesList& get_edges() const {
-        return _edges;
-    }
+    [[nodiscard]] const EdgesList& get_edges() const { return _edges; }
 
     /**
      * @brief Get the non-const edges
      *
      * @return EdgesList& Edges
      */
-    EdgesList& get_edges() {
-        return _edges;
-    }
+    EdgesList& get_edges() { return _edges; }
 
     /**
      * @brief Set the edges
      *
      * @param edges Input edges
      */
-    void set_edges(EdgesList edges) {
-        _edges = std::move(edges);
-    }
+    void set_edges(EdgesList edges) { _edges = std::move(edges); }
 
     /**
      * @brief Get the perimeter edges
@@ -895,9 +869,7 @@ class TriMeshModel {
      *
      * @return EdgesIdsList& Perimeter edges
      */
-    EdgesIdsList& get_perimeter_edges() {
-        return _perimeter_edges;
-    }
+    EdgesIdsList& get_perimeter_edges() { return _perimeter_edges; }
 
     /**
      * @brief Set the perimeter edges
@@ -973,9 +945,8 @@ class TriMeshModel {
         // This check is not necessary by design.
         // TODO(PERFORMANCE): when sure it works, and use an assert instead.
         if (last_face_id % 2 != 0) {
-            std::cout << "Current face_ids" << current_n_triangles <<
-            "\n"; std::cout << "New face_ids" << new_trimesh_n_triangles
-            << "\n";
+            std::cout << "Current face_ids" << current_n_triangles << "\n";
+            std::cout << "New face_ids" << new_trimesh_n_triangles << "\n";
             throw std::runtime_error(
                 "Faces IDs numbering error. Contact developers.");
         }
@@ -1507,8 +1478,9 @@ inline TriMesh create_2d_rectangular_mesh(const Eigen::VectorXd& dir1_mesh,
 // TODO: Refactor this function to reduce its complexity. clang-tidy warning.
 // NOLINTBEGIN(readability-function-cognitive-complexity)
 inline TriMesh create_2d_quadrilateral_mesh(
-    const Eigen::VectorXd& dir1_mesh_normalized, const Eigen::VectorXd& dir2_mesh_normalized,
-    const Point2D& p1, const Point2D& p2, const Point2D& p3, const Point2D& p4,
+    const Eigen::VectorXd& dir1_mesh_normalized,
+    const Eigen::VectorXd& dir2_mesh_normalized, const Point2D& p1,
+    const Point2D& p2, const Point2D& p3, const Point2D& p4,
     double max_distance_points_hdir, double max_distance_points_vdir) {
     // Assert preconditions (only in debug mode)
     assert(dir1_mesh_normalized.size() >= 2);
@@ -1530,10 +1502,8 @@ inline TriMesh create_2d_quadrilateral_mesh(
     auto v14 = p4 - p1;
     auto v43 = p3 - p4;
 
-    Eigen::VectorXd dir1_mesh =
-        dir1_mesh_normalized * v12.norm();
-    Eigen::VectorXd dir2_mesh =
-        dir2_mesh_normalized * v23.norm();
+    Eigen::VectorXd dir1_mesh = dir1_mesh_normalized * v12.norm();
+    Eigen::VectorXd dir2_mesh = dir2_mesh_normalized * v23.norm();
 
     // 1. Determine the number of points to reserve space
     const auto dir1_size = static_cast<MeshIndex>(dir1_mesh.size());
@@ -1943,18 +1913,17 @@ inline TriMesh create_2d_quadrilateral_mesh(
 
 // TODO: Refactor this function to reduce its complexity. clang-tidy warning.
 // NOLINTBEGIN(readability-function-cognitive-complexity)
-inline TriMesh create_2d_triangular_only_mesh(const Eigen::VectorXd& dir2_mesh_normalized,
-                                              const Point2D& p1,
-                                              const Point2D& p2,
-                                              const Point2D& p3,
-                                              double max_distance_points_hdir,
-                                              double max_distance_points_vdir) {
+inline TriMesh create_2d_triangular_only_mesh(
+    const Eigen::VectorXd& dir2_mesh_normalized, const Point2D& p1,
+    const Point2D& p2, const Point2D& p3, double max_distance_points_hdir,
+    double max_distance_points_vdir) {
     // Assert preconditions (only in debug mode)
     assert(dir2_mesh_normalized.size() >= 2);
-    assert(2 * dir2_mesh_normalized.size() <= std::numeric_limits<MeshIndex>::max());
+    assert(2 * dir2_mesh_normalized.size() <=
+           std::numeric_limits<MeshIndex>::max());
     assert(utils::is_sorted(dir2_mesh_normalized));
 
-// Normalize the mesh
+    // Normalize the mesh
     // Eigen::VectorXd dir2_mesh_normalized =
     //     dir2_mesh / (dir2_mesh[dir2_mesh.size() - 1]);
     auto v23 = p3 - p2;
@@ -2197,12 +2166,11 @@ inline TriMesh create_2d_triangular_only_mesh(const Eigen::VectorXd& dir2_mesh_n
 
 // TODO: Refactor this function to reduce its complexity. clang-tidy warning.
 // NOLINTBEGIN(readability-function-cognitive-complexity)
-inline TriMesh create_2d_triangular_mesh(const Eigen::VectorXd& dir1_mesh_normalized,
-                                         const Eigen::VectorXd& dir2_mesh_normalized,
-                                         const Point2D& p1, const Point2D& p2,
-                                         const Point2D& p3,
-                                         double max_distance_points_hdir,
-                                         double max_distance_points_vdir) {
+inline TriMesh create_2d_triangular_mesh(
+    const Eigen::VectorXd& dir1_mesh_normalized,
+    const Eigen::VectorXd& dir2_mesh_normalized, const Point2D& p1,
+    const Point2D& p2, const Point2D& p3, double max_distance_points_hdir,
+    double max_distance_points_vdir) {
     // Assert preconditions (only in debug mode)
     assert(dir1_mesh_normalized.size() >= 2);
     assert(dir2_mesh_normalized.size() >= 2);
@@ -2239,7 +2207,7 @@ inline TriMesh create_2d_triangular_mesh(const Eigen::VectorXd& dir1_mesh_normal
     // Otherwise we need to create a meshed triangle and a meshed quadrilateral
     // and join them together
     const Eigen::VectorXd triangle_dir1_mesh = dir1_mesh.head(2);
-    const auto &triangle_p1 = p1;
+    const auto& triangle_p1 = p1;
     const auto triangle_p2 = p1 + v21 * dir1_mesh_normalized[1];
     const auto triangle_p3 = p1 + v31 * dir1_mesh_normalized[1];
     const Eigen::VectorXd triangle_dir2_mesh =
@@ -2252,14 +2220,15 @@ inline TriMesh create_2d_triangular_mesh(const Eigen::VectorXd& dir1_mesh_normal
     }
 
     const Eigen::VectorXd& quad_dir2_mesh = dir2_mesh;
-    const auto &quad_p1 = triangle_p2;
-    const auto &quad_p2 = p2;
-    const auto &quad_p3 = p3;
-    const auto &quad_p4 = triangle_p3;
+    const auto& quad_p1 = triangle_p2;
+    const auto& quad_p2 = p2;
+    const auto& quad_p3 = p3;
+    const auto& quad_p4 = triangle_p3;
 
     // Normalize the meshes
     Eigen::VectorXd triangle_dir2_mesh_normalized =
-        triangle_dir2_mesh / (triangle_dir2_mesh[triangle_dir2_mesh.size() - 1]);
+        triangle_dir2_mesh /
+        (triangle_dir2_mesh[triangle_dir2_mesh.size() - 1]);
     Eigen::VectorXd quad_dir1_mesh_normalized =
         quad_dir1_mesh / (quad_dir1_mesh[quad_dir1_mesh.size() - 1]);
     Eigen::VectorXd quad_dir2_mesh_normalized =
@@ -2272,8 +2241,8 @@ inline TriMesh create_2d_triangular_mesh(const Eigen::VectorXd& dir1_mesh_normal
 
     // Create the quadrilateral mesh
     TriMesh quad_mesh = create_2d_quadrilateral_mesh(
-        quad_dir1_mesh_normalized, quad_dir2_mesh_normalized, quad_p1, quad_p2, quad_p3, quad_p4,
-        max_distance_points_hdir, max_distance_points_vdir);
+        quad_dir1_mesh_normalized, quad_dir2_mesh_normalized, quad_p1, quad_p2,
+        quad_p3, quad_p4, max_distance_points_hdir, max_distance_points_vdir);
 
     auto tri_vertices = tri_mesh.get_vertices();
     auto quad_vertices = quad_mesh.get_vertices();
