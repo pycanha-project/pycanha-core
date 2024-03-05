@@ -19,22 +19,22 @@ jobs:
       run: |
         cpplint --recursive ./pycanha-core ./test
  
-#  check-code-clang-format:
-#    name: Check format with clang-format
-#    runs-on: ubuntu-latest
-#    strategy:
-#      matrix:
-#        path:
-#          - 'pycanha-core'
-#          - 'test'
-#    steps:
-#    - uses: actions/checkout@v3
-#    - name: Run clang-format style check.
-#      uses: jidicula/clang-format-action@v4.11.0
-#      with:
-#        clang-format-version: '15'
-#        check-path: ${{ matrix.path}}
-#        fallback-style: 'Google' # optional
+  check-code-clang-format:
+    name: Check format with clang-format
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        path:
+          - 'pycanha-core'
+          - 'test'
+    steps:
+    - uses: actions/checkout@v3
+    - name: Run clang-format style check.
+      uses: jidicula/clang-format-action@v4.11.0
+      with:
+        clang-format-version: '15'
+        check-path: ${{ matrix.path}}
+        fallback-style: 'Google' # optional
         
   static_analysis:
     runs-on: ubuntu-latest

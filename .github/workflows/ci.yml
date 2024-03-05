@@ -40,13 +40,8 @@ jobs:
     - name: Install conan profiles
       run: |
         conan config install .conan
-    - name: Build and test application in Release mode
+    - name: Build and test application in ${{matrix.build_type}} mode
       run: >        
         conan create . --build=missing 
-        -pr:h=${{matrix.os}}-${{matrix.compiler}}-amd64 -pr:h=build-release -pr:h=options-ci 
-        -pr:b=${{matrix.os}}-${{matrix.compiler}}-amd64 -pr:b=build-release -pr:b=options-ci
-    - name: Build and test application in debug mode
-      run: >        
-        conan create . --build=missing 
-        -pr:h=${{matrix.os}}-${{matrix.compiler}}-amd64 -pr:h=build-debug -pr:h=options-ci 
-        -pr:b=${{matrix.os}}-${{matrix.compiler}}-amd64 -pr:b=build-debug -pr:b=options-ci
+        -pr:h=${{matrix.os}}-${{matrix.compiler}}-amd64 -pr:h=build-${{matrix.build_type}} -pr:h=options-ci 
+        -pr:b=${{matrix.os}}-${{matrix.compiler}}-amd64 -pr:b=build-${{matrix.build_type}} -pr:b=options-ci
