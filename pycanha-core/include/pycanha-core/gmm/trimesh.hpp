@@ -2065,21 +2065,50 @@ inline TriMesh create_2d_triangular_only_mesh(
         e_idx++;
     }
 
-MeshIndex start_p_idx = additional_points_dir1[0] + 1;
-MeshIndex start_padd_idx = additional_points_dir2_start;
-for (MeshIndex i = 0; i < dir2_size - 1; ++i) {
-    MeshIndex end_p_idx = start_p_idx + additional_points_dir1[i + 1];
-    const MeshIndex num_edge_points = additional_points_dir2[i] + 2;
-    Edges edge(num_edge_points);
-    edge[0] = start_p_idx;
-    edge.tail<1>()(0) = end_p_idx;
+    //     // Loop over dir2 line
+    //     MeshIndex start_p_idx = 0;
+    //     MeshIndex end_p_idx = additional_points_dir1[0] + 1;
+    //     MeshIndex start_padd_idx = additional_points_dir2_start;
+    //     for (MeshIndex i = 0; i < dir2_size - 1; ++i) {
+    //         start_p_idx = end_p_idx;
+    //         end_p_idx += additional_points_dir1[i + 1] + 1;
+    //         const MeshIndex num_edge_points = additional_points_dir2[i] + 2;
+    //         Edges edge(num_edge_points);
+    // #if defined(__GNUC__)
+    // #pragma GCC diagnostic push
+    // #pragma GCC diagnostic ignored "-Wnull-dereference"
+    // #endif
+    //         edge[0] = start_p_idx;
+    //         edge.tail<1>()(0) = end_p_idx;
+    // #if defined(__GNUC__)
+    // #pragma GCC diagnostic pop
+    // #endif
+    //         for (MeshIndex i_add = 0; i_add < additional_points_dir2[i];
+    //         ++i_add) {
+    //             edge[i_add + 1] = start_padd_idx;
+    //             start_padd_idx++;
+    //         }
+    //         edges[e_idx] = edge;
+    //         e_idx++;
+    //     }
 
-    for (MeshIndex i_add = 0; i_add < additional_points_dir2[i]; ++i_add) {
-        edge[i_add + 1] = start_padd_idx++;
+    MeshIndex start_p_idx = additional_points_dir1[0] + 1;
+    MeshIndex start_padd_idx = additional_points_dir2_start;
+    for (MeshIndex i = 0; i < dir2_size - 1; ++i) {
+        MeshIndex end_p_idx = start_p_idx + additional_points_dir1[i + 1] + 1;
+        const MeshIndex num_edge_points = additional_points_dir2[i] + 2;
+        Edges edge(num_edge_points);
+        edge[0] = start_p_idx;
+        edge.tail<1>()(0) = end_p_idx;
+
+        for (MeshIndex i_add = 0; i_add < additional_points_dir2[i]; ++i_add) {
+            edge[i_add + 1] = start_padd_idx;
+            start_padd_idx++;
+        }
+        edges[e_idx] = edge;
+        e_idx++;
+        start_p_idx = end_p_idx;
     }
-    edges[e_idx++] = edge;
-    start_p_idx = end_p_idx + 1;
-}
 
     // 4. Create the permiter edges. Anti-clockwise order starting from P01
     // -> dir1 edge
