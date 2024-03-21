@@ -42,8 +42,8 @@ set(DOXYGEN_CALL_GRAPH YES)
 
 
 
-set(DOXYGEN_PROJECT_BRIEF "Modern C++ template")
-set(DOXYGEN_USE_MDFILE_AS_MAINPAGE index.md)
+set(DOXYGEN_PROJECT_BRIEF "The C++ core of pycanha")
+set(DOXYGEN_USE_MDFILE_AS_MAINPAGE README.md)
 
 
 # Add a target to generate the Doxygen documentation
@@ -51,8 +51,8 @@ set(DOXYGEN_USE_MDFILE_AS_MAINPAGE index.md)
 # so I put them manually to set the order.
 doxygen_add_docs(
     doc
-    ${PROJECT_SOURCE_DIR}/docs/index.md
     ${PROJECT_SOURCE_DIR}/README.md
+    ${PROJECT_SOURCE_DIR}/docs/index.md
     ${PROJECT_SOURCE_DIR}/docs/tools.md
     ${PROJECT_SOURCE_DIR}/docs/workflow.md
     ${PROJECT_SOURCE_DIR}/docs/configuring.md

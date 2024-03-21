@@ -1,11 +1,8 @@
 # Index
 
-Welcome to the **Modern C++ template** documentation.
-Here you can find detailed explanation of the package and the tools.
+1. [Introduction](README.md): A quick introduction to **pycanha-core**
 
-1. [Introduction](README.md): A quick introduction to the used tools and the motivation.
-
-2. [Tools](tools.md): A more detailed explanation of each tool.
+2. [Tools](tools.md): An explanation of the developer tools used in this package.
 
 3. [Development workflow](workflow.md): An overview of the devlopment workflow using GitHub
 
