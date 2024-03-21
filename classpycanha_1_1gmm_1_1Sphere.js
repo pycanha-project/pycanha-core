@@ -43,5 +43,6 @@ var classpycanha_1_1gmm_1_1Sphere =
     [ "_p2", "classpycanha_1_1gmm_1_1Sphere.html#adc1374961f04f16332512a7959f1e74e", null ],
     [ "_p3", "classpycanha_1_1gmm_1_1Sphere.html#a3a9279cc58e12b5d1a837e6280c22538", null ],
     [ "_radius", "classpycanha_1_1gmm_1_1Sphere.html#ab65f950724946f8c274bf41f67b0d3ed", null ],
-    [ "_start_angle", "classpycanha_1_1gmm_1_1Sphere.html#a0cf2d37bc3224e4e625218f027ccff2e", null ]
+    [ "_start_angle", "classpycanha_1_1gmm_1_1Sphere.html#a0cf2d37bc3224e4e625218f027ccff2e", null ],
+    [ "_valid", "classpycanha_1_1gmm_1_1Sphere.html#a004ee62bf9f77fe32e11510476df56ad", null ]
 ];

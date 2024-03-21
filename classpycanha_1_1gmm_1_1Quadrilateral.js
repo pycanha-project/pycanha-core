@@ -1,13 +1,13 @@
 var classpycanha_1_1gmm_1_1Quadrilateral =
 [
     [ "Quadrilateral", "classpycanha_1_1gmm_1_1Quadrilateral.html#a7fffabde9d7ce27eafd258e24547d956", null ],
-    [ "create_mesh", "classpycanha_1_1gmm_1_1Quadrilateral.html#ab02cd8b7ccdf7eb78c01156f279324e2", null ],
+    [ "create_mesh", "classpycanha_1_1gmm_1_1Quadrilateral.html#a23cdecdb64009618086e912884740019", null ],
     [ "distance", "classpycanha_1_1gmm_1_1Quadrilateral.html#a4b3bef25f83860c556feeaec8c9e1b1c", null ],
     [ "distance_jacobian_cutted_surface", "classpycanha_1_1gmm_1_1Quadrilateral.html#a162d862f70d23b7c3913da0689684afe", null ],
     [ "distance_jacobian_cutting_surface", "classpycanha_1_1gmm_1_1Quadrilateral.html#acabd34209d5be6e122862b2e3954bfc4", null ],
     [ "from_2d_to_3d", "classpycanha_1_1gmm_1_1Quadrilateral.html#a73193629bf24bc896f00d9888b053368", null ],
     [ "from_3d_to_2d", "classpycanha_1_1gmm_1_1Quadrilateral.html#a75d240e94a5545d07123a5657b24c82b", null ],
-    [ "get_faceid_from_uv", "classpycanha_1_1gmm_1_1Quadrilateral.html#a0f6c46bf8d66f95ebabb923fdc7762d3", null ],
+    [ "get_faceid_from_uv", "classpycanha_1_1gmm_1_1Quadrilateral.html#a2c4ffa947c0d4af2f7a1c67ed24f1ba9", null ],
     [ "get_p1", "classpycanha_1_1gmm_1_1Quadrilateral.html#aa156a3cb9202e310dc68be1215120af1", null ],
     [ "get_p2", "classpycanha_1_1gmm_1_1Quadrilateral.html#af4122e45efd0321292142f3824529cba", null ],
     [ "get_p3", "classpycanha_1_1gmm_1_1Quadrilateral.html#a9ac9565012be590aab8eef4d241cef50", null ],

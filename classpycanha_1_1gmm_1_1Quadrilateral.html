@@ -28,9 +28,9 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">pycanha-core
-   &#160;<span id="projectnumber">0.0.2</span>
+   &#160;<span id="projectnumber">0.0.3</span>
    </div>
-   <div id="projectbrief">Modern C++ template</div>
+   <div id="projectbrief">The C++ core of pycanha</div>
   </td>
  </tr>
  </tbody>
@@ -164,12 +164,12 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a73193629bf24bc896f00d9888b053368"><td class="memItemLeft" align="right" valign="top">Point3D&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classpycanha_1_1gmm_1_1Quadrilateral.html#a73193629bf24bc896f00d9888b053368">from_2d_to_3d</a> (const Point2D &amp;p2d) const override</td></tr>
 <tr class="memdesc:a73193629bf24bc896f00d9888b053368"><td class="mdescLeft">&#160;</td><td class="mdescRight">3D coordinates of a point ON the primitive surface from 2D coordinates. Note: The method is not valid for the following primitives:  <a href="classpycanha_1_1gmm_1_1Quadrilateral.html#a73193629bf24bc896f00d9888b053368">More...</a><br /></td></tr>
 <tr class="separator:a73193629bf24bc896f00d9888b053368"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab02cd8b7ccdf7eb78c01156f279324e2"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classpycanha_1_1gmm_1_1TriMesh.html">TriMesh</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classpycanha_1_1gmm_1_1Quadrilateral.html#ab02cd8b7ccdf7eb78c01156f279324e2">create_mesh</a> (const <a class="el" href="classpycanha_1_1gmm_1_1ThermalMesh.html">ThermalMesh</a> &amp;, double) const override</td></tr>
-<tr class="memdesc:ab02cd8b7ccdf7eb78c01156f279324e2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates the triangular mesh from the primitive.  <a href="classpycanha_1_1gmm_1_1Quadrilateral.html#ab02cd8b7ccdf7eb78c01156f279324e2">More...</a><br /></td></tr>
-<tr class="separator:ab02cd8b7ccdf7eb78c01156f279324e2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0f6c46bf8d66f95ebabb923fdc7762d3"><td class="memItemLeft" align="right" valign="top">MeshIndex&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classpycanha_1_1gmm_1_1Quadrilateral.html#a0f6c46bf8d66f95ebabb923fdc7762d3">get_faceid_from_uv</a> (const <a class="el" href="classpycanha_1_1gmm_1_1ThermalMesh.html">ThermalMesh</a> &amp;, const Point2D &amp;) const override</td></tr>
-<tr class="memdesc:a0f6c46bf8d66f95ebabb923fdc7762d3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the ID of the face in the thermal mesh that contains the given UV coordinates. Return -1 if UV point is outside the primitive.  <a href="classpycanha_1_1gmm_1_1Quadrilateral.html#a0f6c46bf8d66f95ebabb923fdc7762d3">More...</a><br /></td></tr>
-<tr class="separator:a0f6c46bf8d66f95ebabb923fdc7762d3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a23cdecdb64009618086e912884740019"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classpycanha_1_1gmm_1_1TriMesh.html">TriMesh</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classpycanha_1_1gmm_1_1Quadrilateral.html#a23cdecdb64009618086e912884740019">create_mesh</a> (const <a class="el" href="classpycanha_1_1gmm_1_1ThermalMesh.html">ThermalMesh</a> &amp;thermal_mesh, double tolerance) const override</td></tr>
+<tr class="memdesc:a23cdecdb64009618086e912884740019"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates the triangular mesh from the primitive.  <a href="classpycanha_1_1gmm_1_1Quadrilateral.html#a23cdecdb64009618086e912884740019">More...</a><br /></td></tr>
+<tr class="separator:a23cdecdb64009618086e912884740019"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2c4ffa947c0d4af2f7a1c67ed24f1ba9"><td class="memItemLeft" align="right" valign="top">MeshIndex&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classpycanha_1_1gmm_1_1Quadrilateral.html#a2c4ffa947c0d4af2f7a1c67ed24f1ba9">get_faceid_from_uv</a> (const <a class="el" href="classpycanha_1_1gmm_1_1ThermalMesh.html">ThermalMesh</a> &amp;thermal_mesh, const Point2D &amp;point_uv) const override</td></tr>
+<tr class="memdesc:a2c4ffa947c0d4af2f7a1c67ed24f1ba9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the ID of the face in the thermal mesh that contains the given UV coordinates. Return -1 if UV point is outside the primitive.  <a href="classpycanha_1_1gmm_1_1Quadrilateral.html#a2c4ffa947c0d4af2f7a1c67ed24f1ba9">More...</a><br /></td></tr>
+<tr class="separator:a2c4ffa947c0d4af2f7a1c67ed24f1ba9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9cdd27efcc74a1bb48dfae4ce2208519"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="classpycanha_1_1gmm_1_1Primitive.html">Primitive</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classpycanha_1_1gmm_1_1Quadrilateral.html#a9cdd27efcc74a1bb48dfae4ce2208519">transform</a> (const <a class="el" href="classpycanha_1_1gmm_1_1CoordinateTransformation.html">CoordinateTransformation</a> &amp;transformation) const override</td></tr>
 <tr class="memdesc:a9cdd27efcc74a1bb48dfae4ce2208519"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a new transformed primitive.  <a href="classpycanha_1_1gmm_1_1Quadrilateral.html#a9cdd27efcc74a1bb48dfae4ce2208519">More...</a><br /></td></tr>
 <tr class="separator:a9cdd27efcc74a1bb48dfae4ce2208519"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -316,8 +316,8 @@ v2 |    |         \
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="ab02cd8b7ccdf7eb78c01156f279324e2"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ab02cd8b7ccdf7eb78c01156f279324e2">&#9670;&nbsp;</a></span>create_mesh()</h2>
+<a id="a23cdecdb64009618086e912884740019"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a23cdecdb64009618086e912884740019">&#9670;&nbsp;</a></span>create_mesh()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -361,6 +361,12 @@ v2 |    |         \
 <dl class="section return"><dt>Returns</dt><dd>The mesh. </dd></dl>
 
 <p>Implements <a class="el" href="classpycanha_1_1gmm_1_1Primitive.html#a279ac46870c883d2e9c19f4abb5060f7">pycanha::gmm::Primitive</a>.</p>
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="classpycanha_1_1gmm_1_1Quadrilateral_a23cdecdb64009618086e912884740019_cgraph.svg" width="767" height="902"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
+</div>
+</div>
 
 </div>
 </div>
@@ -597,8 +603,8 @@ Here is the call graph for this function:</div>
 
 </div>
 </div>
-<a id="a0f6c46bf8d66f95ebabb923fdc7762d3"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a0f6c46bf8d66f95ebabb923fdc7762d3">&#9670;&nbsp;</a></span>get_faceid_from_uv()</h2>
+<a id="a2c4ffa947c0d4af2f7a1c67ed24f1ba9"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2c4ffa947c0d4af2f7a1c67ed24f1ba9">&#9670;&nbsp;</a></span>get_faceid_from_uv()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -643,6 +649,12 @@ Here is the call graph for this function:</div>
 <p>TODO(TEST): Untested return of -1. </p>
 
 <p>Implements <a class="el" href="classpycanha_1_1gmm_1_1Primitive.html#ab9cdca3dd0c0726e36b8dae1967885bc">pycanha::gmm::Primitive</a>.</p>
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="classpycanha_1_1gmm_1_1Quadrilateral_a2c4ffa947c0d4af2f7a1c67ed24f1ba9_cgraph.svg" width="507" height="88"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
+</div>
+</div>
 
 </div>
 </div>

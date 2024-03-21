@@ -28,9 +28,9 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">pycanha-core
-   &#160;<span id="projectnumber">0.0.2</span>
+   &#160;<span id="projectnumber">0.0.3</span>
    </div>
-   <div id="projectbrief">Modern C++ template</div>
+   <div id="projectbrief">The C++ core of pycanha</div>
   </td>
  </tr>
  </tbody>
@@ -109,11 +109,15 @@ $(document).ready(function(){initNavTree('functions_func_g.html',''); initResiza
 <li>get_apex_truncation()
 : <a class="el" href="classpycanha_1_1gmm_1_1Sphere.html#a704315c7f4a232a2fbb05c7a42b43f73">pycanha::gmm::Sphere</a>
 </li>
+<li>get_back_colors()
+: <a class="el" href="classpycanha_1_1gmm_1_1TriMeshModel.html#a2872a5de3dc5dddf704c27a0504247ec">pycanha::gmm::TriMeshModel</a>
+</li>
 <li>get_base_truncation()
 : <a class="el" href="classpycanha_1_1gmm_1_1Sphere.html#a39aa1c67327d35fcf2427c3745263d90">pycanha::gmm::Sphere</a>
 </li>
 <li>get_cumareas()
 : <a class="el" href="classpycanha_1_1gmm_1_1TriMesh.html#a1c18146513be80ad67217cfdb36c7601">pycanha::gmm::TriMesh</a>
+, <a class="el" href="classpycanha_1_1gmm_1_1TriMeshModel.html#aad8bc23838a238dd506580c256cdb1a9">pycanha::gmm::TriMeshModel</a>
 </li>
 <li>get_cutted_geometry_meshed_items()
 : <a class="el" href="classpycanha_1_1gmm_1_1GeometryGroupCutted.html#abd59dc8bf783ae6372b21a91da5d4576">pycanha::gmm::GeometryGroupCutted</a>
@@ -123,6 +127,7 @@ $(document).ready(function(){initNavTree('functions_func_g.html',''); initResiza
 </li>
 <li>get_edges()
 : <a class="el" href="classpycanha_1_1gmm_1_1TriMesh.html#ac96e1edfa90d2ef931bfb038d9eeede3">pycanha::gmm::TriMesh</a>
+, <a class="el" href="classpycanha_1_1gmm_1_1TriMeshModel.html#ae85830f049e51a7dd11afe1ffc4885f8">pycanha::gmm::TriMeshModel</a>
 </li>
 <li>get_end_angle()
 : <a class="el" href="classpycanha_1_1gmm_1_1Cone.html#a67118c03959d2351f3c8c48f1698181c">pycanha::gmm::Cone</a>
@@ -130,8 +135,12 @@ $(document).ready(function(){initNavTree('functions_func_g.html',''); initResiza
 , <a class="el" href="classpycanha_1_1gmm_1_1Disc.html#a4c41f143b301831ef15df062a5a0be63">pycanha::gmm::Disc</a>
 , <a class="el" href="classpycanha_1_1gmm_1_1Sphere.html#abc8188751b46926196ab09b6e264cf63">pycanha::gmm::Sphere</a>
 </li>
+<li>get_face_activity()
+: <a class="el" href="classpycanha_1_1gmm_1_1TriMeshModel.html#a50f316c883a6a6aec059d7cd1c2f9d44">pycanha::gmm::TriMeshModel</a>
+</li>
 <li>get_face_ids()
-: <a class="el" href="classpycanha_1_1gmm_1_1TriMesh.html#a81f6628b978aaeac9d36fafc63e0eead">pycanha::gmm::TriMesh</a>
+: <a class="el" href="classpycanha_1_1gmm_1_1TriMesh.html#ac289e231b4d4662114a7eb26fa7309c6">pycanha::gmm::TriMesh</a>
+, <a class="el" href="classpycanha_1_1gmm_1_1TriMeshModel.html#a80c95b05439fe3c8cdb6592b807b7c76">pycanha::gmm::TriMeshModel</a>
 </li>
 <li>get_faceid_from_point()
 : <a class="el" href="classpycanha_1_1gmm_1_1Primitive.html#a5969f99e77c06b56007b09aa4cc6b1a9">pycanha::gmm::Primitive</a>
@@ -141,13 +150,32 @@ $(document).ready(function(){initNavTree('functions_func_g.html',''); initResiza
 , <a class="el" href="classpycanha_1_1gmm_1_1Cylinder.html#ae6e9725aa439500d0da3f09629420e3f">pycanha::gmm::Cylinder</a>
 , <a class="el" href="classpycanha_1_1gmm_1_1Disc.html#a578a2348582f419e910b199a125f6f88">pycanha::gmm::Disc</a>
 , <a class="el" href="classpycanha_1_1gmm_1_1Primitive.html#ab9cdca3dd0c0726e36b8dae1967885bc">pycanha::gmm::Primitive</a>
-, <a class="el" href="classpycanha_1_1gmm_1_1Quadrilateral.html#a0f6c46bf8d66f95ebabb923fdc7762d3">pycanha::gmm::Quadrilateral</a>
+, <a class="el" href="classpycanha_1_1gmm_1_1Quadrilateral.html#a2c4ffa947c0d4af2f7a1c67ed24f1ba9">pycanha::gmm::Quadrilateral</a>
 , <a class="el" href="classpycanha_1_1gmm_1_1Rectangle.html#a1581e1d4cedcbe733e2e9d6ff9ca01e4">pycanha::gmm::Rectangle</a>
 , <a class="el" href="classpycanha_1_1gmm_1_1Sphere.html#ae7d4f11d849017ddc2a055f57254ee7e">pycanha::gmm::Sphere</a>
 , <a class="el" href="classpycanha_1_1gmm_1_1Triangle.html#a691cd31a1c3f5de250e32ed063eb5496">pycanha::gmm::Triangle</a>
 </li>
 <li>get_faces_edges()
 : <a class="el" href="classpycanha_1_1gmm_1_1TriMesh.html#ac519c05be1a8304a4674b79c5a827551">pycanha::gmm::TriMesh</a>
+, <a class="el" href="classpycanha_1_1gmm_1_1TriMeshModel.html#a0e17c02c503e59c9f0ccebf77634b8a8">pycanha::gmm::TriMeshModel</a>
+</li>
+<li>get_front_colors()
+: <a class="el" href="classpycanha_1_1gmm_1_1TriMeshModel.html#ac38ea149729b2213edfa02ec464a055e">pycanha::gmm::TriMeshModel</a>
+</li>
+<li>get_geometries_edges()
+: <a class="el" href="classpycanha_1_1gmm_1_1TriMeshModel.html#a193c06365e0c3d60b2cbaedcf47fc888">pycanha::gmm::TriMeshModel</a>
+</li>
+<li>get_geometries_id()
+: <a class="el" href="classpycanha_1_1gmm_1_1TriMeshModel.html#ae6eda6b517b0b6d5370376c8c3ca1ca9">pycanha::gmm::TriMeshModel</a>
+</li>
+<li>get_geometries_perimeter_edges()
+: <a class="el" href="classpycanha_1_1gmm_1_1TriMeshModel.html#a5a078c375e867404971c6f01d9da0def">pycanha::gmm::TriMeshModel</a>
+</li>
+<li>get_geometries_triangles()
+: <a class="el" href="classpycanha_1_1gmm_1_1TriMeshModel.html#af80b471527068ea511e7f0d9f3226e9d">pycanha::gmm::TriMeshModel</a>
+</li>
+<li>get_geometries_vertices()
+: <a class="el" href="classpycanha_1_1gmm_1_1TriMeshModel.html#ac3eb83d89301e4c3d96c2dd4307a7427">pycanha::gmm::TriMeshModel</a>
 </li>
 <li>get_geometry_groups()
 : <a class="el" href="classpycanha_1_1gmm_1_1GeometryGroup.html#a044ba647320773c9859260a037f7094e">pycanha::gmm::GeometryGroup</a>
@@ -166,9 +194,16 @@ $(document).ready(function(){initNavTree('functions_func_g.html',''); initResiza
 </li>
 <li>get_number_of_faces()
 : <a class="el" href="classpycanha_1_1gmm_1_1TriMesh.html#a9738f0ec5e4816d990b04a54e3081ced">pycanha::gmm::TriMesh</a>
+, <a class="el" href="classpycanha_1_1gmm_1_1TriMeshModel.html#a294bac67196bd422629cf2307c1b6f36">pycanha::gmm::TriMeshModel</a>
+</li>
+<li>get_number_of_geometries()
+: <a class="el" href="classpycanha_1_1gmm_1_1TriMeshModel.html#a3291348df0152e5d41c6b6e999bc9ce4">pycanha::gmm::TriMeshModel</a>
 </li>
 <li>get_number_of_pair_faces()
 : <a class="el" href="classpycanha_1_1gmm_1_1ThermalMesh.html#aa4f95a1ff0a29ef63939fff7fb0e0480">pycanha::gmm::ThermalMesh</a>
+</li>
+<li>get_opticals()
+: <a class="el" href="classpycanha_1_1gmm_1_1TriMeshModel.html#a697e25b807d76eabeadd2059464fd639">pycanha::gmm::TriMeshModel</a>
 </li>
 <li>get_order()
 : <a class="el" href="classpycanha_1_1gmm_1_1CoordinateTransformation.html#a7c66da45f19f55e43617dbb82b7b4246">pycanha::gmm::CoordinateTransformation</a>
@@ -211,6 +246,7 @@ $(document).ready(function(){initNavTree('functions_func_g.html',''); initResiza
 </li>
 <li>get_perimeter_edges()
 : <a class="el" href="classpycanha_1_1gmm_1_1TriMesh.html#ae06f494211f1c8d830818babc1e79b3e">pycanha::gmm::TriMesh</a>
+, <a class="el" href="classpycanha_1_1gmm_1_1TriMeshModel.html#a7b11f73fc56853ea6053725703251a1d">pycanha::gmm::TriMeshModel</a>
 </li>
 <li>get_primitive()
 : <a class="el" href="classpycanha_1_1gmm_1_1GeometryItem.html#a03e8af9930e8c791f838e4148fee206c">pycanha::gmm::GeometryItem</a>

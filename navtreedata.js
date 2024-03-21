@@ -25,8 +25,7 @@
 var NAVTREE =
 [
   [ "pycanha-core", "index.html", [
-    [ "Index", "index.html", null ],
-    [ "pycanha-core", "md_README.html", null ],
+    [ "Index", "md_docs_index.html", null ],
     [ "Using the tools", "md_docs_tools.html", [
       [ "Code formatting tools", "md_docs_tools.html#autotoc_md3", [
         [ "clang-format", "md_docs_tools.html#autotoc_md4", null ]
@@ -110,7 +109,7 @@ var NAVTREEINDEX =
 [
 "annotated.html",
 "classpycanha_1_1gmm_1_1Primitive.html#a4c2915af2ef3d1b5596c211893a84115",
-"functions.html"
+"classpycanha_1_1gmm_1_1TriMeshModel.html#add43a419772892b25dc87c1b471c835f"
 ];
 
 var SYNCONMSG = 'click to disable panel synchronisation';

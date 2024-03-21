@@ -1,0 +1,19 @@
+<map id="pycanha::gmm::Quadrilateral::create_mesh" name="pycanha::gmm::Quadrilateral::create_mesh">
+<area shape="rect" id="node1" title="Creates the triangular mesh from the primitive." alt="" coords="5,431,217,472"/>
+<area shape="rect" id="node2" href="$classpycanha_1_1gmm_1_1Quadrilateral.html#a73193629bf24bc896f00d9888b053368" title="3D coordinates of a point ON the primitive surface from 2D coordinates. Note: The method is not valid..." alt="" coords="265,5,477,47"/>
+<area shape="rect" id="node5" href="$classpycanha_1_1gmm_1_1Quadrilateral.html#a75d240e94a5545d07123a5657b24c82b" title="2D coordinates of a point ON the primitive surface from 3D coordinates. Note: It is assumed that the ..." alt="" coords="265,71,477,112"/>
+<area shape="rect" id="node6" href="$classpycanha_1_1gmm_1_1TriMesh.html#a81f6628b978aaeac9d36fafc63e0eead" title="Get face ids vector." alt="" coords="283,201,460,243"/>
+<area shape="rect" id="node7" href="$classpycanha_1_1gmm_1_1Quadrilateral.html#a2c4ffa947c0d4af2f7a1c67ed24f1ba9" title="Returns the ID of the face in the thermal mesh that contains the given UV coordinates...." alt="" coords="265,136,477,177"/>
+<area shape="rect" id="node8" href="$classpycanha_1_1gmm_1_1Quadrilateral.html#aa156a3cb9202e310dc68be1215120af1" title="Returns the first vertex of the quadrilateral." alt="" coords="265,267,477,308"/>
+<area shape="rect" id="node9" href="$classpycanha_1_1gmm_1_1Quadrilateral.html#af4122e45efd0321292142f3824529cba" title="Returns the second vertex of the quadrilateral." alt="" coords="265,332,477,373"/>
+<area shape="rect" id="node10" href="$classpycanha_1_1gmm_1_1Quadrilateral.html#a9ac9565012be590aab8eef4d241cef50" title="Returns the third vertex of the quadrilateral." alt="" coords="265,397,477,439"/>
+<area shape="rect" id="node11" href="$classpycanha_1_1gmm_1_1Quadrilateral.html#a2586d9c1b6e557ab219ded313dfa5ce0" title="Returns the fourth vertex of the quadrilateral." alt="" coords="265,463,477,504"/>
+<area shape="rect" id="node12" href="$classpycanha_1_1gmm_1_1Color.html#a6b0ff80336dd7c71b042dd65fb5534da" title="Get the RGB values." alt="" coords="291,528,452,569"/>
+<area shape="rect" id="node13" href="$classpycanha_1_1gmm_1_1TriMesh.html#a113cdc2728d6b47e8841ef9732ebd9b2" title="Get triangles matrix." alt="" coords="283,593,460,635"/>
+<area shape="rect" id="node14" href="$classpycanha_1_1gmm_1_1TriMesh.html#a5e7a2cc9ec97ba48a13277d2c391e928" title="Get vertices matrix." alt="" coords="283,659,460,700"/>
+<area shape="rect" id="node15" href="$classpycanha_1_1gmm_1_1TriMesh.html#a27e1232524b78c47b58b8d4d45d8172d" title="Set the surface 1 color." alt="" coords="283,724,460,765"/>
+<area shape="rect" id="node16" href="$classpycanha_1_1gmm_1_1TriMesh.html#a331d5c97a882188d4454694b4a2a4af9" title="Set the surface 2 color." alt="" coords="283,789,460,831"/>
+<area shape="rect" id="node17" href="$classpycanha_1_1gmm_1_1TriMesh.html#a7f0a8a501de5c2d065f71e164b956b39" title="Sort the triangles according to the face ids." alt="" coords="283,855,460,896"/>
+<area shape="rect" id="node3" href="$classpycanha_1_1gmm_1_1Quadrilateral.html#a3c2cecd1d2adf11cb3c619dceb6baa1f" title="Returns the first direction v1 = p2 &#45; p1." alt="" coords="525,53,761,79"/>
+<area shape="rect" id="node4" href="$classpycanha_1_1gmm_1_1Quadrilateral.html#a6037ada729f3b3aaa6c9a1392019a799" title="Returns the second direction v2 = p4 &#45; p1." alt="" coords="525,103,761,130"/>
+</map>
