@@ -2491,6 +2491,7 @@ inline TriMesh create_2d_triangular_mesh(
 // NOLINTEND(readability-function-cognitive-complexity)
 
 // TODO: Remove this when an update of MSVC is available
+// Issue: #18
 #if defined(_MSC_VER)
 #pragma optimize("", off)
 #endif
