@@ -2740,7 +2740,7 @@ inline TriMesh create_2d_disc_mesh(const Eigen::VectorXd& dir1_mesh_normalized,
     for (MeshIndex i_dir2 = 0; i_dir2 < dir2_stop; ++i_dir2) {
         auto angle_i = dir2_mesh_normalized[i_dir2] * 2 * pi;
         // If i_dir1 is declared MeshIndex, the loop does not work on release
-        for (int i_dir1 = dir1_start; i_dir1 < full_dir1_mesh_size;
+        for (MeshIndex i_dir1 = dir1_start; i_dir1 < full_dir1_mesh_size;
              ++i_dir1) {
             points(p_idx, 0) = center.x() + round(full_dir1_mesh[i_dir1] *
                                                   cos(angle_i) / LENGTH_TOL) *
