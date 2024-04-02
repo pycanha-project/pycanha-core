@@ -1418,7 +1418,7 @@ class Sphere : public Primitive {
 
     [[nodiscard]] TriMesh create_mesh(const ThermalMesh& thermal_mesh,
                                       double tolerance) const override {
-        return create_mesh2(thermal_mesh, tolerance);
+        return create_mesh1(thermal_mesh, tolerance);
     };
 
     [[nodiscard]] TriMesh create_mesh1(const ThermalMesh& thermal_mesh,
@@ -2388,18 +2388,12 @@ inline MeshIndex Disc::get_faceid_from_uv(const ThermalMesh& thermal_mesh,
 
     auto inner_radius = _inner_radius;
     auto outer_radius = _outer_radius;
-
-    if (inner_radius != 0.0) {
-        for (VectorIndex i = 0; i < dir1_mesh.size() - 1; i++) {
-            dir1_mesh[i] =
-                dir1_mesh[i] * (outer_radius - inner_radius) / outer_radius +
-                inner_radius / outer_radius;
-        }
-    }
+    auto start_angle = _start_angle;
+    auto end_angle = _end_angle;
 
     auto r_uv = point_uv.norm();
-    if (r_uv < _inner_radius) {
-        r_uv = _inner_radius + (dir1_mesh[1] - dir1_mesh[0]) * outer_radius / 2;
+    if (r_uv < inner_radius) {
+        r_uv = inner_radius + (dir1_mesh[1] - dir1_mesh[0]) * outer_radius / 2;
     }
     auto angle_uv = std::atan2(point_uv.y(), point_uv.x());
     if (angle_uv < 0) {
@@ -2408,11 +2402,13 @@ inline MeshIndex Disc::get_faceid_from_uv(const ThermalMesh& thermal_mesh,
 
     // With auto I get a compiler error
     // NOLINTBEGIN(hicpp-use-auto,modernize-use-auto)
-    const std::vector<double>::iterator r_it = std::lower_bound(
-        dir1_mesh.begin(), dir1_mesh.end(), r_uv / outer_radius);
+    const std::vector<double>::iterator r_it =
+        std::lower_bound(dir1_mesh.begin(), dir1_mesh.end(),
+                         (r_uv - inner_radius) / (outer_radius - inner_radius));
 
-    const std::vector<double>::iterator angle_it = std::lower_bound(
-        dir2_mesh.begin(), dir2_mesh.end(), angle_uv / (2 * pi));
+    const std::vector<double>::iterator angle_it =
+        std::lower_bound(dir2_mesh.begin(), dir2_mesh.end(),
+                         (angle_uv - start_angle) / (end_angle - start_angle));
 
     // NOLINTEND(hicpp-use-auto,modernize-use-auto)
 
@@ -2424,13 +2420,12 @@ inline MeshIndex Disc::get_faceid_from_uv(const ThermalMesh& thermal_mesh,
 
     // Calculate indices
     const auto r_index =
-        static_cast<MeshIndex>(std::distance(dir1_mesh.begin(), r_it) - 1);
+        static_cast<int>(std::distance(dir1_mesh.begin(), r_it) - 1);
     const auto angle_index =
-        static_cast<MeshIndex>(std::distance(dir2_mesh.begin(), angle_it) - 1);
+        static_cast<int>(std::distance(dir2_mesh.begin(), angle_it) - 1);
 
     // Compute face_id
-    return (angle_index * (static_cast<MeshIndex>(dir1_mesh.size()) - 1) +
-            r_index) *
+    return (angle_index * (static_cast<int>(dir1_mesh.size()) - 1) + r_index) *
            2;
 }
 
@@ -2874,15 +2869,18 @@ inline TriMesh Disc::create_mesh(const ThermalMesh& thermal_mesh,
         throw std::invalid_argument("dir2_mesh is not normalized.");
     }
 
-    const Point2D center = disc.from_3d_to_2d(disc.get_p1());
+    const auto p1 = disc.get_p1();
+    const auto p3 = disc.get_p3();
+    const auto outer_radius = disc.get_outer_radius();
+
+    const Point2D center = disc.from_3d_to_2d(p1);
     // Calculate the 2D coordinates of p3 in the local disc plane
 
     auto start_angle = disc.get_start_angle();
-    Point2D outer_point = disc.from_3d_to_2d(disc.get_p3());
+    Point2D outer_point = disc.from_3d_to_2d(
+        (p3 - p1).normalized()*outer_radius + p1);
     if (start_angle != 0.0) {
         Point2D p3_2d = disc.from_3d_to_2d(disc.get_p3());
-        // Point3D vx = v1().normalized();
-        // Point3D vy = v2().normalized();
 
         // Calculate the new 2D coordinates after rotation
         const double new_x_2d =
@@ -2897,7 +2895,6 @@ inline TriMesh Disc::create_mesh(const ThermalMesh& thermal_mesh,
     }
 
     auto inner_radius = disc.get_inner_radius();
-    auto outer_radius = disc.get_outer_radius();
     if (inner_radius != 0.0) {
         for (int i = 0; i < dir1_mesh.size() - 1; i++) {
             dir1_mesh[i] =
@@ -2924,7 +2921,8 @@ inline TriMesh Disc::create_mesh(const ThermalMesh& thermal_mesh,
         const Point2D p2_2d{trimesh.get_vertices()(tri[2], 0),
                             trimesh.get_vertices()(tri[2], 1)};
 
-        const Point2D centroid = (p0_2d + p1_2d + p2_2d) / 3.0;
+        const Point2D centroid =
+            (p0_2d + p1_2d + p2_2d) / 3.0 - center;
 
         // Get the face id
         // i >= 0, so it is safe to cast to VectorIndex
@@ -3311,9 +3309,9 @@ inline TriMesh Sphere::create_mesh1(const ThermalMesh& thermal_mesh,
     // return create_mesh2(thermal_mesh, tolerance);
 
     // Main directions of the 3D cone
-    // Eigen::Vector3d vx = (_p3 - _p1).normalized();
-    // Eigen::Vector3d vz = (_p2 - _p1).normalized();
-    // Eigen::Vector3d vy = (vz.cross(vx)).normalized();
+    Eigen::Vector3d vx = (_p3 - _p1).normalized();
+    Eigen::Vector3d vz = (_p2 - _p1).normalized();
+    Eigen::Vector3d vy = (vz.cross(vx)).normalized();
 
     // TODO Add checks to validate tolerance and have a minimum/maximum
     // tolerance
@@ -3931,6 +3929,11 @@ inline TriMesh Sphere::create_mesh1(const ThermalMesh& thermal_mesh,
         trimesh.get_face_ids()[i] = get_faceid_from_uv(thermal_mesh, centroid);
     }
 
+    for (int i = 0; i < points.rows(); ++i) {
+        auto p = points.row(i);
+        points.row(i) = _p1 + vx * (p[0]-_p1[0]) + vy * (p[1]-_p1[1]) + vz * (p[2]-_p1[2]);
+    }
+
     // Common operations for all meshes. TODO: create a dedicated function
     trimesh.set_surface1_color(thermal_mesh.get_side1_color().get_rgb());
     trimesh.set_surface2_color(thermal_mesh.get_side2_color().get_rgb());
@@ -4211,7 +4214,6 @@ inline TriMesh Sphere::create_mesh2(const ThermalMesh& thermal_mesh,
         ++p_idx;
     }
 
-    // std::cout << "fill pts2" << '\n';
     // Fill the points array in dir2
     MeshIndex dir2_idx = 0;
     for (MeshIndex i_dir1 = 0; i_dir1 < dir1_size - (dir1_start + dir1_end);
@@ -4551,6 +4553,14 @@ inline TriMesh Sphere::create_mesh2(const ThermalMesh& thermal_mesh,
         points_2d(i, 2) = 0;
     }
 
+    // Write the points2d to a file
+    std::ofstream file("points2d.txt");
+    for (MeshIndex i = 0; i < num_points; ++i) {
+        file << '[' << points_2d(i, 0) << ', ' << points_2d(i, 1) << ', '
+             << points_2d(i, 2) << ']' << '\n';
+    }
+    file.close();
+
     if (_end_angle - _start_angle == 2 * pi) {
         Edges edge(num_points_2d - num_points + dir1_start + dir1_end);
         if (_base_truncation == -_radius) {
@@ -4654,7 +4664,7 @@ inline TriMesh Sphere::create_mesh2(const ThermalMesh& thermal_mesh,
     // Rotate the points to the true position
     for (int i = 0; i < points.rows(); ++i) {
         auto p = points.row(i);
-        points.row(i) = _p1 + vx * p[0] + vy * p[1] + vz * p[2];
+        points.row(i) = _p1 + vx * (p[0]-_p1[0]) + vy * (p[1]-_p1[1]) + vz * (p[2]-_p1[2]);
     }
     // Set points to 3D
     trimesh.set_vertices(points);

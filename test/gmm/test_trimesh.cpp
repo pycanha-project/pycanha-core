@@ -428,6 +428,75 @@ TEST_CASE("Mesh a cylinder", "[gmm][trimesh][cylinder]") {
         }
     }
 }
+
+// NOLINTBEGIN(readability-function-cognitive-complexity)
+TEST_CASE("Mesh a disc", "[gmm][trimesh][disc]") {
+    using pycanha::Point3D;
+    using pycanha::gmm::Disc;
+    using pycanha::gmm::FaceIdsList;
+    using pycanha::gmm::ThermalMesh;
+    using pycanha::gmm::TriMesh;
+    using pycanha::gmm::VerticesList;
+    using pycanha::gmm::Edges;
+    using std::numbers::pi;
+
+    SECTION("Check the created mesh is correct for a complete disc") {
+        const Point3D p1(0.0, 0.0, 0.0);
+        const Point3D p2(0.0, 0.0, 1.0);
+        const Point3D p3(1.0, 0.0, 0.0);
+        const double inner_radius = 0.0;
+        const double outer_radius = 1.41421;
+        const double start_angle = 0.0;
+        const double end_angle = 2 * pi;
+        const Disc disc(p1, p2, p3, inner_radius, outer_radius, start_angle,
+                        end_angle);
+
+        ThermalMesh th_mesh;
+
+        th_mesh.set_dir1_mesh(std::vector<double>{0.0, 0.5, 1.0});
+        th_mesh.set_dir2_mesh(std::vector<double>{0.0, 0.25, 0.5, 0.75, 1.0});
+
+        TriMesh trimesh = disc.create_mesh(th_mesh, 0.4);
+
+        // TODO: add checks
+
+        // Check face ids. Triangles should be sorted by face id.
+        // The exact number of triangles depend on the resolution.
+        // But we can check that there are at least one triangle with
+        // the expected ids
+        REQUIRE(std::is_sorted(trimesh.get_face_ids().begin(),
+                               trimesh.get_face_ids().end()));
+        FaceIdsList expected_face_ids = (FaceIdsList(16) << 0, 2, 2, 2, 4, 6, 6,
+                                         6, 8, 10, 10, 10, 12, 14, 14, 14)
+                                            .finished();
+        auto unique_face_ids = trimesh.get_face_ids();
+        REQUIRE(expected_face_ids == unique_face_ids);
+
+        VerticesList expected_points =
+            (VerticesList(13, 3) << 0.0, 0.0, 0.0, 0.707105, 0.0, 0.0, 1.41421,
+             0.0, 0.0, 0.0, 0.707105, 0.0, 0.0, 1.41421, 0.0, -0.707105, 0.0,
+             0.0, -1.41421, 0.0, 0.0, 0.0, -0.707105, 0.0, 0.0, -1.41421, 0.0,
+             0.999997, 0.999997, 0.0, -0.999997, 0.999997, 0.0, -0.999997,
+             -0.999997, 0.0, 0.999997, -0.999997, 0).finished();
+        auto unique_points = trimesh.get_vertices();
+        REQUIRE(expected_points.isApprox(unique_points, 1.0E-5));
+
+        // Check the edges are correct
+        REQUIRE(trimesh.get_edges().size() == 16);
+        REQUIRE(trimesh.get_edges()[0]  == (Edges(2) << 0, 1).finished());
+        REQUIRE(trimesh.get_edges()[1]  == (Edges(2) << 1, 2).finished());
+        REQUIRE(trimesh.get_edges()[2]  == (Edges(2) << 0, 3).finished());
+        REQUIRE(trimesh.get_edges()[3]  == (Edges(2) << 3, 4).finished());
+        REQUIRE(trimesh.get_edges()[4]  == (Edges(2) << 0, 5).finished());
+        REQUIRE(trimesh.get_edges()[5]  == (Edges(2) << 5, 6).finished());
+        REQUIRE(trimesh.get_edges()[14] == (Edges(3) << 6, 11, 8).finished());
+        REQUIRE(trimesh.get_edges()[15] == (Edges(3) << 8, 12, 2).finished());
+
+        // Check the perimeter edges are correct
+        REQUIRE(trimesh.get_perimeter_edges() ==
+                (Edges(4) << 12, 13, 14, 15).finished());
+    }
+}
 // NOLINTEND(readability-function-cognitive-complexity)
 
 TEST_CASE("Test the model mesh", "[gmm][trimesh][model]") {
