@@ -2490,6 +2490,11 @@ inline TriMesh create_2d_triangular_mesh(
 
 // NOLINTEND(readability-function-cognitive-complexity)
 
+// TODO: Remove this when an update of MSVC is available
+// Issue: #18
+#if defined(_MSC_VER)
+#pragma optimize("", off)
+#endif
 // Create the mesh of a disc
 /**
  * @brief Create a 2d mesh of a disc
@@ -2991,6 +2996,9 @@ inline TriMesh create_2d_disc_mesh(const Eigen::VectorXd& dir1_mesh_normalized,
 
     return trimesh;
 }
+#if defined(_MSC_VER)
+#pragma optimize("", on)
+#endif
 // NOLINTEND(readability-function-cognitive-complexity)
 
 }  // namespace trimesher
