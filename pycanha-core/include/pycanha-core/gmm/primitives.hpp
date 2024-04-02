@@ -1418,7 +1418,7 @@ class Sphere : public Primitive {
 
     [[nodiscard]] TriMesh create_mesh(const ThermalMesh& thermal_mesh,
                                       double tolerance) const override {
-        return create_mesh1(thermal_mesh, tolerance);
+        return create_mesh2(thermal_mesh, tolerance);
     };
 
     [[nodiscard]] TriMesh create_mesh1(const ThermalMesh& thermal_mesh,
@@ -3309,9 +3309,9 @@ inline TriMesh Sphere::create_mesh1(const ThermalMesh& thermal_mesh,
     // return create_mesh2(thermal_mesh, tolerance);
 
     // Main directions of the 3D cone
-    Eigen::Vector3d vx = (_p3 - _p1).normalized();
-    Eigen::Vector3d vz = (_p2 - _p1).normalized();
-    Eigen::Vector3d vy = (vz.cross(vx)).normalized();
+    // Eigen::Vector3d vx = (_p3 - _p1).normalized();
+    // Eigen::Vector3d vz = (_p2 - _p1).normalized();
+    // Eigen::Vector3d vy = (vz.cross(vx)).normalized();
 
     // TODO Add checks to validate tolerance and have a minimum/maximum
     // tolerance
@@ -3882,7 +3882,7 @@ inline TriMesh Sphere::create_mesh1(const ThermalMesh& thermal_mesh,
         for (MeshIndex i = 0; i < trimesh.get_triangles().rows(); ++i) {
             for (MeshIndex j = 0; j < trimesh.get_triangles().cols(); ++j) {
                 if (trimesh.get_triangles()(i, j) >= num_points) {
-                    if (trimesh.get_triangles()(i, j) == points_2d.rows() - 1 &&
+                    if (trimesh.get_triangles()(i, j) == points_2d.rows() &&
                         _apex_truncation == _radius) {
                         trimesh.get_triangles()(i, j) = north_pole_idx;
                     } else {
@@ -3927,11 +3927,6 @@ inline TriMesh Sphere::create_mesh1(const ThermalMesh& thermal_mesh,
 
         // Get the face id
         trimesh.get_face_ids()[i] = get_faceid_from_uv(thermal_mesh, centroid);
-    }
-
-    for (int i = 0; i < points.rows(); ++i) {
-        auto p = points.row(i);
-        points.row(i) = _p1 + vx * (p[0]-_p1[0]) + vy * (p[1]-_p1[1]) + vz * (p[2]-_p1[2]);
     }
 
     // Common operations for all meshes. TODO: create a dedicated function
@@ -4286,7 +4281,6 @@ inline TriMesh Sphere::create_mesh2(const ThermalMesh& thermal_mesh,
                     ++p_idx;
                 }
             }
-            // std::cout << "crossline pts" << '\n';
             for (MeshIndex p = 1; p <= add_pi1 + 1; ++p) {
                 const double phi_i = ph1 + (p - 1) * d_ph / (add_pi1 + 1) +
                                      d_ph / (2 * (add_pi1 + 1));
@@ -4553,14 +4547,6 @@ inline TriMesh Sphere::create_mesh2(const ThermalMesh& thermal_mesh,
         points_2d(i, 2) = 0;
     }
 
-    // Write the points2d to a file
-    std::ofstream file("points2d.txt");
-    for (MeshIndex i = 0; i < num_points; ++i) {
-        file << '[' << points_2d(i, 0) << ', ' << points_2d(i, 1) << ', '
-             << points_2d(i, 2) << ']' << '\n';
-    }
-    file.close();
-
     if (_end_angle - _start_angle == 2 * pi) {
         Edges edge(num_points_2d - num_points + dir1_start + dir1_end);
         if (_base_truncation == -_radius) {
@@ -4618,7 +4604,7 @@ inline TriMesh Sphere::create_mesh2(const ThermalMesh& thermal_mesh,
         for (MeshIndex i = 0; i < trimesh.get_triangles().rows(); ++i) {
             for (MeshIndex j = 0; j < trimesh.get_triangles().cols(); ++j) {
                 if (trimesh.get_triangles()(i, j) >= num_points) {
-                    if (trimesh.get_triangles()(i, j) == points_2d.rows() - 1 &&
+                    if (trimesh.get_triangles()(i, j) == points_2d.rows() &&
                         _apex_truncation == _radius) {
                         trimesh.get_triangles()(i, j) = north_pole_idx;
                     } else {
