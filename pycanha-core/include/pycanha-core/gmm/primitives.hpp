@@ -2425,7 +2425,8 @@ inline MeshIndex Disc::get_faceid_from_uv(const ThermalMesh& thermal_mesh,
         static_cast<MeshIndex>(std::distance(dir2_mesh.begin(), angle_it) - 1);
 
     // Compute face_id
-    return (angle_index * (static_cast<MeshIndex>(dir1_mesh.size()) - 1) + r_index) *
+    return (angle_index * (static_cast<MeshIndex>(dir1_mesh.size()) - 1) +
+            r_index) *
            2;
 }
 
