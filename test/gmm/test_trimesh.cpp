@@ -433,11 +433,11 @@ TEST_CASE("Mesh a cylinder", "[gmm][trimesh][cylinder]") {
 TEST_CASE("Mesh a disc", "[gmm][trimesh][disc]") {
     using pycanha::Point3D;
     using pycanha::gmm::Disc;
+    using pycanha::gmm::Edges;
     using pycanha::gmm::FaceIdsList;
     using pycanha::gmm::ThermalMesh;
     using pycanha::gmm::TriMesh;
     using pycanha::gmm::VerticesList;
-    using pycanha::gmm::Edges;
     using std::numbers::pi;
 
     SECTION("Check the created mesh is correct for a complete disc") {
@@ -477,18 +477,19 @@ TEST_CASE("Mesh a disc", "[gmm][trimesh][disc]") {
              0.0, 0.0, 0.0, 0.707105, 0.0, 0.0, 1.41421, 0.0, -0.707105, 0.0,
              0.0, -1.41421, 0.0, 0.0, 0.0, -0.707105, 0.0, 0.0, -1.41421, 0.0,
              0.999997, 0.999997, 0.0, -0.999997, 0.999997, 0.0, -0.999997,
-             -0.999997, 0.0, 0.999997, -0.999997, 0).finished();
+             -0.999997, 0.0, 0.999997, -0.999997, 0)
+                .finished();
         auto unique_points = trimesh.get_vertices();
         REQUIRE(expected_points.isApprox(unique_points, 1.0E-5));
 
         // Check the edges are correct
         REQUIRE(trimesh.get_edges().size() == 16);
-        REQUIRE(trimesh.get_edges()[0]  == (Edges(2) << 0, 1).finished());
-        REQUIRE(trimesh.get_edges()[1]  == (Edges(2) << 1, 2).finished());
-        REQUIRE(trimesh.get_edges()[2]  == (Edges(2) << 0, 3).finished());
-        REQUIRE(trimesh.get_edges()[3]  == (Edges(2) << 3, 4).finished());
-        REQUIRE(trimesh.get_edges()[4]  == (Edges(2) << 0, 5).finished());
-        REQUIRE(trimesh.get_edges()[5]  == (Edges(2) << 5, 6).finished());
+        REQUIRE(trimesh.get_edges()[0] == (Edges(2) << 0, 1).finished());
+        REQUIRE(trimesh.get_edges()[1] == (Edges(2) << 1, 2).finished());
+        REQUIRE(trimesh.get_edges()[2] == (Edges(2) << 0, 3).finished());
+        REQUIRE(trimesh.get_edges()[3] == (Edges(2) << 3, 4).finished());
+        REQUIRE(trimesh.get_edges()[4] == (Edges(2) << 0, 5).finished());
+        REQUIRE(trimesh.get_edges()[5] == (Edges(2) << 5, 6).finished());
         REQUIRE(trimesh.get_edges()[14] == (Edges(3) << 6, 11, 8).finished());
         REQUIRE(trimesh.get_edges()[15] == (Edges(3) << 8, 12, 2).finished());
 
