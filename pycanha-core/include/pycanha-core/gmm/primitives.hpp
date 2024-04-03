@@ -2877,8 +2877,8 @@ inline TriMesh Disc::create_mesh(const ThermalMesh& thermal_mesh,
     // Calculate the 2D coordinates of p3 in the local disc plane
 
     auto start_angle = disc.get_start_angle();
-    Point2D outer_point = disc.from_3d_to_2d(
-        (p3 - p1).normalized()*outer_radius + p1);
+    Point2D outer_point =
+        disc.from_3d_to_2d((p3 - p1).normalized() * outer_radius + p1);
     if (start_angle != 0.0) {
         Point2D p3_2d = disc.from_3d_to_2d(disc.get_p3());
 
@@ -2921,8 +2921,7 @@ inline TriMesh Disc::create_mesh(const ThermalMesh& thermal_mesh,
         const Point2D p2_2d{trimesh.get_vertices()(tri[2], 0),
                             trimesh.get_vertices()(tri[2], 1)};
 
-        const Point2D centroid =
-            (p0_2d + p1_2d + p2_2d) / 3.0 - center;
+        const Point2D centroid = (p0_2d + p1_2d + p2_2d) / 3.0 - center;
 
         // Get the face id
         // i >= 0, so it is safe to cast to VectorIndex
@@ -4650,7 +4649,8 @@ inline TriMesh Sphere::create_mesh2(const ThermalMesh& thermal_mesh,
     // Rotate the points to the true position
     for (int i = 0; i < points.rows(); ++i) {
         auto p = points.row(i);
-        points.row(i) = _p1 + vx * (p[0]-_p1[0]) + vy * (p[1]-_p1[1]) + vz * (p[2]-_p1[2]);
+        points.row(i) = _p1 + vx * (p[0] - _p1[0]) + vy * (p[1] - _p1[1]) +
+                        vz * (p[2] - _p1[2]);
     }
     // Set points to 3D
     trimesh.set_vertices(points);
