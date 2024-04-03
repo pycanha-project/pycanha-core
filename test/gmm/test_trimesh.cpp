@@ -1,5 +1,5 @@
 // NOLINTBEGIN(misc-include-cleaner)
-#include <Eigen/Core>
+// #include <Eigen/Core>
 #include <algorithm>
 #include <catch2/catch_test_macros.hpp>
 #include <memory>
@@ -428,6 +428,7 @@ TEST_CASE("Mesh a cylinder", "[gmm][trimesh][cylinder]") {
         }
     }
 }
+// NOLINTEND(readability-function-cognitive-complexity)
 
 // NOLINTBEGIN(readability-function-cognitive-complexity)
 TEST_CASE("Mesh a disc", "[gmm][trimesh][disc]") {
@@ -472,7 +473,7 @@ TEST_CASE("Mesh a disc", "[gmm][trimesh][disc]") {
         auto unique_face_ids = trimesh.get_face_ids();
         REQUIRE(expected_face_ids == unique_face_ids);
 
-        VerticesList expected_points =
+        const VerticesList expected_points =
             (VerticesList(13, 3) << 0.0, 0.0, 0.0, 0.707105, 0.0, 0.0, 1.41421,
              0.0, 0.0, 0.0, 0.707105, 0.0, 0.0, 1.41421, 0.0, -0.707105, 0.0,
              0.0, -1.41421, 0.0, 0.0, 0.0, -0.707105, 0.0, 0.0, -1.41421, 0.0,
