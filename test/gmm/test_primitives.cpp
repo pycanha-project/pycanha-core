@@ -666,3 +666,106 @@ TEST_CASE("Cylinder Primitive", "[gmm][primitive][cylinder]") {
         REQUIRE(cyl.from_2d_to_3d(p4_2d).isApprox(p4_3d, LENGTH_TOL));
     }
 }
+
+TEST_CASE("Disc Primitive", "[gmm][primitive][disc]") {
+    using pycanha::gmm::Disc;
+    using std::numbers::pi;
+
+    SECTION("Check constructor and set/get methods") {
+        Point3D p1(0.0, 0.0, 0.0);
+        Point3D p2(0.0, 0.0, 1.0);
+        Point3D p3(1.0, 0.0, 0.0);
+        const double inner_radius = 1.0;
+        const double outer_radius = 2.0;
+        const double start_angle = 0.0;
+        const double end_angle = pi;
+        Disc disc(p1, p2, p3, inner_radius, outer_radius, start_angle,
+                  end_angle);
+
+        REQUIRE(disc.get_p1() == p1);
+        REQUIRE(disc.get_p2() == p2);
+        REQUIRE(disc.get_p3() == p3);
+        REQUIRE(disc.get_inner_radius() == inner_radius);
+        REQUIRE(disc.get_outer_radius() == outer_radius);
+        REQUIRE(disc.get_start_angle() == start_angle);
+        REQUIRE(disc.get_end_angle() == end_angle);
+
+        p1.z() += 1.0;
+        p2.z() += 1.0;
+        p3.x() += 1.0;
+
+        REQUIRE(disc.get_p1() != p1);
+        REQUIRE(disc.get_p2() != p2);
+        REQUIRE(disc.get_p3() != p3);
+
+        disc.set_p1(p1);
+        disc.set_p2(p2);
+        disc.set_p3(p3);
+        disc.set_inner_radius(inner_radius + 1.0);
+        disc.set_outer_radius(outer_radius + 1.0);
+        disc.set_start_angle(start_angle + pi / 2.0);
+        disc.set_end_angle(end_angle + pi / 2.0);
+
+        REQUIRE(disc.get_p1() == p1);
+        REQUIRE(disc.get_p2() == p2);
+        REQUIRE(disc.get_p3() == p3);
+        REQUIRE(disc.get_inner_radius() == inner_radius + 1.0);
+        REQUIRE(disc.get_outer_radius() == outer_radius + 1.0);
+        REQUIRE(disc.get_start_angle() == start_angle + pi / 2.0);
+        REQUIRE(disc.get_end_angle() == end_angle + pi / 2.0);
+    }
+    SECTION("Check valid Disc") {
+        const Point3D p1(0.0, 0.0, 0.0);
+        const Point3D p2(1.0, 1.0, 0.0);
+        const Point3D p3(1.0, -1.0, 0.0);
+        const double inner_radius = 1.0;
+        const double outer_radius = 2.0;
+        const double start_angle = 0.0;
+        const double end_angle = 2.0 * pi;
+        const Disc disc(p1, p2, p3, inner_radius, outer_radius, start_angle,
+                        end_angle);
+
+        REQUIRE(disc.is_valid());
+    }
+
+    SECTION("Disc - 2D 3D transformations") {
+        const Point3D p1_disc(0.0, 0.0, 1.0);
+        const Point3D p2_disc(0.0, 0.0, 5.0);
+        const Point3D p3_disc(0.1, 0.0, 1.0);
+        const double inner_radius = 1.0;
+        const double outer_radius = 2.0;
+        const double start_angle = 0.0;
+        const double end_angle = 2.0 * pi;
+        const Disc disc(p1_disc, p2_disc, p3_disc, inner_radius,
+        outer_radius, start_angle,
+                           end_angle);
+
+        const Point3D p1_3d(1.0 * inner_radius, 0.0 * inner_radius, 1.0);
+        const Point3D p2_3d(0.0 * inner_radius, 1.0 * inner_radius, 1.0);
+        const Point3D p3_3d(-1.0 * inner_radius, 0.0 * inner_radius, 1.0);
+        const Point3D p4_3d(0.0 * inner_radius, -1.0 * inner_radius, 1.0);
+
+        auto p1_2d = disc.from_3d_to_2d(p1_3d);
+        auto p2_2d = disc.from_3d_to_2d(p2_3d);
+        auto p3_2d = disc.from_3d_to_2d(p3_3d);
+        auto p4_2d = disc.from_3d_to_2d(p4_3d);
+
+        // Expected 2D points
+        const Point2D p1_2d_expected(1.0, 0.0);
+        const Point2D p2_2d_expected(0.0, 1.0);
+        const Point2D p3_2d_expected(-1.0, 0.0);
+        const Point2D p4_2d_expected(0.0, -1.0);
+
+        // Check that the cylinder vertices are converted correctly
+        REQUIRE(p1_2d.isApprox(p1_2d_expected, LENGTH_TOL));
+        REQUIRE(p2_2d.isApprox(p2_2d_expected, LENGTH_TOL));
+        REQUIRE(p3_2d.isApprox(p3_2d_expected, LENGTH_TOL));
+        REQUIRE(p4_2d.isApprox(p4_2d_expected, LENGTH_TOL));
+
+        // Check that the backwards conversion also works
+        REQUIRE(disc.from_2d_to_3d(p1_2d).isApprox(p1_3d, LENGTH_TOL));
+        REQUIRE(disc.from_2d_to_3d(p2_2d).isApprox(p2_3d, LENGTH_TOL));
+        REQUIRE(disc.from_2d_to_3d(p3_2d).isApprox(p3_3d, LENGTH_TOL));
+        REQUIRE(disc.from_2d_to_3d(p4_2d).isApprox(p4_3d, LENGTH_TOL));
+    }
+}
