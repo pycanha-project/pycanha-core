@@ -330,7 +330,6 @@ class TriMesh {
         for (Index i = 0; i < static_cast<Index>(indices.size()); ++i) {
             sorted_face_ids[i] =
                 _face_ids[indices[static_cast<VectorIndex>(i)]];
-            // std::cout << sorted_face_ids[i] << "\n";
         }
 
         _face_ids = std::move(sorted_face_ids);
@@ -2808,11 +2807,11 @@ inline TriMesh create_2d_disc_mesh(const Eigen::VectorXd& dir1_mesh_normalized,
                             2 * pi;
                         points(p_idx, 0) =
                             center.x() +
-                            round(rad_i * cos(angle_a - theta_0) / LENGTH_TOL) *
+                            round(rad_i * cos(angle_a) / LENGTH_TOL) *
                                 LENGTH_TOL;
                         points(p_idx, 1) =
                             center.y() +
-                            round(rad_i * sin(angle_a - theta_0) / LENGTH_TOL) *
+                            round(rad_i * sin(angle_a) / LENGTH_TOL) *
                                 LENGTH_TOL;
                         points(p_idx, 2) = 0.0;
                         ++p_idx;
