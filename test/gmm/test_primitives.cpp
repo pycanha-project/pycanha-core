@@ -844,7 +844,6 @@ TEST_CASE("cone Primitive", "[gmm][primitive][cone]") {
         const Point3D p3_3d(-1.0 * radius1, 0.0 * radius1, 1.0);
         const Point3D p4_3d(0.0 * radius1, -1.0 * radius1, 1.0);
 
-
         auto p1_2d = cone.from_3d_to_2d(p1_3d);
         auto p2_2d = cone.from_3d_to_2d(p2_3d);
         auto p3_2d = cone.from_3d_to_2d(p3_3d);
