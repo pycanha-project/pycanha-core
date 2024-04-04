@@ -736,9 +736,8 @@ TEST_CASE("Disc Primitive", "[gmm][primitive][disc]") {
         const double outer_radius = 2.0;
         const double start_angle = 0.0;
         const double end_angle = 2.0 * pi;
-        const Disc disc(p1_disc, p2_disc, p3_disc, inner_radius,
-        outer_radius, start_angle,
-                           end_angle);
+        const Disc disc(p1_disc, p2_disc, p3_disc, inner_radius, outer_radius,
+                        start_angle, end_angle);
 
         const Point3D p1_3d(1.0 * inner_radius, 0.0 * inner_radius, 1.0);
         const Point3D p2_3d(0.0 * inner_radius, 1.0 * inner_radius, 1.0);
@@ -767,5 +766,110 @@ TEST_CASE("Disc Primitive", "[gmm][primitive][disc]") {
         REQUIRE(disc.from_2d_to_3d(p2_2d).isApprox(p2_3d, LENGTH_TOL));
         REQUIRE(disc.from_2d_to_3d(p3_2d).isApprox(p3_3d, LENGTH_TOL));
         REQUIRE(disc.from_2d_to_3d(p4_2d).isApprox(p4_3d, LENGTH_TOL));
+    }
+}
+
+TEST_CASE("cone Primitive", "[gmm][primitive][cone]") {
+    using pycanha::gmm::Cone;
+    using std::numbers::pi;
+
+    SECTION("Check constructor and set/get methods") {
+        Point3D p1(0.0, 0.0, 0.0);
+        Point3D p2(0.0, 0.0, 1.0);
+        Point3D p3(1.0, 0.0, 0.0);
+        const double radius1 = 1.0;
+        const double radius2 = 2.0;
+        const double start_angle = 0.0;
+        const double end_angle = pi;
+        Cone cone(p1, p2, p3, radius1, radius2, start_angle, end_angle);
+
+        REQUIRE(cone.get_p1() == p1);
+        REQUIRE(cone.get_p2() == p2);
+        REQUIRE(cone.get_p3() == p3);
+        REQUIRE(cone.get_radius1() == radius1);
+        REQUIRE(cone.get_radius2() == radius2);
+        REQUIRE(cone.get_start_angle() == start_angle);
+        REQUIRE(cone.get_end_angle() == end_angle);
+
+        p1.z() += 1.0;
+        p2.z() += 1.0;
+        p3.x() += 1.0;
+
+        REQUIRE(cone.get_p1() != p1);
+        REQUIRE(cone.get_p2() != p2);
+        REQUIRE(cone.get_p3() != p3);
+
+        cone.set_p1(p1);
+        cone.set_p2(p2);
+        cone.set_p3(p3);
+        cone.set_radius1(radius1 + 1.0);
+        cone.set_radius2(radius2 + 1.0);
+        cone.set_start_angle(start_angle + pi / 2.0);
+        cone.set_end_angle(end_angle + pi / 2.0);
+
+        REQUIRE(cone.get_p1() == p1);
+        REQUIRE(cone.get_p2() == p2);
+        REQUIRE(cone.get_p3() == p3);
+        REQUIRE(cone.get_radius1() == radius1 + 1.0);
+        REQUIRE(cone.get_radius2() == radius2 + 1.0);
+        REQUIRE(cone.get_start_angle() == start_angle + pi / 2.0);
+        REQUIRE(cone.get_end_angle() == end_angle + pi / 2.0);
+    }
+    SECTION("Check valid Cone") {
+        const Point3D p1(0.0, 0.0, 0.0);
+        const Point3D p2(1.0, 1.0, 0.0);
+        const Point3D p3(1.0, -1.0, 0.0);
+        const double radius1 = 1.0;
+        const double radius2 = 2.0;
+        const double start_angle = 0.0;
+        const double end_angle = 2.0 * pi;
+        const Cone cone(p1, p2, p3, radius1, radius2, start_angle, end_angle);
+
+        // REQUIRE(cone.is_valid());
+    }
+
+    SECTION("Cone - 2D 3D transformations") {
+        const Point3D p1_cone(0.0, 0.0, 1.0);
+        const Point3D p2_cone(0.0, 0.0, 5.0);
+        const Point3D p3_cone(0.1, 0.0, 1.0);
+        const double radius1 = 1.0;
+        const double radius2 = 2.0;
+        const double start_angle = 0.0;
+        const double end_angle = 2.0 * pi;
+        const Cone cone(p1_cone, p2_cone, p3_cone, radius1, radius2,
+                        start_angle, end_angle);
+
+        const Point3D p1_3d(1.0 * radius1, 0.0 * radius1, 1.0);
+        const Point3D p2_3d(0.0 * radius1, 1.0 * radius1, 1.0);
+        const Point3D p3_3d(-1.0 * radius1, 0.0 * radius1, 1.0);
+        const Point3D p4_3d(0.0 * radius1, -1.0 * radius1, 1.0);
+
+        const Point3D p5_3d(1.0 * radius2, 0.0 * radius2, 5.0);
+        const Point3D p6_3d(0.0 * radius2, 1.0 * radius2, 5.0);
+        const Point3D p7_3d(-1.0 *radius2, 0.0 * radius2, 5.0);
+        const Point3D p8_3d(0.0 * radius2, -1.0 *radius2, 5.0);
+
+        auto p1_2d = cone.from_3d_to_2d(p1_3d);
+        auto p2_2d = cone.from_3d_to_2d(p2_3d);
+        auto p3_2d = cone.from_3d_to_2d(p3_3d);
+        auto p4_2d = cone.from_3d_to_2d(p4_3d);
+
+        // Expected 2D points
+        const Point2D p1_2d_expected(2.06155, 0);
+        const Point2D p2_2d_expected(1.80125, 1.00274);
+        const Point2D p3_2d_expected(1.08609, 1.75226);
+        const Point2D p4_2d_expected(0.0966515, 2.05929);
+
+        // Check that the cylinder vertices are converted correctly
+        REQUIRE(p1_2d.isApprox(p1_2d_expected, 1E-5));
+        REQUIRE(p2_2d.isApprox(p2_2d_expected, 1E-5));
+        REQUIRE(p3_2d.isApprox(p3_2d_expected, 1E-5));
+        REQUIRE(p4_2d.isApprox(p4_2d_expected, 1E-5));
+
+        // Check that the backwards conversion also works
+        REQUIRE(cone.from_2d_to_3d(p1_2d).isApprox(p1_3d, 1E-5));
+        REQUIRE(cone.from_2d_to_3d(p2_2d).isApprox(p2_3d, 1E-5));
+        REQUIRE(cone.from_2d_to_3d(p3_2d).isApprox(p3_3d, 1E-5));
+        REQUIRE(cone.from_2d_to_3d(p4_2d).isApprox(p4_3d, 1E-5));
     }
 }
