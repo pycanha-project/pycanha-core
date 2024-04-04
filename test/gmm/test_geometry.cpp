@@ -76,7 +76,7 @@ TEST_CASE("Geometry Items and Groups",
                                                            transf_2, th_mesh_1);
     auto geo_item_4 = std::make_shared<GeometryMeshedItem>("geo_item_4", cyl,
                                                            transf_2, th_mesh_1);
-    auto geo_item_5 = std::make_shared<GeometryMeshedItem>("geo_item_4", disc,
+    auto geo_item_5 = std::make_shared<GeometryMeshedItem>("geo_item_5", disc,
                                                            transf_2, th_mesh_1);
 
     // Create GeometryGroup with two GeometryItems

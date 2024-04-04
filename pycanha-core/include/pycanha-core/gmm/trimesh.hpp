@@ -2490,6 +2490,11 @@ inline TriMesh create_2d_triangular_mesh(
 
 // NOLINTEND(readability-function-cognitive-complexity)
 
+// TODO: Remove this when an update of MSVC is available
+// Issue: #18
+#if defined(_MSC_VER)
+#pragma optimize("", off)
+#endif
 // Create the mesh of a disc
 /**
  * @brief Create a 2d mesh of a disc
@@ -2734,6 +2739,7 @@ inline TriMesh create_2d_disc_mesh(const Eigen::VectorXd& dir1_mesh_normalized,
 
     for (MeshIndex i_dir2 = 0; i_dir2 < dir2_stop; ++i_dir2) {
         auto angle_i = dir2_mesh_normalized[i_dir2] * 2 * pi;
+        // If i_dir1 is declared MeshIndex, the loop does not work on release
         for (MeshIndex i_dir1 = dir1_start; i_dir1 < full_dir1_mesh_size;
              ++i_dir1) {
             points(p_idx, 0) = center.x() + round(full_dir1_mesh[i_dir1] *
@@ -2990,6 +2996,9 @@ inline TriMesh create_2d_disc_mesh(const Eigen::VectorXd& dir1_mesh_normalized,
 
     return trimesh;
 }
+#if defined(_MSC_VER)
+#pragma optimize("", on)
+#endif
 // NOLINTEND(readability-function-cognitive-complexity)
 
 }  // namespace trimesher
