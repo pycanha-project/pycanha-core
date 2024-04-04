@@ -2560,12 +2560,6 @@ inline TriMesh create_2d_disc_mesh(const Eigen::VectorXd& dir1_mesh_normalized,
         throw std::runtime_error("dir2_mesh is not normalized.");
     }
 
-    // Check that the mesh in dir2 starts in 0.0
-    double theta_0 = 0.0;
-    if (dir2_mesh_normalized[0] != 0.0) {
-        theta_0 = dir2_mesh_normalized[0] * 2 * pi;
-    }
-
     // 1. Determine the number of points to reserve space
     const auto dir1_size = static_cast<MeshIndex>(dir1_mesh_normalized.size());
     const auto dir2_size = static_cast<MeshIndex>(dir2_mesh_normalized.size());
