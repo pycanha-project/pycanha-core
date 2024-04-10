@@ -769,7 +769,7 @@ TEST_CASE("Disc Primitive", "[gmm][primitive][disc]") {
     }
 }
 
-TEST_CASE("cone Primitive", "[gmm][primitive][cone]") {
+TEST_CASE("Cone Primitive", "[gmm][primitive][cone]") {
     using pycanha::gmm::Cone;
     using std::numbers::pi;
 

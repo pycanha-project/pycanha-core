@@ -2858,7 +2858,7 @@ inline TriMesh Disc::create_mesh(const ThermalMesh& thermal_mesh,
         thermal_mesh.get_dir1_mesh().data(),
         static_cast<Eigen::Index>(thermal_mesh.get_dir1_mesh().size()));
 
-    const Eigen::VectorXd dir2_mesh = Eigen::Map<const Eigen::VectorXd>(
+    Eigen::VectorXd dir2_mesh = Eigen::Map<const Eigen::VectorXd>(
         thermal_mesh.get_dir2_mesh().data(),
         static_cast<Eigen::Index>(thermal_mesh.get_dir2_mesh().size()));
 
@@ -2895,6 +2895,7 @@ inline TriMesh Disc::create_mesh(const ThermalMesh& thermal_mesh,
         outer_point.y() = new_y_2d;
     }
 
+    // Remap dir1_mesh to include the inner radius
     auto inner_radius = disc.get_inner_radius();
     if (inner_radius != 0.0) {
         for (int i = 0; i < dir1_mesh.size() - 1; i++) {
@@ -2902,6 +2903,13 @@ inline TriMesh Disc::create_mesh(const ThermalMesh& thermal_mesh,
                 dir1_mesh[i] * (outer_radius - inner_radius) / outer_radius +
                 inner_radius / outer_radius;
         }
+    }
+
+    // Remap dir2_mesh to include the starting and ending angles
+    auto end_angle = disc.get_end_angle();
+    for (int i = 0; i < dir2_mesh.size(); i++) {
+        dir2_mesh[i] = dir2_mesh[i] * (end_angle - start_angle) / (2 * pi) +
+                       start_angle / (2 * pi);
     }
 
     TriMesh trimesh = trimesher::create_2d_disc_mesh(
@@ -2928,6 +2936,7 @@ inline TriMesh Disc::create_mesh(const ThermalMesh& thermal_mesh,
         // i >= 0, so it is safe to cast to VectorIndex
         trimesh.get_face_ids()[i] =
             disc.get_faceid_from_uv(thermal_mesh, centroid);
+        // std::cout << "Face ID: " << trimesh.get_face_ids()[i] << std::endl;
     }
 
     // Transform 2D points to 3D
