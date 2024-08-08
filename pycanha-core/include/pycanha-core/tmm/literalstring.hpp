@@ -17,9 +17,9 @@ class LiteralString {
     friend class Nodes;
 
   public:
-    LiteralString(int value);
     LiteralString();
-    LiteralString(const std::string& str);
+    explicit LiteralString(int value);
+    explicit LiteralString(const std::string& str);
 
     const void print_string();
 

@@ -13,7 +13,7 @@ bool are_coupling_values_almost_equal(double val1, double val2) {
             ALMOST_EQUAL_COUPLING_EPSILON);
 }
 
-CouplingMatrices::CouplingMatrices() {};
+CouplingMatrices::CouplingMatrices() {}
 
 inline int CouplingMatrices::get_num_diff_nodes() const {
     return sparse_dd.rows();
@@ -42,29 +42,29 @@ void CouplingMatrices::add_ovw_coupling_from_node_idxs(int idx1, int idx2,
                                                        double val) {
     _validate_coupling_call_add_generic(
         idx1, idx2, val, &CouplingMatrices::_add_ovw_coupling_sparse);
-};
+}
 void CouplingMatrices::add_ovw_coupling_from_node_idxs_verbose(int idx1,
                                                                int idx2,
                                                                double val) {
     _validate_coupling_call_add_generic(
         idx1, idx2, val, &CouplingMatrices::_add_ovw_coupling_sparse_verbose);
-};
+}
 void CouplingMatrices::add_sum_coupling_from_node_idxs(int idx1, int idx2,
                                                        double val) {
     _validate_coupling_call_add_generic(
         idx1, idx2, val, &CouplingMatrices::_add_sum_coupling_sparse);
-};
+}
 void CouplingMatrices::add_sum_coupling_from_node_idxs_verbose(int idx1,
                                                                int idx2,
                                                                double val) {
     _validate_coupling_call_add_generic(
         idx1, idx2, val, &CouplingMatrices::_add_sum_coupling_sparse_verbose);
-};
+}
 void CouplingMatrices::add_new_coupling_from_node_idxs(int idx1, int idx2,
                                                        double val) {
     _validate_coupling_call_add_generic(
         idx1, idx2, val, &CouplingMatrices::_add_new_coupling_sparse);
-};
+}
 
 double CouplingMatrices::get_conductor_value_from_idx(Index idx1, Index idx2) {
     auto [sp_ptr, sp_idx1, sp_idx2] = _get_sp_ptr_and_sp_idx(idx1, idx2);
@@ -283,8 +283,8 @@ void CouplingMatrices::_add_ovw_coupling_sparse_verbose(
     Eigen::SparseMatrix<double, Eigen::RowMajor> &sparse, int sp_idx1,
     int sp_idx2, double val) {
     if (!SparseUtils::is_trivial_zero(sparse, sp_idx1, sp_idx2)) {
-        //(VERBOSE) -> left this as a tag to find messages that should be logged
-        // in the future
+        // (VERBOSE) -> left this as a tag to find messages that should be
+        // logged in the future
         double &coupling_val = sparse.coeffRef(sp_idx1, sp_idx2);
         if (!are_coupling_values_almost_equal(coupling_val, val)) {
             std::cout << "Duplicated coupling at indexes (" << sp_idx1 << ", "
@@ -309,8 +309,8 @@ void CouplingMatrices::_add_sum_coupling_sparse_verbose(
     Eigen::SparseMatrix<double, Eigen::RowMajor> &sparse, int sp_idx1,
     int sp_idx2, double val) {
     if (!SparseUtils::is_trivial_zero(sparse, sp_idx1, sp_idx2)) {
-        //(VERBOSE) -> left this as a tag to find messages that should be logged
-        // in the future
+        // (VERBOSE) -> left this as a tag to find messages that should be
+        // logged in the future
         std::cout << "Duplicated coupling at indexes (" << sp_idx1 << ", "
                   << sp_idx2;
         std::cout << "). Adding up old value: "

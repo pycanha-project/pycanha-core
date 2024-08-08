@@ -8,12 +8,12 @@
 Node::Node(int UsrNodeNum) : UsrNodeNum(UsrNodeNum) {
     m_local_storage_ptr = new local_storage{'D', 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
                                             0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-};
+}
 
 Node::Node(int UsrNodeNum, std::weak_ptr<Nodes> ParentPointer)
     : UsrNodeNum(UsrNodeNum),
       ParentPointer(ParentPointer),
-      m_local_storage_ptr(nullptr) {};
+      m_local_storage_ptr(nullptr) {}
 
 // Move constructor
 Node::Node(Node&& otherNode)

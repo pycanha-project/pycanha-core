@@ -17,7 +17,7 @@ Nodes::Nodes() : NodeNumMapped(false) {
     // destructor would be called twice
     self_pointer = std::shared_ptr<Nodes>(
         this, [](Nodes* p) { std::cout << "Self deleting \n"; });
-};
+}
 
 // Nodes::Nodes (const Nodes&) = delete;
 // Nodes& Nodes::operator= (const Nodes&) = delete;
@@ -27,7 +27,7 @@ Nodes::~Nodes() {
     if (DEBUG) {
         std::cout << "Destructor of TNs called " << this << "\n";
     }
-};
+}
 
 void Nodes::add_node(Node& node) {
     // Info obtained from "node"
@@ -38,7 +38,7 @@ void Nodes::add_node(Node& node) {
     Index insert_idx;
 
     if (UsrToIntNodeNum.find(UsrNodeNum) != UsrToIntNodeNum.end()) {
-        // TODO:ERROR. Duplicated node
+        // TODO: ERROR. Duplicated node
         std::cout << "ERROR. Node " << UsrNodeNum << " already inserted.\n";
         return;
     }
@@ -53,7 +53,7 @@ void Nodes::add_node(Node& node) {
         insert_idx = std::distance(BoundUsrNodeNum_vector.begin(), it);
         insert_idx += DiffUsrNodeNum_vector.size();
     } else {
-        // TODO:ERROR. WRONG NODE TYPE
+        // TODO: ERROR. WRONG NODE TYPE
         std::cout << "ERROR. Wrong node type?\n";
         return;
     }
@@ -435,7 +435,7 @@ void Nodes::_add_node_insert_idx(Node& node, Index insert_idx) {
                 (insert_idx - static_cast<Index>(DiffUsrNodeNum_vector.size())),
             UsrNodeNum);
     } else {
-        // TODO:ERROR. WRONG NODE TYPE
+        // TODO: ERROR. WRONG NODE TYPE
         std::cout << "ERROR. Wrong node type?\n";
         return;
     }

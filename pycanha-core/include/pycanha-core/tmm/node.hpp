@@ -37,6 +37,7 @@
 
 #pragma once
 #include <memory>
+#include <string>
 
 #include "./nodes.hpp"
 
@@ -120,7 +121,7 @@ class Node {
      * set to zero. The node type and attributes can be changed through the
      * setters member functions.
      */
-    Node(int UsrNodeNum);
+    explicit Node(int UsrNodeNum);
 
     /// Associated node constructor 1.
     /**

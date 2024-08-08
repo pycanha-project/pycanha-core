@@ -751,7 +751,7 @@ void copy_values_same_nnz(
     cblas_dcopy(sp_dest.nonZeros(), sp_from.valuePtr(), 1, sp_dest.valuePtr(),
                 1);
 #endif
-};
+}
 
 void copy_sum_values_same_nnz(
     Eigen::SparseMatrix<double, Eigen::RowMajor>& sp_dest,
@@ -775,7 +775,7 @@ void copy_sum_values_same_nnz(
     cblas_daxpy(sp_dest.nonZeros(), 1.0, sp_from.valuePtr(), 1,
                 sp_dest.valuePtr(), 1);
 #endif
-};
+}
 
 void copy_values_with_idx(double* dest, double* from,
                           std::vector<int>& dest_idx) {
@@ -784,7 +784,7 @@ void copy_values_with_idx(double* dest, double* from,
     for (int ival = 0; ival < dest_idx.size(); ival++) {
         dest[dest_idx[ival]] = from[ival];
     }
-};
+}
 
 void copy_2_values_with_idx(double* dest, double* from,
                             std::vector<int>& dest_idx_1,
@@ -797,7 +797,7 @@ void copy_2_values_with_idx(double* dest, double* from,
         dest[dest_idx_1[ival]] = from[ival];
         dest[dest_idx_2[ival]] = from[ival];
     }
-};
+}
 
 void copy_sum_values_with_idx(double* dest, double* from,
                               std::vector<int>& dest_idx) {
@@ -805,7 +805,7 @@ void copy_sum_values_with_idx(double* dest, double* from,
     for (int ival = 0; ival < dest_idx.size(); ival++) {
         dest[dest_idx[ival]] += from[ival];
     }
-};
+}
 
 void copy_sum_2_values_with_idx(double* dest, double* from,
                                 std::vector<int>& dest_idx_1,
@@ -815,7 +815,7 @@ void copy_sum_2_values_with_idx(double* dest, double* from,
         dest[dest_idx_1[ival]] += from[ival];
         dest[dest_idx_2[ival]] += from[ival];
     }
-};
+}
 
 std::tuple<int, int, double> get_row_col_value_from_value_idx(
     const Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse, int vidx) {

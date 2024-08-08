@@ -44,6 +44,7 @@
 #pragma once
 #include <memory>
 #include <vector>
+#include <unordered_map>
 
 #include "../parameters.hpp"
 #include "./couplingmatrices.hpp"
@@ -240,101 +241,101 @@ class Nodes {
      * also deleted, so any information regarding the links of the deleted node
      * with other nodes of the model is also deleted.
      */
-    void remove_node(int usr_node_num);
+    void remove_node(int node_num);
 
     // Attribute getters and setters
-    char get_type(int usr_node_num);   ///< Type getter.
-    double get_T(int usr_node_num);    ///< Temperature [K] getter.
-    double get_C(int usr_node_num);    ///< Thermal capacity [J/K] getter.
-    double get_qs(int usr_node_num);   ///< Solar load [W] getter.
-    double get_qa(int usr_node_num);   ///< Albedo load [W] getter.
-    double get_qe(int usr_node_num);   ///< Earth IR load [W] getter.
-    double get_qi(int usr_node_num);   ///< Internal load [W] getter.
-    double get_qr(int usr_node_num);   ///< Other load [W] getter.
-    double get_a(int usr_node_num);    ///< Area [m^2] getter.
-    double get_fx(int usr_node_num);   ///< X coordinate [m] getter.
-    double get_fy(int usr_node_num);   ///< Y coordinate [m] getter.
-    double get_fz(int usr_node_num);   ///< Z coordinate [m] getter.
-    double get_eps(int usr_node_num);  ///< IR emissivity getter.
-    double get_aph(int usr_node_num);  ///< Solar absortivity getter.
+    char get_type(int node_num);   ///< Type getter.
+    double get_T(int node_num);    ///< Temperature [K] getter.
+    double get_C(int node_num);    ///< Thermal capacity [J/K] getter.
+    double get_qs(int node_num);   ///< Solar load [W] getter.
+    double get_qa(int node_num);   ///< Albedo load [W] getter.
+    double get_qe(int node_num);   ///< Earth IR load [W] getter.
+    double get_qi(int node_num);   ///< Internal load [W] getter.
+    double get_qr(int node_num);   ///< Other load [W] getter.
+    double get_a(int node_num);    ///< Area [m^2] getter.
+    double get_fx(int node_num);   ///< X coordinate [m] getter.
+    double get_fy(int node_num);   ///< Y coordinate [m] getter.
+    double get_fz(int node_num);   ///< Z coordinate [m] getter.
+    double get_eps(int node_num);  ///< IR emissivity getter.
+    double get_aph(int node_num);  ///< Solar absortivity getter.
 
     std::string get_literal_C(
-        int usr_node_num) const;  ///< Literal thermal capacity getter.
+        int node_num) const;  ///< Literal thermal capacity getter.
 
-    bool set_type(int usr_node_num, char type);  ///< Type setter.
-    bool set_T(int usr_node_num, double T);      ///< Temperature [K] setter.
-    bool set_C(int usr_node_num, double C);  ///< Thermal capacity [J/K] setter.
-    bool set_qs(int usr_node_num, double qs);    ///< Solar load [W] setter.
-    bool set_qa(int usr_node_num, double qa);    ///< Albedo load [W] setter.
-    bool set_qe(int usr_node_num, double qe);    ///< Earth IR load [W] setter.
-    bool set_qi(int usr_node_num, double qi);    ///< Internal load [W] setter.
-    bool set_qr(int usr_node_num, double qr);    ///< Other load [W] setter.
-    bool set_a(int usr_node_num, double a);      ///< Area [m^2] setter.
-    bool set_fx(int usr_node_num, double fx);    ///< X coordinate [m] setter.
-    bool set_fy(int usr_node_num, double fy);    ///< Y coordinate [m] setter.
-    bool set_fz(int usr_node_num, double fz);    ///< Z coordinate [m] setter.
-    bool set_eps(int usr_node_num, double eps);  ///< IR emissivity setter.
-    bool set_aph(int usr_node_num, double aph);  ///< Solar absortivity setter.
+    bool set_type(int node_num, char type);  ///< Type setter.
+    bool set_T(int node_num, double T);      ///< Temperature [K] setter.
+    bool set_C(int node_num, double C);  ///< Thermal capacity [J/K] setter.
+    bool set_qs(int node_num, double qs);    ///< Solar load [W] setter.
+    bool set_qa(int node_num, double qa);    ///< Albedo load [W] setter.
+    bool set_qe(int node_num, double qe);    ///< Earth IR load [W] setter.
+    bool set_qi(int node_num, double qi);    ///< Internal load [W] setter.
+    bool set_qr(int node_num, double qr);    ///< Other load [W] setter.
+    bool set_a(int node_num, double a);      ///< Area [m^2] setter.
+    bool set_fx(int node_num, double fx);    ///< X coordinate [m] setter.
+    bool set_fy(int node_num, double fy);    ///< Y coordinate [m] setter.
+    bool set_fz(int node_num, double fz);    ///< Z coordinate [m] setter.
+    bool set_eps(int node_num, double eps);  ///< IR emissivity setter.
+    bool set_aph(int node_num, double aph);  ///< Solar absortivity setter.
 
-    bool set_literal_C(int usr_node_num,
+    bool set_literal_C(int node_num,
                        std::string str);  ///< Literal thermal capacity setter.
 
     double *get_T_value_ref(
-        int usr_node_num);  ///< Pointer where the temperature value is stored.
+        int node_num);  ///< Pointer where the temperature value is stored.
     double *get_C_value_ref(
-        int usr_node_num);  ///< Pointer where the capacity value is stored.
+        int node_num);  ///< Pointer where the capacity value is stored.
     double *get_qs_value_ref(
-        int usr_node_num);  ///< Solar load [W] pointer to the value. Note:
+        int node_num);  ///< Solar load [W] pointer to the value. Note:
                             ///< Values are store in sparse vectors. Calling
                             ///< this function will create a zero value in the
                             ///< matrix if not exist.
     double *get_qa_value_ref(
-        int usr_node_num);  ///< Albedo load [W] pointer to the value. Note:
+        int node_num);  ///< Albedo load [W] pointer to the value. Note:
                             ///< Values are store in sparse vectors. Calling
                             ///< this function will create a zero value in the
                             ///< matrix if not exist.
     double *get_qe_value_ref(
-        int usr_node_num);  ///< Earth IR load [W] pointer to the value. Note:
+        int node_num);  ///< Earth IR load [W] pointer to the value. Note:
                             ///< Values are store in sparse vectors. Calling
                             ///< this function will create a zero value in the
                             ///< matrix if not exist.
     double *get_qi_value_ref(
-        int usr_node_num);  ///< Internal load [W] pointer to the value. Note:
+        int node_num);  ///< Internal load [W] pointer to the value. Note:
                             ///< Values are store in sparse vectors. Calling
                             ///< this function will create a zero value in the
                             ///< matrix if not exist.
     double *get_qr_value_ref(
-        int usr_node_num);  ///< Other load [W] pointer to the value. Note:
+        int node_num);  ///< Other load [W] pointer to the value. Note:
                             ///< Values are store in sparse vectors. Calling
                             ///< this function will create a zero value in the
                             ///< matrix if not exist.
     double *get_a_value_ref(
-        int usr_node_num);  ///< Area [m^2] pointer to the value. Note: Values
+        int node_num);  ///< Area [m^2] pointer to the value. Note: Values
                             ///< are store in sparse vectors. Calling this
                             ///< function will create a zero value in the matrix
                             ///< if not exist.
     double *get_fx_value_ref(
-        int usr_node_num);  ///< X coordinate [m] pointer to the value. Note:
+        int node_num);  ///< X coordinate [m] pointer to the value. Note:
                             ///< Values are store in sparse vectors. Calling
                             ///< this function will create a zero value in the
                             ///< matrix if not exist.
     double *get_fy_value_ref(
-        int usr_node_num);  ///< Y coordinate [m] pointer to the value. Note:
+        int node_num);  ///< Y coordinate [m] pointer to the value. Note:
                             ///< Values are store in sparse vectors. Calling
                             ///< this function will create a zero value in the
                             ///< matrix if not exist.
     double *get_fz_value_ref(
-        int usr_node_num);  ///< Z coordinate [m] pointer to the value. Note:
+        int node_num);  ///< Z coordinate [m] pointer to the value. Note:
                             ///< Values are store in sparse vectors. Calling
                             ///< this function will create a zero value in the
                             ///< matrix if not exist.
     double *get_eps_value_ref(
-        int usr_node_num);  ///< IR emissivity pointer to the value. Note:
+        int node_num);  ///< IR emissivity pointer to the value. Note:
                             ///< Values are store in sparse vectors. Calling
                             ///< this function will create a zero value in the
                             ///< matrix if not exist.
     double *get_aph_value_ref(
-        int usr_node_num);  ///< Solar absortivity pointer to the value. Note:
+        int node_num);  ///< Solar absortivity pointer to the value. Note:
                             ///< Values are store in sparse vectors. Calling
                             ///< this function will create a zero value in the
                             ///< matrix if not exist.
@@ -374,13 +375,13 @@ class Nodes {
      * Change the type of the node from diffusive to boundary. Because of how
      * the internal order is defined, the node structure needs to be rearranged.
      */
-    void diffusive_to_boundary(int usr_node_num);
+    void diffusive_to_boundary(int node_num);
 
     /**
      * Change the type of the node from boundary to diffusive. Because of how
      * the internal order is defined, the node structure needs to be rearranged.
      */
-    void boundary_to_diffusive(int usr_node_num);
+    void boundary_to_diffusive(int node_num);
 
     // Insert methods for SparseVectors
 
