@@ -306,7 +306,7 @@ Node Nodes::get_node_from_idx(Index idx) {
 }
 
 void Nodes::insert_displace(Eigen::SparseVector<LiteralString>& sparse,
-                            int index, const LiteralString& string) {
+                            Index index, const LiteralString& string) {
     sparse.conservativeResize(sparse.size() + 1);
     for (int i = sparse.nonZeros() - 1;
          i >= 0 && sparse.innerIndexPtr()[i] >= index; i--) {
@@ -317,7 +317,12 @@ void Nodes::insert_displace(Eigen::SparseVector<LiteralString>& sparse,
     }
 }
 
-void Nodes::insert_displace(Eigen::SparseVector<double>& sparse, int index,
+void Nodes::insert_displace(Eigen::SparseVector<LiteralString>& sparse,
+                            Eigen::Index index, const std::string& string) {
+    insert_displace(sparse, index, LiteralString(string));
+}
+
+void Nodes::insert_displace(Eigen::SparseVector<double>& sparse, Index index,
                             double value) {
     sparse.conservativeResize(sparse.size() + 1);
     for (int i = sparse.nonZeros() - 1;

@@ -19,11 +19,11 @@ jobs:
       matrix:
         os: [ubuntu, windows]
         #Using now gcc12 because gcc13 was removed from github 
-        compiler: [gcc13, msvc2022]
+        compiler: [gcc12, msvc2022]
         build_type: [release, debug]
         exclude:
           - os: windows
-            compiler: gcc13
+            compiler: gcc12
           - os: ubuntu
             compiler: msvc2022
 

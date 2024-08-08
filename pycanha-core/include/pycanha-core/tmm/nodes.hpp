@@ -391,15 +391,23 @@ class Nodes {
      * vector. The size of the vector is increased by one, and the elements
      * after the inserted one are displaced one position.
      */
-    void insert_displace(Eigen::SparseVector<LiteralString> &sparse, int index,
-                         const LiteralString &string);
+    void insert_displace(Eigen::SparseVector<LiteralString> &sparse,
+                         Index index, const LiteralString &string);
+
+    /**
+     * Helper method to insert a string value in the middle of a Sparse
+     * vector. The size of the vector is increased by one, and the elements
+     * after the inserted one are displaced one position.
+     */
+    void insert_displace(Eigen::SparseVector<LiteralString> &sparse,
+                         Index index, const std::string &string);
 
     /**
      * Helper method to insert a double value in the middle of a Sparse vector.
      * The size of the vector is increased by one, and the elements after the
      * inserted one are displaced one position.
      */
-    void insert_displace(Eigen::SparseVector<double> &sparse, int index,
+    void insert_displace(Eigen::SparseVector<double> &sparse, Index index,
                          double value);
 
     // Delete methods for SparseVectors
