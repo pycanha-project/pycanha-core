@@ -8,6 +8,8 @@ set(TEST_SOURCES
       "${CMAKE_CURRENT_SOURCE_DIR}/gmm/test_transformations.cpp"
       "${CMAKE_CURRENT_SOURCE_DIR}/gmm/test_geometry.cpp"
       "${CMAKE_CURRENT_SOURCE_DIR}/gmm/test_geometrymodel.cpp"
+
+      "${CMAKE_CURRENT_SOURCE_DIR}/tmm/test_node.cpp"
 )
 
 set(TEST_HEADERS "")

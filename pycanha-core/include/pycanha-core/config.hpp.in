@@ -44,3 +44,21 @@ constexpr int LIB_CPP_STANDARD = -1;
 // Ensure size of float
 // Use C++23 std::float32_t in the future.
 static_assert(sizeof(float) == 4, "float is not 32 bits on this system");
+
+// Set the DEBUG flag to 1 if the build type is Debug. Use NDEBUG
+#ifdef NDEBUG
+constexpr bool DEBUG = false;
+#else
+constexpr bool DEBUG = true;
+#endif
+
+// TODO: Temporary. Set these flags in Conan.
+#define CYCANHA_USE_ONLY_EIGEN
+
+constexpr bool VERBOSE = 1;
+
+// Assert expr when in DEBUG
+// msg -> Error message
+#define CYCANHA_ASSERT(exp, msg) assert(((void)msg, exp))
+// Use (void) to silence unused warnings (from ccpref)
+// We use the standar assert, which is based also in NDEBUG
