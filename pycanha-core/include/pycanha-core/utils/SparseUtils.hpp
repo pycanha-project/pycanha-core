@@ -3,6 +3,8 @@
 #include <Eigen/Sparse>
 #include <iomanip>
 #include <iostream>
+#include <tuple>
+#include <vector>
 
 #include "../config.hpp"
 #include "./Instrumentor.hpp"

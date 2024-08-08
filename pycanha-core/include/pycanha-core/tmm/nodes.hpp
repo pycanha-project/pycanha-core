@@ -43,8 +43,9 @@
 
 #pragma once
 #include <memory>
-#include <vector>
+#include <string>
 #include <unordered_map>
+#include <vector>
 
 #include "../parameters.hpp"
 #include "./couplingmatrices.hpp"
@@ -264,7 +265,7 @@ class Nodes {
 
     bool set_type(int node_num, char type);  ///< Type setter.
     bool set_T(int node_num, double T);      ///< Temperature [K] setter.
-    bool set_C(int node_num, double C);  ///< Thermal capacity [J/K] setter.
+    bool set_C(int node_num, double C);      ///< Thermal capacity [J/K] setter.
     bool set_qs(int node_num, double qs);    ///< Solar load [W] setter.
     bool set_qa(int node_num, double qa);    ///< Albedo load [W] setter.
     bool set_qe(int node_num, double qe);    ///< Earth IR load [W] setter.
@@ -286,59 +287,59 @@ class Nodes {
         int node_num);  ///< Pointer where the capacity value is stored.
     double *get_qs_value_ref(
         int node_num);  ///< Solar load [W] pointer to the value. Note:
-                            ///< Values are store in sparse vectors. Calling
-                            ///< this function will create a zero value in the
-                            ///< matrix if not exist.
+                        ///< Values are store in sparse vectors. Calling
+                        ///< this function will create a zero value in the
+                        ///< matrix if not exist.
     double *get_qa_value_ref(
         int node_num);  ///< Albedo load [W] pointer to the value. Note:
-                            ///< Values are store in sparse vectors. Calling
-                            ///< this function will create a zero value in the
-                            ///< matrix if not exist.
+                        ///< Values are store in sparse vectors. Calling
+                        ///< this function will create a zero value in the
+                        ///< matrix if not exist.
     double *get_qe_value_ref(
         int node_num);  ///< Earth IR load [W] pointer to the value. Note:
-                            ///< Values are store in sparse vectors. Calling
-                            ///< this function will create a zero value in the
-                            ///< matrix if not exist.
+                        ///< Values are store in sparse vectors. Calling
+                        ///< this function will create a zero value in the
+                        ///< matrix if not exist.
     double *get_qi_value_ref(
         int node_num);  ///< Internal load [W] pointer to the value. Note:
-                            ///< Values are store in sparse vectors. Calling
-                            ///< this function will create a zero value in the
-                            ///< matrix if not exist.
+                        ///< Values are store in sparse vectors. Calling
+                        ///< this function will create a zero value in the
+                        ///< matrix if not exist.
     double *get_qr_value_ref(
         int node_num);  ///< Other load [W] pointer to the value. Note:
-                            ///< Values are store in sparse vectors. Calling
-                            ///< this function will create a zero value in the
-                            ///< matrix if not exist.
+                        ///< Values are store in sparse vectors. Calling
+                        ///< this function will create a zero value in the
+                        ///< matrix if not exist.
     double *get_a_value_ref(
         int node_num);  ///< Area [m^2] pointer to the value. Note: Values
-                            ///< are store in sparse vectors. Calling this
-                            ///< function will create a zero value in the matrix
-                            ///< if not exist.
+                        ///< are store in sparse vectors. Calling this
+                        ///< function will create a zero value in the matrix
+                        ///< if not exist.
     double *get_fx_value_ref(
         int node_num);  ///< X coordinate [m] pointer to the value. Note:
-                            ///< Values are store in sparse vectors. Calling
-                            ///< this function will create a zero value in the
-                            ///< matrix if not exist.
+                        ///< Values are store in sparse vectors. Calling
+                        ///< this function will create a zero value in the
+                        ///< matrix if not exist.
     double *get_fy_value_ref(
         int node_num);  ///< Y coordinate [m] pointer to the value. Note:
-                            ///< Values are store in sparse vectors. Calling
-                            ///< this function will create a zero value in the
-                            ///< matrix if not exist.
+                        ///< Values are store in sparse vectors. Calling
+                        ///< this function will create a zero value in the
+                        ///< matrix if not exist.
     double *get_fz_value_ref(
         int node_num);  ///< Z coordinate [m] pointer to the value. Note:
-                            ///< Values are store in sparse vectors. Calling
-                            ///< this function will create a zero value in the
-                            ///< matrix if not exist.
+                        ///< Values are store in sparse vectors. Calling
+                        ///< this function will create a zero value in the
+                        ///< matrix if not exist.
     double *get_eps_value_ref(
         int node_num);  ///< IR emissivity pointer to the value. Note:
-                            ///< Values are store in sparse vectors. Calling
-                            ///< this function will create a zero value in the
-                            ///< matrix if not exist.
+                        ///< Values are store in sparse vectors. Calling
+                        ///< this function will create a zero value in the
+                        ///< matrix if not exist.
     double *get_aph_value_ref(
         int node_num);  ///< Solar absortivity pointer to the value. Note:
-                            ///< Values are store in sparse vectors. Calling
-                            ///< this function will create a zero value in the
-                            ///< matrix if not exist.
+                        ///< Values are store in sparse vectors. Calling
+                        ///< this function will create a zero value in the
+                        ///< matrix if not exist.
 
     Index get_idx_from_node_num(
         int node_num) const;  ///< Get internal node numbre from user number.

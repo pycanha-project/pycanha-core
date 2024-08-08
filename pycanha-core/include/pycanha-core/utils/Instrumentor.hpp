@@ -23,7 +23,7 @@
 // //Function timing
 //
 // void some_function(){
-//   PROFILE_FUNCTION();  //Name is automatically inferred
+//   PROFILE_FUNCTION();  //name is automatically inferred
 //   // code
 // }
 //
@@ -42,18 +42,17 @@
 #include <thread>
 
 struct ProfileResult {
-    std::string Name;
-    long long Timestamp;
+    std::string name;
+    int64_t timestamp;
     char EventType;
     std::thread::id ThreadID;
 };
 
 struct InstrumentationSession {
-    std::string Name;
+    std::string name;
 };
 
 class Instrumentor {
-  private:
     InstrumentationSession* m_CurrentSession;
     std::ofstream m_OutputStream;
     int m_ProfileCount;
@@ -84,7 +83,7 @@ class Instrumentor {
 
         if (m_ProfileCount++ > 0) m_OutputStream << ",";
 
-        std::string name = result.Name;
+        std::string name = result.name;
         std::replace(name.begin(), name.end(), '"', '\'');
 
         m_OutputStream << "{";
@@ -93,7 +92,7 @@ class Instrumentor {
         m_OutputStream << "\"ph\":\"" << result.EventType << "\",";
         m_OutputStream << "\"pid\":0,";
         m_OutputStream << "\"tid\":" << result.ThreadID << ",";
-        m_OutputStream << "\"ts\":" << result.Timestamp;
+        m_OutputStream << "\"ts\":" << result.timestamp;
         m_OutputStream << "}";
 
         m_OutputStream.flush();
@@ -117,7 +116,8 @@ class Instrumentor {
 
 class InstrumentationTimer {
   public:
-    InstrumentationTimer(const char* name) : m_Name(name), m_Stopped(false) {
+    explicit InstrumentationTimer(const char* name)
+        : m_Name(name), m_Stopped(false) {
         Start();
     }
 
@@ -126,10 +126,10 @@ class InstrumentationTimer {
     }
     void Start() {
         m_StartTimepoint = std::chrono::high_resolution_clock::now();
-        long long ts = std::chrono::time_point_cast<std::chrono::microseconds>(
-                           m_StartTimepoint)
-                           .time_since_epoch()
-                           .count();
+        int64_t ts = std::chrono::time_point_cast<std::chrono::microseconds>(
+                         m_StartTimepoint)
+                         .time_since_epoch()
+                         .count();
         // uint32_t threadID =
         // std::hash<std::thread::id>{}(std::this_thread::get_id());
         std::thread::id threadID = std::this_thread::get_id();
@@ -138,10 +138,10 @@ class InstrumentationTimer {
     void Stop() {
         auto endTimepoint = std::chrono::high_resolution_clock::now();
 
-        long long ts = std::chrono::time_point_cast<std::chrono::microseconds>(
-                           endTimepoint)
-                           .time_since_epoch()
-                           .count();
+        int64_t ts = std::chrono::time_point_cast<std::chrono::microseconds>(
+                         endTimepoint)
+                         .time_since_epoch()
+                         .count();
 
         std::thread::id threadID = std::this_thread::get_id();
         Instrumentor::Get().WriteEvent({m_Name, ts, 'E', threadID});
