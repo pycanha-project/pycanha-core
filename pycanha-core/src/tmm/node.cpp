@@ -84,6 +84,27 @@ Node& Node::operator=(const Node& otherNode) {
     return *this;
 }
 
+// Move assignment operator
+Node& Node::operator=(Node&& otherNode) noexcept {
+    if (this != &otherNode) {
+        // Release any resources currently held by this object
+        delete m_local_storage_ptr;
+
+        // Transfer ownership of resources from otherNode to this object
+        UsrNodeNum = otherNode.UsrNodeNum;
+        ParentPointer = std::move(otherNode.ParentPointer);
+        m_local_storage_ptr = otherNode.m_local_storage_ptr;
+
+        // Invalidate the resources of the otherNode
+        otherNode.m_local_storage_ptr = nullptr;
+
+        if (DEBUG) {
+            std::cout << "Move assignment operator called \n";
+        }
+    }
+    return *this;
+}
+
 Node::~Node() { _local_storage_destructor(); }
 
 /*

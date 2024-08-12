@@ -27,8 +27,8 @@ inline int CouplingMatrices::get_num_nodes() const {
     return sparse_db.rows() + sparse_db.cols();
 }
 
-const Eigen::SparseMatrix<double, Eigen::RowMajor>
-*CouplingMatrices::return_sparse_dd() {
+const Eigen::SparseMatrix<double, Eigen::RowMajor> *
+CouplingMatrices::return_sparse_dd() {
     sparse_dd.makeCompressed();
     return &sparse_dd;
 }
@@ -249,16 +249,16 @@ void CouplingMatrices::print_sparse() {
     SparseUtils::print_sparse(sparse_bb);
 }
 
-void CouplingMatrices::_add_node_diff(Index InsertPosition) {
+void CouplingMatrices::_add_node_diff(Index insert_position) {
     // NEW STORAGE USING K_dd and K_db
-    SparseUtils::add_zero_row(sparse_db, InsertPosition);
-    SparseUtils::add_zero_row_col(sparse_dd, InsertPosition, InsertPosition);
+    SparseUtils::add_zero_row(sparse_db, insert_position);
+    SparseUtils::add_zero_row_col(sparse_dd, insert_position, insert_position);
 }
 
-void CouplingMatrices::_add_node_bound(Index InsertPosition) {
+void CouplingMatrices::_add_node_bound(Index insert_position) {
     // NEW STORAGE USING K_dd and K_db
-    SparseUtils::add_zero_col(sparse_db, InsertPosition);
-    SparseUtils::add_zero_row_col(sparse_bb, InsertPosition, InsertPosition);
+    SparseUtils::add_zero_col(sparse_db, insert_position);
+    SparseUtils::add_zero_row_col(sparse_bb, insert_position, insert_position);
 }
 
 void CouplingMatrices::_remove_node_diff(Index idx) {

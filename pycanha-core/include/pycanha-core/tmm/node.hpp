@@ -43,7 +43,7 @@
 
 using namespace pycanha;  // NOLINT
 
-enum NodeType : unsigned char { DiffusiveNode = 'D', BoundaryNode = 'B' };
+enum NodeType : unsigned char { DIFFUSIVE_NODE = 'D', BOUNDARY_NODE = 'B' };
 
 class Nodes;
 
@@ -139,6 +139,9 @@ class Node {
     // Asignment operator
     Node& operator=(const Node& otherNode);
 
+    // Move assignment operator
+    Node& operator=(Node&& otherNode) noexcept;
+
     // Destructor
     ~Node();
 
@@ -169,7 +172,8 @@ class Node {
     double get_eps();  ///< IR emissivity getter.
     double get_aph();  ///< Solar absortivity getter.
 
-    [[nodiscard]] std::string get_literal_C() const;  ///< Literal thermal capacity getter.
+    [[nodiscard]] std::string get_literal_C()
+        const;  ///< Literal thermal capacity getter.
 
     // TODO: Inconsistent nomenclature
     void setUsrNodeNum(int UsrNodeNum);  ///< Internal node number setter.

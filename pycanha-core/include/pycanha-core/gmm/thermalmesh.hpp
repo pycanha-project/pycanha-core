@@ -42,7 +42,7 @@ class ThermalMesh : public UniqueID {
     std::vector<double> _dir2_mesh = std::vector<double>{0.0, 1.0};
 
     // Validate function that throws exception.
-    void validate() const {
+    void _validate() const {
         if (!is_valid()) {
             throw std::invalid_argument("Invalid thermal mesh");
         }
@@ -50,7 +50,7 @@ class ThermalMesh : public UniqueID {
 
   public:
     // Using default values and test if the mesh is valid
-    ThermalMesh() { validate(); }
+    ThermalMesh() { _validate(); }
 
     // Getters
     [[nodiscard]] bool get_side1_activity() const { return _side1_activity; }
@@ -102,62 +102,62 @@ class ThermalMesh : public UniqueID {
     // Setters
     void set_side1_activity(bool side1_activity) {
         _side1_activity = side1_activity;
-        validate();
+        _validate();
     }
     void set_side2_activity(bool side2_activity) {
         _side2_activity = side2_activity;
-        validate();
+        _validate();
     }
 
     void set_side1_thick(double side1_thick) {
         _side1_thick = side1_thick;
-        validate();
+        _validate();
     }
     void set_side2_thick(double side2_thick) {
         _side2_thick = side2_thick;
-        validate();
+        _validate();
     }
 
     // cppcheck-suppress passedByValue
     void set_side1_color(Color side1_color) {
         _side1_color = side1_color;
-        validate();
+        _validate();
     }
 
     // cppcheck-suppress passedByValue
     void set_side2_color(Color side2_color) {
         _side2_color = side2_color;
-        validate();
+        _validate();
     }
 
     void set_side1_material(std::shared_ptr<BulkMaterial> side1_material) {
         _side1_material = std::move(side1_material);
-        validate();
+        _validate();
     }
 
     void set_side2_material(std::shared_ptr<BulkMaterial> side2_material) {
         _side2_material = std::move(side2_material);
-        validate();
+        _validate();
     }
 
     void set_side1_optical(std::shared_ptr<OpticalMaterial> side1_optical) {
         _side1_optical = std::move(side1_optical);
-        validate();
+        _validate();
     }
 
     void set_side2_optical(std::shared_ptr<OpticalMaterial> side2_optical) {
         _side2_optical = std::move(side2_optical);
-        validate();
+        _validate();
     }
 
     void set_dir1_mesh(std::vector<double> dir1_mesh) {
         _dir1_mesh = std::move(dir1_mesh);
-        validate();
+        _validate();
     }
 
     void set_dir2_mesh(std::vector<double> dir2_mesh) {
         _dir2_mesh = std::move(dir2_mesh);
-        validate();
+        _validate();
     }
     /**
      * @brief Check if the mesh is valid

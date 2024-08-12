@@ -33,7 +33,6 @@ class CouplingMatrices {
     Eigen::SparseMatrix<double, Eigen::RowMajor> sparse_db;
     Eigen::SparseMatrix<double, Eigen::RowMajor> sparse_bb;
 
-  public:
     // Constructors
     CouplingMatrices();
 
@@ -108,7 +107,7 @@ class CouplingMatrices {
     void _remove_node_diff(Index idx);
     void _remove_node_bound(Index idx);
 
-    typedef void (CouplingMatrices::*_add_coupling_generic)(
+    using _add_coupling_generic = void (CouplingMatrices::*)(
         Eigen::SparseMatrix<double, Eigen::RowMajor> &, int, int, double);
 
     void _add_ovw_coupling_sparse(
@@ -155,5 +154,5 @@ class CouplingMatrices {
         int idx1, int idx2, double val, _add_coupling_generic add_coupling_fun);
 
     // TODO
-    void _diff_to_bound(Index InsertPosition, Index int_bound_num);
+    void _diff_to_bound(Index insert_position, Index int_bound_num);
 };

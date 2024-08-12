@@ -19,24 +19,24 @@ class LiteralString {
     friend class Nodes;
 
   public:
-    LiteralString() : m_string(std::string()) {}
-    explicit LiteralString(int) : m_string(std::string()) {}  // NOLINT
-    explicit LiteralString(const std::string& str) : m_string(str) {}
+    LiteralString() = default;  // Default constructor
+    explicit LiteralString(int) {}
+    explicit LiteralString(const std::string& str) : _string(str) {}
 
     // Implicit conversion constructor from std::string
-    explicit LiteralString(std::string&& str) : m_string(std::move(str)) {}
+    explicit LiteralString(std::string&& str) : _string(std::move(str)) {}
 
     // Copy constructor
-    LiteralString(const LiteralString& other) : m_string(other.m_string) {}
+    LiteralString(const LiteralString& other) = default;
 
     // Move constructor
     LiteralString(LiteralString&& other) noexcept
-        : m_string(std::move(other.m_string)) {}
+        : _string(std::move(other._string)) {}
 
     // Copy assignment operator
     LiteralString& operator=(const LiteralString& other) {
         if (this != &other) {
-            m_string = other.m_string;
+            _string = other._string;
         }
         return *this;
     }
@@ -44,21 +44,24 @@ class LiteralString {
     // Move assignment operator
     LiteralString& operator=(LiteralString&& other) noexcept {
         if (this != &other) {
-            m_string = std::move(other.m_string);
+            _string = std::move(other._string);
         }
         return *this;
     }
 
     // Assignment operator from std::string
     LiteralString& operator=(const std::string& str) {
-        m_string = str;
+        _string = str;
         return *this;
     }
 
-    void print_string() const { std::cout << m_string; }
-    [[nodiscard]] const std::string& get_literal() const { return m_string; }
-    [[nodiscard]] bool is_empty() const { return m_string.empty(); }
+    void print_string() const { std::cout << _string; }
+    [[nodiscard]] const std::string& get_literal() const { return _string; }
+    [[nodiscard]] bool is_empty() const { return _string.empty(); }
+
+    // Destructor
+    ~LiteralString() = default;
 
   private:
-    std::string m_string;
+    std::string _string;
 };
