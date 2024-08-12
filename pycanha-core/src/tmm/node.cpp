@@ -16,26 +16,26 @@ Node::Node(int node_num, std::weak_ptr<Nodes> parent_pointer)
       _local_storage_ptr(nullptr) {}
 
 // Move constructor
-Node::Node(Node&& otherNode)
-    : _node_num(otherNode._node_num),
-      _parent_pointer(otherNode._parent_pointer),
-      _local_storage_ptr(otherNode._local_storage_ptr) {
+Node::Node(Node&& other_node)
+    : _node_num(other_node._node_num),
+      _parent_pointer(other_node._parent_pointer),
+      _local_storage_ptr(other_node._local_storage_ptr) {
     if (DEBUG) {
         std::cout << "Move constructor called \n";
     }
 
-    // When otherNode call its destructor, the storage (if exists) its not
+    // When other_node call its destructor, the storage (if exists) its not
     // deleted.
-    otherNode._local_storage_ptr = nullptr;
+    other_node._local_storage_ptr = nullptr;
 }
 
 // Copy constructor
-Node::Node(const Node& otherNode)
-    : _node_num(otherNode._node_num),
-      _parent_pointer(otherNode._parent_pointer),
-      _local_storage_ptr(otherNode._local_storage_ptr) {
+Node::Node(const Node& other_node)
+    : _node_num(other_node._node_num),
+      _parent_pointer(other_node._parent_pointer),
+      _local_storage_ptr(other_node._local_storage_ptr) {
     // Instead of copyng attributes individually, call memcpy
-    // memcpy(this, &otherNode, sizeof(Node)); //THIS IS EVIL DON'T DO IT.
+    // memcpy(this, &other_node, sizeof(Node)); //THIS IS EVIL DON'T DO IT.
     // PROGRAM WILL CRASH
     // TODO: I need to manually write a copy constructor because I need to
     // handle the local_storage. If I change the local storage to be an RII
@@ -47,7 +47,7 @@ Node::Node(const Node& otherNode)
 
         // Copy memory buffer containing the node info to other place
         _local_storage_ptr = new local_storage;
-        *_local_storage_ptr = *otherNode._local_storage_ptr;
+        *_local_storage_ptr = *other_node._local_storage_ptr;
     }
     // else: _local_storage_ptr is nullptr, and ParentPointer should be valid
     // (is not checked)
@@ -58,25 +58,25 @@ Node::Node(const Node& otherNode)
 }
 
 // Assignment operator
-Node& Node::operator=(const Node& otherNode) {
+Node& Node::operator=(const Node& other_node) {
     // First, delete the old buffer if exists
     if (_local_storage_ptr) {
         delete _local_storage_ptr;
     }
 
     // Shallow copy. Instead of copyng attributes individually, call memcpy
-    // memcpy(this, &otherNode, sizeof(Node)); //DON'T!!!!
+    // memcpy(this, &other_node, sizeof(Node)); //DON'T!!!!
 
-    this->_node_num = otherNode._node_num;
-    this->_parent_pointer = otherNode._parent_pointer;
-    this->_local_storage_ptr = otherNode._local_storage_ptr;
+    this->_node_num = other_node._node_num;
+    this->_parent_pointer = other_node._parent_pointer;
+    this->_local_storage_ptr = other_node._local_storage_ptr;
 
     if (_local_storage_ptr) {
         // Pointer is not null and the node is local, not associated with TNs
 
         // Copy memory buffer containing the node info to other place
         _local_storage_ptr = new local_storage;
-        *_local_storage_ptr = *otherNode._local_storage_ptr;
+        *_local_storage_ptr = *other_node._local_storage_ptr;
     }
     // else: _local_storage_ptr is nullptr, and ParentPointer should be valid
     // (is not checked)
@@ -85,18 +85,18 @@ Node& Node::operator=(const Node& otherNode) {
 }
 
 // Move assignment operator
-Node& Node::operator=(Node&& otherNode) noexcept {
-    if (this != &otherNode) {
+Node& Node::operator=(Node&& other_node) noexcept {
+    if (this != &other_node) {
         // Release any resources currently held by this object
         delete _local_storage_ptr;
 
-        // Transfer ownership of resources from otherNode to this object
-        _node_num = otherNode._node_num;
-        _parent_pointer = std::move(otherNode._parent_pointer);
-        _local_storage_ptr = otherNode._local_storage_ptr;
+        // Transfer ownership of resources from other_node to this object
+        _node_num = other_node._node_num;
+        _parent_pointer = std::move(other_node._parent_pointer);
+        _local_storage_ptr = other_node._local_storage_ptr;
 
-        // Invalidate the resources of the otherNode
-        otherNode._local_storage_ptr = nullptr;
+        // Invalidate the resources of the other_node
+        other_node._local_storage_ptr = nullptr;
 
         if (DEBUG) {
             std::cout << "Move assignment operator called \n";

@@ -131,16 +131,16 @@ class Node {
     Node(int node_num, std::weak_ptr<Nodes> _parent_pointer);
 
     // Move constructor
-    Node(Node&& otherNode);
+    Node(Node&& other_node);
 
     // Copy constructor
-    Node(const Node& otherNode);
+    Node(const Node& other_node);
 
     // Asignment operator
-    Node& operator=(const Node& otherNode);
+    Node& operator=(const Node& other_node);
 
     // Move assignment operator
-    Node& operator=(Node&& otherNode) noexcept;
+    Node& operator=(Node&& other_node) noexcept;
 
     // Destructor
     ~Node();
