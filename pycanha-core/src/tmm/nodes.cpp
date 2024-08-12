@@ -7,7 +7,7 @@
 #include "pycanha-core/parameters.hpp"
 
 // Default constructor
-Nodes::Nodes() : NodeNumMapped(false) {
+Nodes::Nodes() : _node_num_mapped(false) {
     if (DEBUG) {
         std::cout << "Default constructor of TNs called " << self_pointer
                   << "\n";
@@ -37,21 +37,21 @@ void Nodes::add_node(Node& node) {
     // Update the node number mapping
     Index insert_idx;
 
-    if (UsrToIntNodeNum.find(node_num) != UsrToIntNodeNum.end()) {
+    if (_usr_to_int_node_num.find(node_num) != _usr_to_int_node_num.end()) {
         // TODO: ERROR. Duplicated node
         std::cout << "ERROR. Node " << node_num << " already inserted.\n";
         return;
     }
 
     if (type == 'D') {
-        auto it = std::upper_bound(DiffUsrNodeNum_vector.begin(),
-                                   DiffUsrNodeNum_vector.end(), node_num);
-        insert_idx = std::distance(DiffUsrNodeNum_vector.begin(), it);
+        auto it = std::upper_bound(_diff_node_num_vector.begin(),
+                                   _diff_node_num_vector.end(), node_num);
+        insert_idx = std::distance(_diff_node_num_vector.begin(), it);
     } else if (type == 'B') {
-        auto it = std::upper_bound(BoundUsrNodeNum_vector.begin(),
-                                   BoundUsrNodeNum_vector.end(), node_num);
-        insert_idx = std::distance(BoundUsrNodeNum_vector.begin(), it);
-        insert_idx += DiffUsrNodeNum_vector.size();
+        auto it = std::upper_bound(_bound_node_num_vector.begin(),
+                                   _bound_node_num_vector.end(), node_num);
+        insert_idx = std::distance(_bound_node_num_vector.begin(), it);
+        insert_idx += _diff_node_num_vector.size();
     } else {
         // TODO: ERROR. WRONG NODE TYPE
         std::cout << "ERROR. Wrong node type?\n";
@@ -71,20 +71,20 @@ int Nodes::num_nodes() const { return T_vector.size(); }
 
 int Nodes::get_num_nodes() const { return T_vector.size(); }
 
-int Nodes::get_num_diff_nodes() const { return DiffUsrNodeNum_vector.size(); }
+int Nodes::get_num_diff_nodes() const { return _diff_node_num_vector.size(); }
 
-int Nodes::get_num_bound_nodes() const { return BoundUsrNodeNum_vector.size(); }
+int Nodes::get_num_bound_nodes() const { return _bound_node_num_vector.size(); }
 
 /*
 Getters and setters are always the same except which atributte is needed.
 */
 #define GET_SET_DOUBLE_ATTR(attr)                             \
-    bool Nodes::set_##attr(int node_num, double attr) {     \
-        if (!NodeNumMapped) {                                 \
+    bool Nodes::set_##attr(int node_num, double attr) {       \
+        if (!_node_num_mapped) {                                 \
             create_node_num_map();                            \
         }                                                     \
-        auto it = UsrToIntNodeNum.find(node_num);           \
-        if (it != UsrToIntNodeNum.end()) {                    \
+        auto it = _usr_to_int_node_num.find(node_num);             \
+        if (it != _usr_to_int_node_num.end()) {                    \
             attr##_vector[it->second] = attr;                 \
             return true;                                      \
         } else {                                              \
@@ -92,24 +92,24 @@ Getters and setters are always the same except which atributte is needed.
             return false;                                     \
         }                                                     \
     }                                                         \
-    double Nodes::get_##attr(int node_num) {                \
-        if (!NodeNumMapped) {                                 \
+    double Nodes::get_##attr(int node_num) {                  \
+        if (!_node_num_mapped) {                                 \
             create_node_num_map();                            \
         }                                                     \
-        auto it = UsrToIntNodeNum.find(node_num);           \
-        if (it != UsrToIntNodeNum.end()) {                    \
+        auto it = _usr_to_int_node_num.find(node_num);             \
+        if (it != _usr_to_int_node_num.end()) {                    \
             return attr##_vector[it->second];                 \
         } else {                                              \
             std::cout << "Get Error: Node does not exist.\n"; \
             return std::nan("");                              \
         }                                                     \
     }                                                         \
-    double* Nodes::get_##attr##_value_ref(int node_num) {   \
-        if (!NodeNumMapped) {                                 \
+    double* Nodes::get_##attr##_value_ref(int node_num) {     \
+        if (!_node_num_mapped) {                                 \
             create_node_num_map();                            \
         }                                                     \
-        auto it = UsrToIntNodeNum.find(node_num);           \
-        if (it != UsrToIntNodeNum.end()) {                    \
+        auto it = _usr_to_int_node_num.find(node_num);             \
+        if (it != _usr_to_int_node_num.end()) {                    \
             return &(attr##_vector[it->second]);              \
         } else {                                              \
             std::cout << "Get Error: Node does not exist.\n"; \
@@ -118,24 +118,24 @@ Getters and setters are always the same except which atributte is needed.
     }
 
 #define GET_SET_DOUBLE_SPARSE(attr)                           \
-    double Nodes::get_##attr(int node_num) {                \
-        if (!NodeNumMapped) {                                 \
+    double Nodes::get_##attr(int node_num) {                  \
+        if (!_node_num_mapped) {                                 \
             create_node_num_map();                            \
         }                                                     \
-        auto it = UsrToIntNodeNum.find(node_num);           \
-        if (it != UsrToIntNodeNum.end()) {                    \
+        auto it = _usr_to_int_node_num.find(node_num);             \
+        if (it != _usr_to_int_node_num.end()) {                    \
             return attr##_vector.coeff(it->second);           \
         } else {                                              \
             std::cout << "Get Error: Node does not exist.\n"; \
             return std::nan("");                              \
         }                                                     \
     }                                                         \
-    bool Nodes::set_##attr(int node_num, double value) {    \
-        if (!NodeNumMapped) {                                 \
+    bool Nodes::set_##attr(int node_num, double value) {      \
+        if (!_node_num_mapped) {                                 \
             create_node_num_map();                            \
         }                                                     \
-        auto it = UsrToIntNodeNum.find(node_num);           \
-        if (it != UsrToIntNodeNum.end()) {                    \
+        auto it = _usr_to_int_node_num.find(node_num);             \
+        if (it != _usr_to_int_node_num.end()) {                    \
             attr##_vector.insert(it->second) = value;         \
             return true;                                      \
         } else {                                              \
@@ -143,12 +143,12 @@ Getters and setters are always the same except which atributte is needed.
             return false;                                     \
         }                                                     \
     }                                                         \
-    double* Nodes::get_##attr##_value_ref(int node_num) {   \
-        if (!NodeNumMapped) {                                 \
+    double* Nodes::get_##attr##_value_ref(int node_num) {     \
+        if (!_node_num_mapped) {                                 \
             create_node_num_map();                            \
         }                                                     \
-        auto it = UsrToIntNodeNum.find(node_num);           \
-        if (it != UsrToIntNodeNum.end()) {                    \
+        auto it = _usr_to_int_node_num.find(node_num);             \
+        if (it != _usr_to_int_node_num.end()) {                    \
             return &(attr##_vector.coeffRef(it->second));     \
         } else {                                              \
             std::cout << "Get Error: Node does not exist.\n"; \
@@ -176,7 +176,7 @@ GET_SET_DOUBLE_SPARSE(aph)
 /////////////////////////////////////////////////////////////////////////
 
 bool Nodes::set_type(int node_num, char Type) {
-    if (!NodeNumMapped) {
+    if (!_node_num_mapped) {
         create_node_num_map();
     }
     if (!(Type == 'D' || Type == 'B')) {
@@ -208,12 +208,12 @@ bool Nodes::set_type(int node_num, char Type) {
     }
 }
 char Nodes::get_type(int node_num) {
-    if (!NodeNumMapped) {
+    if (!_node_num_mapped) {
         create_node_num_map();
     }
-    auto it = UsrToIntNodeNum.find(node_num);
-    if (it != UsrToIntNodeNum.end()) {
-        if (it->second < DiffUsrNodeNum_vector.size()) {
+    auto it = _usr_to_int_node_num.find(node_num);
+    if (it != _usr_to_int_node_num.end()) {
+        if (it->second < _diff_node_num_vector.size()) {
             return 'D';
         } else {
             return 'B';
@@ -226,16 +226,16 @@ char Nodes::get_type(int node_num) {
 
 void Nodes::create_node_num_map() const {
     int int_num;
-    for (int_num = 0; int_num < DiffUsrNodeNum_vector.size(); int_num++) {
-        UsrToIntNodeNum[DiffUsrNodeNum_vector[int_num]] = int_num;
+    for (int_num = 0; int_num < _diff_node_num_vector.size(); int_num++) {
+        _usr_to_int_node_num[_diff_node_num_vector[int_num]] = int_num;
     }
-    for (int bound_num = 0; bound_num < BoundUsrNodeNum_vector.size();
+    for (int bound_num = 0; bound_num < _bound_node_num_vector.size();
          bound_num++) {
-        UsrToIntNodeNum[BoundUsrNodeNum_vector[bound_num]] = int_num;
+        _usr_to_int_node_num[_bound_node_num_vector[bound_num]] = int_num;
         int_num++;
     }
 
-    NodeNumMapped = true;
+    _node_num_mapped = true;
 }
 
 void Nodes::diffusive_to_boundary(int usr_node_num) {
@@ -257,11 +257,11 @@ void Nodes::boundary_to_diffusive(int usr_node_num) {
 }
 
 Index Nodes::get_idx_from_node_num(int node_num) const {
-    if (!NodeNumMapped) {
+    if (!_node_num_mapped) {
         create_node_num_map();
     }
-    auto it = UsrToIntNodeNum.find(node_num);
-    if (it != UsrToIntNodeNum.end()) {
+    auto it = _usr_to_int_node_num.find(node_num);
+    if (it != _usr_to_int_node_num.end()) {
         return it->second;
     } else {
         std::cout << "Error: Node does not exists" << std::endl;
@@ -270,15 +270,15 @@ Index Nodes::get_idx_from_node_num(int node_num) const {
 }
 
 int Nodes::get_node_num_from_idx(Index idx) const {
-    if (!NodeNumMapped) {
+    if (!_node_num_mapped) {
         create_node_num_map();
     }
-    if (0 <= idx && idx < DiffUsrNodeNum_vector.size()) {
-        return DiffUsrNodeNum_vector[idx];
+    if (0 <= idx && idx < _diff_node_num_vector.size()) {
+        return _diff_node_num_vector[idx];
     } else if (idx <
-               DiffUsrNodeNum_vector.size() + BoundUsrNodeNum_vector.size()) {
-        idx -= DiffUsrNodeNum_vector.size();
-        return BoundUsrNodeNum_vector[idx];
+               _diff_node_num_vector.size() + _bound_node_num_vector.size()) {
+        idx -= _diff_node_num_vector.size();
+        return _bound_node_num_vector[idx];
     } else {
         std::cout << "Error: Node does not exists\n";
         return -1;
@@ -359,11 +359,11 @@ void Nodes::delete_displace(Eigen::SparseVector<double>& sparse, int index) {
 }
 
 std::string Nodes::get_literal_C(int node_num) const {
-    if (!NodeNumMapped) {
+    if (!_node_num_mapped) {
         create_node_num_map();
     }
-    auto it = UsrToIntNodeNum.find(node_num);
-    if (it != UsrToIntNodeNum.end()) {
+    auto it = _usr_to_int_node_num.find(node_num);
+    if (it != _usr_to_int_node_num.end()) {
         return literals_C.coeff(it->second).get_literal();
     } else {
         std::cout << "Get Error: Node does not exist.\n";
@@ -372,11 +372,11 @@ std::string Nodes::get_literal_C(int node_num) const {
 }
 
 bool Nodes::set_literal_C(int node_num, std::string str) {
-    if (!NodeNumMapped) {
+    if (!_node_num_mapped) {
         create_node_num_map();
     }
-    auto it = UsrToIntNodeNum.find(node_num);
-    if (it != UsrToIntNodeNum.end()) {
+    auto it = _usr_to_int_node_num.find(node_num);
+    if (it != _usr_to_int_node_num.end()) {
         literals_C.insert(it->second) = str;
         return true;
     } else {
@@ -397,7 +397,7 @@ void Nodes::remove_node(int node_num) {
         return;
     }
 
-    UsrToIntNodeNum.extract(node_num);
+    _usr_to_int_node_num.extract(node_num);
 
     T_vector.erase(T_vector.begin() + idx);
     C_vector.erase(C_vector.begin() + idx);
@@ -417,13 +417,13 @@ void Nodes::remove_node(int node_num) {
     delete_displace(literals_C, idx);
 
     // Reshape node vector and conductors
-    if (idx < DiffUsrNodeNum_vector.size()) {
-        DiffUsrNodeNum_vector.erase(DiffUsrNodeNum_vector.begin() + idx);
+    if (idx < _diff_node_num_vector.size()) {
+        _diff_node_num_vector.erase(_diff_node_num_vector.begin() + idx);
     } else {
-        BoundUsrNodeNum_vector.erase(BoundUsrNodeNum_vector.begin() +
-                                     (idx - DiffUsrNodeNum_vector.size()));
+        _bound_node_num_vector.erase(_bound_node_num_vector.begin() +
+                                     (idx - _diff_node_num_vector.size()));
     }
-    NodeNumMapped = false;
+    _node_num_mapped = false;
 }
 
 void Nodes::_add_node_insert_idx(Node& node, Index insert_idx) {
@@ -432,12 +432,12 @@ void Nodes::_add_node_insert_idx(Node& node, Index insert_idx) {
     int node_num = node.get_node_num();
 
     if (type == 'D') {
-        DiffUsrNodeNum_vector.insert(DiffUsrNodeNum_vector.begin() + insert_idx,
+        _diff_node_num_vector.insert(_diff_node_num_vector.begin() + insert_idx,
                                      node_num);
     } else if (type == 'B') {
-        BoundUsrNodeNum_vector.insert(
-            BoundUsrNodeNum_vector.begin() +
-                (insert_idx - static_cast<Index>(DiffUsrNodeNum_vector.size())),
+        _bound_node_num_vector.insert(
+            _bound_node_num_vector.begin() +
+                (insert_idx - static_cast<Index>(_diff_node_num_vector.size())),
             node_num);
     } else {
         // TODO: ERROR. WRONG NODE TYPE
@@ -445,7 +445,7 @@ void Nodes::_add_node_insert_idx(Node& node, Index insert_idx) {
         return;
     }
 
-    NodeNumMapped = false;
+    _node_num_mapped = false;
     int nn = num_nodes() + 1;
 
 // Fill the containers with the node properties
@@ -477,4 +477,4 @@ void Nodes::_add_node_insert_idx(Node& node, Index insert_idx) {
     return;
 }
 
-bool Nodes::is_mapped() const { return NodeNumMapped; }
+bool Nodes::is_mapped() const { return _node_num_mapped; }

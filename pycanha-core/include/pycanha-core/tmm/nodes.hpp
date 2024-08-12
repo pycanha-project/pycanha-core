@@ -77,16 +77,16 @@ class Nodes {
      * ordered from lower user node number to higher.
      */
     // TODO: Consistent nomenclature
-    std::vector<int> DiffUsrNodeNum_vector;
+    std::vector<int> _diff_node_num_vector;
 
     /**
      * Vector with the user node number of the boundary nodes. The vector is
      * ordered from lower user node number to higher.
      */
     // TODO: Consistent nomenclature
-    std::vector<int> BoundUsrNodeNum_vector;
+    std::vector<int> _bound_node_num_vector;
 
-    // The concatenated vector [DiffUsrNodeNum_vector, BoundUsrNodeNum_vector]
+    // The concatenated vector [diff_node_num_vector, bound_node_num_vector]
     // would contain the user node number of all the nodes of the model ordered
     // according to the internal number.
 
@@ -179,20 +179,20 @@ class Nodes {
      * structure change.
      *
      * The opposite map (internal to user) is not necessary as the user number
-     * are stored in two ordered vectors (DiffUsrNodeNum_vector and
-     * BoundUsrNodeNum_vector).
+     * are stored in two ordered vectors (diff_node_num_vector and
+     * bound_node_num_vector).
      */
     // TODO: Consistent nomenclature
-    mutable std::unordered_map<int, int> UsrToIntNodeNum;
+    mutable std::unordered_map<int, int> _usr_to_int_node_num;
 
     /**
      * Variable to track changes in the structure of the nodes.
      * Anytime the node order changes, or a node is added or removed, the
      * variable is set to false. Always, before using the node number map
-     * (UsrToIntNodeNum) this variable is checked. If false the map is updated
+     * (_usr_to_int_node_num) this variable is checked. If false the map is updated
      * before accesing it.
      */
-    mutable bool NodeNumMapped;
+    mutable bool _node_num_mapped;
 
   public:
     // Constructors
@@ -364,10 +364,10 @@ class Nodes {
   private:
     /**
      * Remake the map that tracks user node numbers -> internal node numbers,
-     * after that set NodeNumMapped to true. The method is called automatically
-     * when trying to obtain an attribute but NodeNumMapped is false. It is
+     * after that set _node_num_mapped to true. The method is called automatically
+     * when trying to obtain an attribute but _node_num_mapped is false. It is
      * marked as const because the node struture and the node attributes are not
-     * modified. However the (mutable) members UsrToIntNodeNum and NodeNumMapped
+     * modified. However the (mutable) members _usr_to_int_node_num and _node_num_mapped
      * are modified.
      */
     void create_node_num_map() const;
