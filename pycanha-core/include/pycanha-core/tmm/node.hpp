@@ -150,8 +150,8 @@ class Node {
     //-----------------------------------------
 
     // TODO: Inconsistent nomenclature
-    int getUsrNodeNum();  ///< User node number getter.
-    int getIntNodeNum();  ///< Internal node number getter.
+    int get_node_num();  ///< User node number getter.
+    int get_int_node_num();  ///< Internal node number getter.
     /**
      * Two valid types:
      * - 'D': Diffusive
@@ -176,7 +176,7 @@ class Node {
         const;  ///< Literal thermal capacity getter.
 
     // TODO: Inconsistent nomenclature
-    void setUsrNodeNum(int UsrNodeNum);  ///< Internal node number setter.
+    void set_node_num(int UsrNodeNum);  ///< Internal node number setter.
     /**
      * Two valid types:
      * - 'D': Diffusive
@@ -209,7 +209,7 @@ class Node {
      * associated, the weak pointer doesn't reference any instance.
      */
     // TODO: Consistent nomenclature
-    std::weak_ptr<Nodes> getParentPointer();
+    std::weak_ptr<Nodes> get_parent_pointer();
 
     /// Get an unsigned 64 bit integer representation of the address of the
     /// parent instance.
@@ -220,7 +220,7 @@ class Node {
      */
     // TODO: Consistent nomenclature
     // TODO: Undefined behaviour for non-associated nodes?????
-    uint64_t getintParentPointer();
+    uint64_t get_int_parent_pointer();
 
     // Other setters
     //-------------

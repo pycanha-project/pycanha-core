@@ -242,11 +242,11 @@ void Node::set_literal_C(std::string str) {
 }
 // TODO: Put in the macro?
 
-void Node::setUsrNodeNum(int UsrNodeNum) { this->UsrNodeNum = UsrNodeNum; }
+void Node::set_node_num(int UsrNodeNum) { this->UsrNodeNum = UsrNodeNum; }
 
-int Node::getUsrNodeNum() { return UsrNodeNum; }
+int Node::get_node_num() { return UsrNodeNum; }
 
-int Node::getIntNodeNum() {
+int Node::get_int_node_num() {
     if (auto PtrTNs = _parent_pointer.lock()) {
         int temp = PtrTNs->get_idx_from_node_num(UsrNodeNum);
         if (temp < 0) {
@@ -267,9 +267,9 @@ int Node::getIntNodeNum() {
     }
 }
 
-std::weak_ptr<Nodes> Node::getParentPointer() { return _parent_pointer; }
+std::weak_ptr<Nodes> Node::get_parent_pointer() { return _parent_pointer; }
 
-uint64_t Node::getintParentPointer() {
+uint64_t Node::get_int_parent_pointer() {
     auto PtrTNs = _parent_pointer.lock();
 
     return (uint64_t)PtrTNs.get();

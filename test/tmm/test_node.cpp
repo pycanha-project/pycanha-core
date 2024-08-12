@@ -8,7 +8,7 @@
 
 void assert_node_default_values(Node &tn) {
     // Test default values for tn
-    REQUIRE(tn.getIntNodeNum() == -1);
+    REQUIRE(tn.get_int_node_num() == -1);
     REQUIRE(tn.get_type() == 'D');
     REQUIRE(tn.get_T() == 0.0);
     REQUIRE(tn.get_C() == 0.0);
@@ -31,7 +31,7 @@ void assert_node_default_values(Node &tn) {
 void assert_nodes_have_same_attribute_values_except_usr_number(Node &tn1,
                                                                Node &tn2) {
     // Test attributes are equal
-    REQUIRE(tn1.getIntNodeNum() == tn2.getIntNodeNum());
+    REQUIRE(tn1.get_int_node_num() == tn2.get_int_node_num());
     REQUIRE(tn1.get_type() == tn2.get_type());
     REQUIRE(tn1.get_T() == tn2.get_T());
     REQUIRE(tn1.get_C() == tn2.get_C());
@@ -54,7 +54,7 @@ void assert_nodes_have_same_attribute_values_except_usr_number(Node &tn1,
 
 void assert_nodes_have_same_attribute_values(Node &tn1, Node &tn2) {
     // Test usr node number is the same
-    REQUIRE(tn1.getUsrNodeNum() == tn2.getUsrNodeNum());
+    REQUIRE(tn1.get_node_num() == tn2.get_node_num());
 
     // Test the other attributes
     assert_nodes_have_same_attribute_values_except_usr_number(tn1, tn2);
@@ -65,7 +65,7 @@ TEST_CASE("Node Default Values", "[node]") {
     Node tn(usr_num);
 
     // Test usr_num supplied is the same as the stored one
-    REQUIRE(usr_num == tn.getUsrNodeNum());
+    REQUIRE(usr_num == tn.get_node_num());
 
     // For Changing default values and testing the new values has been stored
     usr_num = 9;
@@ -100,7 +100,7 @@ TEST_CASE("Node Default Values", "[node]") {
             assert_node_default_values(tn2);
 
             // Change values
-            tn2.setUsrNodeNum(usr_num);
+            tn2.set_node_num(usr_num);
             tn2.set_type(type);
             tn2.set_T(T);
             tn2.set_C(C);
@@ -117,8 +117,8 @@ TEST_CASE("Node Default Values", "[node]") {
             tn2.set_aph(aph);
             tn2.set_literal_C(literal_C);
 
-            REQUIRE(usr_num == tn2.getUsrNodeNum());
-            REQUIRE(tn2.getIntNodeNum() == -1);
+            REQUIRE(usr_num == tn2.get_node_num());
+            REQUIRE(tn2.get_int_node_num() == -1);
             REQUIRE(tn2.get_type() == type);
             REQUIRE(tn2.get_T() == T);
             REQUIRE(tn2.get_C() == C);
@@ -144,8 +144,8 @@ TEST_CASE("Node Default Values", "[node]") {
 
             // Check if copy assignment works
             tn = tn2;
-            REQUIRE(usr_num == tn.getUsrNodeNum());
-            REQUIRE(tn.getIntNodeNum() == -1);
+            REQUIRE(usr_num == tn.get_node_num());
+            REQUIRE(tn.get_int_node_num() == -1);
             REQUIRE(tn.get_type() == type);
             REQUIRE(tn.get_T() == T);
             REQUIRE(tn.get_C() == C);
@@ -164,8 +164,8 @@ TEST_CASE("Node Default Values", "[node]") {
         }
 
         // tn2 object is destroyed. check that tn still holds the values
-        REQUIRE(usr_num == tn.getUsrNodeNum());
-        REQUIRE(tn.getIntNodeNum() == -1);
+        REQUIRE(usr_num == tn.get_node_num());
+        REQUIRE(tn.get_int_node_num() == -1);
         REQUIRE(tn.get_type() == type);
         REQUIRE(tn.get_T() == T);
         REQUIRE(tn.get_C() == C);

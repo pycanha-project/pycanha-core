@@ -32,7 +32,7 @@ Nodes::~Nodes() {
 void Nodes::add_node(Node& node) {
     // Info obtained from "node"
     char type = node.get_type();
-    int UsrNodeNum = node.getUsrNodeNum();
+    int UsrNodeNum = node.get_node_num();
 
     // Update the node number mapping
     Index insert_idx;
@@ -429,7 +429,7 @@ void Nodes::remove_node(int node_num) {
 void Nodes::_add_node_insert_idx(Node& node, Index insert_idx) {
     // Info obtained from "node"
     char type = node.get_type();
-    int UsrNodeNum = node.getUsrNodeNum();
+    int UsrNodeNum = node.get_node_num();
 
     if (type == 'D') {
         DiffUsrNodeNum_vector.insert(DiffUsrNodeNum_vector.begin() + insert_idx,
