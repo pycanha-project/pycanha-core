@@ -60,7 +60,7 @@ class Node {
      * the TNs instance is destroyed, so is the shared pointer. And TN knows
      * that the parent instance is not accesible any more
      */
-    std::weak_ptr<Nodes> ParentPointer;
+    std::weak_ptr<Nodes> _parent_pointer;
 
     /**
      * Local storage structure to save the information of a non-associated node.
@@ -128,7 +128,7 @@ class Node {
      * Similar to the previous one, but given directly the weak pointer to the
      * Nodes instance.
      */
-    Node(int UsrNodeNum, std::weak_ptr<Nodes> ParentPointer);
+    Node(int UsrNodeNum, std::weak_ptr<Nodes> _parent_pointer);
 
     // Move constructor
     Node(Node&& otherNode);

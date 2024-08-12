@@ -10,15 +10,15 @@ Node::Node(int UsrNodeNum) : UsrNodeNum(UsrNodeNum) {
                                             0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 }
 
-Node::Node(int UsrNodeNum, std::weak_ptr<Nodes> ParentPointer)
+Node::Node(int UsrNodeNum, std::weak_ptr<Nodes> parent_pointer)
     : UsrNodeNum(UsrNodeNum),
-      ParentPointer(ParentPointer),
+      _parent_pointer(parent_pointer),
       m_local_storage_ptr(nullptr) {}
 
 // Move constructor
 Node::Node(Node&& otherNode)
     : UsrNodeNum(otherNode.UsrNodeNum),
-      ParentPointer(otherNode.ParentPointer),
+      _parent_pointer(otherNode._parent_pointer),
       m_local_storage_ptr(otherNode.m_local_storage_ptr) {
     if (DEBUG) {
         std::cout << "Move constructor called \n";
@@ -32,7 +32,7 @@ Node::Node(Node&& otherNode)
 // Copy constructor
 Node::Node(const Node& otherNode)
     : UsrNodeNum(otherNode.UsrNodeNum),
-      ParentPointer(otherNode.ParentPointer),
+      _parent_pointer(otherNode._parent_pointer),
       m_local_storage_ptr(otherNode.m_local_storage_ptr) {
     // Instead of copyng attributes individually, call memcpy
     // memcpy(this, &otherNode, sizeof(Node)); //THIS IS EVIL DON'T DO IT.
@@ -68,7 +68,7 @@ Node& Node::operator=(const Node& otherNode) {
     // memcpy(this, &otherNode, sizeof(Node)); //DON'T!!!!
 
     this->UsrNodeNum = otherNode.UsrNodeNum;
-    this->ParentPointer = otherNode.ParentPointer;
+    this->_parent_pointer = otherNode._parent_pointer;
     this->m_local_storage_ptr = otherNode.m_local_storage_ptr;
 
     if (m_local_storage_ptr) {
@@ -92,7 +92,7 @@ Node& Node::operator=(Node&& otherNode) noexcept {
 
         // Transfer ownership of resources from otherNode to this object
         UsrNodeNum = otherNode.UsrNodeNum;
-        ParentPointer = std::move(otherNode.ParentPointer);
+        _parent_pointer = std::move(otherNode._parent_pointer);
         m_local_storage_ptr = otherNode.m_local_storage_ptr;
 
         // Invalidate the resources of the otherNode
@@ -114,10 +114,10 @@ A macro is used to get/set most of them.
 
 #define GET_SET_DOUBLE_ATTR(attr)                                              \
     double Node::get_##attr() {                                                \
-        if (auto ptr_TNs = ParentPointer.lock()) {                             \
+        if (auto ptr_TNs = _parent_pointer.lock()) {                           \
             double temp = ptr_TNs->get_##attr(UsrNodeNum);                     \
             if (std::isnan(temp)) {                                            \
-                ParentPointer.reset();                                         \
+                _parent_pointer.reset();                                       \
                 if (VERBOSE) {                                                 \
                     std::cout << "WARNING: Attribute unavailable. "            \
                               << "Probably the node was deleted. "             \
@@ -134,9 +134,9 @@ A macro is used to get/set most of them.
         }                                                                      \
     }                                                                          \
     void Node::set_##attr(double value) {                                      \
-        if (auto ptr_TNs = ParentPointer.lock()) {                             \
+        if (auto ptr_TNs = _parent_pointer.lock()) {                           \
             if (!(ptr_TNs->set_##attr(UsrNodeNum, value))) {                   \
-                ParentPointer.reset();                                         \
+                _parent_pointer.reset();                                       \
                 if (VERBOSE) {                                                 \
                     std::cout << "WARNING: Cannot set attribute. "             \
                               << "Probably the node was deleted from TNs. "    \
@@ -169,10 +169,10 @@ GET_SET_DOUBLE_ATTR(eps)
 GET_SET_DOUBLE_ATTR(aph)
 
 char Node::get_type() {
-    if (auto ptr_TNs = ParentPointer.lock()) {
+    if (auto ptr_TNs = _parent_pointer.lock()) {
         char temp = ptr_TNs->get_type(UsrNodeNum);
         if (temp == static_cast<char>(0)) {
-            ParentPointer.reset();
+            _parent_pointer.reset();
             if (VERBOSE) {
                 std::cout << "WARNING: Attribute unavailable. "
                           << "Probably the node was deleted. "
@@ -190,9 +190,9 @@ char Node::get_type() {
 }
 
 void Node::set_type(char type) {
-    if (auto ptr_TNs = ParentPointer.lock()) {
+    if (auto ptr_TNs = _parent_pointer.lock()) {
         if (!(ptr_TNs->set_type(UsrNodeNum, type))) {
-            ParentPointer.reset();
+            _parent_pointer.reset();
             if (VERBOSE) {
                 std::cout << "WARNING: Cannot set attribute. "
                           << "Probably the node was deleted from TNs. "
@@ -210,7 +210,7 @@ void Node::set_type(char type) {
 }
 
 std::string Node::get_literal_C() const {
-    if (auto ptr_TNs = ParentPointer.lock()) {
+    if (auto ptr_TNs = _parent_pointer.lock()) {
         return ptr_TNs->get_literal_C(UsrNodeNum);
     } else if (m_local_storage_ptr) {
         return m_local_storage_ptr->m_literal_C;
@@ -222,9 +222,9 @@ std::string Node::get_literal_C() const {
 }
 
 void Node::set_literal_C(std::string str) {
-    if (auto ptr_TNs = ParentPointer.lock()) {
+    if (auto ptr_TNs = _parent_pointer.lock()) {
         if (!(ptr_TNs->set_literal_C(UsrNodeNum, str))) {
-            ParentPointer.reset();
+            _parent_pointer.reset();
             if (VERBOSE) {
                 std::cout << "WARNING: Cannot set attribute. "
                           << "Probably the node was deleted from TNs. "
@@ -247,7 +247,7 @@ void Node::setUsrNodeNum(int UsrNodeNum) { this->UsrNodeNum = UsrNodeNum; }
 int Node::getUsrNodeNum() { return UsrNodeNum; }
 
 int Node::getIntNodeNum() {
-    if (auto PtrTNs = ParentPointer.lock()) {
+    if (auto PtrTNs = _parent_pointer.lock()) {
         int temp = PtrTNs->get_idx_from_node_num(UsrNodeNum);
         if (temp < 0) {
             if (DEBUG) {
@@ -255,7 +255,7 @@ int Node::getIntNodeNum() {
                           << "Probably the node was deleted. "
                           << "The node is now unassociated from TNs.\n";
             }
-            ParentPointer.reset();
+            _parent_pointer.reset();
         }
         return temp;
     } else {
@@ -267,17 +267,17 @@ int Node::getIntNodeNum() {
     }
 }
 
-std::weak_ptr<Nodes> Node::getParentPointer() { return ParentPointer; }
+std::weak_ptr<Nodes> Node::getParentPointer() { return _parent_pointer; }
 
 uint64_t Node::getintParentPointer() {
-    auto PtrTNs = ParentPointer.lock();
+    auto PtrTNs = _parent_pointer.lock();
 
     return (uint64_t)PtrTNs.get();
 }
 
 void Node::set_thermal_nodes_parent(
     std::weak_ptr<Nodes> thermal_nodes_parent_ptr) {
-    ParentPointer = thermal_nodes_parent_ptr;
+    _parent_pointer = thermal_nodes_parent_ptr;
     _local_storage_destructor();
 }
 
