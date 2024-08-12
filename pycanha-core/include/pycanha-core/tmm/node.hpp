@@ -67,33 +67,33 @@ class Node {
      * The storage is dynamically de/allocated.
      */
     struct local_storage {
-        char m_type;   // Type
-        double m_T;    // Temperature
-        double m_C;    // Thermal capacity
-        double m_qs;   // Solar load
-        double m_qa;   // Albedo load
-        double m_qe;   // Earth IR load
-        double m_qi;   // Internal load
-        double m_qr;   // Other load
-        double m_a;    // Area
-        double m_fx;   // X coordinate
-        double m_fy;   // Y coordinate
-        double m_fz;   // Z coordinate
-        double m_eps;  // IR emissivity
-        double m_aph;  // Solar absortivity
+        char _type;   // Type
+        double _T;    // Temperature
+        double _C;    // Thermal capacity
+        double _qs;   // Solar load
+        double _qa;   // Albedo load
+        double _qe;   // Earth IR load
+        double _qi;   // Internal load
+        double _qr;   // Other load
+        double _a;    // Area
+        double _fx;   // X coordinate
+        double _fy;   // Y coordinate
+        double _fz;   // Z coordinate
+        double _eps;  // IR emissivity
+        double _aph;  // Solar absortivity
 
-        std::string m_literal_C;    // Literal Thermal capacity
-        std::string m_literal_qs;   // Literal Solar load
-        std::string m_literal_qa;   // Literal Albedo load
-        std::string m_literal_qe;   // Literal Earth IR load
-        std::string m_literal_qi;   // Literal Internal load
-        std::string m_literal_qr;   // Literal Other load
-        std::string m_literal_a;    // Literal Area
-        std::string m_literal_fx;   // Literal X coordinate
-        std::string m_literal_fy;   // Literal Y coordinate
-        std::string m_literal_fz;   // Literal Z coordinate
-        std::string m_literal_eps;  // Literal IR emissivity
-        std::string m_literal_aph;  // Literal Solar absortivity
+        std::string _literal_C;    // Literal Thermal capacity
+        std::string _literal_qs;   // Literal Solar load
+        std::string _literal_qa;   // Literal Albedo load
+        std::string _literal_qe;   // Literal Earth IR load
+        std::string _literal_qi;   // Literal Internal load
+        std::string _literal_qr;   // Literal Other load
+        std::string _literal_a;    // Literal Area
+        std::string _literal_fx;   // Literal X coordinate
+        std::string _literal_fy;   // Literal Y coordinate
+        std::string _literal_fz;   // Literal Z coordinate
+        std::string _literal_eps;  // Literal IR emissivity
+        std::string _literal_aph;  // Literal Solar absortivity
     };
 
     /**
@@ -101,7 +101,7 @@ class Node {
      * the TNs class it is a valid pointer to an existing struct. Otherwise is a
      * nullptr.
      */
-    local_storage* m_local_storage_ptr;
+    local_storage* _local_storage_ptr;
 
     /**
      * Node attribute: User node number

@@ -6,34 +6,34 @@
 #include "pycanha-core/config.hpp"
 
 Node::Node(int node_num) : _node_num(node_num) {
-    m_local_storage_ptr = new local_storage{'D', 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+    _local_storage_ptr = new local_storage{'D', 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
                                             0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 }
 
 Node::Node(int node_num, std::weak_ptr<Nodes> parent_pointer)
     : _node_num(node_num),
       _parent_pointer(parent_pointer),
-      m_local_storage_ptr(nullptr) {}
+      _local_storage_ptr(nullptr) {}
 
 // Move constructor
 Node::Node(Node&& otherNode)
     : _node_num(otherNode._node_num),
       _parent_pointer(otherNode._parent_pointer),
-      m_local_storage_ptr(otherNode.m_local_storage_ptr) {
+      _local_storage_ptr(otherNode._local_storage_ptr) {
     if (DEBUG) {
         std::cout << "Move constructor called \n";
     }
 
     // When otherNode call its destructor, the storage (if exists) its not
     // deleted.
-    otherNode.m_local_storage_ptr = nullptr;
+    otherNode._local_storage_ptr = nullptr;
 }
 
 // Copy constructor
 Node::Node(const Node& otherNode)
     : _node_num(otherNode._node_num),
       _parent_pointer(otherNode._parent_pointer),
-      m_local_storage_ptr(otherNode.m_local_storage_ptr) {
+      _local_storage_ptr(otherNode._local_storage_ptr) {
     // Instead of copyng attributes individually, call memcpy
     // memcpy(this, &otherNode, sizeof(Node)); //THIS IS EVIL DON'T DO IT.
     // PROGRAM WILL CRASH
@@ -42,14 +42,14 @@ Node::Node(const Node& otherNode)
     // class that manage the storage itself (it would be like std::string or
     // std::vector), then can I use the default constructors?
 
-    if (m_local_storage_ptr) {
+    if (_local_storage_ptr) {
         // Pointer is not null and the node is local, not associated with TNs
 
         // Copy memory buffer containing the node info to other place
-        m_local_storage_ptr = new local_storage;
-        *m_local_storage_ptr = *otherNode.m_local_storage_ptr;
+        _local_storage_ptr = new local_storage;
+        *_local_storage_ptr = *otherNode._local_storage_ptr;
     }
-    // else: m_local_storage_ptr is nullptr, and ParentPointer should be valid
+    // else: _local_storage_ptr is nullptr, and ParentPointer should be valid
     // (is not checked)
 
     if (DEBUG) {
@@ -60,8 +60,8 @@ Node::Node(const Node& otherNode)
 // Assignment operator
 Node& Node::operator=(const Node& otherNode) {
     // First, delete the old buffer if exists
-    if (m_local_storage_ptr) {
-        delete m_local_storage_ptr;
+    if (_local_storage_ptr) {
+        delete _local_storage_ptr;
     }
 
     // Shallow copy. Instead of copyng attributes individually, call memcpy
@@ -69,16 +69,16 @@ Node& Node::operator=(const Node& otherNode) {
 
     this->_node_num = otherNode._node_num;
     this->_parent_pointer = otherNode._parent_pointer;
-    this->m_local_storage_ptr = otherNode.m_local_storage_ptr;
+    this->_local_storage_ptr = otherNode._local_storage_ptr;
 
-    if (m_local_storage_ptr) {
+    if (_local_storage_ptr) {
         // Pointer is not null and the node is local, not associated with TNs
 
         // Copy memory buffer containing the node info to other place
-        m_local_storage_ptr = new local_storage;
-        *m_local_storage_ptr = *otherNode.m_local_storage_ptr;
+        _local_storage_ptr = new local_storage;
+        *_local_storage_ptr = *otherNode._local_storage_ptr;
     }
-    // else: m_local_storage_ptr is nullptr, and ParentPointer should be valid
+    // else: _local_storage_ptr is nullptr, and ParentPointer should be valid
     // (is not checked)
 
     return *this;
@@ -88,15 +88,15 @@ Node& Node::operator=(const Node& otherNode) {
 Node& Node::operator=(Node&& otherNode) noexcept {
     if (this != &otherNode) {
         // Release any resources currently held by this object
-        delete m_local_storage_ptr;
+        delete _local_storage_ptr;
 
         // Transfer ownership of resources from otherNode to this object
         _node_num = otherNode._node_num;
         _parent_pointer = std::move(otherNode._parent_pointer);
-        m_local_storage_ptr = otherNode.m_local_storage_ptr;
+        _local_storage_ptr = otherNode._local_storage_ptr;
 
         // Invalidate the resources of the otherNode
-        otherNode.m_local_storage_ptr = nullptr;
+        otherNode._local_storage_ptr = nullptr;
 
         if (DEBUG) {
             std::cout << "Move assignment operator called \n";
@@ -125,8 +125,8 @@ A macro is used to get/set most of them.
                 }                                                              \
             }                                                                  \
             return temp;                                                       \
-        } else if (m_local_storage_ptr) {                                      \
-            return m_local_storage_ptr->m_##attr;                              \
+        } else if (_local_storage_ptr) {                                      \
+            return _local_storage_ptr->_##attr;                              \
         } else {                                                               \
             std::cout << "WARNING: The node is an unvalid container. "         \
                       << "Create a new one to have a valid node again.\n";     \
@@ -143,8 +143,8 @@ A macro is used to get/set most of them.
                               << "The node is now an unvalid container.\n";    \
                 }                                                              \
             }                                                                  \
-        } else if (m_local_storage_ptr) {                                      \
-            m_local_storage_ptr->m_##attr = value;                             \
+        } else if (_local_storage_ptr) {                                      \
+            _local_storage_ptr->_##attr = value;                             \
         } else {                                                               \
             if (VERBOSE) {                                                     \
                 std::cout << "WARNING: The node is an unvalid container. "     \
@@ -180,8 +180,8 @@ char Node::get_type() {
             }
         }
         return temp;
-    } else if (m_local_storage_ptr) {
-        return m_local_storage_ptr->m_type;
+    } else if (_local_storage_ptr) {
+        return _local_storage_ptr->_type;
     } else {
         std::cout << "WARNING: The node is an unvalid container. "
                   << "Create a new one to have a valid node again.\n";
@@ -199,8 +199,8 @@ void Node::set_type(char type) {
                           << "The node is now an unvalid container.\n";
             }
         }
-    } else if (m_local_storage_ptr) {
-        m_local_storage_ptr->m_type = type;
+    } else if (_local_storage_ptr) {
+        _local_storage_ptr->_type = type;
     } else {
         if (VERBOSE) {
             std::cout << "WARNING: The node is an unvalid container. "
@@ -212,8 +212,8 @@ void Node::set_type(char type) {
 std::string Node::get_literal_C() const {
     if (auto ptr_TNs = _parent_pointer.lock()) {
         return ptr_TNs->get_literal_C(_node_num);
-    } else if (m_local_storage_ptr) {
-        return m_local_storage_ptr->m_literal_C;
+    } else if (_local_storage_ptr) {
+        return _local_storage_ptr->_literal_C;
     } else {
         std::cout << "WARNING: The node is an unvalid container. "
                   << "Create a new one to have a valid node again.\n";
@@ -231,8 +231,8 @@ void Node::set_literal_C(std::string str) {
                           << "The node is now an unvalid container.\n";
             }
         }
-    } else if (m_local_storage_ptr) {
-        m_local_storage_ptr->m_literal_C = str;
+    } else if (_local_storage_ptr) {
+        _local_storage_ptr->_literal_C = str;
     } else {
         if (VERBOSE) {
             std::cout << "WARNING: The node is an unvalid container. "
@@ -282,6 +282,6 @@ void Node::set_thermal_nodes_parent(
 }
 
 void Node::_local_storage_destructor() {
-    delete m_local_storage_ptr;
-    m_local_storage_ptr = nullptr;
+    delete _local_storage_ptr;
+    _local_storage_ptr = nullptr;
 }
