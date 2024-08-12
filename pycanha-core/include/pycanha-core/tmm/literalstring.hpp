@@ -20,7 +20,7 @@ class LiteralString {
 
   public:
     LiteralString() : m_string(std::string()) {}
-    explicit LiteralString(int) : m_string(std::string()) {}
+    explicit LiteralString(int) : m_string(std::string()) {}  // NOLINT
     explicit LiteralString(const std::string& str) : m_string(str) {}
 
     // Implicit conversion constructor from std::string
@@ -55,9 +55,9 @@ class LiteralString {
         return *this;
     }
 
-    const void print_string() const { std::cout << m_string; }
-    const std::string& get_literal() const { return m_string; }
-    bool is_empty() const { return m_string.empty(); }
+    void print_string() const { std::cout << m_string; }
+    [[nodiscard]] const std::string& get_literal() const { return m_string; }
+    [[nodiscard]] bool is_empty() const { return m_string.empty(); }
 
   private:
     std::string m_string;

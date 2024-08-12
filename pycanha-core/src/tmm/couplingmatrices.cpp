@@ -27,8 +27,8 @@ inline int CouplingMatrices::get_num_nodes() const {
     return sparse_db.rows() + sparse_db.cols();
 }
 
-const Eigen::SparseMatrix<double, Eigen::RowMajor> *
-CouplingMatrices::return_sparse_dd() {
+const Eigen::SparseMatrix<double, Eigen::RowMajor>
+*CouplingMatrices::return_sparse_dd() {
     sparse_dd.makeCompressed();
     return &sparse_dd;
 }

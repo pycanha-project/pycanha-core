@@ -169,7 +169,7 @@ class Node {
     double get_eps();  ///< IR emissivity getter.
     double get_aph();  ///< Solar absortivity getter.
 
-    std::string get_literal_C() const;  ///< Literal thermal capacity getter.
+    [[nodiscard]] std::string get_literal_C() const;  ///< Literal thermal capacity getter.
 
     // TODO: Inconsistent nomenclature
     void setUsrNodeNum(int UsrNodeNum);  ///< Internal node number setter.

@@ -24,9 +24,9 @@ class CouplingMatrices {
 
   public:
     // Interface
-    inline int get_num_diff_nodes() const;
-    inline int get_num_bound_nodes() const;
-    inline int get_num_nodes() const;
+    [[nodiscard]] inline int get_num_diff_nodes() const;
+    [[nodiscard]] inline int get_num_bound_nodes() const;
+    [[nodiscard]] inline int get_num_nodes() const;
 
     // Numerical values. TODO: Make private
     Eigen::SparseMatrix<double, Eigen::RowMajor> sparse_dd;
@@ -70,7 +70,8 @@ class CouplingMatrices {
 
     // Return the sparse matrix representation
     const Eigen::SparseMatrix<double, Eigen::RowMajor> *return_sparse_dd();
-    const Eigen::SparseMatrix<double, Eigen::RowMajor> get_sparse_dd() const;
+    [[nodiscard]] const Eigen::SparseMatrix<double, Eigen::RowMajor>
+    get_sparse_dd() const;
 
     // Return a copy of the sparse matrix
     Eigen::SparseMatrix<double, Eigen::RowMajor> sparse_dd_copy();
@@ -78,14 +79,14 @@ class CouplingMatrices {
     Eigen::SparseMatrix<double, Eigen::RowMajor> sparse_bb_copy();
 
     // Num couplings
-    int get_num_diff_diff_couplings() const;
-    int get_num_diff_bound_couplings() const;
-    int get_num_bound_bound_couplings() const;
-    int get_num_total_couplings() const;
+    [[nodiscard]] int get_num_diff_diff_couplings() const;
+    [[nodiscard]] int get_num_diff_bound_couplings() const;
+    [[nodiscard]] int get_num_bound_bound_couplings() const;
+    [[nodiscard]] int get_num_total_couplings() const;
 
     // For coupling iteration
-    std::tuple<int, int, double> get_idxs_and_coupling_value_from_coupling_idx(
-        int cidx) const;
+    [[nodiscard]] std::tuple<int, int, double>
+    get_idxs_and_coupling_value_from_coupling_idx(int cidx) const;
     bool coupling_exists_from_idxs(int idx1, int idx2);
 
     void print_sparse();

@@ -7,13 +7,14 @@ namespace pycanha {
 
 // Tolerances (SI Units)
 
-constexpr double LENGTH_TOL = 1e-9;  // NOLINT(readability-identifier-naming)
-constexpr double ANGLE_TOL = 1e-9;   // NOLINT(readability-identifier-naming)
-constexpr double TOL = 1e-11;        // NOLINT(readability-identifier-naming)
-constexpr double ZERO_THR_ATTR = std::numeric_limits<double>::epsilon() *
-                                 1e3;  // NOLINT(readability-identifier-naming)
-
+// Constexpr should be usually lowercase (checked by clang-tidy), but I want
+// these to be uppercase NOLINTBEGIN(readability-identifier-naming)
+constexpr double LENGTH_TOL = 1e-9;
+constexpr double ANGLE_TOL = 1e-9;
+constexpr double TOL = 1e-11;
+constexpr double ZERO_THR_ATTR = std::numeric_limits<double>::epsilon() * 1e3;
 constexpr double ALMOST_EQUAL_COUPLING_EPSILON = 1.0e-5;
+// NOLINTEND(readability-identifier-naming)
 
 using Point2D = Eigen::Vector2d;
 using Point3D = Eigen::Vector3d;

@@ -141,6 +141,8 @@ CheckOptions:
     value: '_'
   - key: 'readability-identifier-naming.PrivateMethodCase'
     value: 'lower_case'
+  - key: 'readability-identifier-naming.PrivateMethodPrefix'
+    value: '_'
   - key: 'readability-identifier-naming.ProtectedMemberCase'
     value: 'lower_case'
   - key: 'readability-identifier-naming.ProtectedMemberPrefix'
