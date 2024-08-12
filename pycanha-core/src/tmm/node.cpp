@@ -5,19 +5,19 @@
 
 #include "pycanha-core/config.hpp"
 
-Node::Node(int UsrNodeNum) : UsrNodeNum(UsrNodeNum) {
+Node::Node(int node_num) : _node_num(node_num) {
     m_local_storage_ptr = new local_storage{'D', 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
                                             0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 }
 
-Node::Node(int UsrNodeNum, std::weak_ptr<Nodes> parent_pointer)
-    : UsrNodeNum(UsrNodeNum),
+Node::Node(int node_num, std::weak_ptr<Nodes> parent_pointer)
+    : _node_num(node_num),
       _parent_pointer(parent_pointer),
       m_local_storage_ptr(nullptr) {}
 
 // Move constructor
 Node::Node(Node&& otherNode)
-    : UsrNodeNum(otherNode.UsrNodeNum),
+    : _node_num(otherNode._node_num),
       _parent_pointer(otherNode._parent_pointer),
       m_local_storage_ptr(otherNode.m_local_storage_ptr) {
     if (DEBUG) {
@@ -31,7 +31,7 @@ Node::Node(Node&& otherNode)
 
 // Copy constructor
 Node::Node(const Node& otherNode)
-    : UsrNodeNum(otherNode.UsrNodeNum),
+    : _node_num(otherNode._node_num),
       _parent_pointer(otherNode._parent_pointer),
       m_local_storage_ptr(otherNode.m_local_storage_ptr) {
     // Instead of copyng attributes individually, call memcpy
@@ -67,7 +67,7 @@ Node& Node::operator=(const Node& otherNode) {
     // Shallow copy. Instead of copyng attributes individually, call memcpy
     // memcpy(this, &otherNode, sizeof(Node)); //DON'T!!!!
 
-    this->UsrNodeNum = otherNode.UsrNodeNum;
+    this->_node_num = otherNode._node_num;
     this->_parent_pointer = otherNode._parent_pointer;
     this->m_local_storage_ptr = otherNode.m_local_storage_ptr;
 
@@ -91,7 +91,7 @@ Node& Node::operator=(Node&& otherNode) noexcept {
         delete m_local_storage_ptr;
 
         // Transfer ownership of resources from otherNode to this object
-        UsrNodeNum = otherNode.UsrNodeNum;
+        _node_num = otherNode._node_num;
         _parent_pointer = std::move(otherNode._parent_pointer);
         m_local_storage_ptr = otherNode.m_local_storage_ptr;
 
@@ -115,7 +115,7 @@ A macro is used to get/set most of them.
 #define GET_SET_DOUBLE_ATTR(attr)                                              \
     double Node::get_##attr() {                                                \
         if (auto ptr_TNs = _parent_pointer.lock()) {                           \
-            double temp = ptr_TNs->get_##attr(UsrNodeNum);                     \
+            double temp = ptr_TNs->get_##attr(_node_num);                     \
             if (std::isnan(temp)) {                                            \
                 _parent_pointer.reset();                                       \
                 if (VERBOSE) {                                                 \
@@ -135,7 +135,7 @@ A macro is used to get/set most of them.
     }                                                                          \
     void Node::set_##attr(double value) {                                      \
         if (auto ptr_TNs = _parent_pointer.lock()) {                           \
-            if (!(ptr_TNs->set_##attr(UsrNodeNum, value))) {                   \
+            if (!(ptr_TNs->set_##attr(_node_num, value))) {                   \
                 _parent_pointer.reset();                                       \
                 if (VERBOSE) {                                                 \
                     std::cout << "WARNING: Cannot set attribute. "             \
@@ -153,7 +153,7 @@ A macro is used to get/set most of them.
         }                                                                      \
     }
 
-// GETSET(int, UsrNodeNum)
+// GETSET(int, node_num)
 GET_SET_DOUBLE_ATTR(T)
 GET_SET_DOUBLE_ATTR(C)
 GET_SET_DOUBLE_ATTR(qs)
@@ -170,7 +170,7 @@ GET_SET_DOUBLE_ATTR(aph)
 
 char Node::get_type() {
     if (auto ptr_TNs = _parent_pointer.lock()) {
-        char temp = ptr_TNs->get_type(UsrNodeNum);
+        char temp = ptr_TNs->get_type(_node_num);
         if (temp == static_cast<char>(0)) {
             _parent_pointer.reset();
             if (VERBOSE) {
@@ -191,7 +191,7 @@ char Node::get_type() {
 
 void Node::set_type(char type) {
     if (auto ptr_TNs = _parent_pointer.lock()) {
-        if (!(ptr_TNs->set_type(UsrNodeNum, type))) {
+        if (!(ptr_TNs->set_type(_node_num, type))) {
             _parent_pointer.reset();
             if (VERBOSE) {
                 std::cout << "WARNING: Cannot set attribute. "
@@ -211,7 +211,7 @@ void Node::set_type(char type) {
 
 std::string Node::get_literal_C() const {
     if (auto ptr_TNs = _parent_pointer.lock()) {
-        return ptr_TNs->get_literal_C(UsrNodeNum);
+        return ptr_TNs->get_literal_C(_node_num);
     } else if (m_local_storage_ptr) {
         return m_local_storage_ptr->m_literal_C;
     } else {
@@ -223,7 +223,7 @@ std::string Node::get_literal_C() const {
 
 void Node::set_literal_C(std::string str) {
     if (auto ptr_TNs = _parent_pointer.lock()) {
-        if (!(ptr_TNs->set_literal_C(UsrNodeNum, str))) {
+        if (!(ptr_TNs->set_literal_C(_node_num, str))) {
             _parent_pointer.reset();
             if (VERBOSE) {
                 std::cout << "WARNING: Cannot set attribute. "
@@ -242,13 +242,13 @@ void Node::set_literal_C(std::string str) {
 }
 // TODO: Put in the macro?
 
-void Node::set_node_num(int UsrNodeNum) { this->UsrNodeNum = UsrNodeNum; }
+void Node::set_node_num(int node_num) { this->_node_num = node_num; }
 
-int Node::get_node_num() { return UsrNodeNum; }
+int Node::get_node_num() { return _node_num; }
 
 int Node::get_int_node_num() {
     if (auto PtrTNs = _parent_pointer.lock()) {
-        int temp = PtrTNs->get_idx_from_node_num(UsrNodeNum);
+        int temp = PtrTNs->get_idx_from_node_num(_node_num);
         if (temp < 0) {
             if (DEBUG) {
                 std::cout << "WARNING: Attribute unavailable. "

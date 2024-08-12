@@ -106,7 +106,7 @@ class Node {
     /**
      * Node attribute: User node number
      */
-    int UsrNodeNum;
+    int _node_num;
 
     // Public methods
   public:
@@ -121,14 +121,14 @@ class Node {
      * set to zero. The node type and attributes can be changed through the
      * setters member functions.
      */
-    explicit Node(int UsrNodeNum);
+    explicit Node(int node_num);
 
     /// Associated node constructor 1.
     /**
      * Similar to the previous one, but given directly the weak pointer to the
      * Nodes instance.
      */
-    Node(int UsrNodeNum, std::weak_ptr<Nodes> _parent_pointer);
+    Node(int node_num, std::weak_ptr<Nodes> _parent_pointer);
 
     // Move constructor
     Node(Node&& otherNode);
@@ -150,7 +150,7 @@ class Node {
     //-----------------------------------------
 
     // TODO: Inconsistent nomenclature
-    int get_node_num();  ///< User node number getter.
+    int get_node_num();      ///< User node number getter.
     int get_int_node_num();  ///< Internal node number getter.
     /**
      * Two valid types:
@@ -176,7 +176,7 @@ class Node {
         const;  ///< Literal thermal capacity getter.
 
     // TODO: Inconsistent nomenclature
-    void set_node_num(int UsrNodeNum);  ///< Internal node number setter.
+    void set_node_num(int node_num);  ///< Internal node number setter.
     /**
      * Two valid types:
      * - 'D': Diffusive

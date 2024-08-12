@@ -32,24 +32,24 @@ Nodes::~Nodes() {
 void Nodes::add_node(Node& node) {
     // Info obtained from "node"
     char type = node.get_type();
-    int UsrNodeNum = node.get_node_num();
+    int node_num = node.get_node_num();
 
     // Update the node number mapping
     Index insert_idx;
 
-    if (UsrToIntNodeNum.find(UsrNodeNum) != UsrToIntNodeNum.end()) {
+    if (UsrToIntNodeNum.find(node_num) != UsrToIntNodeNum.end()) {
         // TODO: ERROR. Duplicated node
-        std::cout << "ERROR. Node " << UsrNodeNum << " already inserted.\n";
+        std::cout << "ERROR. Node " << node_num << " already inserted.\n";
         return;
     }
 
     if (type == 'D') {
         auto it = std::upper_bound(DiffUsrNodeNum_vector.begin(),
-                                   DiffUsrNodeNum_vector.end(), UsrNodeNum);
+                                   DiffUsrNodeNum_vector.end(), node_num);
         insert_idx = std::distance(DiffUsrNodeNum_vector.begin(), it);
     } else if (type == 'B') {
         auto it = std::upper_bound(BoundUsrNodeNum_vector.begin(),
-                                   BoundUsrNodeNum_vector.end(), UsrNodeNum);
+                                   BoundUsrNodeNum_vector.end(), node_num);
         insert_idx = std::distance(BoundUsrNodeNum_vector.begin(), it);
         insert_idx += DiffUsrNodeNum_vector.size();
     } else {
@@ -79,11 +79,11 @@ int Nodes::get_num_bound_nodes() const { return BoundUsrNodeNum_vector.size(); }
 Getters and setters are always the same except which atributte is needed.
 */
 #define GET_SET_DOUBLE_ATTR(attr)                             \
-    bool Nodes::set_##attr(int UsrNodeNum, double attr) {     \
+    bool Nodes::set_##attr(int node_num, double attr) {     \
         if (!NodeNumMapped) {                                 \
             create_node_num_map();                            \
         }                                                     \
-        auto it = UsrToIntNodeNum.find(UsrNodeNum);           \
+        auto it = UsrToIntNodeNum.find(node_num);           \
         if (it != UsrToIntNodeNum.end()) {                    \
             attr##_vector[it->second] = attr;                 \
             return true;                                      \
@@ -92,11 +92,11 @@ Getters and setters are always the same except which atributte is needed.
             return false;                                     \
         }                                                     \
     }                                                         \
-    double Nodes::get_##attr(int UsrNodeNum) {                \
+    double Nodes::get_##attr(int node_num) {                \
         if (!NodeNumMapped) {                                 \
             create_node_num_map();                            \
         }                                                     \
-        auto it = UsrToIntNodeNum.find(UsrNodeNum);           \
+        auto it = UsrToIntNodeNum.find(node_num);           \
         if (it != UsrToIntNodeNum.end()) {                    \
             return attr##_vector[it->second];                 \
         } else {                                              \
@@ -104,11 +104,11 @@ Getters and setters are always the same except which atributte is needed.
             return std::nan("");                              \
         }                                                     \
     }                                                         \
-    double* Nodes::get_##attr##_value_ref(int UsrNodeNum) {   \
+    double* Nodes::get_##attr##_value_ref(int node_num) {   \
         if (!NodeNumMapped) {                                 \
             create_node_num_map();                            \
         }                                                     \
-        auto it = UsrToIntNodeNum.find(UsrNodeNum);           \
+        auto it = UsrToIntNodeNum.find(node_num);           \
         if (it != UsrToIntNodeNum.end()) {                    \
             return &(attr##_vector[it->second]);              \
         } else {                                              \
@@ -118,11 +118,11 @@ Getters and setters are always the same except which atributte is needed.
     }
 
 #define GET_SET_DOUBLE_SPARSE(attr)                           \
-    double Nodes::get_##attr(int UsrNodeNum) {                \
+    double Nodes::get_##attr(int node_num) {                \
         if (!NodeNumMapped) {                                 \
             create_node_num_map();                            \
         }                                                     \
-        auto it = UsrToIntNodeNum.find(UsrNodeNum);           \
+        auto it = UsrToIntNodeNum.find(node_num);           \
         if (it != UsrToIntNodeNum.end()) {                    \
             return attr##_vector.coeff(it->second);           \
         } else {                                              \
@@ -130,11 +130,11 @@ Getters and setters are always the same except which atributte is needed.
             return std::nan("");                              \
         }                                                     \
     }                                                         \
-    bool Nodes::set_##attr(int UsrNodeNum, double value) {    \
+    bool Nodes::set_##attr(int node_num, double value) {    \
         if (!NodeNumMapped) {                                 \
             create_node_num_map();                            \
         }                                                     \
-        auto it = UsrToIntNodeNum.find(UsrNodeNum);           \
+        auto it = UsrToIntNodeNum.find(node_num);           \
         if (it != UsrToIntNodeNum.end()) {                    \
             attr##_vector.insert(it->second) = value;         \
             return true;                                      \
@@ -143,11 +143,11 @@ Getters and setters are always the same except which atributte is needed.
             return false;                                     \
         }                                                     \
     }                                                         \
-    double* Nodes::get_##attr##_value_ref(int UsrNodeNum) {   \
+    double* Nodes::get_##attr##_value_ref(int node_num) {   \
         if (!NodeNumMapped) {                                 \
             create_node_num_map();                            \
         }                                                     \
-        auto it = UsrToIntNodeNum.find(UsrNodeNum);           \
+        auto it = UsrToIntNodeNum.find(node_num);           \
         if (it != UsrToIntNodeNum.end()) {                    \
             return &(attr##_vector.coeffRef(it->second));     \
         } else {                                              \
@@ -175,7 +175,7 @@ GET_SET_DOUBLE_SPARSE(aph)
 
 /////////////////////////////////////////////////////////////////////////
 
-bool Nodes::set_type(int UsrNodeNum, char Type) {
+bool Nodes::set_type(int node_num, char Type) {
     if (!NodeNumMapped) {
         create_node_num_map();
     }
@@ -186,7 +186,7 @@ bool Nodes::set_type(int UsrNodeNum, char Type) {
         return false;
     }
 
-    auto current_type = get_type(UsrNodeNum);
+    auto current_type = get_type(node_num);
 
     if (current_type == Type) {
         return false;
@@ -194,12 +194,12 @@ bool Nodes::set_type(int UsrNodeNum, char Type) {
 
     if (current_type == 'D') {
         if (Type == 'B') {
-            diffusive_to_boundary(UsrNodeNum);
+            diffusive_to_boundary(node_num);
         }
         return true;
     } else if (current_type == 'B') {
         if (Type == 'D') {
-            boundary_to_diffusive(UsrNodeNum);
+            boundary_to_diffusive(node_num);
         }
         return true;
     } else {
@@ -207,11 +207,11 @@ bool Nodes::set_type(int UsrNodeNum, char Type) {
         return false;
     }
 }
-char Nodes::get_type(int UsrNodeNum) {
+char Nodes::get_type(int node_num) {
     if (!NodeNumMapped) {
         create_node_num_map();
     }
-    auto it = UsrToIntNodeNum.find(UsrNodeNum);
+    auto it = UsrToIntNodeNum.find(node_num);
     if (it != UsrToIntNodeNum.end()) {
         if (it->second < DiffUsrNodeNum_vector.size()) {
             return 'D';
@@ -358,11 +358,11 @@ void Nodes::delete_displace(Eigen::SparseVector<double>& sparse, int index) {
                                        // ref*prec
 }
 
-std::string Nodes::get_literal_C(int UsrNodeNum) const {
+std::string Nodes::get_literal_C(int node_num) const {
     if (!NodeNumMapped) {
         create_node_num_map();
     }
-    auto it = UsrToIntNodeNum.find(UsrNodeNum);
+    auto it = UsrToIntNodeNum.find(node_num);
     if (it != UsrToIntNodeNum.end()) {
         return literals_C.coeff(it->second).get_literal();
     } else {
@@ -371,11 +371,11 @@ std::string Nodes::get_literal_C(int UsrNodeNum) const {
     }
 }
 
-bool Nodes::set_literal_C(int UsrNodeNum, std::string str) {
+bool Nodes::set_literal_C(int node_num, std::string str) {
     if (!NodeNumMapped) {
         create_node_num_map();
     }
-    auto it = UsrToIntNodeNum.find(UsrNodeNum);
+    auto it = UsrToIntNodeNum.find(node_num);
     if (it != UsrToIntNodeNum.end()) {
         literals_C.insert(it->second) = str;
         return true;
@@ -429,16 +429,16 @@ void Nodes::remove_node(int node_num) {
 void Nodes::_add_node_insert_idx(Node& node, Index insert_idx) {
     // Info obtained from "node"
     char type = node.get_type();
-    int UsrNodeNum = node.get_node_num();
+    int node_num = node.get_node_num();
 
     if (type == 'D') {
         DiffUsrNodeNum_vector.insert(DiffUsrNodeNum_vector.begin() + insert_idx,
-                                     UsrNodeNum);
+                                     node_num);
     } else if (type == 'B') {
         BoundUsrNodeNum_vector.insert(
             BoundUsrNodeNum_vector.begin() +
                 (insert_idx - static_cast<Index>(DiffUsrNodeNum_vector.size())),
-            UsrNodeNum);
+            node_num);
     } else {
         // TODO: ERROR. WRONG NODE TYPE
         std::cout << "ERROR. Wrong node type?\n";
