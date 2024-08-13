@@ -16,7 +16,7 @@ Node::Node(int node_num, std::weak_ptr<Nodes> parent_pointer)
       _local_storage_ptr(nullptr) {}
 
 // Move constructor
-Node::Node(Node&& other_node)
+Node::Node(Node&& other_node) noexcept
     : _node_num(other_node._node_num),
       _parent_pointer(other_node._parent_pointer),
       _local_storage_ptr(other_node._local_storage_ptr) {
