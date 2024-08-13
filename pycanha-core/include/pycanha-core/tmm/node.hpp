@@ -67,33 +67,33 @@ class Node {
      * The storage is dynamically de/allocated.
      */
     struct local_storage {
-        char _type;   // Type
-        double _T;    // Temperature
-        double _C;    // Thermal capacity
-        double _qs;   // Solar load
-        double _qa;   // Albedo load
-        double _qe;   // Earth IR load
-        double _qi;   // Internal load
-        double _qr;   // Other load
-        double _a;    // Area
-        double _fx;   // X coordinate
-        double _fy;   // Y coordinate
-        double _fz;   // Z coordinate
-        double _eps;  // IR emissivity
-        double _aph;  // Solar absortivity
+        char type;   // Type
+        double T;    // Temperature
+        double C;    // Thermal capacity
+        double qs;   // Solar load
+        double qa;   // Albedo load
+        double qe;   // Earth IR load
+        double qi;   // Internal load
+        double qr;   // Other load
+        double a;    // Area
+        double fx;   // X coordinate
+        double fy;   // Y coordinate
+        double fz;   // Z coordinate
+        double eps;  // IR emissivity
+        double aph;  // Solar absortivity
 
-        std::string _literal_C;    // Literal Thermal capacity
-        std::string _literal_qs;   // Literal Solar load
-        std::string _literal_qa;   // Literal Albedo load
-        std::string _literal_qe;   // Literal Earth IR load
-        std::string _literal_qi;   // Literal Internal load
-        std::string _literal_qr;   // Literal Other load
-        std::string _literal_a;    // Literal Area
-        std::string _literal_fx;   // Literal X coordinate
-        std::string _literal_fy;   // Literal Y coordinate
-        std::string _literal_fz;   // Literal Z coordinate
-        std::string _literal_eps;  // Literal IR emissivity
-        std::string _literal_aph;  // Literal Solar absortivity
+        std::string literal_C;    // Literal Thermal capacity
+        std::string literal_qs;   // Literal Solar load
+        std::string literal_qa;   // Literal Albedo load
+        std::string literal_qe;   // Literal Earth IR load
+        std::string literal_qi;   // Literal Internal load
+        std::string literal_qr;   // Literal Other load
+        std::string literal_a;    // Literal Area
+        std::string literal_fx;   // Literal X coordinate
+        std::string literal_fy;   // Literal Y coordinate
+        std::string literal_fz;   // Literal Z coordinate
+        std::string literal_eps;  // Literal IR emissivity
+        std::string literal_aph;  // Literal Solar absortivity
     };
 
     /**
@@ -128,10 +128,10 @@ class Node {
      * Similar to the previous one, but given directly the weak pointer to the
      * Nodes instance.
      */
-    Node(int node_num, std::weak_ptr<Nodes> _parent_pointer);
+    Node(int node_num, std::weak_ptr<Nodes> parent_pointer);
 
     // Move constructor
-    Node(Node&& other_node);
+    Node(Node&& other_node) noexcept;
 
     // Copy constructor
     Node(const Node& other_node);
@@ -157,9 +157,11 @@ class Node {
      * - 'D': Diffusive
      * - 'B': Boundary
      */
-    char get_type();   ///< Type getter.
-    double get_T();    ///< Temperature [K] getter.
-    double get_C();    ///< Thermal capacity [J/K] getter.
+    char get_type();  ///< Type getter.
+    // NOLINTBEGIN(readability-identifier-naming)
+    double get_T();  ///< Temperature [K] getter.
+    double get_C();  ///< Thermal capacity [J/K] getter.
+    // NOLINTEND(readability-identifier-naming)
     double get_qs();   ///< Solar load [W] getter.
     double get_qa();   ///< Albedo load [W] getter.
     double get_qe();   ///< Earth IR load [W] getter.
@@ -183,8 +185,10 @@ class Node {
      * - 'B': Boundary
      */
     void set_type(char type);  ///< Type setter.
-    void set_T(double T);      ///< Temperature [K] setter.
-    void set_C(double C);      ///< Thermal capacity [J/K] setter.
+    // NOLINTBEGIN(readability-identifier-naming)
+    void set_T(double T);  ///< Temperature [K] setter.
+    void set_C(double C);  ///< Thermal capacity [J/K] setter.
+    // NOLINTEND(readability-identifier-naming)
     void set_qs(double qs);    ///< Solar load [W] setter.
     void set_qa(double qa);    ///< Albedo load [W] setter.
     void set_qe(double qe);    ///< Earth IR load [W] setter.
@@ -197,7 +201,9 @@ class Node {
     void set_eps(double eps);  ///< IR emissivity setter.
     void set_aph(double aph);  ///< Solar absortivity setter.
 
+    // NOLINTBEGIN(readability-identifier-naming)
     void set_literal_C(std::string str);  ///< Literal thermal capacity setter.
+    // NOLINTEND(readability-identifier-naming)
 
     // Other getters
     //-------------

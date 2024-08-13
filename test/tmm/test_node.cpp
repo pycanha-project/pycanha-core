@@ -6,6 +6,8 @@
 
 #include "pycanha-core/tmm/node.hpp"
 
+// NOLINTBEGIN(readability-function-cognitive-complexity)
+
 void assert_node_default_values(Node &tn) {
     // Test default values for tn
     REQUIRE(tn.get_int_node_num() == -1);
@@ -185,3 +187,5 @@ TEST_CASE("Node Default Values", "[node]") {
 
     // TODO test the rest of the methods.
 }
+
+// NOLINTEND(readability-function-cognitive-complexity)

@@ -189,8 +189,8 @@ class Nodes {
      * Variable to track changes in the structure of the nodes.
      * Anytime the node order changes, or a node is added or removed, the
      * variable is set to false. Always, before using the node number map
-     * (_usr_to_int_node_num) this variable is checked. If false the map is updated
-     * before accesing it.
+     * (_usr_to_int_node_num) this variable is checked. If false the map is
+     * updated before accesing it.
      */
     mutable bool _node_num_mapped;
 
@@ -364,11 +364,11 @@ class Nodes {
   private:
     /**
      * Remake the map that tracks user node numbers -> internal node numbers,
-     * after that set _node_num_mapped to true. The method is called automatically
-     * when trying to obtain an attribute but _node_num_mapped is false. It is
-     * marked as const because the node struture and the node attributes are not
-     * modified. However the (mutable) members _usr_to_int_node_num and _node_num_mapped
-     * are modified.
+     * after that set _node_num_mapped to true. The method is called
+     * automatically when trying to obtain an attribute but _node_num_mapped is
+     * false. It is marked as const because the node struture and the node
+     * attributes are not modified. However the (mutable) members
+     * _usr_to_int_node_num and _node_num_mapped are modified.
      */
     void create_node_num_map() const;
 

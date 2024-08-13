@@ -80,11 +80,11 @@ Getters and setters are always the same except which atributte is needed.
 */
 #define GET_SET_DOUBLE_ATTR(attr)                             \
     bool Nodes::set_##attr(int node_num, double attr) {       \
-        if (!_node_num_mapped) {                                 \
+        if (!_node_num_mapped) {                              \
             create_node_num_map();                            \
         }                                                     \
-        auto it = _usr_to_int_node_num.find(node_num);             \
-        if (it != _usr_to_int_node_num.end()) {                    \
+        auto it = _usr_to_int_node_num.find(node_num);        \
+        if (it != _usr_to_int_node_num.end()) {               \
             attr##_vector[it->second] = attr;                 \
             return true;                                      \
         } else {                                              \
@@ -93,11 +93,11 @@ Getters and setters are always the same except which atributte is needed.
         }                                                     \
     }                                                         \
     double Nodes::get_##attr(int node_num) {                  \
-        if (!_node_num_mapped) {                                 \
+        if (!_node_num_mapped) {                              \
             create_node_num_map();                            \
         }                                                     \
-        auto it = _usr_to_int_node_num.find(node_num);             \
-        if (it != _usr_to_int_node_num.end()) {                    \
+        auto it = _usr_to_int_node_num.find(node_num);        \
+        if (it != _usr_to_int_node_num.end()) {               \
             return attr##_vector[it->second];                 \
         } else {                                              \
             std::cout << "Get Error: Node does not exist.\n"; \
@@ -105,11 +105,11 @@ Getters and setters are always the same except which atributte is needed.
         }                                                     \
     }                                                         \
     double* Nodes::get_##attr##_value_ref(int node_num) {     \
-        if (!_node_num_mapped) {                                 \
+        if (!_node_num_mapped) {                              \
             create_node_num_map();                            \
         }                                                     \
-        auto it = _usr_to_int_node_num.find(node_num);             \
-        if (it != _usr_to_int_node_num.end()) {                    \
+        auto it = _usr_to_int_node_num.find(node_num);        \
+        if (it != _usr_to_int_node_num.end()) {               \
             return &(attr##_vector[it->second]);              \
         } else {                                              \
             std::cout << "Get Error: Node does not exist.\n"; \
@@ -119,11 +119,11 @@ Getters and setters are always the same except which atributte is needed.
 
 #define GET_SET_DOUBLE_SPARSE(attr)                           \
     double Nodes::get_##attr(int node_num) {                  \
-        if (!_node_num_mapped) {                                 \
+        if (!_node_num_mapped) {                              \
             create_node_num_map();                            \
         }                                                     \
-        auto it = _usr_to_int_node_num.find(node_num);             \
-        if (it != _usr_to_int_node_num.end()) {                    \
+        auto it = _usr_to_int_node_num.find(node_num);        \
+        if (it != _usr_to_int_node_num.end()) {               \
             return attr##_vector.coeff(it->second);           \
         } else {                                              \
             std::cout << "Get Error: Node does not exist.\n"; \
@@ -131,11 +131,11 @@ Getters and setters are always the same except which atributte is needed.
         }                                                     \
     }                                                         \
     bool Nodes::set_##attr(int node_num, double value) {      \
-        if (!_node_num_mapped) {                                 \
+        if (!_node_num_mapped) {                              \
             create_node_num_map();                            \
         }                                                     \
-        auto it = _usr_to_int_node_num.find(node_num);             \
-        if (it != _usr_to_int_node_num.end()) {                    \
+        auto it = _usr_to_int_node_num.find(node_num);        \
+        if (it != _usr_to_int_node_num.end()) {               \
             attr##_vector.insert(it->second) = value;         \
             return true;                                      \
         } else {                                              \
@@ -144,11 +144,11 @@ Getters and setters are always the same except which atributte is needed.
         }                                                     \
     }                                                         \
     double* Nodes::get_##attr##_value_ref(int node_num) {     \
-        if (!_node_num_mapped) {                                 \
+        if (!_node_num_mapped) {                              \
             create_node_num_map();                            \
         }                                                     \
-        auto it = _usr_to_int_node_num.find(node_num);             \
-        if (it != _usr_to_int_node_num.end()) {                    \
+        auto it = _usr_to_int_node_num.find(node_num);        \
+        if (it != _usr_to_int_node_num.end()) {               \
             return &(attr##_vector.coeffRef(it->second));     \
         } else {                                              \
             std::cout << "Get Error: Node does not exist.\n"; \

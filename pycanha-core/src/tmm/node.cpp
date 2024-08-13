@@ -7,7 +7,7 @@
 
 Node::Node(int node_num) : _node_num(node_num) {
     _local_storage_ptr = new local_storage{'D', 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-                                            0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+                                           0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 }
 
 Node::Node(int node_num, std::weak_ptr<Nodes> parent_pointer)
@@ -115,7 +115,7 @@ A macro is used to get/set most of them.
 #define GET_SET_DOUBLE_ATTR(attr)                                              \
     double Node::get_##attr() {                                                \
         if (auto ptr_TNs = _parent_pointer.lock()) {                           \
-            double temp = ptr_TNs->get_##attr(_node_num);                     \
+            double temp = ptr_TNs->get_##attr(_node_num);                      \
             if (std::isnan(temp)) {                                            \
                 _parent_pointer.reset();                                       \
                 if (VERBOSE) {                                                 \
@@ -125,8 +125,8 @@ A macro is used to get/set most of them.
                 }                                                              \
             }                                                                  \
             return temp;                                                       \
-        } else if (_local_storage_ptr) {                                      \
-            return _local_storage_ptr->_##attr;                              \
+        } else if (_local_storage_ptr) {                                       \
+            return _local_storage_ptr->##attr;                                 \
         } else {                                                               \
             std::cout << "WARNING: The node is an unvalid container. "         \
                       << "Create a new one to have a valid node again.\n";     \
@@ -135,7 +135,7 @@ A macro is used to get/set most of them.
     }                                                                          \
     void Node::set_##attr(double value) {                                      \
         if (auto ptr_TNs = _parent_pointer.lock()) {                           \
-            if (!(ptr_TNs->set_##attr(_node_num, value))) {                   \
+            if (!(ptr_TNs->set_##attr(_node_num, value))) {                    \
                 _parent_pointer.reset();                                       \
                 if (VERBOSE) {                                                 \
                     std::cout << "WARNING: Cannot set attribute. "             \
@@ -143,8 +143,8 @@ A macro is used to get/set most of them.
                               << "The node is now an unvalid container.\n";    \
                 }                                                              \
             }                                                                  \
-        } else if (_local_storage_ptr) {                                      \
-            _local_storage_ptr->_##attr = value;                             \
+        } else if (_local_storage_ptr) {                                       \
+            _local_storage_ptr->##attr = value;                                \
         } else {                                                               \
             if (VERBOSE) {                                                     \
                 std::cout << "WARNING: The node is an unvalid container. "     \
@@ -181,7 +181,7 @@ char Node::get_type() {
         }
         return temp;
     } else if (_local_storage_ptr) {
-        return _local_storage_ptr->_type;
+        return _local_storage_ptr->type;
     } else {
         std::cout << "WARNING: The node is an unvalid container. "
                   << "Create a new one to have a valid node again.\n";
@@ -200,7 +200,7 @@ void Node::set_type(char type) {
             }
         }
     } else if (_local_storage_ptr) {
-        _local_storage_ptr->_type = type;
+        _local_storage_ptr->type = type;
     } else {
         if (VERBOSE) {
             std::cout << "WARNING: The node is an unvalid container. "
@@ -213,7 +213,7 @@ std::string Node::get_literal_C() const {
     if (auto ptr_TNs = _parent_pointer.lock()) {
         return ptr_TNs->get_literal_C(_node_num);
     } else if (_local_storage_ptr) {
-        return _local_storage_ptr->_literal_C;
+        return _local_storage_ptr->literal_C;
     } else {
         std::cout << "WARNING: The node is an unvalid container. "
                   << "Create a new one to have a valid node again.\n";
@@ -232,7 +232,7 @@ void Node::set_literal_C(std::string str) {
             }
         }
     } else if (_local_storage_ptr) {
-        _local_storage_ptr->_literal_C = str;
+        _local_storage_ptr->literal_C = str;
     } else {
         if (VERBOSE) {
             std::cout << "WARNING: The node is an unvalid container. "
