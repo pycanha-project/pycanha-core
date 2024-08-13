@@ -49,9 +49,7 @@ void assert_nodes_have_same_attribute_values_except_usr_number(Node &tn1,
     REQUIRE(tn1.get_eps() == tn2.get_eps());
     REQUIRE(tn1.get_aph() == tn2.get_aph());
 
-    // Literal assertion. string1.compare(string2) returns 0 if strings are
-    // equal
-    REQUIRE(tn1.get_literal_C().compare(tn2.get_literal_C()) == 0);
+    REQUIRE(tn1.get_literal_C() == tn2.get_literal_C());
 }
 
 void assert_nodes_have_same_attribute_values(Node &tn1, Node &tn2) {
@@ -71,21 +69,21 @@ TEST_CASE("Node Default Values", "[node]") {
 
     // For Changing default values and testing the new values has been stored
     usr_num = 9;
-    char type = 'B';
-    double T = 1.3;
-    double C = 2.3;
-    double qs = 3.3;
-    double qa = 4.3;
-    double qe = 5.3;
-    double qi = 6.3;
-    double qr = 7.3;
-    double a = 8.3;
-    double fx = 9.3;
-    double fy = 10.3;
-    double fz = 11.3;
-    double eps = 12.3;
-    double aph = 13.3;
-    std::string literal_C = "7e3*5.0/2+2.1";
+    const char type = 'B';
+    const double T = 1.3;
+    const double C = 2.3;
+    const double qs = 3.3;
+    const double qa = 4.3;
+    const double qe = 5.3;
+    const double qi = 6.3;
+    const double qr = 7.3;
+    const double a = 8.3;
+    const double fx = 9.3;
+    const double fy = 10.3;
+    const double fz = 11.3;
+    const double eps = 12.3;
+    const double aph = 13.3;
+    std::string literal_c = "7e3*5.0/2+2.1";
 
     // Test a blank node has default values
     assert_node_default_values(tn);
@@ -117,7 +115,7 @@ TEST_CASE("Node Default Values", "[node]") {
             tn2.set_fz(fz);
             tn2.set_eps(eps);
             tn2.set_aph(aph);
-            tn2.set_literal_C(literal_C);
+            tn2.set_literal_C(literal_c);
 
             REQUIRE(usr_num == tn2.get_node_num());
             REQUIRE(tn2.get_int_node_num() == -1);
@@ -136,9 +134,7 @@ TEST_CASE("Node Default Values", "[node]") {
             REQUIRE(tn2.get_eps() == eps);
             REQUIRE(tn2.get_aph() == aph);
 
-            // Literal assertion. string1.compare(string2) returns 0 if strings
-            // are equal
-            REQUIRE(literal_C.compare(tn2.get_literal_C()) == 0);
+            REQUIRE(literal_c == tn2.get_literal_C());
 
             // Check the copied node is a copy, so the first one still holds the
             // old values
@@ -162,7 +158,7 @@ TEST_CASE("Node Default Values", "[node]") {
             REQUIRE(tn.get_fz() == fz);
             REQUIRE(tn.get_eps() == eps);
             REQUIRE(tn.get_aph() == aph);
-            REQUIRE(literal_C.compare(tn.get_literal_C()) == 0);
+            REQUIRE(literal_c == tn.get_literal_C());
         }
 
         // tn2 object is destroyed. check that tn still holds the values
@@ -182,7 +178,7 @@ TEST_CASE("Node Default Values", "[node]") {
         REQUIRE(tn.get_fz() == fz);
         REQUIRE(tn.get_eps() == eps);
         REQUIRE(tn.get_aph() == aph);
-        REQUIRE(literal_C.compare(tn.get_literal_C()) == 0);
+        REQUIRE(literal_c == tn.get_literal_C());
     }
 
     // TODO test the rest of the methods.

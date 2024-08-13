@@ -6,8 +6,8 @@
 #include "pycanha-core/config.hpp"
 
 Node::Node(int node_num) : _node_num(node_num) {
-    _local_storage_ptr = new local_storage{'D', 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-                                           0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+    _local_storage_ptr = new LocalStorage{'D', 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                                          0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 }
 
 Node::Node(int node_num, std::weak_ptr<Nodes> parent_pointer)
@@ -38,7 +38,7 @@ Node::Node(const Node& other_node)
     // memcpy(this, &other_node, sizeof(Node)); //THIS IS EVIL DON'T DO IT.
     // PROGRAM WILL CRASH
     // TODO: I need to manually write a copy constructor because I need to
-    // handle the local_storage. If I change the local storage to be an RII
+    // handle the LocalStorage. If I change the local storage to be an RII
     // class that manage the storage itself (it would be like std::string or
     // std::vector), then can I use the default constructors?
 
@@ -46,7 +46,7 @@ Node::Node(const Node& other_node)
         // Pointer is not null and the node is local, not associated with TNs
 
         // Copy memory buffer containing the node info to other place
-        _local_storage_ptr = new local_storage;
+        _local_storage_ptr = new LocalStorage;
         *_local_storage_ptr = *other_node._local_storage_ptr;
     }
     // else: _local_storage_ptr is nullptr, and ParentPointer should be valid
@@ -75,7 +75,7 @@ Node& Node::operator=(const Node& other_node) {
         // Pointer is not null and the node is local, not associated with TNs
 
         // Copy memory buffer containing the node info to other place
-        _local_storage_ptr = new local_storage;
+        _local_storage_ptr = new LocalStorage;
         *_local_storage_ptr = *other_node._local_storage_ptr;
     }
     // else: _local_storage_ptr is nullptr, and ParentPointer should be valid

@@ -9,18 +9,194 @@
 // Default constructor
 Nodes::Nodes() : _node_num_mapped(false) {
     if (DEBUG) {
-        std::cout << "Default constructor of TNs called " << self_pointer
+        std::cout << "Default constructor of TNs called " << _self_pointer
                   << "\n";
     }
 
     // Create the shared pointer with a dummy destructor, otherwise TNs
     // destructor would be called twice
-    self_pointer = std::shared_ptr<Nodes>(
+    _self_pointer = std::shared_ptr<Nodes>(
         this, [](Nodes* p) { std::cout << "Self deleting \n"; });
 }
 
-// Nodes::Nodes (const Nodes&) = delete;
-// Nodes& Nodes::operator= (const Nodes&) = delete;
+// Copy Constructor
+Nodes::Nodes(const Nodes& other)
+    : _diff_node_num_vector(other._diff_node_num_vector),
+      _bound_node_num_vector(other._bound_node_num_vector),
+      T_vector(other.T_vector),
+      C_vector(other.C_vector),
+      qs_vector(other.qs_vector),
+      qa_vector(other.qa_vector),
+      qe_vector(other.qe_vector),
+      qi_vector(other.qi_vector),
+      qr_vector(other.qr_vector),
+      a_vector(other.a_vector),
+      fx_vector(other.fx_vector),
+      fy_vector(other.fy_vector),
+      fz_vector(other.fz_vector),
+      eps_vector(other.eps_vector),
+      aph_vector(other.aph_vector),
+      literals_C(other.literals_C),
+      literals_qs(other.literals_qs),
+      literals_qa(other.literals_qa),
+      literals_qe(other.literals_qe),
+      literals_qi(other.literals_qi),
+      literals_qr(other.literals_qr),
+      literals_a(other.literals_a),
+      literals_fx(other.literals_fx),
+      literals_fy(other.literals_fy),
+      literals_fz(other.literals_fz),
+      literals_eps(other.literals_eps),
+      literals_aph(other.literals_aph),
+      _usr_to_int_node_num(other._usr_to_int_node_num),
+      _node_num_mapped(other._node_num_mapped) {
+    if (DEBUG) {
+        std::cout << "Copy constructor of TNs called " << &other << " -> "
+                  << this << "\n";
+    }
+
+    // Create the shared pointer with a dummy destructor, otherwise TNs
+    // destructor would be called twice
+    _self_pointer = std::shared_ptr<Nodes>(
+        this, [](Nodes* p) { std::cout << "Self deleting \n"; });
+}
+
+// Copy Assignment Operator
+Nodes& Nodes::operator=(const Nodes& other) {
+    if (this != &other) {
+        if (DEBUG) {
+            std::cout << "Copy assignment operator of TNs called " << &other
+                      << " -> " << this << "\n";
+        }
+
+        // Copy data members
+        _diff_node_num_vector = other._diff_node_num_vector;
+        _bound_node_num_vector = other._bound_node_num_vector;
+        T_vector = other.T_vector;
+        C_vector = other.C_vector;
+        qs_vector = other.qs_vector;
+        qa_vector = other.qa_vector;
+        qe_vector = other.qe_vector;
+        qi_vector = other.qi_vector;
+        qr_vector = other.qr_vector;
+        a_vector = other.a_vector;
+        fx_vector = other.fx_vector;
+        fy_vector = other.fy_vector;
+        fz_vector = other.fz_vector;
+        eps_vector = other.eps_vector;
+        aph_vector = other.aph_vector;
+        literals_C = other.literals_C;
+        literals_qs = other.literals_qs;
+        literals_qa = other.literals_qa;
+        literals_qe = other.literals_qe;
+        literals_qi = other.literals_qi;
+        literals_qr = other.literals_qr;
+        literals_a = other.literals_a;
+        literals_fx = other.literals_fx;
+        literals_fy = other.literals_fy;
+        literals_fz = other.literals_fz;
+        literals_eps = other.literals_eps;
+        literals_aph = other.literals_aph;
+        _usr_to_int_node_num = other._usr_to_int_node_num;
+        _node_num_mapped = other._node_num_mapped;
+
+        // Recreate self_pointer
+        _self_pointer = std::shared_ptr<Nodes>(
+            this, [](Nodes* p) { std::cout << "Self deleting \n"; });
+    }
+    return *this;
+}
+
+// Move Constructor
+Nodes::Nodes(Nodes&& other) noexcept
+    : _diff_node_num_vector(std::move(other._diff_node_num_vector)),
+      _bound_node_num_vector(std::move(other._bound_node_num_vector)),
+      T_vector(std::move(other.T_vector)),
+      C_vector(std::move(other.C_vector)),
+      qs_vector(std::move(other.qs_vector)),
+      qa_vector(std::move(other.qa_vector)),
+      qe_vector(std::move(other.qe_vector)),
+      qi_vector(std::move(other.qi_vector)),
+      qr_vector(std::move(other.qr_vector)),
+      a_vector(std::move(other.a_vector)),
+      fx_vector(std::move(other.fx_vector)),
+      fy_vector(std::move(other.fy_vector)),
+      fz_vector(std::move(other.fz_vector)),
+      eps_vector(std::move(other.eps_vector)),
+      aph_vector(std::move(other.aph_vector)),
+      literals_C(std::move(other.literals_C)),
+      literals_qs(std::move(other.literals_qs)),
+      literals_qa(std::move(other.literals_qa)),
+      literals_qe(std::move(other.literals_qe)),
+      literals_qi(std::move(other.literals_qi)),
+      literals_qr(std::move(other.literals_qr)),
+      literals_a(std::move(other.literals_a)),
+      literals_fx(std::move(other.literals_fx)),
+      literals_fy(std::move(other.literals_fy)),
+      literals_fz(std::move(other.literals_fz)),
+      literals_eps(std::move(other.literals_eps)),
+      literals_aph(std::move(other.literals_aph)),
+      _usr_to_int_node_num(std::move(other._usr_to_int_node_num)),
+      _node_num_mapped(other._node_num_mapped) {
+    if (DEBUG) {
+        std::cout << "Move constructor of TNs called " << &other << " -> "
+                  << this << "\n";
+    }
+
+    // Transfer the self_pointer
+    _self_pointer = std::move(other._self_pointer);
+
+    // Reset the other object's self_pointer
+    other._self_pointer.reset();
+}
+
+// Move Assignment Operator
+Nodes& Nodes::operator=(Nodes&& other) noexcept {
+    if (this != &other) {
+        if (DEBUG) {
+            std::cout << "Move assignment operator of TNs called " << &other
+                      << " -> " << this << "\n";
+        }
+
+        // Move data members
+        _diff_node_num_vector = std::move(other._diff_node_num_vector);
+        _bound_node_num_vector = std::move(other._bound_node_num_vector);
+        T_vector = std::move(other.T_vector);
+        C_vector = std::move(other.C_vector);
+        qs_vector = std::move(other.qs_vector);
+        qa_vector = std::move(other.qa_vector);
+        qe_vector = std::move(other.qe_vector);
+        qi_vector = std::move(other.qi_vector);
+        qr_vector = std::move(other.qr_vector);
+        a_vector = std::move(other.a_vector);
+        fx_vector = std::move(other.fx_vector);
+        fy_vector = std::move(other.fy_vector);
+        fz_vector = std::move(other.fz_vector);
+        eps_vector = std::move(other.eps_vector);
+        aph_vector = std::move(other.aph_vector);
+        literals_C = std::move(other.literals_C);
+        literals_qs = std::move(other.literals_qs);
+        literals_qa = std::move(other.literals_qa);
+        literals_qe = std::move(other.literals_qe);
+        literals_qi = std::move(other.literals_qi);
+        literals_qr = std::move(other.literals_qr);
+        literals_a = std::move(other.literals_a);
+        literals_fx = std::move(other.literals_fx);
+        literals_fy = std::move(other.literals_fy);
+        literals_fz = std::move(other.literals_fz);
+        literals_eps = std::move(other.literals_eps);
+        literals_aph = std::move(other.literals_aph);
+        _usr_to_int_node_num = std::move(other._usr_to_int_node_num);
+        _node_num_mapped = other._node_num_mapped;
+
+        // Transfer the self_pointer
+        _self_pointer = std::move(other._self_pointer);
+
+        // Reset the other object's self_pointer
+        other._self_pointer.reset();
+    }
+    return *this;
+}
 
 // Destructor
 Nodes::~Nodes() {
@@ -81,7 +257,7 @@ Getters and setters are always the same except which atributte is needed.
 #define GET_SET_DOUBLE_ATTR(attr)                             \
     bool Nodes::set_##attr(int node_num, double attr) {       \
         if (!_node_num_mapped) {                              \
-            create_node_num_map();                            \
+            _create_node_num_map();                            \
         }                                                     \
         auto it = _usr_to_int_node_num.find(node_num);        \
         if (it != _usr_to_int_node_num.end()) {               \
@@ -94,7 +270,7 @@ Getters and setters are always the same except which atributte is needed.
     }                                                         \
     double Nodes::get_##attr(int node_num) {                  \
         if (!_node_num_mapped) {                              \
-            create_node_num_map();                            \
+            _create_node_num_map();                            \
         }                                                     \
         auto it = _usr_to_int_node_num.find(node_num);        \
         if (it != _usr_to_int_node_num.end()) {               \
@@ -106,7 +282,7 @@ Getters and setters are always the same except which atributte is needed.
     }                                                         \
     double* Nodes::get_##attr##_value_ref(int node_num) {     \
         if (!_node_num_mapped) {                              \
-            create_node_num_map();                            \
+            _create_node_num_map();                            \
         }                                                     \
         auto it = _usr_to_int_node_num.find(node_num);        \
         if (it != _usr_to_int_node_num.end()) {               \
@@ -120,7 +296,7 @@ Getters and setters are always the same except which atributte is needed.
 #define GET_SET_DOUBLE_SPARSE(attr)                           \
     double Nodes::get_##attr(int node_num) {                  \
         if (!_node_num_mapped) {                              \
-            create_node_num_map();                            \
+            _create_node_num_map();                            \
         }                                                     \
         auto it = _usr_to_int_node_num.find(node_num);        \
         if (it != _usr_to_int_node_num.end()) {               \
@@ -132,7 +308,7 @@ Getters and setters are always the same except which atributte is needed.
     }                                                         \
     bool Nodes::set_##attr(int node_num, double value) {      \
         if (!_node_num_mapped) {                              \
-            create_node_num_map();                            \
+            _create_node_num_map();                            \
         }                                                     \
         auto it = _usr_to_int_node_num.find(node_num);        \
         if (it != _usr_to_int_node_num.end()) {               \
@@ -145,7 +321,7 @@ Getters and setters are always the same except which atributte is needed.
     }                                                         \
     double* Nodes::get_##attr##_value_ref(int node_num) {     \
         if (!_node_num_mapped) {                              \
-            create_node_num_map();                            \
+            _create_node_num_map();                            \
         }                                                     \
         auto it = _usr_to_int_node_num.find(node_num);        \
         if (it != _usr_to_int_node_num.end()) {               \
@@ -177,7 +353,7 @@ GET_SET_DOUBLE_SPARSE(aph)
 
 bool Nodes::set_type(int node_num, char Type) {
     if (!_node_num_mapped) {
-        create_node_num_map();
+        _create_node_num_map();
     }
     if (!(Type == 'D' || Type == 'B')) {
         if (VERBOSE) {
@@ -194,12 +370,12 @@ bool Nodes::set_type(int node_num, char Type) {
 
     if (current_type == 'D') {
         if (Type == 'B') {
-            diffusive_to_boundary(node_num);
+            _diffusive_to_boundary(node_num);
         }
         return true;
     } else if (current_type == 'B') {
         if (Type == 'D') {
-            boundary_to_diffusive(node_num);
+            _boundary_to_diffusive(node_num);
         }
         return true;
     } else {
@@ -209,7 +385,7 @@ bool Nodes::set_type(int node_num, char Type) {
 }
 char Nodes::get_type(int node_num) {
     if (!_node_num_mapped) {
-        create_node_num_map();
+        _create_node_num_map();
     }
     auto it = _usr_to_int_node_num.find(node_num);
     if (it != _usr_to_int_node_num.end()) {
@@ -224,7 +400,7 @@ char Nodes::get_type(int node_num) {
     }
 }
 
-void Nodes::create_node_num_map() const {
+void Nodes::_create_node_num_map() const {
     int int_num;
     for (int_num = 0; int_num < _diff_node_num_vector.size(); int_num++) {
         _usr_to_int_node_num[_diff_node_num_vector[int_num]] = int_num;
@@ -238,7 +414,7 @@ void Nodes::create_node_num_map() const {
     _node_num_mapped = true;
 }
 
-void Nodes::diffusive_to_boundary(int usr_node_num) {
+void Nodes::_diffusive_to_boundary(int usr_node_num) {
     std::cout << "TODO: Not implemented yet\n";
     // 1. Copy all the info of usr_node_num to a new node not associated with
     // any TNs
@@ -247,7 +423,7 @@ void Nodes::diffusive_to_boundary(int usr_node_num) {
     // 4. Insert the copy of the node in the model
 }
 
-void Nodes::boundary_to_diffusive(int usr_node_num) {
+void Nodes::_boundary_to_diffusive(int usr_node_num) {
     std::cout << "TODO: Not implemented yet\n";
     // 1. Copy all the info of usr_node_num to a new node not associated with
     // any TNs
@@ -258,7 +434,7 @@ void Nodes::boundary_to_diffusive(int usr_node_num) {
 
 Index Nodes::get_idx_from_node_num(int node_num) const {
     if (!_node_num_mapped) {
-        create_node_num_map();
+        _create_node_num_map();
     }
     auto it = _usr_to_int_node_num.find(node_num);
     if (it != _usr_to_int_node_num.end()) {
@@ -271,7 +447,7 @@ Index Nodes::get_idx_from_node_num(int node_num) const {
 
 int Nodes::get_node_num_from_idx(Index idx) const {
     if (!_node_num_mapped) {
-        create_node_num_map();
+        _create_node_num_map();
     }
     if (0 <= idx && idx < _diff_node_num_vector.size()) {
         return _diff_node_num_vector[idx];
@@ -295,17 +471,17 @@ bool Nodes::is_node(int node_num) {
 
 Node Nodes::get_node_from_node_num(int node_num) {
     if (is_node(node_num)) {
-        return Node(node_num, self_pointer);
+        return Node(node_num, _self_pointer);
     } else {
         return Node(-1);
     }
 }
 
 Node Nodes::get_node_from_idx(Index idx) {
-    return Node(get_node_num_from_idx(idx), self_pointer);
+    return Node(get_node_num_from_idx(idx), _self_pointer);
 }
 
-void Nodes::insert_displace(Eigen::SparseVector<LiteralString>& sparse,
+void Nodes::_insert_displace(Eigen::SparseVector<LiteralString>& sparse,
                             Index index, const LiteralString& string) {
     sparse.conservativeResize(sparse.size() + 1);
     for (int i = sparse.nonZeros() - 1;
@@ -317,12 +493,12 @@ void Nodes::insert_displace(Eigen::SparseVector<LiteralString>& sparse,
     }
 }
 
-void Nodes::insert_displace(Eigen::SparseVector<LiteralString>& sparse,
+void Nodes::_insert_displace(Eigen::SparseVector<LiteralString>& sparse,
                             Eigen::Index index, const std::string& string) {
-    insert_displace(sparse, index, LiteralString(string));
+    _insert_displace(sparse, index, LiteralString(string));
 }
 
-void Nodes::insert_displace(Eigen::SparseVector<double>& sparse, Index index,
+void Nodes::_insert_displace(Eigen::SparseVector<double>& sparse, Index index,
                             double value) {
     sparse.conservativeResize(sparse.size() + 1);
     for (int i = sparse.nonZeros() - 1;
@@ -334,7 +510,7 @@ void Nodes::insert_displace(Eigen::SparseVector<double>& sparse, Index index,
     }
 }
 
-void Nodes::delete_displace(Eigen::SparseVector<LiteralString>& sparse,
+void Nodes::_delete_displace(Eigen::SparseVector<LiteralString>& sparse,
                             int index) {
     int to_remove_index = -1;
     for (int i = 0; i < sparse.nonZeros(); i++) {
@@ -352,7 +528,7 @@ void Nodes::delete_displace(Eigen::SparseVector<LiteralString>& sparse,
     }
 }
 
-void Nodes::delete_displace(Eigen::SparseVector<double>& sparse, int index) {
+void Nodes::_delete_displace(Eigen::SparseVector<double>& sparse, int index) {
     sparse.coeffRef(index) = 0.0;
     sparse.prune(ZERO_THR_ATTR, 1.0);  // sparse.prune(ref,prec); num <=
                                        // ref*prec
@@ -360,7 +536,7 @@ void Nodes::delete_displace(Eigen::SparseVector<double>& sparse, int index) {
 
 std::string Nodes::get_literal_C(int node_num) const {
     if (!_node_num_mapped) {
-        create_node_num_map();
+        _create_node_num_map();
     }
     auto it = _usr_to_int_node_num.find(node_num);
     if (it != _usr_to_int_node_num.end()) {
@@ -373,7 +549,7 @@ std::string Nodes::get_literal_C(int node_num) const {
 
 bool Nodes::set_literal_C(int node_num, std::string str) {
     if (!_node_num_mapped) {
-        create_node_num_map();
+        _create_node_num_map();
     }
     auto it = _usr_to_int_node_num.find(node_num);
     if (it != _usr_to_int_node_num.end()) {
@@ -402,19 +578,19 @@ void Nodes::remove_node(int node_num) {
     T_vector.erase(T_vector.begin() + idx);
     C_vector.erase(C_vector.begin() + idx);
 
-    delete_displace(qs_vector, idx);
-    delete_displace(qa_vector, idx);
-    delete_displace(qe_vector, idx);
-    delete_displace(qi_vector, idx);
-    delete_displace(qr_vector, idx);
-    delete_displace(a_vector, idx);
-    delete_displace(fx_vector, idx);
-    delete_displace(fy_vector, idx);
-    delete_displace(fz_vector, idx);
-    delete_displace(eps_vector, idx);
-    delete_displace(aph_vector, idx);
+    _delete_displace(qs_vector, idx);
+    _delete_displace(qa_vector, idx);
+    _delete_displace(qe_vector, idx);
+    _delete_displace(qi_vector, idx);
+    _delete_displace(qr_vector, idx);
+    _delete_displace(a_vector, idx);
+    _delete_displace(fx_vector, idx);
+    _delete_displace(fy_vector, idx);
+    _delete_displace(fz_vector, idx);
+    _delete_displace(eps_vector, idx);
+    _delete_displace(aph_vector, idx);
 
-    delete_displace(literals_C, idx);
+    _delete_displace(literals_C, idx);
 
     // Reshape node vector and conductors
     if (idx < _diff_node_num_vector.size()) {
@@ -457,22 +633,22 @@ void Nodes::_add_node_insert_idx(Node& node, Index insert_idx) {
     FILL_VECTOR_ATTR(C)
 
     // FILL_VECTOR_ATTR(aph)
-    insert_displace(qs_vector, insert_idx, node.get_qs());
-    insert_displace(qa_vector, insert_idx, node.get_qa());
-    insert_displace(qe_vector, insert_idx, node.get_qe());
-    insert_displace(qi_vector, insert_idx, node.get_qi());
-    insert_displace(qr_vector, insert_idx, node.get_qr());
-    insert_displace(a_vector, insert_idx, node.get_a());
-    insert_displace(fx_vector, insert_idx, node.get_fx());
-    insert_displace(fy_vector, insert_idx, node.get_fy());
-    insert_displace(fz_vector, insert_idx, node.get_fz());
-    insert_displace(eps_vector, insert_idx, node.get_eps());
-    insert_displace(aph_vector, insert_idx, node.get_aph());
+    _insert_displace(qs_vector, insert_idx, node.get_qs());
+    _insert_displace(qa_vector, insert_idx, node.get_qa());
+    _insert_displace(qe_vector, insert_idx, node.get_qe());
+    _insert_displace(qi_vector, insert_idx, node.get_qi());
+    _insert_displace(qr_vector, insert_idx, node.get_qr());
+    _insert_displace(a_vector, insert_idx, node.get_a());
+    _insert_displace(fx_vector, insert_idx, node.get_fx());
+    _insert_displace(fy_vector, insert_idx, node.get_fy());
+    _insert_displace(fz_vector, insert_idx, node.get_fz());
+    _insert_displace(eps_vector, insert_idx, node.get_eps());
+    _insert_displace(aph_vector, insert_idx, node.get_aph());
 
-    insert_displace(literals_C, insert_idx, node.get_literal_C());
+    _insert_displace(literals_C, insert_idx, node.get_literal_C());
 
     // The node instance now points to this TNs instance
-    node.set_thermal_nodes_parent(self_pointer);
+    node.set_thermal_nodes_parent(_self_pointer);
 
     return;
 }

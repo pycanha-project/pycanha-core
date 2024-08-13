@@ -66,10 +66,12 @@ class Node {
      * Local storage structure to save the information of a non-associated node.
      * The storage is dynamically de/allocated.
      */
-    struct local_storage {
-        char type;   // Type
-        double T;    // Temperature
-        double C;    // Thermal capacity
+    struct LocalStorage {
+        char type;  // Type
+        // NOLINTBEGIN(readability-identifier-naming)
+        double T;  // Temperature
+        double C;  // Thermal capacity
+        // NOLINTEND(readability-identifier-naming)
         double qs;   // Solar load
         double qa;   // Albedo load
         double qe;   // Earth IR load
@@ -82,7 +84,10 @@ class Node {
         double eps;  // IR emissivity
         double aph;  // Solar absortivity
 
-        std::string literal_C;    // Literal Thermal capacity
+        // NOLINTBEGIN(readability-identifier-naming)
+        std::string literal_C;  // Literal Thermal capacity
+        // NOLINTEND(readability-identifier-naming)
+
         std::string literal_qs;   // Literal Solar load
         std::string literal_qa;   // Literal Albedo load
         std::string literal_qe;   // Literal Earth IR load
@@ -97,11 +102,11 @@ class Node {
     };
 
     /**
-     * A pointer to the local_storage struct. If the node is not associated to
+     * A pointer to the LocalStorage struct. If the node is not associated to
      * the TNs class it is a valid pointer to an existing struct. Otherwise is a
      * nullptr.
      */
-    local_storage* _local_storage_ptr;
+    LocalStorage* _local_storage_ptr;
 
     /**
      * Node attribute: User node number
@@ -174,8 +179,10 @@ class Node {
     double get_eps();  ///< IR emissivity getter.
     double get_aph();  ///< Solar absortivity getter.
 
+    // NOLINTBEGIN(readability-identifier-naming)
     [[nodiscard]] std::string get_literal_C()
         const;  ///< Literal thermal capacity getter.
+    // NOLINTEND(readability-identifier-naming)
 
     // TODO: Inconsistent nomenclature
     void set_node_num(int node_num);  ///< Internal node number setter.

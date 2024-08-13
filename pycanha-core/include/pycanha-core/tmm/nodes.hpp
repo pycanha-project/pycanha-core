@@ -70,7 +70,7 @@ class Nodes {
      * All the references to the instance in Node are through weak_ptr
      * so the node automatically knows that it doesn't belong to any Nodes
      */
-    std::shared_ptr<Nodes> self_pointer;
+    std::shared_ptr<Nodes> _self_pointer;
 
     /**
      * Vector with the user node number of the diffusive nodes. The vector is
@@ -91,11 +91,13 @@ class Nodes {
     // according to the internal number.
 
   public:
+    // NOLINTBEGIN(readability-identifier-naming)
     // Dense storage for vectors used directly by the solvers
     std::vector<double>
         T_vector;  ///< Temperature [K] vector ordered by internal node number.
     std::vector<double> C_vector;  ///< Thermal capacity [J/K] vector ordered by
                                    ///< internal node number.
+    // NOLINTEND(readability-identifier-naming)
 
     // Sparse storage for attributes that are typically 0
     Eigen::SparseVector<double>
@@ -132,9 +134,11 @@ class Nodes {
                      ///< node number.
 
     // Literals storage, typically empty
+    // NOLINTBEGIN(readability-identifier-naming)
     Eigen::SparseVector<LiteralString>
         literals_C;  ///< Thermal capacity literal sparse vector ordered by
                      ///< internal node number.
+    // NOLINTEND(readability-identifier-naming)
     Eigen::SparseVector<LiteralString>
         literals_qs;  ///< Solar load literal sparse vector ordered by internal
                       ///< node number.
@@ -208,6 +212,18 @@ class Nodes {
     /// Destructor
     ~Nodes();
 
+    // Copy Constructor
+    Nodes(const Nodes &other);
+
+    // Copy Assignment Operator
+    Nodes &operator=(const Nodes &other);
+
+    // Move Constructor
+    Nodes(Nodes &&other) noexcept;
+
+    // Move Assignment Operator
+    Nodes &operator=(Nodes &&other) noexcept;
+
     // Node handlers
 
     /// Method to add a new node.
@@ -245,9 +261,11 @@ class Nodes {
     void remove_node(int node_num);
 
     // Attribute getters and setters
-    char get_type(int node_num);   ///< Type getter.
-    double get_T(int node_num);    ///< Temperature [K] getter.
-    double get_C(int node_num);    ///< Thermal capacity [J/K] getter.
+    char get_type(int node_num);  ///< Type getter.
+    // NOLINTBEGIN(readability-identifier-naming)
+    double get_T(int node_num);  ///< Temperature [K] getter.
+    double get_C(int node_num);  ///< Thermal capacity [J/K] getter.
+    // NOLINTEND(readability-identifier-naming)
     double get_qs(int node_num);   ///< Solar load [W] getter.
     double get_qa(int node_num);   ///< Albedo load [W] getter.
     double get_qe(int node_num);   ///< Earth IR load [W] getter.
@@ -264,8 +282,10 @@ class Nodes {
         int node_num) const;  ///< Literal thermal capacity getter.
 
     bool set_type(int node_num, char type);  ///< Type setter.
-    bool set_T(int node_num, double T);      ///< Temperature [K] setter.
-    bool set_C(int node_num, double C);      ///< Thermal capacity [J/K] setter.
+    // NOLINTBEGIN(readability-identifier-naming)
+    bool set_T(int node_num, double T);  ///< Temperature [K] setter.
+    bool set_C(int node_num, double C);  ///< Thermal capacity [J/K] setter.
+    // NOLINTEND(readability-identifier-naming)
     bool set_qs(int node_num, double qs);    ///< Solar load [W] setter.
     bool set_qa(int node_num, double qa);    ///< Albedo load [W] setter.
     bool set_qe(int node_num, double qe);    ///< Earth IR load [W] setter.
@@ -278,6 +298,7 @@ class Nodes {
     bool set_eps(int node_num, double eps);  ///< IR emissivity setter.
     bool set_aph(int node_num, double aph);  ///< Solar absortivity setter.
 
+    // NOLINTBEGIN(readability-identifier-naming)
     bool set_literal_C(int node_num,
                        std::string str);  ///< Literal thermal capacity setter.
 
@@ -285,6 +306,7 @@ class Nodes {
         int node_num);  ///< Pointer where the temperature value is stored.
     double *get_C_value_ref(
         int node_num);  ///< Pointer where the capacity value is stored.
+    // NOLINTEND(readability-identifier-naming)
     double *get_qs_value_ref(
         int node_num);  ///< Solar load [W] pointer to the value. Note:
                         ///< Values are store in sparse vectors. Calling
@@ -370,19 +392,19 @@ class Nodes {
      * attributes are not modified. However the (mutable) members
      * _usr_to_int_node_num and _node_num_mapped are modified.
      */
-    void create_node_num_map() const;
+    void _create_node_num_map() const;
 
     /**
      * Change the type of the node from diffusive to boundary. Because of how
      * the internal order is defined, the node structure needs to be rearranged.
      */
-    void diffusive_to_boundary(int node_num);
+    void _diffusive_to_boundary(int node_num);
 
     /**
      * Change the type of the node from boundary to diffusive. Because of how
      * the internal order is defined, the node structure needs to be rearranged.
      */
-    void boundary_to_diffusive(int node_num);
+    void _boundary_to_diffusive(int node_num);
 
     // Insert methods for SparseVectors
 
@@ -391,7 +413,7 @@ class Nodes {
      * vector. The size of the vector is increased by one, and the elements
      * after the inserted one are displaced one position.
      */
-    void insert_displace(Eigen::SparseVector<LiteralString> &sparse,
+    void _insert_displace(Eigen::SparseVector<LiteralString> &sparse,
                          Index index, const LiteralString &string);
 
     /**
@@ -399,7 +421,7 @@ class Nodes {
      * vector. The size of the vector is increased by one, and the elements
      * after the inserted one are displaced one position.
      */
-    void insert_displace(Eigen::SparseVector<LiteralString> &sparse,
+    void _insert_displace(Eigen::SparseVector<LiteralString> &sparse,
                          Index index, const std::string &string);
 
     /**
@@ -407,7 +429,7 @@ class Nodes {
      * The size of the vector is increased by one, and the elements after the
      * inserted one are displaced one position.
      */
-    void insert_displace(Eigen::SparseVector<double> &sparse, Index index,
+    void _insert_displace(Eigen::SparseVector<double> &sparse, Index index,
                          double value);
 
     // Delete methods for SparseVectors
@@ -417,14 +439,14 @@ class Nodes {
      * of LiteralString. The size of the vector is decreased by one, and the
      * elements after the deleted one are displaced one position.
      */
-    void delete_displace(Eigen::SparseVector<LiteralString> &sparse, int index);
+    void _delete_displace(Eigen::SparseVector<LiteralString> &sparse, int index);
 
     /**
      * Helper method to delete an entry at position 'index' in a Sparse vector
      * of doubles. The size of the vector is decreased by one, and the elements
      * after the deleted one are displaced one position.
      */
-    void delete_displace(Eigen::SparseVector<double> &sparse, int index);
+    void _delete_displace(Eigen::SparseVector<double> &sparse, int index);
 
     /**
      * Insert the node given the positions.
