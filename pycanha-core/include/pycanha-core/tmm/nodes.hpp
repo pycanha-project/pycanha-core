@@ -278,8 +278,10 @@ class Nodes {
     double get_eps(int node_num);  ///< IR emissivity getter.
     double get_aph(int node_num);  ///< Solar absortivity getter.
 
+    // NOLINTBEGIN(readability-identifier-naming)
     std::string get_literal_C(
         int node_num) const;  ///< Literal thermal capacity getter.
+    // NOLINTEND(readability-identifier-naming)
 
     bool set_type(int node_num, char type);  ///< Type setter.
     // NOLINTBEGIN(readability-identifier-naming)
@@ -414,7 +416,7 @@ class Nodes {
      * after the inserted one are displaced one position.
      */
     void _insert_displace(Eigen::SparseVector<LiteralString> &sparse,
-                         Index index, const LiteralString &string);
+                          Index index, const LiteralString &string);
 
     /**
      * Helper method to insert a string value in the middle of a Sparse
@@ -422,7 +424,7 @@ class Nodes {
      * after the inserted one are displaced one position.
      */
     void _insert_displace(Eigen::SparseVector<LiteralString> &sparse,
-                         Index index, const std::string &string);
+                          Index index, const std::string &string);
 
     /**
      * Helper method to insert a double value in the middle of a Sparse vector.
@@ -430,7 +432,7 @@ class Nodes {
      * inserted one are displaced one position.
      */
     void _insert_displace(Eigen::SparseVector<double> &sparse, Index index,
-                         double value);
+                          double value);
 
     // Delete methods for SparseVectors
 
@@ -439,7 +441,8 @@ class Nodes {
      * of LiteralString. The size of the vector is decreased by one, and the
      * elements after the deleted one are displaced one position.
      */
-    void _delete_displace(Eigen::SparseVector<LiteralString> &sparse, int index);
+    void _delete_displace(Eigen::SparseVector<LiteralString> &sparse,
+                          int index);
 
     /**
      * Helper method to delete an entry at position 'index' in a Sparse vector

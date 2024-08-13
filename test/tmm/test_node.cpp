@@ -70,8 +70,8 @@ TEST_CASE("Node Default Values", "[node]") {
     // For Changing default values and testing the new values has been stored
     usr_num = 9;
     const char type = 'B';
-    const double T = 1.3;
-    const double C = 2.3;
+    const double T = 1.3;  // NOLINT(readability-identifier-naming)
+    const double C = 2.3;  // NOLINT(readability-identifier-naming)
     const double qs = 3.3;
     const double qa = 4.3;
     const double qe = 5.3;

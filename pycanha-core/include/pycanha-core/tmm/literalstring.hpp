@@ -20,7 +20,7 @@ class LiteralString {
 
   public:
     LiteralString() = default;  // Default constructor
-    explicit LiteralString(int) {}
+    explicit LiteralString([[maybe_unused]] int number) {}
     explicit LiteralString(const std::string& str) : _string(str) {}
 
     // Implicit conversion constructor from std::string

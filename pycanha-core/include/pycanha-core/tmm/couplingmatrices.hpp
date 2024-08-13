@@ -107,7 +107,7 @@ class CouplingMatrices {
     void _remove_node_diff(Index idx);
     void _remove_node_bound(Index idx);
 
-    using _add_coupling_generic = void (CouplingMatrices::*)(
+    using AddCouplingGeneric = void (CouplingMatrices::*)(
         Eigen::SparseMatrix<double, Eigen::RowMajor> &, int, int, double);
 
     void _add_ovw_coupling_sparse(
@@ -151,7 +151,7 @@ class CouplingMatrices {
     inline bool _validate_conductor_value(double value);
 
     void _validate_coupling_call_add_generic(
-        int idx1, int idx2, double val, _add_coupling_generic add_coupling_fun);
+        int idx1, int idx2, double val, AddCouplingGeneric add_coupling_fun);
 
     // TODO
     void _diff_to_bound(Index insert_position, Index int_bound_num);

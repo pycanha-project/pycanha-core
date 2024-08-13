@@ -389,7 +389,7 @@ inline bool CouplingMatrices::_validate_conductor_value(double value) {
 }
 
 void CouplingMatrices::_validate_coupling_call_add_generic(
-    int idx1, int idx2, double val, _add_coupling_generic add_coupling_fun) {
+    int idx1, int idx2, double val, AddCouplingGeneric add_coupling_fun) {
     // NOTE: All add_coupling function use this method, so invalid indexes or
     // invalid coupling values error are always printed.
     auto [sp_ptr, sp_idx1, sp_idx2] = _get_sp_ptr_and_sp_idx(idx1, idx2);

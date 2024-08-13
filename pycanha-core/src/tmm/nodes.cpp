@@ -257,7 +257,7 @@ Getters and setters are always the same except which atributte is needed.
 #define GET_SET_DOUBLE_ATTR(attr)                             \
     bool Nodes::set_##attr(int node_num, double attr) {       \
         if (!_node_num_mapped) {                              \
-            _create_node_num_map();                            \
+            _create_node_num_map();                           \
         }                                                     \
         auto it = _usr_to_int_node_num.find(node_num);        \
         if (it != _usr_to_int_node_num.end()) {               \
@@ -270,7 +270,7 @@ Getters and setters are always the same except which atributte is needed.
     }                                                         \
     double Nodes::get_##attr(int node_num) {                  \
         if (!_node_num_mapped) {                              \
-            _create_node_num_map();                            \
+            _create_node_num_map();                           \
         }                                                     \
         auto it = _usr_to_int_node_num.find(node_num);        \
         if (it != _usr_to_int_node_num.end()) {               \
@@ -282,7 +282,7 @@ Getters and setters are always the same except which atributte is needed.
     }                                                         \
     double* Nodes::get_##attr##_value_ref(int node_num) {     \
         if (!_node_num_mapped) {                              \
-            _create_node_num_map();                            \
+            _create_node_num_map();                           \
         }                                                     \
         auto it = _usr_to_int_node_num.find(node_num);        \
         if (it != _usr_to_int_node_num.end()) {               \
@@ -296,7 +296,7 @@ Getters and setters are always the same except which atributte is needed.
 #define GET_SET_DOUBLE_SPARSE(attr)                           \
     double Nodes::get_##attr(int node_num) {                  \
         if (!_node_num_mapped) {                              \
-            _create_node_num_map();                            \
+            _create_node_num_map();                           \
         }                                                     \
         auto it = _usr_to_int_node_num.find(node_num);        \
         if (it != _usr_to_int_node_num.end()) {               \
@@ -308,7 +308,7 @@ Getters and setters are always the same except which atributte is needed.
     }                                                         \
     bool Nodes::set_##attr(int node_num, double value) {      \
         if (!_node_num_mapped) {                              \
-            _create_node_num_map();                            \
+            _create_node_num_map();                           \
         }                                                     \
         auto it = _usr_to_int_node_num.find(node_num);        \
         if (it != _usr_to_int_node_num.end()) {               \
@@ -321,7 +321,7 @@ Getters and setters are always the same except which atributte is needed.
     }                                                         \
     double* Nodes::get_##attr##_value_ref(int node_num) {     \
         if (!_node_num_mapped) {                              \
-            _create_node_num_map();                            \
+            _create_node_num_map();                           \
         }                                                     \
         auto it = _usr_to_int_node_num.find(node_num);        \
         if (it != _usr_to_int_node_num.end()) {               \
@@ -482,7 +482,7 @@ Node Nodes::get_node_from_idx(Index idx) {
 }
 
 void Nodes::_insert_displace(Eigen::SparseVector<LiteralString>& sparse,
-                            Index index, const LiteralString& string) {
+                             Index index, const LiteralString& string) {
     sparse.conservativeResize(sparse.size() + 1);
     for (int i = sparse.nonZeros() - 1;
          i >= 0 && sparse.innerIndexPtr()[i] >= index; i--) {
@@ -494,12 +494,12 @@ void Nodes::_insert_displace(Eigen::SparseVector<LiteralString>& sparse,
 }
 
 void Nodes::_insert_displace(Eigen::SparseVector<LiteralString>& sparse,
-                            Eigen::Index index, const std::string& string) {
+                             Eigen::Index index, const std::string& string) {
     _insert_displace(sparse, index, LiteralString(string));
 }
 
 void Nodes::_insert_displace(Eigen::SparseVector<double>& sparse, Index index,
-                            double value) {
+                             double value) {
     sparse.conservativeResize(sparse.size() + 1);
     for (int i = sparse.nonZeros() - 1;
          i >= 0 && sparse.innerIndexPtr()[i] >= index; i--) {
@@ -511,7 +511,7 @@ void Nodes::_insert_displace(Eigen::SparseVector<double>& sparse, Index index,
 }
 
 void Nodes::_delete_displace(Eigen::SparseVector<LiteralString>& sparse,
-                            int index) {
+                             int index) {
     int to_remove_index = -1;
     for (int i = 0; i < sparse.nonZeros(); i++) {
         if (sparse.innerIndexPtr()[i] == index) {
