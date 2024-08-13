@@ -59,6 +59,11 @@ Node::Node(const Node& other_node)
 
 // Assignment operator
 Node& Node::operator=(const Node& other_node) {
+    // Check for self-assignment
+    if (this == &other_node) {
+        return *this;
+    }
+
     // First, delete the old buffer if exists
     if (_local_storage_ptr) {
         delete _local_storage_ptr;

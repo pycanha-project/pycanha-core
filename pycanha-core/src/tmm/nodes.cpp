@@ -7,7 +7,7 @@
 #include "pycanha-core/parameters.hpp"
 
 // Default constructor
-Nodes::Nodes() : _node_num_mapped(false) {
+Nodes::Nodes() : estimated_number_of_nodes(100), _node_num_mapped(false) {
     if (DEBUG) {
         std::cout << "Default constructor of TNs called " << _self_pointer
                   << "\n";
@@ -21,7 +21,8 @@ Nodes::Nodes() : _node_num_mapped(false) {
 
 // Copy Constructor
 Nodes::Nodes(const Nodes& other)
-    : _diff_node_num_vector(other._diff_node_num_vector),
+    : estimated_number_of_nodes(other.estimated_number_of_nodes),
+      _diff_node_num_vector(other._diff_node_num_vector),
       _bound_node_num_vector(other._bound_node_num_vector),
       T_vector(other.T_vector),
       C_vector(other.C_vector),
@@ -70,6 +71,7 @@ Nodes& Nodes::operator=(const Nodes& other) {
         }
 
         // Copy data members
+        estimated_number_of_nodes = other.estimated_number_of_nodes;
         _diff_node_num_vector = other._diff_node_num_vector;
         _bound_node_num_vector = other._bound_node_num_vector;
         T_vector = other.T_vector;
@@ -109,7 +111,8 @@ Nodes& Nodes::operator=(const Nodes& other) {
 
 // Move Constructor
 Nodes::Nodes(Nodes&& other) noexcept
-    : _diff_node_num_vector(std::move(other._diff_node_num_vector)),
+    : estimated_number_of_nodes(other.estimated_number_of_nodes),
+      _diff_node_num_vector(std::move(other._diff_node_num_vector)),
       _bound_node_num_vector(std::move(other._bound_node_num_vector)),
       T_vector(std::move(other.T_vector)),
       C_vector(std::move(other.C_vector)),
@@ -159,6 +162,7 @@ Nodes& Nodes::operator=(Nodes&& other) noexcept {
         }
 
         // Move data members
+        estimated_number_of_nodes = other.estimated_number_of_nodes;
         _diff_node_num_vector = std::move(other._diff_node_num_vector);
         _bound_node_num_vector = std::move(other._bound_node_num_vector);
         T_vector = std::move(other.T_vector);
@@ -547,7 +551,7 @@ std::string Nodes::get_literal_C(int node_num) const {
     }
 }
 
-bool Nodes::set_literal_C(int node_num, std::string str) {
+bool Nodes::set_literal_C(int node_num, const std::string& str) {
     if (!_node_num_mapped) {
         _create_node_num_map();
     }
@@ -622,7 +626,7 @@ void Nodes::_add_node_insert_idx(Node& node, Index insert_idx) {
     }
 
     _node_num_mapped = false;
-    int nn = num_nodes() + 1;
+    // int nn = num_nodes() + 1;
 
 // Fill the containers with the node properties
 #define FILL_VECTOR_ATTR(attr)                           \
@@ -645,7 +649,9 @@ void Nodes::_add_node_insert_idx(Node& node, Index insert_idx) {
     _insert_displace(eps_vector, insert_idx, node.get_eps());
     _insert_displace(aph_vector, insert_idx, node.get_aph());
 
-    _insert_displace(literals_C, insert_idx, node.get_literal_C());
+    // TODO: The Sparse Vector for LiteralString is not working properly. FIX
+    //_insert_displace(literals_C, insert_idx, node.get_literal_C());
+    //_insert_displace(literals_C, insert_idx, "NOT IMPLEMENTED");
 
     // The node instance now points to this TNs instance
     node.set_thermal_nodes_parent(_self_pointer);

@@ -66,16 +66,16 @@ void copy_values_same_nnz(
 void copy_sum_values_same_nnz(
     Eigen::SparseMatrix<double, Eigen::RowMajor>& sp_dest,
     Eigen::SparseMatrix<double, Eigen::RowMajor>& sp_from);
-void copy_values_with_idx(double* dest, double* from,
-                          std::vector<int>& dest_idx);
-void copy_2_values_with_idx(double* dest, double* from,
-                            std::vector<int>& dest_idx_1,
-                            std::vector<int>& dest_idx_2);
-void copy_sum_values_with_idx(double* dest, double* from,
-                              std::vector<int>& dest_idx);
-void copy_sum_2_values_with_idx(double* dest, double* from,
-                                std::vector<int>& dest_idx_1,
-                                std::vector<int>& dest_idx_2);
+void copy_values_with_idx(double* dest, const double* from,
+                          const std::vector<int>& dest_idx);
+void copy_2_values_with_idx(double* dest, const double* from,
+                            const std::vector<int>& dest_idx_1,
+                            const std::vector<int>& dest_idx_2);
+void copy_sum_values_with_idx(double* dest, const double* from,
+                              const std::vector<int>& dest_idx);
+void copy_sum_2_values_with_idx(double* dest, const double* from,
+                                const std::vector<int>& dest_idx_1,
+                                const std::vector<int>& dest_idx_2);
 
 std::tuple<int, int, double> get_row_col_value_from_value_idx(
     const Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse, int vidx);

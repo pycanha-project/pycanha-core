@@ -301,8 +301,9 @@ class Nodes {
     bool set_aph(int node_num, double aph);  ///< Solar absortivity setter.
 
     // NOLINTBEGIN(readability-identifier-naming)
-    bool set_literal_C(int node_num,
-                       std::string str);  ///< Literal thermal capacity setter.
+    bool set_literal_C(
+        int node_num,
+        const std::string &str);  ///< Literal thermal capacity setter.
 
     double *get_T_value_ref(
         int node_num);  ///< Pointer where the temperature value is stored.

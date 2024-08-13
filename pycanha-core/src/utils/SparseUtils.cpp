@@ -777,8 +777,8 @@ void copy_sum_values_same_nnz(
 #endif
 }
 
-void copy_values_with_idx(double* dest, double* from,
-                          std::vector<int>& dest_idx) {
+void copy_values_with_idx(double* dest, const double* from,
+                          const std::vector<int>& dest_idx) {
     // Copy the values 'from' to 'dest'. The ival value is inserted in dest in
     // dest + dest_idx[i_nnz] No Checks performed.
     for (int ival = 0; ival < dest_idx.size(); ival++) {
@@ -786,9 +786,9 @@ void copy_values_with_idx(double* dest, double* from,
     }
 }
 
-void copy_2_values_with_idx(double* dest, double* from,
-                            std::vector<int>& dest_idx_1,
-                            std::vector<int>& dest_idx_2) {
+void copy_2_values_with_idx(double* dest, const double* from,
+                            const std::vector<int>& dest_idx_1,
+                            const std::vector<int>& dest_idx_2) {
     // Copy the values 'from' to 'dest'. The ival value is inserted twice in:
     //  - dest in dest + dest_idx_1[i_nnz]
     //  - dest in dest + dest_idx_2[i_nnz]
@@ -799,17 +799,17 @@ void copy_2_values_with_idx(double* dest, double* from,
     }
 }
 
-void copy_sum_values_with_idx(double* dest, double* from,
-                              std::vector<int>& dest_idx) {
+void copy_sum_values_with_idx(double* dest, const double* from,
+                              const std::vector<int>& dest_idx) {
     // Same as the copy version, but sum the values.
     for (int ival = 0; ival < dest_idx.size(); ival++) {
         dest[dest_idx[ival]] += from[ival];
     }
 }
 
-void copy_sum_2_values_with_idx(double* dest, double* from,
-                                std::vector<int>& dest_idx_1,
-                                std::vector<int>& dest_idx_2) {
+void copy_sum_2_values_with_idx(double* dest, const double* from,
+                                const std::vector<int>& dest_idx_1,
+                                const std::vector<int>& dest_idx_2) {
     // Same as the copy version, but sum the values.
     for (int ival = 0; ival < dest_idx_1.size(); ival++) {
         dest[dest_idx_1[ival]] += from[ival];
