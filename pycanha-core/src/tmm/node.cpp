@@ -126,7 +126,7 @@ A macro is used to get/set most of them.
             }                                                                  \
             return temp;                                                       \
         } else if (_local_storage_ptr) {                                       \
-            return _local_storage_ptr->##attr;                                 \
+            return _local_storage_ptr->attr;                                   \
         } else {                                                               \
             std::cout << "WARNING: The node is an unvalid container. "         \
                       << "Create a new one to have a valid node again.\n";     \
@@ -144,7 +144,7 @@ A macro is used to get/set most of them.
                 }                                                              \
             }                                                                  \
         } else if (_local_storage_ptr) {                                       \
-            _local_storage_ptr->##attr = value;                                \
+            _local_storage_ptr->attr = value;                                  \
         } else {                                                               \
             if (VERBOSE) {                                                     \
                 std::cout << "WARNING: The node is an unvalid container. "     \
