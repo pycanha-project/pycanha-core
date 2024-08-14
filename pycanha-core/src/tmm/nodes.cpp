@@ -650,8 +650,8 @@ void Nodes::_add_node_insert_idx(Node& node, Index insert_idx) {
     _insert_displace(aph_vector, insert_idx, node.get_aph());
 
     // TODO: The Sparse Vector for LiteralString is not working properly. FIX
-    //_insert_displace(literals_C, insert_idx, node.get_literal_C());
-    //_insert_displace(literals_C, insert_idx, "NOT IMPLEMENTED");
+    // _insert_displace(literals_C, insert_idx, node.get_literal_C());
+    // _insert_displace(literals_C, insert_idx, "NOT IMPLEMENTED");
 
     // The node instance now points to this TNs instance
     node.set_thermal_nodes_parent(_self_pointer);
