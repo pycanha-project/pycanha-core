@@ -48,25 +48,25 @@ void assert_tn_has_same_values_as_tns(Node& tn, Nodes& tns,
     // REQUIRE(tn.get_literal_C().compare(tns.get_literal_C(usr_num)) == 0);
 }
 
-void assert_trivial_zeros(const std::vector<int>& non_zero_nodes,
+void assert_trivial_zeros(const std::vector<Index>& non_zero_nodes,
                           Eigen::SparseVector<double>& attr_sp_vector) {
-    for (int i = 0; i < attr_sp_vector.nonZeros(); i++) {
+    for (Index i = 0; i < attr_sp_vector.nonZeros(); i++) {
         REQUIRE(non_zero_nodes[i] == attr_sp_vector.innerIndexPtr()[i]);
     }
 }
 
-void assert_trivial_zeros(const std::vector<int>& non_zero_nodes,
+void assert_trivial_zeros(const std::vector<Index>& non_zero_nodes,
                           Eigen::SparseVector<LiteralString>& attr_sp_vector) {
-    for (int i = 0; i < attr_sp_vector.nonZeros(); i++) {
+    for (Index i = 0; i < attr_sp_vector.nonZeros(); i++) {
         REQUIRE(non_zero_nodes[i] == attr_sp_vector.innerIndexPtr()[i]);
     }
 }
 
 void assert_blank_nodes_attributes_are_trivial_zeros(
-    const std::vector<int>& blank_nodes, Nodes& tns) {
-    std::vector<int> blank_internal_number;
-    std::vector<int> non_blank_internal_number;
-    for (int i = 0; i < tns.num_nodes(); i++) {
+    const std::vector<Index>& blank_nodes, Nodes& tns) {
+    std::vector<Index> blank_internal_number;
+    std::vector<Index> non_blank_internal_number;
+    for (Index i = 0; i < tns.num_nodes(); i++) {
         int usr_num = tns.get_node_num_from_idx(i);
         if (std::find(blank_nodes.begin(), blank_nodes.end(), usr_num) !=
             blank_nodes.end()) {
@@ -97,27 +97,27 @@ TEST_CASE("Nodes Testing", "[nodes]") {
     Nodes tns;
 
     // Nodes for testing
-    std::vector<int> num_nodes{1,  5,  25, 43, 48, 53, 56, 57, 58, 63,
-                               68, 73, 77, 78, 81, 83, 85, 89, 94, 98};
-    std::vector<int> bound_nodes{1, 5, 43, 63, 68, 73, 85, 94, 98};
-    std::vector<int> blank_nodes{1, 48, 53, 78, 94};
-    std::vector<int> insertion_order{63, 58, 5,  57, 43, 94, 1,  48, 89, 25,
-                                     83, 98, 68, 78, 85, 81, 73, 53, 56, 77};
+    std::vector<Index> num_nodes{1,  5,  25, 43, 48, 53, 56, 57, 58, 63,
+                                 68, 73, 77, 78, 81, 83, 85, 89, 94, 98};
+    std::vector<Index> bound_nodes{1, 5, 43, 63, 68, 73, 85, 94, 98};
+    std::vector<Index> blank_nodes{1, 48, 53, 78, 94};
+    std::vector<Index> insertion_order{63, 58, 5,  57, 43, 94, 1,  48, 89, 25,
+                                       83, 98, 68, 78, 85, 81, 73, 53, 56, 77};
 
     // Create N nodes and store them in nodes_vector
-    SizeType N = num_nodes.size();
+    Index N = num_nodes.size();
     std::vector<Node> nodes_vector;
     std::vector<Node> nodes_vector_copy;
     nodes_vector.reserve(N);
     nodes_vector_copy.reserve(N);
 
     // Internal order vector
-    std::vector<int> internal_order;
+    std::vector<Index> internal_order;
     internal_order.reserve(N);
-    int diff_index = 0;
+    Index diff_index = 0;
 
-    for (int i = 0; i < N; i++) {
-        int usr_num = num_nodes[i];
+    for (Index i = 0; i < N; i++) {
+        int usr_num = static_cast<int>(num_nodes[i]);
         Node node(usr_num);
 
         // Blank/filled nodes
@@ -154,8 +154,8 @@ TEST_CASE("Nodes Testing", "[nodes]") {
     }
 
     // Add nodes to thermal nodes
-    for (int i = 0; i < N; i++) {
-        int usr_num = insertion_order[i];
+    for (Index i = 0; i < N; i++) {
+        int usr_num = static_cast<int>(insertion_order[i]);
         auto it =
             std::find(insertion_order.begin(), insertion_order.end(), usr_num);
         if (it != insertion_order.end()) {
@@ -167,18 +167,18 @@ TEST_CASE("Nodes Testing", "[nodes]") {
     REQUIRE(tns.num_nodes() == N);
 
     // Assert that tns have the values of the nodes stored
-    for (int i = 0; i < N; i++) {
+    for (Index i = 0; i < N; i++) {
         assert_tn_has_same_values_as_tns(nodes_vector_copy[i], tns, false);
     }
 
     // Assert that the nodes added to tns return the same values as tns
-    for (int i = 0; i < N; i++) {
+    for (Index i = 0; i < N; i++) {
         assert_tn_has_same_values_as_tns(nodes_vector[i], tns, true);
     }
 
     // Assert internal order is correct
-    for (int i = 0; i < N; i++) {
-        int int_ix = internal_order[i];
+    for (Index i = 0; i < N; i++) {
+        Index int_ix = internal_order[i];
         REQUIRE(nodes_vector_copy[int_ix].get_node_num() ==
                 tns.get_node_num_from_idx(i));
     }
@@ -186,8 +186,8 @@ TEST_CASE("Nodes Testing", "[nodes]") {
     // Assert temperatures and capacities are contiguous in memory
     double* temperatures_vector = &tns.T_vector[0];
     double* capacities_vector = &tns.C_vector[0];
-    for (int i = 0; i < N; i++) {
-        int int_ix = internal_order[i];
+    for (Index i = 0; i < N; i++) {
+        Index int_ix = internal_order[i];
         double node_temp = nodes_vector_copy[int_ix].get_T();
         double node_capacity = nodes_vector_copy[int_ix].get_C();
         REQUIRE(node_temp == temperatures_vector[i]);
