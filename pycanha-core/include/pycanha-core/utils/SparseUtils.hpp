@@ -48,7 +48,7 @@ void remove_row_col(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
                     Index del_idx);
 
 bool is_trivial_zero(const Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
-                     int idx1, int idx2);
+                     Index idx1, Index idx2);
 bool are_compressed_sparse_identical(
     Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse1,
     Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse2);

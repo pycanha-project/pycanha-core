@@ -563,7 +563,7 @@ void remove_row_col(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
 }
 
 bool is_trivial_zero(const Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
-                     int idx1, int idx2) {
+                     Index idx1, Index idx2) {
     // Check if element is a trivial zero in RowMajor SparseMatrix efficiently
     // (binary_search)
     if ((idx1 >= sparse.outerSize()) || (idx2 >= sparse.innerSize())) {
