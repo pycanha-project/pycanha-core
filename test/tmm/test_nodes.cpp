@@ -7,19 +7,21 @@
 
 #include "pycanha-core/tmm/nodes.hpp"
 
+// NOLINTBEGIN(readability-function-cognitive-complexity)
+
 class DoubleRandomGenerator {
   public:
     // Constructor
-    DoubleRandomGenerator(double min, double max) : dist(min, max), seed(100) {
-        rng.seed(seed);
+    DoubleRandomGenerator(double min, double max) : _dist(min, max) {
+        _rng.seed(seed);
     }
     // Generator function
-    double generate_random() { return dist(rng); }
+    double generate_random() { return _dist(_rng); }
 
   private:
-    std::uniform_real_distribution<double> dist;
-    std::mt19937 rng;
-    const int seed;
+    std::uniform_real_distribution<double> _dist;
+    std::mt19937 _rng;
+    const int seed = 100;
 };
 
 void assert_tn_has_same_values_as_tns(Node& tn, Nodes& tns,
@@ -159,7 +161,7 @@ TEST_CASE("Nodes Testing", "[nodes]") {
         auto it =
             std::find(insertion_order.begin(), insertion_order.end(), usr_num);
         if (it != insertion_order.end()) {
-            Index node_ix = it - insertion_order.begin();
+            const SizeType node_ix = it - insertion_order.begin();
             tns.add_node(nodes_vector[node_ix]);
         }
     }
@@ -167,62 +169,70 @@ TEST_CASE("Nodes Testing", "[nodes]") {
     REQUIRE(tns.num_nodes() == N);
 
     // Assert that tns have the values of the nodes stored
-    for (Index i = 0; i < N; i++) {
-        assert_tn_has_same_values_as_tns(nodes_vector_copy[i], tns, false);
+    for (SizeType i = 0; i < static_cast<SizeType>(N); i++) {
+        assert_tn_has_same_values_as_tns(nodes_vector_copy[i], tns,
+                                         /*check_internal=*/false);
     }
 
     // Assert that the nodes added to tns return the same values as tns
-    for (Index i = 0; i < N; i++) {
-        assert_tn_has_same_values_as_tns(nodes_vector[i], tns, true);
+    for (SizeType i = 0; i < static_cast<SizeType>(N); i++) {
+        assert_tn_has_same_values_as_tns(nodes_vector[i], tns,
+                                         /*check_internal=*/true);
     }
 
     // Assert internal order is correct
-    for (Index i = 0; i < N; i++) {
-        Index int_ix = internal_order[i];
+    for (SizeType i = 0; i < static_cast<SizeType>(N); i++) {
+        SizeType int_ix = internal_order[i];
         REQUIRE(nodes_vector_copy[int_ix].get_node_num() ==
                 tns.get_node_num_from_idx(i));
     }
 
+    // NOLINTBEGIN(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+
     // Assert temperatures and capacities are contiguous in memory
-    double* temperatures_vector = &tns.T_vector[0];
-    double* capacities_vector = &tns.C_vector[0];
-    for (Index i = 0; i < N; i++) {
-        Index int_ix = internal_order[i];
-        double node_temp = nodes_vector_copy[int_ix].get_T();
-        double node_capacity = nodes_vector_copy[int_ix].get_C();
+    double* temperatures_vector = tns.T_vector.data();
+    double* capacities_vector = tns.C_vector.data();
+    for (SizeType i = 0; i < static_cast<SizeType>(N); i++) {
+        SizeType int_ix = internal_order[i];
+        const double node_temp = nodes_vector_copy[int_ix].get_T();
+        const double node_capacity = nodes_vector_copy[int_ix].get_C();
         REQUIRE(node_temp == temperatures_vector[i]);
         REQUIRE(node_capacity == capacities_vector[i]);
     }
+
+    // NOLINTEND(cppcoreguidelines-pro-bounds-pointer-arithmetic)
 
     // Assert that only non-zero elements are entries of the sparse vectors
     assert_blank_nodes_attributes_are_trivial_zeros(blank_nodes, tns);
 
     // Check that the map is updated and flagged outdated properly
-    Node node_map_check_D1(1001);
-    Node node_map_check_D2(1002);
-    Node node_map_check_B1(1003);
-    Node node_map_check_B2(1004);
-    node_map_check_B1.set_type('B');
-    node_map_check_B2.set_type('B');
-    tns.add_node(node_map_check_D1);  // Map flagged outdated
+    Node node_map_check_d1(1001);
+    Node node_map_check_d2(1002);
+    Node node_map_check_b1(1003);
+    Node node_map_check_b2(1004);
+    node_map_check_b1.set_type('B');
+    node_map_check_b2.set_type('B');
+    tns.add_node(node_map_check_d1);  // Map flagged outdated
     REQUIRE_FALSE(tns.is_mapped());
     tns.set_T(1001, 1001.0);  // Map updated
     REQUIRE(tns.is_mapped());
 
-    tns.add_node(node_map_check_B1);  // Map flagged outdated
+    tns.add_node(node_map_check_b1);  // Map flagged outdated
     REQUIRE_FALSE(tns.is_mapped());
     tns.set_T(1003, 1003.0);  // Map updated
     REQUIRE(tns.is_mapped());
 
-    tns.add_node(node_map_check_D2);  // Map flagged outdated
+    tns.add_node(node_map_check_d2);  // Map flagged outdated
     REQUIRE_FALSE(tns.is_mapped());
     tns.set_T(1002, 1002.0);  // Map updated
     REQUIRE(tns.is_mapped());
 
-    tns.add_node(node_map_check_B2);  // Map flagged outdated
+    tns.add_node(node_map_check_b2);  // Map flagged outdated
     REQUIRE_FALSE(tns.is_mapped());
     tns.set_T(1004, 1004.0);  // Map updated
     REQUIRE(tns.is_mapped());
 
     // Additional tests can be added here...
 }
+
+// NOLINTEND(readability-function-cognitive-complexity)
