@@ -11,7 +11,7 @@
 
 // NOLINTBEGIN(readability-function-cognitive-complexity)
 
-using namespace SparseUtils;
+using namespace SparseUtils;  // NOLINT
 
 // Size of sparse for testing
 int ROW_SIZE = 20;
@@ -146,10 +146,10 @@ void move_test() {
 
     std::vector<int> rows_idxs(sparse.rows()), cols_idxs(sparse.cols());
     // Initialize vectors in sequence
-    for (int i = 0; i < rows_idxs.size(); i++) {
+    for (int i = 0; i < std::ssize(rows_idxs); i++) {
         rows_idxs[i] = i;
     }
-    for (int i = 0; i < cols_idxs.size(); i++) {
+    for (int i = 0; i < std::ssize(cols_idxs); i++) {
         cols_idxs[i] = i;
     }
 
@@ -192,9 +192,9 @@ void move_test() {
     }
 
     // Move rows again to the original position
-    for (int i = 0; i < rows_idxs.size(); i++) {
+    for (int i = 0; i < std::ssize(rows_idxs); i++) {
         if (rows_idxs[i] != i) {
-            for (int j = i + 1; j < rows_idxs.size(); j++) {
+            for (int j = i + 1; j < std::ssize(rows_idxs); j++) {
                 if (rows_idxs[j] == i) {
                     std::swap(rows_idxs[i], rows_idxs[j]);
                     move_rows(sparse, i, j);
@@ -205,9 +205,9 @@ void move_test() {
     }
 
     // Move cols again to the original position
-    for (int i = 0; i < cols_idxs.size(); i++) {
+    for (int i = 0; i < std::ssize(cols_idxs); i++) {
         if (cols_idxs[i] != i) {
-            for (int j = i + 1; j < cols_idxs.size(); j++) {
+            for (int j = i + 1; j < std::ssize(cols_idxs); j++) {
                 if (cols_idxs[j] == i) {
                     std::swap(cols_idxs[i], cols_idxs[j]);
                     move_cols(sparse, i, j);
@@ -307,9 +307,10 @@ void remove_test() {
 
         // Test matrix is ok
         for (Index irow = 0;
-             irow < static_cast<Index>(original_row_idxs.size()); irow++) {
+             irow < static_cast<Index>(std::ssize(original_row_idxs)); irow++) {
             for (Index icol = 0;
-                 icol < static_cast<Index>(original_col_idxs.size()); icol++) {
+                 icol < static_cast<Index>(std::ssize(original_col_idxs));
+                 icol++) {
                 REQUIRE(sparse.coeff(irow, icol) ==
                         sparse_copy.coeff(original_row_idxs[irow],
                                           original_col_idxs[icol]));
