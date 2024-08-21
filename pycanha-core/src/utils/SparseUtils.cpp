@@ -741,7 +741,7 @@ void copy_values_same_nnz(
 
     // If debug, assert sparse structure is the same. This check is very costly,
     // only done in debug.
-    CYCANHA_ASSERT(has_same_structure(sp_from, sp_dest),
+    PYCANHA_ASSERT(has_same_structure(sp_from, sp_dest),
                    "Matrices don't have the same structure");
 #if defined(CYCANHA_USE_ONLY_EIGEN)
     memcpy(sp_dest.valuePtr(), sp_from.valuePtr(),
@@ -763,7 +763,7 @@ void copy_sum_values_same_nnz(
 
     // If debug, assert sparse structure is the same. This check is very costly,
     // only done in debug.
-    CYCANHA_ASSERT(has_same_structure(sp_from, sp_dest),
+    PYCANHA_ASSERT(has_same_structure(sp_from, sp_dest),
                    "Matrices don't have the same structure");
 
 #if defined(CYCANHA_USE_ONLY_EIGEN)
@@ -820,8 +820,8 @@ void copy_sum_2_values_with_idx(double* dest, const double* from,
 std::tuple<int, int, double> get_row_col_value_from_value_idx(
     const Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse, int vidx) {
     // Given vidx, where -1 < vix < sparse.nonZeros()
-    CYCANHA_ASSERT(vidx >= 0, "vidx should be positive");
-    CYCANHA_ASSERT(vidx < sparse.nonZeros(),
+    PYCANHA_ASSERT(vidx >= 0, "vidx should be positive");
+    PYCANHA_ASSERT(vidx < sparse.nonZeros(),
                    "vidx out of limits of sparse non zeros");
 
     double val = sparse.valuePtr()[vidx];
