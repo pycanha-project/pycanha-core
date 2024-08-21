@@ -31,21 +31,22 @@
 
 #pragma once
 
-// Enable/Disable Profiling
-#define PROFILING 1
-
 #include <algorithm>
 #include <chrono>
 #include <fstream>
+#include <memory>  // For std::unique_ptr
 #include <mutex>
 #include <string>
 #include <thread>
 
+// Enable/Disable Profiling
+constexpr bool PROFILING = true;
+
 struct ProfileResult {
     std::string name;
     int64_t timestamp;
-    char EventType;
-    std::thread::id ThreadID;
+    char event_type;
+    std::thread::id thread_id;
 };
 
 struct InstrumentationSession {
@@ -53,62 +54,65 @@ struct InstrumentationSession {
 };
 
 class Instrumentor {
-    InstrumentationSession* m_CurrentSession;
-    std::ofstream m_OutputStream;
-    int m_ProfileCount;
-    std::mutex m_lock;
+    std::unique_ptr<InstrumentationSession> _current_session = nullptr;
+    std::ofstream _output_stream;
+    int _profile_count = 0;
+    std::mutex _lock;
 
   public:
-    Instrumentor() : m_CurrentSession(nullptr), m_ProfileCount(0) {}
+    Instrumentor() = default;
 
-    void BeginSession(const std::string& name,
-                      const std::string& filepath = "results.json") {
-        m_OutputStream.open(filepath);
-        WriteHeader();
-        m_CurrentSession = new InstrumentationSession{name};
+    void begin_session(const std::string& name,
+                       const std::string& filepath = "results.json") {
+        _output_stream.open(filepath);
+        write_header();
+        _current_session = std::make_unique<InstrumentationSession>(
+            InstrumentationSession{name});
     }
 
-    void EndSession() {
-        WriteFooter();
-        m_OutputStream.close();
-        delete m_CurrentSession;
-        m_CurrentSession = nullptr;
-        m_ProfileCount = 0;
+    void end_session() {
+        write_footer();
+        _output_stream.close();
+        _current_session.reset();
+        _profile_count = 0;
     }
 
-    void WriteEvent(const ProfileResult& result) {
-        if (!m_CurrentSession) return;
+    void write_event(const ProfileResult& result) {
+        if (_current_session == nullptr) {
+            return;
+        }
 
-        std::lock_guard<std::mutex> lock(m_lock);
+        const std::lock_guard<std::mutex> lock(_lock);
 
-        if (m_ProfileCount++ > 0) m_OutputStream << ",";
+        if (_profile_count++ > 0) {
+            _output_stream << ",";
+        }
 
         std::string name = result.name;
         std::replace(name.begin(), name.end(), '"', '\'');
 
-        m_OutputStream << "{";
-        m_OutputStream << "\"cat\":\"function\",";
-        m_OutputStream << "\"name\":\"" << name << "\",";
-        m_OutputStream << "\"ph\":\"" << result.EventType << "\",";
-        m_OutputStream << "\"pid\":0,";
-        m_OutputStream << "\"tid\":" << result.ThreadID << ",";
-        m_OutputStream << "\"ts\":" << result.timestamp;
-        m_OutputStream << "}";
+        _output_stream << R"({"cat":"function",)";
+        _output_stream << R"("name":")" << name << R"(",)";
+        _output_stream << R"("ph":")" << result.event_type << R"(",)";
+        _output_stream << R"("pid":0,)";
+        _output_stream << R"("tid":)" << result.thread_id << R"(,)";
+        _output_stream << R"("ts":)" << result.timestamp;
+        _output_stream << "}";
 
-        m_OutputStream.flush();
+        _output_stream.flush();
     }
 
-    void WriteHeader() {
-        m_OutputStream << "{\"otherData\": {},\"traceEvents\":[";
-        m_OutputStream.flush();
+    void write_header() {
+        _output_stream << R"({"otherData": {},"traceEvents":[)";
+        _output_stream.flush();
     }
 
-    void WriteFooter() {
-        m_OutputStream << "]}";
-        m_OutputStream.flush();
+    void write_footer() {
+        _output_stream << "]}";
+        _output_stream.flush();
     }
 
-    static Instrumentor& Get() {
+    static Instrumentor& get() {
         static Instrumentor instance;
         return instance;
     }
@@ -116,44 +120,47 @@ class Instrumentor {
 
 class InstrumentationTimer {
   public:
-    explicit InstrumentationTimer(const char* name)
-        : m_Name(name), m_Stopped(false) {
-        Start();
-    }
+    explicit InstrumentationTimer(const char* name) : _name(name) { start(); }
 
     ~InstrumentationTimer() {
-        if (!m_Stopped) Stop();
+        if (!_stopped) {
+            stop();
+        }
     }
-    void Start() {
-        m_StartTimepoint = std::chrono::high_resolution_clock::now();
-        int64_t ts = std::chrono::time_point_cast<std::chrono::microseconds>(
-                         m_StartTimepoint)
-                         .time_since_epoch()
-                         .count();
-        // uint32_t threadID =
-        // std::hash<std::thread::id>{}(std::this_thread::get_id());
-        std::thread::id threadID = std::this_thread::get_id();
-        Instrumentor::Get().WriteEvent({m_Name, ts, 'B', threadID});
+
+    InstrumentationTimer(const InstrumentationTimer&) = delete;
+    InstrumentationTimer& operator=(const InstrumentationTimer&) = delete;
+    InstrumentationTimer(InstrumentationTimer&&) = delete;
+    InstrumentationTimer& operator=(InstrumentationTimer&&) = delete;
+
+    void start() {
+        _start_timepoint = std::chrono::high_resolution_clock::now();
+        const int64_t ts =
+            std::chrono::time_point_cast<std::chrono::microseconds>(
+                _start_timepoint)
+                .time_since_epoch()
+                .count();
+        const std::thread::id thread_id = std::this_thread::get_id();
+        Instrumentor::get().write_event({_name, ts, 'B', thread_id});
     }
-    void Stop() {
-        auto endTimepoint = std::chrono::high_resolution_clock::now();
 
-        int64_t ts = std::chrono::time_point_cast<std::chrono::microseconds>(
-                         endTimepoint)
-                         .time_since_epoch()
-                         .count();
-
-        std::thread::id threadID = std::this_thread::get_id();
-        Instrumentor::Get().WriteEvent({m_Name, ts, 'E', threadID});
-
-        m_Stopped = true;
+    void stop() {
+        const auto end_timepoint = std::chrono::high_resolution_clock::now();
+        const int64_t ts =
+            std::chrono::time_point_cast<std::chrono::microseconds>(
+                end_timepoint)
+                .time_since_epoch()
+                .count();
+        const std::thread::id thread_id = std::this_thread::get_id();
+        Instrumentor::get().write_event({_name, ts, 'E', thread_id});
+        _stopped = true;
     }
 
   private:
-    const char* m_Name;
+    const char* _name;
     std::chrono::time_point<std::chrono::high_resolution_clock>
-        m_StartTimepoint;
-    bool m_Stopped;
+        _start_timepoint;
+    bool _stopped = false;
 };
 
 #ifdef PROFILING
@@ -161,4 +168,5 @@ class InstrumentationTimer {
 #define PROFILE_FUNCTION() PROFILE_SCOPE(__FUNCTION__)
 #else
 #define PROFILE_SCOPE(name)
+#define PROFILE_FUNCTION()
 #endif

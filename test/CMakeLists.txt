@@ -10,6 +10,7 @@ set(TEST_SOURCES
       "${CMAKE_CURRENT_SOURCE_DIR}/gmm/test_geometrymodel.cpp"
 
       "${CMAKE_CURRENT_SOURCE_DIR}/tmm/test_node.cpp"
+      "${CMAKE_CURRENT_SOURCE_DIR}/tmm/test_sparse_utils.cpp"
       "${CMAKE_CURRENT_SOURCE_DIR}/tmm/test_nodes.cpp"
 )
 

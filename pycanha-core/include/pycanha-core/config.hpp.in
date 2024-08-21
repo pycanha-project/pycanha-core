@@ -1,7 +1,11 @@
 #pragma once  // NOLINT(clang-diagnostic-pragma-once-outside-header)
               // clang-tidy in vscode thinks this is a cpp file.
 
+#include <cassert>
+#include <iostream>
 #include <string_view>
+
+// NOLINTBEGIN(readability-identifier-naming)
 
 // Library name and version
 constexpr std::string_view LIB_NAME = "@LIB_NAME@";
@@ -55,10 +59,22 @@ constexpr bool DEBUG = true;
 // TODO: Temporary. Set these flags in Conan.
 #define CYCANHA_USE_ONLY_EIGEN
 
-constexpr bool VERBOSE = 1;
+constexpr bool VERBOSE = true;
 
 // Assert expr when in DEBUG
 // msg -> Error message
-#define CYCANHA_ASSERT(exp, msg) assert(((void)msg, exp))
+
+// Custom assert function that takes an expression and a message
+template <typename T>
+void PYCANHA_ASSERT(const T& expr, const char* msg) {
+#ifndef NDEBUG
+    if (!(expr)) {
+        std::cerr << "Assertion failed: " << msg << std::endl;
+        assert(false);
+    }
+#endif
+}
 // Use (void) to silence unused warnings (from ccpref)
 // We use the standar assert, which is based also in NDEBUG
+
+// NOLINTEND(readability-identifier-naming)

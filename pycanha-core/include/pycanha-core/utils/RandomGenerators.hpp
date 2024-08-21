@@ -1,62 +1,62 @@
 #pragma once
 #include <random>
 
-namespace RandomGenerators {
-template <typename rand_T>
+namespace random_generators {
+template <typename RandT>
 class RealGenerator {
   public:
     // Constructors
-    RealGenerator(rand_T min, rand_T max) : m_dist(min, max) {
+    RealGenerator(RandT min, RandT max) : _dist(min, max) {
         std::random_device rd;
-        m_seed = rd();
-        m_rng.seed(m_seed);
+        _seed = rd();
+        _rng.seed(_seed);
     }
 
-    RealGenerator(rand_T min, rand_T max, unsigned int seed)
-        : m_dist(min, max), m_seed(seed) {
-        m_rng.seed(m_seed);
+    RealGenerator(RandT min, RandT max, unsigned int seed)
+        : _dist(min, max), _seed(seed) {
+        _rng.seed(_seed);
     }
 
     // Generator fun
-    rand_T generate_random() { return m_dist(m_rng); }
+    RandT generate_random() { return _dist(_rng); }
 
   private:
     // Type of random number distribution
-    std::uniform_real_distribution<rand_T> m_dist;
+    std::uniform_real_distribution<RandT> _dist;
 
     // Mersenne Twister: Good quality random number generator
-    std::mt19937 m_rng;
+    std::mt19937 _rng;
 
     // Seed
-    unsigned int m_seed;
+    unsigned int _seed;
 };
 
-template <typename rand_T>
+template <typename RandT>
 class IntGenerator {
   public:
     // Constructors
-    IntGenerator(rand_T min, rand_T max) : m_dist(min, max) {
+    IntGenerator(RandT min, RandT max) : _dist(min, max) {
         std::random_device rd;
-        m_seed = rd();
-        m_rng.seed(m_seed);
+        _seed = rd();
+        _rng.seed(_seed);
     }
 
-    IntGenerator(rand_T min, rand_T max, unsigned int seed)
-        : m_dist(min, max), m_seed(seed) {
-        m_rng.seed(m_seed);
+    IntGenerator(RandT min, RandT max, unsigned int seed)
+        : _dist(min, max), _seed(seed) {
+        _rng.seed(_seed);
     }
 
     // Generator fun
-    rand_T generate_random() { return m_dist(m_rng); }
+    RandT generate_random() { return _dist(_rng); }
 
   private:
     // Type of random number distribution
-    std::uniform_int_distribution<rand_T> m_dist;
+    std::uniform_int_distribution<RandT> _dist;
 
     // Mersenne Twister: Good quality random number generator
-    std::mt19937 m_rng;
+    std::mt19937 _rng;
 
     // Seed
-    unsigned int m_seed;
+    unsigned int _seed;
 };
-}  // namespace RandomGenerators
+}  // namespace random_generators
