@@ -59,7 +59,7 @@ constexpr bool DEBUG = true;
 // TODO: Temporary. Set these flags in Conan.
 #define CYCANHA_USE_ONLY_EIGEN
 
-constexpr bool VERBOSE = 1;
+constexpr bool VERBOSE = true;
 
 // Assert expr when in DEBUG
 // msg -> Error message

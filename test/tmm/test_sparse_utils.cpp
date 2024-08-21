@@ -6,8 +6,8 @@
 #include <iostream>
 #include <string>
 
-#include "pycanha-core/utils/RandomGenerators.hpp"
 #include "pycanha-core/utils/SparseUtils.hpp"
+#include "pycanha-core/utils/random_generators.hpp"
 
 // NOLINTBEGIN(readability-function-cognitive-complexity)
 
@@ -62,9 +62,9 @@ void zero_row_col_test() {
 
     bool use_row_col_function = false;
     for (int i = 0; i < num_zero_row_cols; i++) {
-        RandomGenerators::IntGenerator<Index> row_rand_gen(
+        random_generators::IntGenerator<Index> row_rand_gen(
             0, sparse1.rows() - 1, i + 567);
-        RandomGenerators::IntGenerator<Index> col_rand_gen(
+        random_generators::IntGenerator<Index> col_rand_gen(
             0, sparse1.cols() - 1, i + 567 + num_zero_row_cols);
 
         Index row = row_rand_gen.generate_random();
@@ -153,10 +153,10 @@ void move_test() {
         cols_idxs[i] = i;
     }
 
-    RandomGenerators::IntGenerator<Index> row_rand_gen(0, sparse.rows() - 1,
-                                                       100);
-    RandomGenerators::IntGenerator<Index> col_rand_gen(0, sparse.cols() - 1,
-                                                       120);
+    random_generators::IntGenerator<Index> row_rand_gen(0, sparse.rows() - 1,
+                                                        100);
+    random_generators::IntGenerator<Index> col_rand_gen(0, sparse.cols() - 1,
+                                                        120);
 
     // Permute randomly using move_rows and move_cols
     for (int iper = 0; iper < num_permutation; iper++) {
@@ -273,7 +273,7 @@ void remove_test() {
     }
 
     // Remove rows/cols randomly and compress the matrix every 4 removals
-    RandomGenerators::IntGenerator<Index> random_bool(0, 1, 666);
+    random_generators::IntGenerator<Index> random_bool(0, 1, 666);
     constexpr int compress_matrix_every = 4;
 
     bool row_or_col_to_remove;
@@ -291,14 +291,14 @@ void remove_test() {
 
         if (row_or_col_to_remove) {
             // Col
-            RandomGenerators::IntGenerator<Index> col_generator(
+            random_generators::IntGenerator<Index> col_generator(
                 0, sparse.cols() - 1, 923 + remove_count);
             Index idx = col_generator.generate_random();
             remove_col(sparse, idx);
             original_col_idxs.erase(original_col_idxs.begin() + idx);
         } else {
             // Row
-            RandomGenerators::IntGenerator<Index> row_generator(
+            random_generators::IntGenerator<Index> row_generator(
                 0, sparse.rows() - 1, 923 + remove_count);
             Index idx = row_generator.generate_random();
             remove_row(sparse, idx);

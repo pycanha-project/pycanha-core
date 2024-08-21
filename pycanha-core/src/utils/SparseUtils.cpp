@@ -3,7 +3,7 @@
 
 #include <iostream>
 
-#include "pycanha-core/utils/RandomGenerators.hpp"
+#include "pycanha-core/utils/random_generators.hpp"
 
 // USE MKL FUNCTION IF AVAILABLE
 #if defined(CYCANHA_USE_MKL)
@@ -712,9 +712,9 @@ void random_fill_sparse(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
     sparse.reserve(
         Eigen::VectorXi::Constant(sparse.rows(), approx_values_per_row));
 
-    RandomGenerators::IntGenerator<int> rrig(0, rows - 1, seed);
-    RandomGenerators::IntGenerator<int> rcig(0, cols - 1, seed + 1);
-    RandomGenerators::RealGenerator<double> rdg(0.0, 9.5, seed + 2);
+    random_generators::IntGenerator<int> rrig(0, rows - 1, seed);
+    random_generators::IntGenerator<int> rcig(0, cols - 1, seed + 1);
+    random_generators::RealGenerator<double> rdg(0.0, 9.5, seed + 2);
 
     Index ir;
     Index ic;
