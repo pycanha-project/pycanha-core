@@ -7,14 +7,15 @@
 #include <vector>
 
 #include "../config.hpp"
+#include "../parameters.hpp"
 #include "./Instrumentor.hpp"
 
-namespace SparseUtils {
+namespace sparse_utils {
 
 // Print information to std output
 constexpr bool VERBOSE = true;
 
-typedef Eigen::Index Index;
+using Index = pycanha::Index;
 
 void add_zero_row(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
                   Index new_row_idx);
@@ -94,4 +95,4 @@ void print_sparse_format(
 void print_sparse_structure(
     const Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse);
 
-}  // namespace SparseUtils
+}  // namespace sparse_utils

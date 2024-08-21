@@ -6,16 +6,18 @@
 #include <iostream>
 #include <string>
 
+#include "pycanha-core/utils/RandomGenerators.hpp"
 #include "pycanha-core/utils/SparseUtils.hpp"
-#include "pycanha-core/utils/random_generators.hpp"
 
 // NOLINTBEGIN(readability-function-cognitive-complexity)
 
-using namespace SparseUtils;  // NOLINT
+using namespace sparse_utils;  // NOLINT
+
+using VectorIndex = pycanha::VectorIndex;
 
 // Size of sparse for testing
-int ROW_SIZE = 20;
-int COL_SIZE = 20;
+int ROW_SIZE = 20;  // NOLINT
+int COL_SIZE = 20;  // NOLINT
 
 void trivial_zero_and_identity_test() {
     Eigen::SparseMatrix<double, Eigen::RowMajor> sparse1(ROW_SIZE, COL_SIZE);
@@ -63,12 +65,13 @@ void zero_row_col_test() {
     bool use_row_col_function = false;
     for (int i = 0; i < num_zero_row_cols; i++) {
         random_generators::IntGenerator<Index> row_rand_gen(
-            0, sparse1.rows() - 1, i + 567);
+            0, sparse1.rows() - 1, static_cast<unsigned int>(i + 567));
         random_generators::IntGenerator<Index> col_rand_gen(
-            0, sparse1.cols() - 1, i + 567 + num_zero_row_cols);
+            0, sparse1.cols() - 1,
+            static_cast<unsigned int>(i + 567 + num_zero_row_cols));
 
-        Index row = row_rand_gen.generate_random();
-        Index col = col_rand_gen.generate_random();
+        const Index row = row_rand_gen.generate_random();
+        const Index col = col_rand_gen.generate_random();
 
         // Use the two different methods alternatively
         use_row_col_function = !use_row_col_function;
@@ -100,8 +103,8 @@ void zero_row_col_test() {
 
     Index row2 = 0;
     Index col2 = 0;
-    int zero_row_idx = 0;
-    int zero_col_idx = 0;
+    VectorIndex zero_row_idx = 0;
+    VectorIndex zero_col_idx = 0;
 
     for (Index row1 = 0; row1 < sparse1.rows(); row1++) {
         zero_col_idx = 0;
@@ -345,7 +348,7 @@ void remove_test() {
     remove_col(sp2, 0);
 }
 
-TEST_CASE("SparseUtils Tests") {
+TEST_CASE("sparse_utils Tests") {
     SECTION("SQUARE MATRICES TEST") {
         ROW_SIZE = 20;
         COL_SIZE = 20;

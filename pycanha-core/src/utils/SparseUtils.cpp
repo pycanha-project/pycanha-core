@@ -3,14 +3,14 @@
 
 #include <iostream>
 
-#include "pycanha-core/utils/random_generators.hpp"
+#include "pycanha-core/utils/RandomGenerators.hpp"
 
 // USE MKL FUNCTION IF AVAILABLE
 #if defined(CYCANHA_USE_MKL)
 #include "mkl.h"
 #endif
 
-namespace SparseUtils {
+namespace sparse_utils {
 
 void _add_zero_row(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
                    Index new_row_idx) {
@@ -950,4 +950,4 @@ void print_sparse_structure(
     std::cout.flush();
 }
 
-}  // namespace SparseUtils
+}  // namespace sparse_utils
