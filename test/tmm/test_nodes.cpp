@@ -57,7 +57,7 @@ void assert_tn_has_same_values_as_tns(Node& tn, Nodes& tns,
 void assert_trivial_zeros(const std::vector<Index>& non_zero_nodes,
                           Eigen::SparseVector<double>& attr_sp_vector) {
     for (Index i = 0; i < attr_sp_vector.nonZeros(); i++) {
-        // NOLINBEGIN(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+        // NOLINTBEGIN(cppcoreguidelines-pro-bounds-pointer-arithmetic)
         REQUIRE(non_zero_nodes[static_cast<VectorIndex>(i)] ==
                 attr_sp_vector.innerIndexPtr()[i]);
         // NOLINTEND(cppcoreguidelines-pro-bounds-pointer-arithmetic)
@@ -67,7 +67,7 @@ void assert_trivial_zeros(const std::vector<Index>& non_zero_nodes,
 void assert_trivial_zeros(const std::vector<Index>& non_zero_nodes,
                           Eigen::SparseVector<LiteralString>& attr_sp_vector) {
     for (Index i = 0; i < attr_sp_vector.nonZeros(); i++) {
-        // NOLINBEGIN(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+        // NOLINTBEGIN(cppcoreguidelines-pro-bounds-pointer-arithmetic)
         REQUIRE(non_zero_nodes[static_cast<VectorIndex>(i)] ==
                 attr_sp_vector.innerIndexPtr()[i]);
         // NOLINTEND(cppcoreguidelines-pro-bounds-pointer-arithmetic)
@@ -117,6 +117,7 @@ TEST_CASE("Nodes Testing", "[nodes]") {
                                        83, 98, 68, 78, 85, 81, 73, 53, 56, 77};
 
     // Create N nodes and store them in nodes_vector
+    // NOLINTNEXTLINE(readability-identifier-naming)
     const Index N = std::ssize(num_nodes);
     std::vector<Node> nodes_vector;
     std::vector<Node> nodes_vector_copy;
@@ -129,7 +130,8 @@ TEST_CASE("Nodes Testing", "[nodes]") {
     Index diff_index = 0;
 
     for (Index i = 0; i < N; i++) {
-        const int usr_num = static_cast<int>(num_nodes[i]);
+        const int usr_num =
+            static_cast<int>(num_nodes[static_cast<VectorIndex>(i)]);
         Node node(usr_num);
 
         // Blank/filled nodes
