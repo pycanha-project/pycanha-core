@@ -607,8 +607,8 @@ bool are_compressed_sparse_identical(
         equal_outer = std::equal(sparse1.outerIndexPtr(),
                                  sparse1.outerIndexPtr() + sparse1.outerSize(),
                                  sparse2.outerIndexPtr());
-        if (sparse1.outerIndexPtr()[sparse1.outerSize() + 1] ==
-            sparse2.outerIndexPtr()[sparse2.outerSize() + 1]) {
+        if (sparse1.outerIndexPtr()[sparse1.outerSize()] ==
+            sparse2.outerIndexPtr()[sparse2.outerSize()]) {
             equal_inner =
                 std::equal(sparse1.valuePtr(),
                            sparse1.valuePtr() +
