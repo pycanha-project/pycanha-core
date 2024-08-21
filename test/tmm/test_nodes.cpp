@@ -9,11 +9,14 @@
 
 // NOLINTBEGIN(readability-function-cognitive-complexity)
 
+// The seed is constant making the random number generator deterministic (which
+// is what we want for testing)
+// NOLINTBEGIN(cert-msc32-c,cert-msc51-cpp)
 class DoubleRandomGenerator {
   public:
     // Constructor
     DoubleRandomGenerator(double min, double max) : _dist(min, max) {
-        _rng.seed(seed);
+        _rng.seed(_seed);
     }
     // Generator function
     double generate_random() { return _dist(_rng); }
@@ -21,12 +24,13 @@ class DoubleRandomGenerator {
   private:
     std::uniform_real_distribution<double> _dist;
     std::mt19937 _rng;
-    const int seed = 100;
+    const std::mt19937::result_type _seed = 100;  // same as uint
 };
+// NOLINTEND(cert-msc32-c,cert-msc51-cpp)
 
 void assert_tn_has_same_values_as_tns(Node& tn, Nodes& tns,
                                       bool check_internal) {
-    int usr_num = tn.get_node_num();
+    const int usr_num = tn.get_node_num();
 
     if (check_internal) {
         REQUIRE(tn.get_int_node_num() == tns.get_idx_from_node_num(usr_num));
@@ -53,14 +57,20 @@ void assert_tn_has_same_values_as_tns(Node& tn, Nodes& tns,
 void assert_trivial_zeros(const std::vector<Index>& non_zero_nodes,
                           Eigen::SparseVector<double>& attr_sp_vector) {
     for (Index i = 0; i < attr_sp_vector.nonZeros(); i++) {
-        REQUIRE(non_zero_nodes[i] == attr_sp_vector.innerIndexPtr()[i]);
+        // NOLINBEGIN(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+        REQUIRE(non_zero_nodes[static_cast<VectorIndex>(i)] ==
+                attr_sp_vector.innerIndexPtr()[i]);
+        // NOLINEND(cppcoreguidelines-pro-bounds-pointer-arithmetic)
     }
 }
 
 void assert_trivial_zeros(const std::vector<Index>& non_zero_nodes,
                           Eigen::SparseVector<LiteralString>& attr_sp_vector) {
     for (Index i = 0; i < attr_sp_vector.nonZeros(); i++) {
-        REQUIRE(non_zero_nodes[i] == attr_sp_vector.innerIndexPtr()[i]);
+        // NOLINBEGIN(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+        REQUIRE(non_zero_nodes[static_cast<VectorIndex>(i)] ==
+                attr_sp_vector.innerIndexPtr()[i]);
+        // NOLINEND(cppcoreguidelines-pro-bounds-pointer-arithmetic)
     }
 }
 
@@ -69,7 +79,7 @@ void assert_blank_nodes_attributes_are_trivial_zeros(
     std::vector<Index> blank_internal_number;
     std::vector<Index> non_blank_internal_number;
     for (Index i = 0; i < tns.num_nodes(); i++) {
-        int usr_num = tns.get_node_num_from_idx(i);
+        const int usr_num = tns.get_node_num_from_idx(i);
         if (std::find(blank_nodes.begin(), blank_nodes.end(), usr_num) !=
             blank_nodes.end()) {
             blank_internal_number.push_back(i);
@@ -107,19 +117,19 @@ TEST_CASE("Nodes Testing", "[nodes]") {
                                        83, 98, 68, 78, 85, 81, 73, 53, 56, 77};
 
     // Create N nodes and store them in nodes_vector
-    Index N = num_nodes.size();
+    Index N = std::ssize(num_nodes);
     std::vector<Node> nodes_vector;
     std::vector<Node> nodes_vector_copy;
-    nodes_vector.reserve(N);
-    nodes_vector_copy.reserve(N);
+    nodes_vector.reserve(static_cast<SizeType>(N));
+    nodes_vector_copy.reserve(static_cast<SizeType>(N));
 
     // Internal order vector
     std::vector<Index> internal_order;
-    internal_order.reserve(N);
+    internal_order.reserve(static_cast<SizeType>(N));
     Index diff_index = 0;
 
     for (Index i = 0; i < N; i++) {
-        int usr_num = static_cast<int>(num_nodes[i]);
+        const int usr_num = static_cast<int>(num_nodes[i]);
         Node node(usr_num);
 
         // Blank/filled nodes
@@ -182,9 +192,9 @@ TEST_CASE("Nodes Testing", "[nodes]") {
 
     // Assert internal order is correct
     for (SizeType i = 0; i < static_cast<SizeType>(N); i++) {
-        SizeType int_ix = internal_order[i];
+        SizeType int_ix = static_cast<SizeType>(internal_order[i]);
         REQUIRE(nodes_vector_copy[int_ix].get_node_num() ==
-                tns.get_node_num_from_idx(i));
+                tns.get_node_num_from_idx(static_cast<int>(i)));
     }
 
     // NOLINTBEGIN(cppcoreguidelines-pro-bounds-pointer-arithmetic)
@@ -193,7 +203,7 @@ TEST_CASE("Nodes Testing", "[nodes]") {
     double* temperatures_vector = tns.T_vector.data();
     double* capacities_vector = tns.C_vector.data();
     for (SizeType i = 0; i < static_cast<SizeType>(N); i++) {
-        SizeType int_ix = internal_order[i];
+        const SizeType int_ix = static_cast<SizeType>(internal_order[i]);
         const double node_temp = nodes_vector_copy[int_ix].get_T();
         const double node_capacity = nodes_vector_copy[int_ix].get_C();
         REQUIRE(node_temp == temperatures_vector[i]);
