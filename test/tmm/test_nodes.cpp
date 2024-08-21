@@ -16,7 +16,7 @@ class DoubleRandomGenerator {
   public:
     // Constructor
     DoubleRandomGenerator(double min, double max) : _dist(min, max) {
-        _rng.seed(_seed);
+        _rng.seed(seed);
     }
     // Generator function
     double generate_random() { return _dist(_rng); }
@@ -24,7 +24,7 @@ class DoubleRandomGenerator {
   private:
     std::uniform_real_distribution<double> _dist;
     std::mt19937 _rng;
-    const std::mt19937::result_type _seed = 100;  // same as uint
+    const std::mt19937::result_type seed = 100;  // same as uint
 };
 // NOLINTEND(cert-msc32-c,cert-msc51-cpp)
 
@@ -60,7 +60,7 @@ void assert_trivial_zeros(const std::vector<Index>& non_zero_nodes,
         // NOLINBEGIN(cppcoreguidelines-pro-bounds-pointer-arithmetic)
         REQUIRE(non_zero_nodes[static_cast<VectorIndex>(i)] ==
                 attr_sp_vector.innerIndexPtr()[i]);
-        // NOLINEND(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+        // NOLINTEND(cppcoreguidelines-pro-bounds-pointer-arithmetic)
     }
 }
 
@@ -70,7 +70,7 @@ void assert_trivial_zeros(const std::vector<Index>& non_zero_nodes,
         // NOLINBEGIN(cppcoreguidelines-pro-bounds-pointer-arithmetic)
         REQUIRE(non_zero_nodes[static_cast<VectorIndex>(i)] ==
                 attr_sp_vector.innerIndexPtr()[i]);
-        // NOLINEND(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+        // NOLINTEND(cppcoreguidelines-pro-bounds-pointer-arithmetic)
     }
 }
 
@@ -117,7 +117,7 @@ TEST_CASE("Nodes Testing", "[nodes]") {
                                        83, 98, 68, 78, 85, 81, 73, 53, 56, 77};
 
     // Create N nodes and store them in nodes_vector
-    Index N = std::ssize(num_nodes);
+    const Index N = std::ssize(num_nodes);
     std::vector<Node> nodes_vector;
     std::vector<Node> nodes_vector_copy;
     nodes_vector.reserve(static_cast<SizeType>(N));
@@ -167,12 +167,13 @@ TEST_CASE("Nodes Testing", "[nodes]") {
 
     // Add nodes to thermal nodes
     for (Index i = 0; i < N; i++) {
-        int usr_num = static_cast<int>(insertion_order[i]);
+        const int usr_num =
+            static_cast<int>(insertion_order[static_cast<VectorIndex>(i)]);
         auto it =
             std::find(insertion_order.begin(), insertion_order.end(), usr_num);
         if (it != insertion_order.end()) {
-            const SizeType node_ix = it - insertion_order.begin();
-            tns.add_node(nodes_vector[node_ix]);
+            const Index node_ix = it - insertion_order.begin();
+            tns.add_node(nodes_vector[static_cast<VectorIndex>(node_ix)]);
         }
     }
     // Assert all nodes have been inserted
@@ -192,7 +193,7 @@ TEST_CASE("Nodes Testing", "[nodes]") {
 
     // Assert internal order is correct
     for (SizeType i = 0; i < static_cast<SizeType>(N); i++) {
-        SizeType int_ix = static_cast<SizeType>(internal_order[i]);
+        const auto int_ix = static_cast<SizeType>(internal_order[i]);
         REQUIRE(nodes_vector_copy[int_ix].get_node_num() ==
                 tns.get_node_num_from_idx(static_cast<int>(i)));
     }
@@ -203,7 +204,7 @@ TEST_CASE("Nodes Testing", "[nodes]") {
     double* temperatures_vector = tns.T_vector.data();
     double* capacities_vector = tns.C_vector.data();
     for (SizeType i = 0; i < static_cast<SizeType>(N); i++) {
-        const SizeType int_ix = static_cast<SizeType>(internal_order[i]);
+        const auto int_ix = static_cast<SizeType>(internal_order[i]);
         const double node_temp = nodes_vector_copy[int_ix].get_T();
         const double node_capacity = nodes_vector_copy[int_ix].get_C();
         REQUIRE(node_temp == temperatures_vector[i]);
