@@ -498,6 +498,68 @@ TEST_CASE("Mesh a disc", "[gmm][trimesh][disc]") {
         REQUIRE(trimesh.get_perimeter_edges() ==
                 (Edges(4) << 12, 13, 14, 15).finished());
     }
+
+    SECTION("Check the created mesh is correct for a partial disc") {
+        const Point3D p1(0.0, 0.0, 0.0);
+        const Point3D p2(0.0, 0.0, 1.0);
+        const Point3D p3(1.0, 0.0, 0.0);
+        const double inner_radius = 0.5;
+        const double outer_radius = 1.0;
+        const double start_angle = pi / 2.0;
+        const double end_angle = 3.0 / 2.0 * pi;
+        const Disc disc(p1, p2, p3, inner_radius, outer_radius, start_angle,
+                        end_angle);
+
+        ThermalMesh th_mesh;
+
+        th_mesh.set_dir1_mesh(std::vector<double>{0.0, 0.25, 0.5, 0.75, 1.0});
+        th_mesh.set_dir2_mesh(std::vector<double>{0.0, 0.25, 0.5, 0.75, 1.0});
+
+        TriMesh trimesh = disc.create_mesh(th_mesh, 0.1);
+
+        // TODO: add checks
+
+        // Check face ids. Triangles should be sorted by face id.
+        // The exact number of triangles depend on the resolution.
+        // But we can check that there are at least one triangle with
+        // the expected ids
+        REQUIRE(std::is_sorted(trimesh.get_face_ids().begin(),
+                               trimesh.get_face_ids().end()));
+        FaceIdsList expected_face_ids =
+            (FaceIdsList(32) << 0, 0, 0, 2, 2, 4, 4, 6, 8, 8, 8, 10, 10, 12, 12,
+             14, 16, 16, 16, 18, 18, 20, 20, 22, 24, 24, 24, 26, 26, 28, 28, 30)
+                .finished();
+        auto unique_face_ids = trimesh.get_face_ids();
+        REQUIRE(expected_face_ids == unique_face_ids);
+
+        auto unique_points = trimesh.get_vertices();
+        const VerticesList expected_points =
+            (VerticesList(25, 3) << 0.0, 0.5, 0.0, 0.0, 0.625, 0.0, 0.0, 0.75,
+             0.0, 0.0, 0.875, 0.0, 0.0, 1.0, 0.0, -0.353553, 0.353553, 0.0,
+             -0.441942, 0.441942, 0.0, -0.53033, 0.53033, 0.0, -0.618718,
+             0.618718, 0.0, -0.707107, 0.707107, 0.0, -0.5, 0.0, 0.0, -0.625,
+             0.0, 0.0, -0.75, 0.0, 0.0, -0.875, 0.0, 0.0, -1.0, 0.0, 0.0,
+             -0.353553, -0.353553, 0.0, -0.441942, -0.441942, 0.0, -0.53033,
+             -0.53033, 0.0, -0.618718, -0.618718, 0.0, -0.707107, -0.707107,
+             0.0, 0.0, -0.5, 0.0, 0.0, -0.625, 0.0, 0.0, -0.75, 0.0, 0.0,
+             -0.875, 0.0, 0.0, -1.0, 0.0)
+                .finished();
+        REQUIRE(expected_points.isApprox(unique_points, 1.0E-5));
+
+        // Check the edges are correct
+        REQUIRE(trimesh.get_edges().size() == 40);
+        REQUIRE(trimesh.get_edges()[0] == (Edges(2) << 0, 1).finished());
+        REQUIRE(trimesh.get_edges()[1] == (Edges(2) << 1, 2).finished());
+        REQUIRE(trimesh.get_edges()[2] == (Edges(2) << 2, 3).finished());
+        REQUIRE(trimesh.get_edges()[27] == (Edges(2) << 16, 21).finished());
+        REQUIRE(trimesh.get_edges()[39] == (Edges(2) << 19, 24).finished());
+
+        // Check the perimeter edges are correct
+        REQUIRE(trimesh.get_perimeter_edges() == (Edges(16) << 0, 1, 2, 3, 16,
+                                                  17, 18, 19, 20, 21, 22, 23,
+                                                  36, 37, 38, 39)
+                                                     .finished());
+    }
 }
 // NOLINTEND(readability-function-cognitive-complexity)
 
