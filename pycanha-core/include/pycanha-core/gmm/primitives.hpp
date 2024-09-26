@@ -3122,9 +3122,6 @@ inline TriMesh Cone::create_mesh(const ThermalMesh& thermal_mesh,
                           : from_3d_to_2d(p3d_r * _radius1 + _p1);
     }
 
-    // TODO: Check if when using start and end angle the mesh takes them into
-    // account
-
     TriMesh trimesh = trimesher::create_2d_disc_mesh(
         dir1_mesh, dir2_mesh, center, outer_point, max_length_points_dir1,
         max_length_points_dir2);
