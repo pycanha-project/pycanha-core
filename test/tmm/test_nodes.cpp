@@ -101,6 +101,21 @@ void assert_blank_nodes_attributes_are_trivial_zeros(
     assert_trivial_zeros(non_blank_internal_number, tns.literals_C);
 }
 
+// Test Node constructor with Nodes pointer
+TEST_CASE("Node Constructor with Nodes pointer", "[node]") {
+    // Nodes instance in a shared pointer
+    std::shared_ptr<Nodes> tns = std::make_shared<Nodes>();
+
+    // Weak pointer to the Nodes instance
+    std::weak_ptr<Nodes> weak_tns = tns;
+
+    int usr_num = 5;
+    Node tn(usr_num, weak_tns);
+
+    // TODO: Add checks
+
+}  // NOLINTEND(readability-function-cognitive-complexity)
+
 TEST_CASE("Nodes Testing", "[nodes]") {
     // Random double generator for assigning values to node attributes
     DoubleRandomGenerator rand_gen(0.0, 10000.0);
