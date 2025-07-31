@@ -2,6 +2,9 @@
 #include "pycanha-core/tmm/node.hpp"
 
 #include <iostream>
+#include <memory>
+#include <string>
+#include <utility>
 
 #include "pycanha-core/config.hpp"
 
@@ -277,7 +280,7 @@ std::weak_ptr<Nodes> Node::get_parent_pointer() { return _parent_pointer; }
 uint64_t Node::get_int_parent_pointer() {
     auto PtrTNs = _parent_pointer.lock();
 
-    return (uint64_t)PtrTNs.get();
+    return static_cast<uint64_t>(reinterpret_cast<uintptr_t>(PtrTNs.get()));
 }
 
 void Node::set_thermal_nodes_parent(

@@ -1,6 +1,7 @@
 #include <Eigen/Sparse>  // NOLINT(misc-include-cleaner)
 #include <algorithm>
 #include <catch2/catch_test_macros.hpp>
+#include <utility>
 #include <vector>
 
 #include "pycanha-core/utils/RandomGenerators.hpp"

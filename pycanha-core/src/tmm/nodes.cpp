@@ -1,7 +1,9 @@
 #include "pycanha-core/tmm/nodes.hpp"
 
 #include <iostream>
+#include <memory>
 #include <string>
+#include <utility>
 
 #include "pycanha-core/config.hpp"
 #include "pycanha-core/parameters.hpp"

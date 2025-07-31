@@ -1,7 +1,11 @@
 
 #include "pycanha-core/utils/SparseUtils.hpp"
 
+#include <algorithm>
 #include <iostream>
+#include <tuple>
+#include <utility>
+#include <vector>
 
 #include "pycanha-core/utils/RandomGenerators.hpp"
 

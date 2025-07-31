@@ -3,6 +3,8 @@
 #include <cmath>
 #include <iomanip>
 #include <iostream>
+#include <tuple>
+#include <utility>
 
 #include "pycanha-core/parameters.hpp"
 #include "pycanha-core/utils/SparseUtils.hpp"
