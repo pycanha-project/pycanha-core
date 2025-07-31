@@ -12,25 +12,40 @@ jobs:
     steps:
     - name: Check out repo's default branch
       uses: actions/checkout@v3
-    - name: Setup python
+
+    - name: Setup Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.12' 
-    - name: Install conan, cmake, gcovr and lcov
+        python-version: '3.12'
+
+    - name: Set GCC 12, G++ 12, and gcov-12 as default
       run: |
-        pip install conan
-        pip install cmake
-        sudo apt-get install gcovr lcov
-    - name: Install with conan
+        sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-12 100
+        sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-12 100
+        sudo update-alternatives --install /usr/bin/gcov gcov /usr/bin/gcov-12 100
+        gcc --version
+        g++ --version
+        gcov --version
+
+    - name: Install Conan, CMake, gcovr, and lcov
+      run: |
+        pip install conan cmake
+        sudo apt-get install -y gcovr lcov
+
+    - name: Install dependencies with Conan
       run: |
         conan config install .conan
-        conan install . --build=missing  -pr:h=ubuntu-gcc12-amd64 -pr:h=build-debug -pr:h=options-coverage  -pr:b=ubuntu-gcc12-amd64 -pr:b=build-debug -pr:b=options-coverage
+        conan install . --build=missing \
+          -pr:h=ubuntu-gcc12-amd64 -pr:h=build-debug -pr:h=options-coverage \
+          -pr:b=ubuntu-gcc12-amd64 -pr:b=build-debug -pr:b=options-coverage
         cmake --preset=conan-debug
-    - name: Build
+
+    - name: Build with coverage target
       run: |
         cmake --build build/Debug --target coverage -j4
+
     - name: Upload coverage reports to Codecov
       uses: codecov/codecov-action@v4.0.1
       with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          slug: pycanha-project/pycanha-core
+        token: ${{ secrets.CODECOV_TOKEN }}
+        slug: pycanha-project/pycanha-core
