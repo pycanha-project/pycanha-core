@@ -292,6 +292,7 @@ function(setup_target_for_coverage_lcov)
     set(LCOV_FILTER_CMD
         ${LCOV_PATH} ${Coverage_LCOV_ARGS} --gcov-tool ${GCOV_PATH} --remove
         ${Coverage_NAME}.total ${LCOV_EXCLUDES} --output-file ${Coverage_NAME}.info
+        --ignore-errors unused
     )
     # Generate HTML output
     set(LCOV_GEN_HTML_CMD
