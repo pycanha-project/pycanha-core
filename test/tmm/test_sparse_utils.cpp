@@ -1,10 +1,7 @@
-#include <Eigen/Sparse>
+#include <Eigen/Sparse>  // NOLINT(misc-include-cleaner)
 #include <algorithm>
 #include <catch2/catch_test_macros.hpp>
-#include <catch2/matchers/catch_matchers.hpp>
-#include <catch2/matchers/catch_matchers_floating_point.hpp>
-#include <iostream>
-#include <string>
+#include <vector>
 
 #include "pycanha-core/utils/RandomGenerators.hpp"
 #include "pycanha-core/utils/SparseUtils.hpp"
@@ -13,15 +10,18 @@
 
 using namespace sparse_utils;  // NOLINT
 
-using VectorIndex = pycanha::VectorIndex;
+namespace {
+using VectorIndex = pycanha::VectorIndex;  // NOLINT(misc-include-cleaner)
 
 // Size of sparse for testing
 int ROW_SIZE = 20;  // NOLINT
 int COL_SIZE = 20;  // NOLINT
 
 void trivial_zero_and_identity_test() {
+    // NOLINTBEGIN(misc-include-cleaner)
     Eigen::SparseMatrix<double, Eigen::RowMajor> sparse1(ROW_SIZE, COL_SIZE);
     Eigen::SparseMatrix<double, Eigen::RowMajor> sparse2(ROW_SIZE, COL_SIZE);
+    // NOLINTEND(misc-include-cleaner)
 
     random_fill_sparse(sparse1, 0.4, -9.5, 9.5, 100);
     random_fill_sparse(sparse2, 0.4, -9.5, 9.5, 100);
@@ -82,18 +82,24 @@ void zero_row_col_test() {
             add_zero_col(sparse1, col);
         }
 
+        // NOLINTNEXTLINE(boost-use-ranges,modernize-use-ranges)
         auto row_lower_bound = std::lower_bound(zero_row_indexes.begin(),
                                                 zero_row_indexes.end(), row);
-        for (auto it = row_lower_bound; it < zero_row_indexes.end(); it++) {
+        // NOLINTNEXTLINE(boost-use-ranges,modernize-use-ranges)
+        for (auto it = row_lower_bound; it < zero_row_indexes.end(); ++it) {
             (*it)++;
         }
+        // NOLINTNEXTLINE(boost-use-ranges,modernize-use-ranges)
         zero_row_indexes.insert(row_lower_bound, row);
 
+        // NOLINTNEXTLINE(boost-use-ranges,modernize-use-ranges)
         auto col_lower_bound = std::lower_bound(zero_col_indexes.begin(),
                                                 zero_col_indexes.end(), col);
-        for (auto it = col_lower_bound; it < zero_col_indexes.end(); it++) {
+        // NOLINTNEXTLINE(boost-use-ranges,modernize-use-ranges)
+        for (auto it = col_lower_bound; it < zero_col_indexes.end(); ++it) {
             (*it)++;
         }
+        // NOLINTNEXTLINE(boost-use-ranges,modernize-use-ranges)
         zero_col_indexes.insert(col_lower_bound, col);
     }
 
@@ -147,7 +153,8 @@ void move_test() {
 
     constexpr int num_permutation = 100;
 
-    std::vector<int> rows_idxs(sparse.rows()), cols_idxs(sparse.cols());
+    std::vector<int> rows_idxs(sparse.rows());
+    std::vector<int> cols_idxs(sparse.cols());
     // Initialize vectors in sequence
     for (int i = 0; i < std::ssize(rows_idxs); i++) {
         rows_idxs[i] = i;
@@ -163,10 +170,10 @@ void move_test() {
 
     // Permute randomly using move_rows and move_cols
     for (int iper = 0; iper < num_permutation; iper++) {
-        Index from_row = row_rand_gen.generate_random();
-        Index to_row = row_rand_gen.generate_random();
-        Index from_col = col_rand_gen.generate_random();
-        Index to_col = col_rand_gen.generate_random();
+        const Index from_row = row_rand_gen.generate_random();
+        const Index to_row = row_rand_gen.generate_random();
+        const Index from_col = col_rand_gen.generate_random();
+        const Index to_col = col_rand_gen.generate_random();
 
         move_rows(sparse, from_row, to_row);
         move_cols(sparse, from_col, to_col);
@@ -177,8 +184,8 @@ void move_test() {
 
     // Permute randomly using move_row_cols
     for (int iper = 0; iper < num_permutation; iper++) {
-        Index from_row_col;
-        Index to_row_col;
+        Index from_row_col = 0;
+        Index to_row_col = 0;
         // For rectangular matrices, use the lowest size
         if (sparse.rows() > sparse.cols()) {
             from_row_col = col_rand_gen.generate_random();
@@ -221,7 +228,8 @@ void move_test() {
     }
 
     // Assert sparse matrix is identical
-    REQUIRE(are_compressed_sparse_identical(sparse_copy, sparse));
+    REQUIRE(are_compressed_sparse_identical(
+        sparse_copy, sparse));  // NOLINT(misc-const-correctness)
 
     // Try to move to invalid positions. No exception thrown and matrix should
     // be equal
@@ -245,7 +253,8 @@ void move_test() {
     move_cols(sparse, sparse.cols(), sparse.cols());
     move_cols(sparse, -1, -1);
     move_cols(sparse, sparse.cols(), -1);
-    REQUIRE(are_compressed_sparse_identical(sparse_copy, sparse));
+    REQUIRE(are_compressed_sparse_identical(
+        sparse_copy, sparse));  // NOLINT(misc-const-correctness)
 
     // To/from invalid indexes (opposite sense)
     move_rows(sparse, sparse.rows(), (sparse.rows() - 1) / 2);
@@ -254,13 +263,14 @@ void move_test() {
     move_cols(sparse, sparse.cols(), (sparse.cols() - 1) / 2);
     move_cols(sparse, -1, (sparse.cols() - 1) / 2);
     move_cols(sparse, -1, sparse.cols());
-    REQUIRE(are_compressed_sparse_identical(sparse_copy, sparse));
+    REQUIRE(are_compressed_sparse_identical(
+        sparse_copy, sparse));  // NOLINT(misc-const-correctness)
 }
 
 void remove_test() {
     Eigen::SparseMatrix<double, Eigen::RowMajor> sparse(ROW_SIZE, COL_SIZE);
-    Eigen::SparseMatrix<double, Eigen::RowMajor> sparse_copy(ROW_SIZE,
-                                                             COL_SIZE);
+    const Eigen::SparseMatrix<double, Eigen::RowMajor> sparse_copy(ROW_SIZE,
+                                                                   COL_SIZE);
 
     std::vector<int> original_row_idxs;
     std::vector<int> original_col_idxs;
@@ -279,31 +289,31 @@ void remove_test() {
     random_generators::IntGenerator<Index> random_bool(0, 1, 666);
     constexpr int compress_matrix_every = 4;
 
-    bool row_or_col_to_remove;
+    bool row_or_col_to_remove = false;
     int remove_count = 0;
 
     while ((sparse.rows() > 1) && (sparse.cols() > 1)) {
         if (sparse.rows() <= 1) {
-            row_or_col_to_remove = 1;  // Row 0, col 1
+            row_or_col_to_remove = true;  // Row 0, col 1
         } else if (sparse.cols() <= 1) {
-            row_or_col_to_remove = 0;  // Row 0, col 1
+            row_or_col_to_remove = false;  // Row 0, col 1
         } else {
             row_or_col_to_remove =
-                random_bool.generate_random();  // Row 0, col 1
+                (random_bool.generate_random() != 0);  // Row 0, col 1
         }
 
         if (row_or_col_to_remove) {
             // Col
             random_generators::IntGenerator<Index> col_generator(
                 0, sparse.cols() - 1, 923 + remove_count);
-            Index idx = col_generator.generate_random();
+            const Index idx = col_generator.generate_random();
             remove_col(sparse, idx);
             original_col_idxs.erase(original_col_idxs.begin() + idx);
         } else {
             // Row
             random_generators::IntGenerator<Index> row_generator(
                 0, sparse.rows() - 1, 923 + remove_count);
-            Index idx = row_generator.generate_random();
+            const Index idx = row_generator.generate_random();
             remove_row(sparse, idx);
             original_row_idxs.erase(original_row_idxs.begin() + idx);
         }
@@ -347,6 +357,8 @@ void remove_test() {
     remove_row(sp2, 0);
     remove_col(sp2, 0);
 }
+
+}  // namespace
 
 TEST_CASE("sparse_utils Tests") {
     SECTION("SQUARE MATRICES TEST") {
