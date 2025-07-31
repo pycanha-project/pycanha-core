@@ -24,7 +24,7 @@ jobs:
     - name: Install with conan
       run: |
         conan config install .conan
-        conan install . --build=missing  -pr:h=ubuntu-gcc11-amd64 -pr:h=build-debug -pr:h=options-coverage  -pr:b=ubuntu-gcc11-amd64 -pr:b=build-debug -pr:b=options-coverage
+        conan install . --build=missing  -pr:h=ubuntu-gcc12-amd64 -pr:h=build-debug -pr:h=options-coverage  -pr:b=ubuntu-gcc12-amd64 -pr:b=build-debug -pr:b=options-coverage
         cmake --preset=conan-debug
     - name: Build
       run: |
