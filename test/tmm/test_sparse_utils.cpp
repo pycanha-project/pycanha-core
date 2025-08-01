@@ -1,4 +1,4 @@
-#include <Eigen/Sparse>  // NOLINT(misc-include-cleaner)
+#include <Eigen/Sparse>
 #include <algorithm>
 #include <catch2/catch_test_macros.hpp>
 #include <utility>
@@ -19,10 +19,8 @@ int ROW_SIZE = 20;  // NOLINT
 int COL_SIZE = 20;  // NOLINT
 
 void trivial_zero_and_identity_test() {
-    // NOLINTBEGIN(misc-include-cleaner)
     Eigen::SparseMatrix<double, Eigen::RowMajor> sparse1(ROW_SIZE, COL_SIZE);
     Eigen::SparseMatrix<double, Eigen::RowMajor> sparse2(ROW_SIZE, COL_SIZE);
-    // NOLINTEND(misc-include-cleaner)
 
     random_fill_sparse(sparse1, 0.4, -9.5, 9.5, 100);
     random_fill_sparse(sparse2, 0.4, -9.5, 9.5, 100);
