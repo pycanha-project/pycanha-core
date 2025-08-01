@@ -49,8 +49,8 @@ function(add_clang_tidy_to_target target)
         string(REGEX REPLACE ".*version ([0-9]+\\.[0-9]+\\.[0-9]+).*" "\\1"
         CLANG_TIDY_VERSION "${CLANG_TIDY_VERSION_OUTPUT}")
  
-        if(CLANG_TIDY_VERSION VERSION_LESS "20.0")
-            message(WARNING "clang-tidy version 14 or higher is required. Found version ${CLANG_TIDY_VERSION}.")
+        if(CLANG_TIDY_VERSION VERSION_LESS "18.0")
+            message(WARNING "clang-tidy version 18 or higher is required. Found version ${CLANG_TIDY_VERSION}.")
             return()
         endif()
 
