@@ -38,7 +38,7 @@ function(add_clang_tidy_to_target target)
         ".*.(cc|h|cpp|hpp)")
 
     # Try to find specific versions of clang-tidy starting from 16, if not, check "clang-tidy"
-    find_program(CLANG_TIDY_EXE NAMES clang-tidy-17 clang-tidy-16 clang-tidy-15 clang-tidy)
+    find_program(CLANG_TIDY_EXE NAMES clang-tidy-20 clang-tidy-19 clang-tidy-18 clang-tidy)
     if(CLANG_TIDY_EXE)
         # Check version of clang-tidy. It should be >=14
         execute_process(
@@ -49,7 +49,7 @@ function(add_clang_tidy_to_target target)
         string(REGEX REPLACE ".*version ([0-9]+\\.[0-9]+\\.[0-9]+).*" "\\1"
         CLANG_TIDY_VERSION "${CLANG_TIDY_VERSION_OUTPUT}")
  
-        if(CLANG_TIDY_VERSION VERSION_LESS "14.0")
+        if(CLANG_TIDY_VERSION VERSION_LESS "20.0")
             message(WARNING "clang-tidy version 14 or higher is required. Found version ${CLANG_TIDY_VERSION}.")
             return()
         endif()

@@ -194,6 +194,6 @@ CheckOptions:
   - key: 'readability-identifier-length.MinimumLoopCounterNameLength'
     value: '1'
 # SparseMatrix usage is missdetected
-  - key: misc-include-cleaner.IgnoreSymbols
-    value: 'Eigen::SparseMatrix;Eigen::RowMajor'
+  - key: misc-include-cleaner.IgnoreHeaders
+    value: 'Eigen*'
 ...
