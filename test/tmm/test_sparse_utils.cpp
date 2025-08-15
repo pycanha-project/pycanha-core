@@ -131,8 +131,8 @@ void zero_row_col_test() {
                 } else {
                     // Check the coefficients are in place and the same as the
                     // sparse2
-                    REQUIRE(sparse2.coeff(row2, col2) ==
-                            sparse1.coeff(row1, col1));
+                    REQUIRE((sparse2.coeff(row2, col2) ==
+                             sparse1.coeff(row1, col1)));
                     col2++;
                 }
             }
@@ -152,14 +152,16 @@ void move_test() {
 
     constexpr int num_permutation = 100;
 
-    std::vector<int> rows_idxs(sparse.rows());
-    std::vector<int> cols_idxs(sparse.cols());
+    std::vector<int> rows_idxs(static_cast<VectorIndex>(sparse.rows()));
+    std::vector<int> cols_idxs(static_cast<VectorIndex>(sparse.cols()));
     // Initialize vectors in sequence
-    for (int i = 0; i < std::ssize(rows_idxs); i++) {
-        rows_idxs[i] = i;
+    for (VectorIndex i = 0; i < static_cast<VectorIndex>(rows_idxs.size());
+         i++) {
+        rows_idxs[i] = static_cast<int>(i);
     }
-    for (int i = 0; i < std::ssize(cols_idxs); i++) {
-        cols_idxs[i] = i;
+    for (VectorIndex i = 0; i < static_cast<VectorIndex>(cols_idxs.size());
+         i++) {
+        cols_idxs[i] = static_cast<int>(i);
     }
 
     random_generators::IntGenerator<Index> row_rand_gen(0, sparse.rows() - 1,
@@ -177,8 +179,10 @@ void move_test() {
         move_rows(sparse, from_row, to_row);
         move_cols(sparse, from_col, to_col);
 
-        std::swap(rows_idxs[from_row], rows_idxs[to_row]);
-        std::swap(cols_idxs[from_col], cols_idxs[to_col]);
+        std::swap(rows_idxs[static_cast<VectorIndex>(from_row)],
+                  rows_idxs[static_cast<VectorIndex>(to_row)]);
+        std::swap(cols_idxs[static_cast<VectorIndex>(from_col)],
+                  cols_idxs[static_cast<VectorIndex>(to_col)]);
     }
 
     // Permute randomly using move_row_cols
@@ -196,17 +200,22 @@ void move_test() {
 
         move_row_col(sparse, from_row_col, to_row_col);
 
-        std::swap(rows_idxs[from_row_col], rows_idxs[to_row_col]);
-        std::swap(cols_idxs[from_row_col], cols_idxs[to_row_col]);
+        std::swap(rows_idxs[static_cast<VectorIndex>(from_row_col)],
+                  rows_idxs[static_cast<VectorIndex>(to_row_col)]);
+        std::swap(cols_idxs[static_cast<VectorIndex>(from_row_col)],
+                  cols_idxs[static_cast<VectorIndex>(to_row_col)]);
     }
 
     // Move rows again to the original position
-    for (int i = 0; i < std::ssize(rows_idxs); i++) {
-        if (rows_idxs[i] != i) {
-            for (int j = i + 1; j < std::ssize(rows_idxs); j++) {
-                if (rows_idxs[j] == i) {
+    for (VectorIndex i = 0; i < static_cast<VectorIndex>(rows_idxs.size());
+         i++) {
+        if (rows_idxs[i] != static_cast<int>(i)) {
+            for (VectorIndex j = i + 1;
+                 j < static_cast<VectorIndex>(rows_idxs.size()); j++) {
+                if (rows_idxs[j] == static_cast<int>(i)) {
                     std::swap(rows_idxs[i], rows_idxs[j]);
-                    move_rows(sparse, i, j);
+                    move_rows(sparse, static_cast<Index>(i),
+                              static_cast<Index>(j));
                     break;
                 }
             }
@@ -214,12 +223,15 @@ void move_test() {
     }
 
     // Move cols again to the original position
-    for (int i = 0; i < std::ssize(cols_idxs); i++) {
-        if (cols_idxs[i] != i) {
-            for (int j = i + 1; j < std::ssize(cols_idxs); j++) {
-                if (cols_idxs[j] == i) {
+    for (VectorIndex i = 0; i < static_cast<VectorIndex>(cols_idxs.size());
+         i++) {
+        if (cols_idxs[i] != static_cast<int>(i)) {
+            for (VectorIndex j = i + 1;
+                 j < static_cast<VectorIndex>(cols_idxs.size()); j++) {
+                if (cols_idxs[j] == static_cast<int>(i)) {
                     std::swap(cols_idxs[i], cols_idxs[j]);
-                    move_cols(sparse, i, j);
+                    move_cols(sparse, static_cast<Index>(i),
+                              static_cast<Index>(j));
                     break;
                 }
             }
@@ -274,14 +286,14 @@ void remove_test() {
     std::vector<int> original_row_idxs;
     std::vector<int> original_col_idxs;
 
-    original_row_idxs.reserve(sparse.rows());
-    original_col_idxs.reserve(sparse.cols());
+    original_row_idxs.reserve(static_cast<VectorIndex>(sparse.rows()));
+    original_col_idxs.reserve(static_cast<VectorIndex>(sparse.cols()));
 
-    for (int i = 0; i < sparse.rows(); i++) {
-        original_row_idxs.push_back(i);
+    for (Index i = 0; i < sparse.rows(); i++) {
+        original_row_idxs.push_back(static_cast<int>(i));
     }
-    for (int i = 0; i < sparse.cols(); i++) {
-        original_col_idxs.push_back(i);
+    for (Index i = 0; i < sparse.cols(); i++) {
+        original_col_idxs.push_back(static_cast<int>(i));
     }
 
     // Remove rows/cols randomly and compress the matrix every 4 removals
@@ -304,17 +316,23 @@ void remove_test() {
         if (row_or_col_to_remove) {
             // Col
             random_generators::IntGenerator<Index> col_generator(
-                0, sparse.cols() - 1, 923 + remove_count);
+                0, sparse.cols() - 1,
+                static_cast<unsigned int>(923 + remove_count));
             const Index idx = col_generator.generate_random();
             remove_col(sparse, idx);
-            original_col_idxs.erase(original_col_idxs.begin() + idx);
+            original_col_idxs.erase(
+                original_col_idxs.begin() +
+                static_cast<std::vector<int>::difference_type>(idx));
         } else {
             // Row
             random_generators::IntGenerator<Index> row_generator(
-                0, sparse.rows() - 1, 923 + remove_count);
+                0, sparse.rows() - 1,
+                static_cast<unsigned int>(923 + remove_count));
             const Index idx = row_generator.generate_random();
             remove_row(sparse, idx);
-            original_row_idxs.erase(original_row_idxs.begin() + idx);
+            original_row_idxs.erase(
+                original_row_idxs.begin() +
+                static_cast<std::vector<int>::difference_type>(idx));
         }
 
         // Test matrix is ok
@@ -323,9 +341,14 @@ void remove_test() {
             for (Index icol = 0;
                  icol < static_cast<Index>(std::ssize(original_col_idxs));
                  icol++) {
-                REQUIRE(sparse.coeff(irow, icol) ==
-                        sparse_copy.coeff(original_row_idxs[irow],
-                                          original_col_idxs[icol]));
+                REQUIRE(
+                    (sparse.coeff(irow, icol) ==
+                     sparse_copy.coeff(
+                         static_cast<Index>(
+                             original_row_idxs[static_cast<VectorIndex>(irow)]),
+                         static_cast<Index>(
+                             original_col_idxs[static_cast<VectorIndex>(
+                                 icol)]))));
             }
         }
 

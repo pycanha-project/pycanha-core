@@ -195,5 +195,5 @@ CheckOptions:
     value: '1'
 # SparseMatrix usage is missdetected
   - key: misc-include-cleaner.IgnoreHeaders
-    value: 'Eigen*'
+    value: 'Eigen/.*'
 ...
