@@ -2,7 +2,6 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
-#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <iterator>

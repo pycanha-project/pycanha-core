@@ -7,14 +7,15 @@
 #include <vector>
 
 #include "../config.hpp"
+#include "../parameters.hpp"
 #include "./Instrumentor.hpp"
 
-namespace SparseUtils {
+namespace sparse_utils {
 
 // Print information to std output
 constexpr bool VERBOSE = true;
 
-typedef Eigen::Index Index;
+using Index = pycanha::Index;
 
 void add_zero_row(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
                   Index new_row_idx);
@@ -48,7 +49,7 @@ void remove_row_col(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
                     Index del_idx);
 
 bool is_trivial_zero(const Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
-                     int idx1, int idx2);
+                     Index idx1, Index idx2);
 bool are_compressed_sparse_identical(
     Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse1,
     Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse2);
@@ -94,4 +95,4 @@ void print_sparse_format(
 void print_sparse_structure(
     const Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse);
 
-}  // namespace SparseUtils
+}  // namespace sparse_utils

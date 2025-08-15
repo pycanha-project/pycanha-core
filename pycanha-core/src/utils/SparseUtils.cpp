@@ -1,7 +1,11 @@
 
 #include "pycanha-core/utils/SparseUtils.hpp"
 
+#include <algorithm>
 #include <iostream>
+#include <tuple>
+#include <utility>
+#include <vector>
 
 #include "pycanha-core/utils/RandomGenerators.hpp"
 
@@ -10,7 +14,7 @@
 #include "mkl.h"
 #endif
 
-namespace SparseUtils {
+namespace sparse_utils {
 
 void _add_zero_row(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
                    Index new_row_idx) {
@@ -563,7 +567,7 @@ void remove_row_col(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
 }
 
 bool is_trivial_zero(const Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
-                     int idx1, int idx2) {
+                     Index idx1, Index idx2) {
     // Check if element is a trivial zero in RowMajor SparseMatrix efficiently
     // (binary_search)
     if ((idx1 >= sparse.outerSize()) || (idx2 >= sparse.innerSize())) {
@@ -607,8 +611,8 @@ bool are_compressed_sparse_identical(
         equal_outer = std::equal(sparse1.outerIndexPtr(),
                                  sparse1.outerIndexPtr() + sparse1.outerSize(),
                                  sparse2.outerIndexPtr());
-        if (sparse1.outerIndexPtr()[sparse1.outerSize() + 1] ==
-            sparse2.outerIndexPtr()[sparse2.outerSize() + 1]) {
+        if (sparse1.outerIndexPtr()[sparse1.outerSize()] ==
+            sparse2.outerIndexPtr()[sparse2.outerSize()]) {
             equal_inner =
                 std::equal(sparse1.valuePtr(),
                            sparse1.valuePtr() +
@@ -712,9 +716,9 @@ void random_fill_sparse(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
     sparse.reserve(
         Eigen::VectorXi::Constant(sparse.rows(), approx_values_per_row));
 
-    RandomGenerators::IntGenerator<int> rrig(0, rows - 1, seed);
-    RandomGenerators::IntGenerator<int> rcig(0, cols - 1, seed + 1);
-    RandomGenerators::RealGenerator<double> rdg(0.0, 9.5, seed + 2);
+    random_generators::IntGenerator<int> rrig(0, rows - 1, seed);
+    random_generators::IntGenerator<int> rcig(0, cols - 1, seed + 1);
+    random_generators::RealGenerator<double> rdg(0.0, 9.5, seed + 2);
 
     Index ir;
     Index ic;
@@ -741,7 +745,7 @@ void copy_values_same_nnz(
 
     // If debug, assert sparse structure is the same. This check is very costly,
     // only done in debug.
-    CYCANHA_ASSERT(has_same_structure(sp_from, sp_dest),
+    PYCANHA_ASSERT(has_same_structure(sp_from, sp_dest),
                    "Matrices don't have the same structure");
 #if defined(CYCANHA_USE_ONLY_EIGEN)
     memcpy(sp_dest.valuePtr(), sp_from.valuePtr(),
@@ -763,7 +767,7 @@ void copy_sum_values_same_nnz(
 
     // If debug, assert sparse structure is the same. This check is very costly,
     // only done in debug.
-    CYCANHA_ASSERT(has_same_structure(sp_from, sp_dest),
+    PYCANHA_ASSERT(has_same_structure(sp_from, sp_dest),
                    "Matrices don't have the same structure");
 
 #if defined(CYCANHA_USE_ONLY_EIGEN)
@@ -820,8 +824,8 @@ void copy_sum_2_values_with_idx(double* dest, const double* from,
 std::tuple<int, int, double> get_row_col_value_from_value_idx(
     const Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse, int vidx) {
     // Given vidx, where -1 < vix < sparse.nonZeros()
-    CYCANHA_ASSERT(vidx >= 0, "vidx should be positive");
-    CYCANHA_ASSERT(vidx < sparse.nonZeros(),
+    PYCANHA_ASSERT(vidx >= 0, "vidx should be positive");
+    PYCANHA_ASSERT(vidx < sparse.nonZeros(),
                    "vidx out of limits of sparse non zeros");
 
     double val = sparse.valuePtr()[vidx];
@@ -950,4 +954,4 @@ void print_sparse_structure(
     std::cout.flush();
 }
 
-}  // namespace SparseUtils
+}  // namespace sparse_utils

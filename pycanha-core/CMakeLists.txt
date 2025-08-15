@@ -35,7 +35,7 @@ FetchContent_Declare(
     GIT_REPOSITORY
     https://github.com/artem-ogre/CDT.git
     GIT_TAG
-    1.3.0
+    1.4.4
 ) 
 FetchContent_GetProperties(cdt)
 if(NOT cdt_POPULATED)

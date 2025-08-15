@@ -3,6 +3,8 @@
 #include <cmath>
 #include <iomanip>
 #include <iostream>
+#include <tuple>
+#include <utility>
 
 #include "pycanha-core/parameters.hpp"
 #include "pycanha-core/utils/SparseUtils.hpp"
@@ -97,7 +99,7 @@ void CouplingMatrices::set_conductor_value_from_idx(Index idx1, Index idx2,
     }
 
     // Check existance of the conductor
-    if (!SparseUtils::is_trivial_zero(*sp_ptr, sp_idx1, sp_idx2)) {
+    if (!sparse_utils::is_trivial_zero(*sp_ptr, sp_idx1, sp_idx2)) {
         sp_ptr->coeffRef(sp_idx1, sp_idx2) = val;
     } else {
         if (VERBOSE)
@@ -120,7 +122,7 @@ double *CouplingMatrices::get_conductor_value_ref_from_idx(Index idx1,
     }
 
     // Get the memory address of the value of a conductor.
-    if (!SparseUtils::is_trivial_zero(*sp_ptr, sp_idx1, sp_idx2)) {
+    if (!sparse_utils::is_trivial_zero(*sp_ptr, sp_idx1, sp_idx2)) {
         return &(sp_ptr->coeffRef(sp_idx1, sp_idx2));
     } else {
         return nullptr;
@@ -181,7 +183,7 @@ CouplingMatrices::get_idxs_and_coupling_value_from_coupling_idx(
     if (cidx < get_num_diff_diff_couplings()) {
         // The cidx is less than the number of dd couplings, so return value
         // from sparse_dd
-        return SparseUtils::get_row_col_value_from_value_idx(sparse_dd, cidx);
+        return sparse_utils::get_row_col_value_from_value_idx(sparse_dd, cidx);
     }
 
     cidx -= get_num_diff_diff_couplings();
@@ -190,7 +192,7 @@ CouplingMatrices::get_idxs_and_coupling_value_from_coupling_idx(
         // The cidx is between dd couplings and dd + db couplings, so return
         // value from sparse_
         auto [row, col, val] =
-            SparseUtils::get_row_col_value_from_value_idx(sparse_db, cidx);
+            sparse_utils::get_row_col_value_from_value_idx(sparse_db, cidx);
 
         // Col need to be increased to the number of diffusive nodes
         return std::make_tuple(row, col + sparse_dd.cols(), val);
@@ -201,7 +203,7 @@ CouplingMatrices::get_idxs_and_coupling_value_from_coupling_idx(
         // The cidx is between dd couplings and dd + db couplings, so return
         // value from sparse_
         auto [row, col, val] =
-            SparseUtils::get_row_col_value_from_value_idx(sparse_bb, cidx);
+            sparse_utils::get_row_col_value_from_value_idx(sparse_bb, cidx);
 
         // Col need to be increased to the number of diffusive nodes
         return std::make_tuple(row + sparse_dd.rows(), col + sparse_dd.cols(),
@@ -236,41 +238,41 @@ void CouplingMatrices::print_sparse() {
     std::cout << std::endl;
     std::cout << "     Kdd matrix    \n";
     std::cout << "-------------------\n";
-    SparseUtils::print_sparse(sparse_dd);
+    sparse_utils::print_sparse(sparse_dd);
 
     std::cout << std::endl;
     std::cout << "     Kdb matrix    \n";
     std::cout << "-------------------\n";
-    SparseUtils::print_sparse(sparse_db);
+    sparse_utils::print_sparse(sparse_db);
 
     std::cout << std::endl;
     std::cout << "     Kbb matrix    \n";
     std::cout << "-------------------\n";
-    SparseUtils::print_sparse(sparse_bb);
+    sparse_utils::print_sparse(sparse_bb);
 }
 
 void CouplingMatrices::_add_node_diff(Index insert_position) {
     // NEW STORAGE USING K_dd and K_db
-    SparseUtils::add_zero_row(sparse_db, insert_position);
-    SparseUtils::add_zero_row_col(sparse_dd, insert_position, insert_position);
+    sparse_utils::add_zero_row(sparse_db, insert_position);
+    sparse_utils::add_zero_row_col(sparse_dd, insert_position, insert_position);
 }
 
 void CouplingMatrices::_add_node_bound(Index insert_position) {
     // NEW STORAGE USING K_dd and K_db
-    SparseUtils::add_zero_col(sparse_db, insert_position);
-    SparseUtils::add_zero_row_col(sparse_bb, insert_position, insert_position);
+    sparse_utils::add_zero_col(sparse_db, insert_position);
+    sparse_utils::add_zero_row_col(sparse_bb, insert_position, insert_position);
 }
 
 void CouplingMatrices::_remove_node_diff(Index idx) {
     // NEW STORAGE USING K_dd and K_db
-    SparseUtils::remove_row(sparse_db, idx);
-    SparseUtils::remove_row_col(sparse_dd, idx);
+    sparse_utils::remove_row(sparse_db, idx);
+    sparse_utils::remove_row_col(sparse_dd, idx);
 }
 
 void CouplingMatrices::_remove_node_bound(Index idx) {
     // NEW STORAGE USING K_dd and K_db
-    SparseUtils::remove_col(sparse_db, idx);
-    SparseUtils::remove_row_col(sparse_bb, idx);
+    sparse_utils::remove_col(sparse_db, idx);
+    sparse_utils::remove_row_col(sparse_bb, idx);
 }
 
 void CouplingMatrices::_add_ovw_coupling_sparse(
@@ -282,7 +284,7 @@ void CouplingMatrices::_add_ovw_coupling_sparse(
 void CouplingMatrices::_add_ovw_coupling_sparse_verbose(
     Eigen::SparseMatrix<double, Eigen::RowMajor> &sparse, int sp_idx1,
     int sp_idx2, double val) {
-    if (!SparseUtils::is_trivial_zero(sparse, sp_idx1, sp_idx2)) {
+    if (!sparse_utils::is_trivial_zero(sparse, sp_idx1, sp_idx2)) {
         // (VERBOSE) -> left this as a tag to find messages that should be
         // logged in the future
         double &coupling_val = sparse.coeffRef(sp_idx1, sp_idx2);
@@ -308,7 +310,7 @@ void CouplingMatrices::_add_sum_coupling_sparse(
 void CouplingMatrices::_add_sum_coupling_sparse_verbose(
     Eigen::SparseMatrix<double, Eigen::RowMajor> &sparse, int sp_idx1,
     int sp_idx2, double val) {
-    if (!SparseUtils::is_trivial_zero(sparse, sp_idx1, sp_idx2)) {
+    if (!sparse_utils::is_trivial_zero(sparse, sp_idx1, sp_idx2)) {
         // (VERBOSE) -> left this as a tag to find messages that should be
         // logged in the future
         std::cout << "Duplicated coupling at indexes (" << sp_idx1 << ", "
@@ -324,7 +326,7 @@ void CouplingMatrices::_add_sum_coupling_sparse_verbose(
 void CouplingMatrices::_add_new_coupling_sparse(
     Eigen::SparseMatrix<double, Eigen::RowMajor> &sparse, int sp_idx1,
     int sp_idx2, double val) {
-    if (!SparseUtils::is_trivial_zero(sparse, sp_idx1, sp_idx2)) {
+    if (!sparse_utils::is_trivial_zero(sparse, sp_idx1, sp_idx2)) {
         // TODO: RAISE EXCEPTION
         std::cout << "Duplicated coupling at indexes (" << sp_idx1 << ", "
                   << sp_idx2;

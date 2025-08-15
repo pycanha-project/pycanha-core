@@ -2,6 +2,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
+#include <memory>
 #include <random>
 #include <vector>
 
@@ -113,7 +114,6 @@ TEST_CASE("Node Constructor with Nodes pointer", "[node]") {
     Node tn(usr_num, weak_tns);
 
     // TODO: Add checks
-
 }  // NOLINTEND(readability-function-cognitive-complexity)
 
 TEST_CASE("Nodes Testing", "[nodes]") {
