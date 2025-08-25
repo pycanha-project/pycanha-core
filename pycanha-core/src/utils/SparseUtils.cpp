@@ -7,6 +7,7 @@
 #include <utility>
 #include <vector>
 
+#include "pycanha-core/utils/Instrumentor.hpp"
 #include "pycanha-core/utils/RandomGenerators.hpp"
 
 // USE MKL FUNCTION IF AVAILABLE

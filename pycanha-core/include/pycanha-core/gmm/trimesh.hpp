@@ -3,12 +3,10 @@
 #include <Eigen/Dense>
 #include <algorithm>
 #include <iostream>
-#include <limits>
 #include <memory>
 #include <numbers>
 #include <numeric>
 #include <set>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -16,7 +14,6 @@
 #include "pycanha-core/gmm/materials.hpp"
 #include "pycanha-core/gmm/triangulation.hpp"
 #include "pycanha-core/parameters.hpp"
-#include "pycanha-core/utils/eigenutils.hpp"
 
 using Eigen::seq;
 using namespace pycanha;  // NOLINT
@@ -1181,13 +1178,11 @@ using TriMeshModelPtr = std::shared_ptr<TriMeshModel>;
 namespace trimesher {
 
 inline void print_point2d(const Point2D& p) {
-    std::cout << "[" << p[0] << ", " << p[1] << "],"
-              << "\n";
+    std::cout << "[" << p[0] << ", " << p[1] << "]," << "\n";
 }
 
 inline void print_point3d(const Point3D& p) {
-    std::cout << "[" << p[0] << ", " << p[1] << ", " << p[2] << "],"
-              << "\n";
+    std::cout << "[" << p[0] << ", " << p[1] << ", " << p[2] << "]," << "\n";
 }
 
 inline void print_points(const TriMesh& trimesh) {

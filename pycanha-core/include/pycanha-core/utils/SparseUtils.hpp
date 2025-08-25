@@ -1,19 +1,16 @@
 #pragma once
 
 #include <Eigen/Sparse>
-#include <iomanip>
-#include <iostream>
 #include <tuple>
 #include <vector>
 
 #include "../config.hpp"
 #include "../parameters.hpp"
-#include "./Instrumentor.hpp"
 
 namespace sparse_utils {
 
 // Print information to std output
-constexpr bool VERBOSE = true;
+using pycanha::VERBOSE;
 
 using Index = pycanha::Index;
 

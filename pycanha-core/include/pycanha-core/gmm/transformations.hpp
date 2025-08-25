@@ -8,7 +8,7 @@
 
 namespace pycanha::gmm {
 
-enum class TransformOrder {
+enum class TransformOrder : std::uint8_t {
     TRANSLATION_THEN_ROTATION,
     ROTATION_THEN_TRANSLATION
 };

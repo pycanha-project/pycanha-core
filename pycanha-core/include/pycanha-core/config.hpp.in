@@ -2,7 +2,6 @@
               // clang-tidy in vscode thinks this is a cpp file.
 
 #include <cassert>
-#include <iostream>
 #include <string_view>
 
 // NOLINTBEGIN(readability-identifier-naming)
@@ -59,14 +58,22 @@ constexpr bool DEBUG = true;
 // TODO: Temporary. Set these flags in Conan.
 #define CYCANHA_USE_ONLY_EIGEN
 
+namespace pycanha {
+
 constexpr bool VERBOSE = true;
+
+// Enable/Disable Profiling
+constexpr bool PROFILING = true;
+
+}  // namespace pycanha
 
 // Assert expr when in DEBUG
 // msg -> Error message
 
 // Custom assert function that takes an expression and a message
 template <typename T>
-void PYCANHA_ASSERT(const T& expr, const char* msg) {
+void PYCANHA_ASSERT([[maybe_unused]] const T& expr,
+                    [[maybe_unused]] const char* msg) {
 #ifndef NDEBUG
     if (!(expr)) {
         std::cerr << "Assertion failed: " << msg << std::endl;

@@ -39,8 +39,10 @@
 #include <string>
 #include <thread>
 
+#include "../config.hpp"
+
 // Enable/Disable Profiling
-constexpr bool PROFILING = true;
+using pycanha::PROFILING;
 
 struct ProfileResult {
     std::string name;
