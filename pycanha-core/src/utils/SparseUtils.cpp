@@ -15,20 +15,28 @@
 #include "mkl.h"
 #endif
 
+// This file use a lot of pointer arithmetic for performance, the warning from
+// clang-tidy is suppressed
+// NOLINTBEGIN(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+
 namespace sparse_utils {
 
-void _add_zero_row(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
-                   Index new_row_idx) {
+// Internal functions
+// TODO: After fix in add_zero_col_row_fun, refactor the internal function and
+// put the code inside the public functions
+namespace {
+void add_zero_row_fun(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
+                      Index new_row_idx) {
     if (sparse.isCompressed()) {
         // Copy the outer indices to the new positions
-        auto src_ptr_outer = sparse.outerIndexPtr() + new_row_idx;
+        auto* src_ptr_outer = sparse.outerIndexPtr() + new_row_idx;
         memmove(
             src_ptr_outer + 1, src_ptr_outer,
             (sparse.outerSize() - new_row_idx - 1) * sizeof(*src_ptr_outer));
     } else {
         // Copy the outer and nnz indices to the new positions
-        auto src_ptr_outer = sparse.outerIndexPtr() + new_row_idx;
-        auto src_ptr_nnz = sparse.innerNonZeroPtr() + new_row_idx;
+        auto* src_ptr_outer = sparse.outerIndexPtr() + new_row_idx;
+        auto* src_ptr_nnz = sparse.innerNonZeroPtr() + new_row_idx;
         size_t elems_to_copy = (sparse.outerSize() - new_row_idx - 1);
         memmove(src_ptr_outer + 1, src_ptr_outer,
                 elems_to_copy * sizeof(*src_ptr_outer));
@@ -39,8 +47,8 @@ void _add_zero_row(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
     }
 }
 
-void _add_zero_col(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
-                   Index new_col_idx) {
+void add_zero_col_fun(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
+                      Index new_col_idx) {
     if (sparse.isCompressed()) {
         // The column index (innerIndexPtr) of any coefficient equal or bigger
         // than new_index should be increased in one.
@@ -65,8 +73,10 @@ void _add_zero_col(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
     }
 }
 
-void _add_zero_row_col(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
-                       Index new_row_idx, Index new_col_idx) {
+// TODO: FIX. This function should be faster than calling first row and then col
+// TOOD: After fix, refactor internal functions ..._row  ..._col ...row_col
+void add_zero_row_col_fun(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
+                          Index new_row_idx, Index new_col_idx) {
     // Change the size of the matrix without deleting the values
     sparse.conservativeResize(sparse.rows() + 1, sparse.cols() + 1);
 
@@ -81,7 +91,7 @@ void _add_zero_row_col(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
         }
 
         // Copy the outer indices to the new positions
-        auto src_ptr_outer = sparse.outerIndexPtr() + new_row_idx;
+        auto* src_ptr_outer = sparse.outerIndexPtr() + new_row_idx;
         memmove(
             src_ptr_outer + 1, src_ptr_outer,
             (sparse.outerSize() - new_row_idx - 1) * sizeof(*src_ptr_outer));
@@ -99,8 +109,8 @@ void _add_zero_row_col(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
         }
 
         // Copy the outer and nnz indices to the new positions
-        auto src_ptr_outer = sparse.outerIndexPtr() + new_row_idx;
-        auto src_ptr_nnz = sparse.innerNonZeroPtr() + new_row_idx;
+        auto* src_ptr_outer = sparse.outerIndexPtr() + new_row_idx;
+        auto* src_ptr_nnz = sparse.innerNonZeroPtr() + new_row_idx;
         size_t elems_to_copy = (sparse.outerSize() - new_row_idx - 1);
         memmove(src_ptr_outer + 1, src_ptr_outer,
                 elems_to_copy * sizeof(*src_ptr_outer));
@@ -111,26 +121,116 @@ void _add_zero_row_col(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
     }
 }
 
+void move_delete_row_fun(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
+                         Index move_row_idx) {
+    PROFILE_FUNCTION();
+    // Removing a node will left a "hole", so the matrix should be in uncompress
+    // mode
+    if (sparse.isCompressed()) {
+        sparse.uncompress();
+    }
+
+    // Remove row
+    // The outer and nnz vectors are displaced, overwriting the information in
+    // the selected row.
+    memmove(
+        sparse.outerIndexPtr() + move_row_idx,
+        sparse.outerIndexPtr() + move_row_idx + 1,
+        (sparse.rows() - move_row_idx - 1) * sizeof(*sparse.outerIndexPtr()));
+
+    memmove(
+        sparse.innerNonZeroPtr() + move_row_idx,
+        sparse.innerNonZeroPtr() + move_row_idx + 1,
+        (sparse.rows() - move_row_idx - 1) * sizeof(*sparse.innerNonZeroPtr()));
+
+    // There can`t be any holes before the first row. If removing the first row,
+    // the coefficient of the second row should be the first
+    if (move_row_idx == 0) {
+        if (sparse.innerNonZeroPtr()[0] != 0) {
+            // The second row has coefficient. They should be copied to the
+            // begining of the value vector (values and inner vectors)
+            memmove(sparse.valuePtr(),
+                    sparse.valuePtr() + sparse.outerIndexPtr()[0],
+                    (sparse.innerNonZeroPtr()[0]) * sizeof(*sparse.valuePtr()));
+
+            memmove(sparse.innerIndexPtr(),
+                    sparse.innerIndexPtr() + sparse.outerIndexPtr()[0],
+                    (sparse.innerNonZeroPtr()[0]) *
+                        sizeof(*sparse.innerIndexPtr()));
+        }
+        // Outer index should start always at 0
+        sparse.outerIndexPtr()[0] = 0;
+    }
+}
+
+void move_delete_row_col(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
+                         Index move_col_idx) {
+    PROFILE_FUNCTION();
+    // Removing a node will left a "hole", so the matrix should be in uncompress
+    // mode
+    if (sparse.isCompressed()) {
+        sparse.uncompress();
+    }
+
+    // Remove column
+
+    // All inner indices should be reduced in 1
+    for (Index iouter = 0; iouter < sparse.outerSize(); iouter++) {
+        Index ival_start =
+            sparse.outerIndexPtr()[iouter];  // Index of the first value of the
+                                             // row
+        auto nnz = sparse.innerNonZeroPtr()[iouter];
+
+        // Loop through the inner vector
+        for (Index ival = ival_start; ival < ival_start + nnz; ival++) {
+            if (sparse.innerIndexPtr()[ival] > move_col_idx) {
+                sparse.innerIndexPtr()[ival]--;
+            } else if (sparse.innerIndexPtr()[ival] == move_col_idx) {
+                if (ival == ival_start) {
+                    // Check if first non zero value in the matrix
+                    if (ival > 0) {
+                        sparse.outerIndexPtr()[iouter]++;
+                    }
+
+                } else if ((ival < ival_start + nnz - 1)) {
+                    // The value is in the middle
+                    auto elems_to_move = (ival - ival_start - 1 + nnz);
+                    memmove(sparse.valuePtr() + ival,
+                            sparse.valuePtr() + ival + 1,
+                            (elems_to_move) * sizeof(*sparse.valuePtr()));
+                    memmove(sparse.innerIndexPtr() + ival,
+                            sparse.innerIndexPtr() + ival + 1,
+                            (elems_to_move) * sizeof(*sparse.innerIndexPtr()));
+                    sparse.innerIndexPtr()[ival]--;
+                }
+                sparse.innerNonZeroPtr()[iouter]--;
+            }
+        }
+    }
+}
+
+}  // namespace
+
 void add_zero_row(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
                   Index new_row_idx) {
     // Change the size of the matrix without deleting the values
     sparse.conservativeResize(sparse.rows() + 1, sparse.cols());
-    _add_zero_row(sparse, new_row_idx);
+    add_zero_row_fun(sparse, new_row_idx);
 }
 
 void add_zero_col(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
                   Index new_col_idx) {
     // Change the size of the matrix without deleting the values
     sparse.conservativeResize(sparse.rows(), sparse.cols() + 1);
-    _add_zero_col(sparse, new_col_idx);
+    add_zero_col_fun(sparse, new_col_idx);
 }
 
 void add_zero_row_col(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
                       Index new_row_idx, Index new_col_idx) {
     // Change the size of the matrix without deleting the values
     sparse.conservativeResize(sparse.rows() + 1, sparse.cols() + 1);
-    _add_zero_row(sparse, new_row_idx);
-    _add_zero_col(sparse, new_col_idx);
+    add_zero_row_fun(sparse, new_row_idx);
+    add_zero_col_fun(sparse, new_col_idx);
 }
 
 void add_zero_diag_square(
@@ -154,11 +254,10 @@ void move_rows(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
                Index from_idx, Index to_idx) {
     PROFILE_FUNCTION();
 
-    typedef decltype(sparse.innerIndexPtr()) StorageIndex_ptr;
-    typedef decltype(sparse.valuePtr()) Values_ptr;
-
-    typedef std::remove_pointer<StorageIndex_ptr>::type StorageIndex;
-    typedef std::remove_pointer<Values_ptr>::type Values;
+    using StorageIndexPtr = decltype(sparse.innerIndexPtr());
+    using ValuesPtr = decltype(sparse.valuePtr());
+    using StorageIndex = std::remove_pointer<StorageIndexPtr>::type;
+    using Values = std::remove_pointer<ValuesPtr>::type;
 
     // Ensure from_idx > to_idx
     if (from_idx >= to_idx) {
@@ -226,14 +325,14 @@ void move_rows(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
     // There is not room (not enough "holes") to fit the arrays
 
     // Copy the from a to row, inner and values arrays to a buffer
-    StorageIndex_ptr inner_from_copy = static_cast<StorageIndex_ptr>(
+    StorageIndexPtr inner_from_copy = static_cast<StorageIndexPtr>(
         malloc(num_holes_from * sizeof(StorageIndex)));
-    Values_ptr values_from_copy =
-        static_cast<Values_ptr>(malloc(num_holes_from * sizeof(Values)));
-    StorageIndex_ptr inner_to_copy = static_cast<StorageIndex_ptr>(
+    ValuesPtr values_from_copy =
+        static_cast<ValuesPtr>(malloc(num_holes_from * sizeof(Values)));
+    StorageIndexPtr inner_to_copy = static_cast<StorageIndexPtr>(
         malloc(num_holes_to * sizeof(StorageIndex)));
-    Values_ptr values_to_copy =
-        static_cast<Values_ptr>(malloc(num_holes_to * sizeof(Values)));
+    ValuesPtr values_to_copy =
+        static_cast<ValuesPtr>(malloc(num_holes_to * sizeof(Values)));
 
     memcpy(inner_from_copy, sparse.innerIndexPtr() + from_start_vidx,
            num_holes_from * sizeof(StorageIndex));
@@ -288,11 +387,11 @@ void move_cols(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
 
     constexpr int LIMIT_LINEAR_SEARCH = 10;
 
-    typedef decltype(sparse.innerIndexPtr()) StorageIndex_ptr;
-    typedef decltype(sparse.valuePtr()) Values_ptr;
+    typedef decltype(sparse.innerIndexPtr()) StorageIndexPtr;
+    typedef decltype(sparse.valuePtr()) ValuesPtr;
 
-    typedef std::remove_pointer<StorageIndex_ptr>::type StorageIndex;
-    typedef std::remove_pointer<Values_ptr>::type Values;
+    typedef std::remove_pointer<StorageIndexPtr>::type StorageIndex;
+    typedef std::remove_pointer<ValuesPtr>::type Values;
 
     // Ensure from_idx > to_idx
     if (from_idx >= to_idx) {
@@ -432,99 +531,11 @@ void move_row_col(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
     move_cols(sparse, from_idx, to_idx);
 }
 
-void _move_delete_row(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
-                      Index move_row_idx) {
-    PROFILE_FUNCTION();
-    // Removing a node will left a "hole", so the matrix should be in uncompress
-    // mode
-    if (sparse.isCompressed()) {
-        sparse.uncompress();
-    }
-
-    // Remove row
-    // The outer and nnz vectors are displaced, overwriting the information in
-    // the selected row.
-    memmove(
-        sparse.outerIndexPtr() + move_row_idx,
-        sparse.outerIndexPtr() + move_row_idx + 1,
-        (sparse.rows() - move_row_idx - 1) * sizeof(*sparse.outerIndexPtr()));
-
-    memmove(
-        sparse.innerNonZeroPtr() + move_row_idx,
-        sparse.innerNonZeroPtr() + move_row_idx + 1,
-        (sparse.rows() - move_row_idx - 1) * sizeof(*sparse.innerNonZeroPtr()));
-
-    // There can`t be any holes before the first row. If removing the first row,
-    // the coefficient of the second row should be the first
-    if (move_row_idx == 0) {
-        if (sparse.innerNonZeroPtr()[0] != 0) {
-            // The second row has coefficient. They should be copied to the
-            // begining of the value vector (values and inner vectors)
-            memmove(sparse.valuePtr(),
-                    sparse.valuePtr() + sparse.outerIndexPtr()[0],
-                    (sparse.innerNonZeroPtr()[0]) * sizeof(*sparse.valuePtr()));
-
-            memmove(sparse.innerIndexPtr(),
-                    sparse.innerIndexPtr() + sparse.outerIndexPtr()[0],
-                    (sparse.innerNonZeroPtr()[0]) *
-                        sizeof(*sparse.innerIndexPtr()));
-        }
-        // Outer index should start always at 0
-        sparse.outerIndexPtr()[0] = 0;
-    }
-}
-
-void _move_delete_col(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
-                      Index move_col_idx) {
-    PROFILE_FUNCTION();
-    // Removing a node will left a "hole", so the matrix should be in uncompress
-    // mode
-    if (sparse.isCompressed()) {
-        sparse.uncompress();
-    }
-
-    // Remove column
-
-    // All inner indices should be reduced in 1
-    for (Index iouter = 0; iouter < sparse.outerSize(); iouter++) {
-        Index ival_start =
-            sparse.outerIndexPtr()[iouter];  // Index of the first value of the
-                                             // row
-        auto nnz = sparse.innerNonZeroPtr()[iouter];
-
-        // Loop through the inner vector
-        for (Index ival = ival_start; ival < ival_start + nnz; ival++) {
-            if (sparse.innerIndexPtr()[ival] > move_col_idx) {
-                sparse.innerIndexPtr()[ival]--;
-            } else if (sparse.innerIndexPtr()[ival] == move_col_idx) {
-                if (ival == ival_start) {
-                    // Check if first non zero value in the matrix
-                    if (ival > 0) {
-                        sparse.outerIndexPtr()[iouter]++;
-                    }
-
-                } else if ((ival < ival_start + nnz - 1)) {
-                    // The value is in the middle
-                    auto elems_to_move = (ival - ival_start - 1 + nnz);
-                    memmove(sparse.valuePtr() + ival,
-                            sparse.valuePtr() + ival + 1,
-                            (elems_to_move) * sizeof(*sparse.valuePtr()));
-                    memmove(sparse.innerIndexPtr() + ival,
-                            sparse.innerIndexPtr() + ival + 1,
-                            (elems_to_move) * sizeof(*sparse.innerIndexPtr()));
-                    sparse.innerIndexPtr()[ival]--;
-                }
-                sparse.innerNonZeroPtr()[iouter]--;
-            }
-        }
-    }
-}
-
 void remove_row(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
                 Index del_row_idx) {
     PROFILE_FUNCTION();
     if ((del_row_idx < sparse.rows()) && (del_row_idx >= 0)) {
-        _move_delete_row(sparse, del_row_idx);
+        move_delete_row_fun(sparse, del_row_idx);
         sparse.conservativeResize(sparse.rows() - 1, sparse.cols());
     } else {
         if (VERBOSE) {
@@ -539,7 +550,7 @@ void remove_col(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
                 Index del_col_idx) {
     PROFILE_FUNCTION();
     if ((del_col_idx < sparse.cols()) && (del_col_idx >= 0)) {
-        _move_delete_col(sparse, del_col_idx);
+        move_delete_row_col(sparse, del_col_idx);
         sparse.conservativeResize(sparse.rows(), sparse.cols() - 1);
     } else {
         if (VERBOSE) {
@@ -555,8 +566,8 @@ void remove_row_col(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
     PROFILE_FUNCTION();
     if ((del_idx >= 0) && (del_idx < sparse.cols()) &&
         (del_idx < sparse.rows())) {
-        _move_delete_row(sparse, del_idx);
-        _move_delete_col(sparse, del_idx);
+        move_delete_row_fun(sparse, del_idx);
+        move_delete_row_col(sparse, del_idx);
         sparse.conservativeResize(sparse.rows() - 1, sparse.cols() - 1);
     } else {
         if (VERBOSE) {
@@ -956,3 +967,5 @@ void print_sparse_structure(
 }
 
 }  // namespace sparse_utils
+
+// NOLINTEND(cppcoreguidelines-pro-bounds-pointer-arithmetic)
