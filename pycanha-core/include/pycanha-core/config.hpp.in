@@ -4,6 +4,10 @@
 #include <cassert>
 #include <string_view>
 
+#ifndef NDEBUG
+#include <iostream>
+#endif
+
 // NOLINTBEGIN(readability-identifier-naming)
 
 // Library name and version
