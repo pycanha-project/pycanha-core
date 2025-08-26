@@ -14,7 +14,6 @@
 #include "./materials.hpp"
 #include "./primitives.hpp"  // NOLINT(misc-header-include-cycle)
 
-using namespace pycanha;  // NOLINT
 namespace pycanha::gmm {
 
 class ThermalMesh : public UniqueID {

@@ -14,8 +14,6 @@
 #include "./thermalmesh.hpp"
 #include "./transformations.hpp"
 
-using namespace pycanha;  // NOLINT
-
 namespace pycanha::gmm {
 
 /**

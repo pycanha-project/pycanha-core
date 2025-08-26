@@ -5,8 +5,6 @@
 
 #include "../parameters.hpp"
 
-using namespace pycanha;  // NOLINT
-
 namespace pycanha::gmm {
 
 /**

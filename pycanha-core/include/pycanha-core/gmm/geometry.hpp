@@ -12,8 +12,6 @@
 #include "./transformations.hpp"
 #include "./trimesh.hpp"
 
-using namespace pycanha;  // NOLINT
-
 namespace pycanha::gmm {
 
 // using PrimitivePtr =

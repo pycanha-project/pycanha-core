@@ -8,6 +8,8 @@
 #include "pycanha-core/gmm/transformations.hpp"
 #include "pycanha-core/parameters.hpp"
 
+using namespace pycanha;
+
 using pycanha::Point3D;
 using pycanha::gmm::GeometryGroup;
 using pycanha::gmm::GeometryMeshedItem;

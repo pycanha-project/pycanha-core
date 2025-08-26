@@ -15,6 +15,8 @@
 #include <string>
 #include <utility>
 
+namespace pycanha {
+
 class LiteralString {
     friend class Nodes;
 
@@ -65,3 +67,5 @@ class LiteralString {
   private:
     std::string _string;
 };
+
+}  // namespace pycanha

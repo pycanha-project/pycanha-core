@@ -7,7 +7,7 @@
 #include "../config.hpp"
 #include "../parameters.hpp"
 
-namespace sparse_utils {
+namespace pycanha::sparse_utils {
 
 // Print information to std output
 using pycanha::VERBOSE;
@@ -94,4 +94,4 @@ void print_sparse_format(
 void print_sparse_structure(
     const Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse);
 
-}  // namespace sparse_utils
+}  // namespace pycanha::sparse_utils

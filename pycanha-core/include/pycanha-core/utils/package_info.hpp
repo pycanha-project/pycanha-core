@@ -3,6 +3,8 @@
 
 #include "../config.hpp"
 
+namespace pycanha {
+
 inline void print_package_info() {
     // PACKAGE INFO
     std::cout << "Printing package info:\n";
@@ -14,3 +16,4 @@ inline void print_package_info() {
     std::cout << "C++ Standard: " << LIB_CPP_STANDARD << "\n";
     std::cout << "---------------------\n";
 }
+}  // namespace pycanha

@@ -1,7 +1,7 @@
 #pragma once
 #include <random>
 
-namespace random_generators {
+namespace pycanha::random_generators {
 template <typename RandT>
 class RealGenerator {
   public:
@@ -60,4 +60,4 @@ class IntGenerator {
     // Seed
     unsigned int _seed;
 };
-}  // namespace random_generators
+}  // namespace pycanha::random_generators

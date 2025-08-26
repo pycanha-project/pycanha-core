@@ -15,7 +15,7 @@
 
 #include "./nodes.hpp"
 
-using namespace pycanha;  // NOLINT
+namespace pycanha {
 
 class CouplingMatrices {
     friend class Nodes;
@@ -156,3 +156,5 @@ class CouplingMatrices {
     // TODO
     void _diff_to_bound(Index insert_position, Index int_bound_num);
 };
+
+}  // namespace pycanha

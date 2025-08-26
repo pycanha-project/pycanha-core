@@ -8,6 +8,8 @@
 #include "pycanha-core/gmm/geometryutils.hpp"
 #include "pycanha-core/parameters.hpp"
 
+using namespace pycanha;
+
 TEST_CASE("Test the geometry utility functions", "[gmm][utils]") {
     using pycanha::LENGTH_TOL;
     using pycanha::Point3D;

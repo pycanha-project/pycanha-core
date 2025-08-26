@@ -23,7 +23,9 @@
 // clang-tidy is suppressed
 // NOLINTBEGIN(cppcoreguidelines-pro-bounds-pointer-arithmetic)
 
-namespace sparse_utils {
+using namespace pycanha;
+
+namespace pycanha::sparse_utils {
 
 // Internal functions
 // TODO: After fix in add_zero_col_row_fun, refactor the internal function and
@@ -986,6 +988,6 @@ void print_sparse_structure(
     std::cout.flush();
 }
 
-}  // namespace sparse_utils
+}  // namespace pycanha::sparse_utils
 
 // NOLINTEND(cppcoreguidelines-pro-bounds-pointer-arithmetic)

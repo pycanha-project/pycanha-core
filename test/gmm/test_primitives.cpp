@@ -7,6 +7,8 @@
 #include "pycanha-core/gmm/primitives.hpp"
 #include "pycanha-core/parameters.hpp"
 
+using namespace pycanha;
+
 using pycanha::Point3D;
 
 // NOLINTBEGIN(bugprone-chained-comparison)
