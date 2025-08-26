@@ -2,6 +2,8 @@
 
 #include "pycanha-core/gmm/triangulation.hpp"
 
+#include "pycanha-core/gmm/trimesh.hpp"
+
 // #include "CDT/include/CDT.h"
 // cppcheck-suppress *
 #include <CDT/include/Triangulation.h>

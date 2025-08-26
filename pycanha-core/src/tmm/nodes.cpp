@@ -7,6 +7,9 @@
 
 #include "pycanha-core/config.hpp"
 #include "pycanha-core/parameters.hpp"
+#include "pycanha-core/tmm/node.hpp"
+
+using namespace pycanha;
 
 // Default constructor
 Nodes::Nodes() : estimated_number_of_nodes(100), _node_num_mapped(false) {

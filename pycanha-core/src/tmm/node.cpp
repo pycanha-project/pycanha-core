@@ -7,6 +7,9 @@
 #include <utility>
 
 #include "pycanha-core/config.hpp"
+#include "pycanha-core/tmm/nodes.hpp"
+
+using namespace pycanha;
 
 Node::Node(int node_num) : _node_num(node_num) {
     _local_storage_ptr = new LocalStorage{'D', 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,

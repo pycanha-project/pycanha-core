@@ -42,17 +42,16 @@
  */
 
 #pragma once
+#include <Eigen/Sparse>
 #include <memory>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
 #include "../parameters.hpp"
-#include "./couplingmatrices.hpp"
 #include "./literalstring.hpp"
-#include "./node.hpp"
 
-using namespace pycanha;  // NOLINT
+namespace pycanha {
 
 class Node;
 class Nodes {
@@ -459,3 +458,5 @@ class Nodes {
      */
     void _add_node_insert_idx(Node &node, Index insert_idx);
 };
+
+}  // namespace pycanha

@@ -39,9 +39,7 @@
 #include <memory>
 #include <string>
 
-#include "./nodes.hpp"
-
-using namespace pycanha;  // NOLINT
+namespace pycanha {
 
 enum NodeType : unsigned char { DIFFUSIVE_NODE = 'D', BOUNDARY_NODE = 'B' };
 
@@ -255,3 +253,5 @@ class Node {
      */
     void _local_storage_destructor();
 };
+
+}  // namespace pycanha

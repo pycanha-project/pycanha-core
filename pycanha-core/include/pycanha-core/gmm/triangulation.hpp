@@ -1,7 +1,5 @@
 #pragma once
 
-#include "pycanha-core/gmm/trimesh.hpp"
-
 namespace pycanha::gmm {
 
 class TriMesh;  // Forward declaration

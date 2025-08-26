@@ -6,7 +6,10 @@
 #include <vector>
 
 #include "pycanha-core/parameters.hpp"
+#include "pycanha-core/tmm/node.hpp"
 #include "pycanha-core/tmm/nodes.hpp"
+
+using namespace pycanha;
 
 // NOLINTBEGIN(readability-function-cognitive-complexity,
 // bugprone-chained-comparison)

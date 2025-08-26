@@ -3,6 +3,8 @@
 
 #include "pycanha-core/tmm/node.hpp"
 
+using namespace pycanha;
+
 // NOLINTBEGIN(readability-function-cognitive-complexity)
 
 void assert_node_default_values(Node& tn) {
