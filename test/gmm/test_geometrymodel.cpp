@@ -9,7 +9,7 @@
 #include "pycanha-core/gmm/transformations.hpp"
 #include "pycanha-core/parameters.hpp"
 
-using namespace pycanha;
+using namespace pycanha;  // NOLINT(build/namespaces)
 
 using pycanha::Point3D;
 using pycanha::gmm::GeometryModel;

@@ -10,9 +10,9 @@
 
 // NOLINTBEGIN(readability-function-cognitive-complexity)
 
-using namespace pycanha;
+using namespace pycanha;  // NOLINT(build/namespaces)
 
-using namespace pycanha::sparse_utils;
+using namespace pycanha::sparse_utils;  // NOLINT(build/namespaces)
 
 namespace {
 using VectorIndex = pycanha::VectorIndex;  // NOLINT(misc-include-cleaner)

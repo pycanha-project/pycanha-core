@@ -9,7 +9,7 @@
 #include "pycanha-core/tmm/node.hpp"
 #include "pycanha-core/tmm/nodes.hpp"
 
-using namespace pycanha;
+using namespace pycanha;  // NOLINT(build/namespaces)
 
 // NOLINTBEGIN(readability-function-cognitive-complexity,
 // bugprone-chained-comparison)

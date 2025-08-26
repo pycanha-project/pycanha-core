@@ -11,7 +11,7 @@
 #include "pycanha-core/gmm/trimesh.hpp"
 #include "pycanha-core/parameters.hpp"
 
-using namespace pycanha;
+using namespace pycanha;  // NOLINT(build/namespaces)
 
 TEST_CASE("Create rectangular mesh", "[gmm][trimesh]") {
     using pycanha::gmm::Edges;

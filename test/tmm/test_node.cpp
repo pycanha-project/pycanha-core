@@ -3,7 +3,7 @@
 
 #include "pycanha-core/tmm/node.hpp"
 
-using namespace pycanha;
+using namespace pycanha;  // NOLINT(build/namespaces)
 
 // NOLINTBEGIN(readability-function-cognitive-complexity)
 

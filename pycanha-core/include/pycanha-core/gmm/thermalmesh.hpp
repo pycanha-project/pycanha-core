@@ -3,6 +3,7 @@
 #include <Eigen/Dense>
 #include <array>
 #include <cmath>
+#include <limits>
 #include <memory>
 #include <utility>
 #include <vector>

@@ -23,7 +23,7 @@
 // clang-tidy is suppressed
 // NOLINTBEGIN(cppcoreguidelines-pro-bounds-pointer-arithmetic)
 
-using namespace pycanha;
+using namespace pycanha;  // NOLINT(build/namespaces)
 
 namespace pycanha::sparse_utils {
 
