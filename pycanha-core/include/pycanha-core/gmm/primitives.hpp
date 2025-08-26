@@ -2069,9 +2069,9 @@ inline Point2D Sphere::from_3d_to_2d_mollweide(const Point3D& p3d) const {
         theta_pre = theta;
     }
 
-    const double x =
-        _radius * 2 * sqrt(2) / pi * spherical_coordinates[0] * cos(theta);
-    const double y = _radius * sqrt(2) * sin(theta);
+    const double x = _radius * 2 * std::numbers::sqrt2 / pi *
+                     spherical_coordinates[0] * cos(theta);
+    const double y = _radius * std::numbers::sqrt2 * sin(theta);
 
     return {x, y};
 }
@@ -2082,8 +2082,9 @@ inline Point2D Sphere::from_3d_to_2d_mollweide(const Point3D& p3d) const {
 inline Point3D Sphere::from_2d_to_3d_mollweide(const Point2D& p2d) const {
     using std::numbers::pi;
 
-    const double theta = asin(p2d[1] / (_radius * sqrt(2)));
-    const double lon = pi * p2d[0] / (2 * _radius * sqrt(2) * cos(theta));
+    const double theta = asin(p2d[1] / (_radius * std::numbers::sqrt2));
+    const double lon =
+        pi * p2d[0] / (2 * _radius * std::numbers::sqrt2 * cos(theta));
     const double lat = asin((2 * theta + sin(2 * theta)) / pi);
 
     return from_spherical_to_cartesian(Eigen::Vector2d(lon, lat));
@@ -3157,8 +3158,7 @@ inline TriMesh Cone::create_mesh(const ThermalMesh& thermal_mesh,
 
         std::vector<MeshIndex> edges_to_remove(dir1_size - 1);
         for (MeshIndex i = 0; i < dir1_size - 1; ++i) {
-            edges_to_remove[i] =
-                static_cast<MeshIndex>((dir1_size - 1) * (dir2_size - 1) + i);
+            edges_to_remove[i] = (dir1_size - 1) * (dir2_size - 1) + i;
         }
 
         // int edge_idx = 0;

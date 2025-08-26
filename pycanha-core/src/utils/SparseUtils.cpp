@@ -852,21 +852,21 @@ void copy_sum_2_values_with_idx(double* dest, const double* from,
     }
 }
 
-std::tuple<int, int, double> get_row_col_value_from_value_idx(
-    const Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse, int vidx) {
+std::tuple<Index, Index, double> get_row_col_value_from_value_idx(
+    const Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse, Index vidx) {
     // Given vidx, where -1 < vix < sparse.nonZeros()
     PYCANHA_ASSERT(vidx >= 0, "vidx should be positive");
     PYCANHA_ASSERT(vidx < sparse.nonZeros(),
                    "vidx out of limits of sparse non zeros");
 
     double val = sparse.valuePtr()[vidx];
-    int col = sparse.innerIndexPtr()[vidx];
+    Index col = sparse.innerIndexPtr()[vidx];
 
     // We need to find the first outer idx where the value is <= vidx
     const auto* upper =
         std::upper_bound(sparse.outerIndexPtr(),
                          sparse.outerIndexPtr() + sparse.outerSize() + 1, vidx);
-    int row = std::distance(sparse.outerIndexPtr(), upper) - 1;
+    Index row = std::distance(sparse.outerIndexPtr(), upper) - 1;
 
     return std::make_tuple(row, col, val);
 }
