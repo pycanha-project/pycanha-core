@@ -1,14 +1,15 @@
 #include <Eigen/Sparse>
+#include <algorithm>
 #include <catch2/catch_test_macros.hpp>
-#include <catch2/matchers/catch_matchers.hpp>
-#include <catch2/matchers/catch_matchers_floating_point.hpp>
 #include <memory>
 #include <random>
 #include <vector>
 
+#include "pycanha-core/parameters.hpp"
 #include "pycanha-core/tmm/nodes.hpp"
 
-// NOLINTBEGIN(readability-function-cognitive-complexity)
+// NOLINTBEGIN(readability-function-cognitive-complexity,
+// bugprone-chained-comparison)
 
 // The seed is constant making the random number generator deterministic (which
 // is what we want for testing)
@@ -114,7 +115,7 @@ TEST_CASE("Node Constructor with Nodes pointer", "[node]") {
     Node tn(usr_num, weak_tns);
 
     // TODO: Add checks
-}  // NOLINTEND(readability-function-cognitive-complexity)
+}
 
 TEST_CASE("Nodes Testing", "[nodes]") {
     // Random double generator for assigning values to node attributes
@@ -263,4 +264,5 @@ TEST_CASE("Nodes Testing", "[nodes]") {
     // Additional tests can be added here...
 }
 
-// NOLINTEND(readability-function-cognitive-complexity)
+// NOLINTEND(readability-function-cognitive-complexity,
+// bugprone-chained-comparison)

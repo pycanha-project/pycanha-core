@@ -1,4 +1,4 @@
-// NOLINTBEGIN(misc-include-cleaner)
+// NOLINTBEGIN(misc-include-cleaner, bugprone-chained-comparison)
 #include <Eigen/Core>
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers.hpp>
@@ -123,4 +123,4 @@ TEST_CASE("Test the geometry utility functions", "[gmm][utils]") {
         REQUIRE(are_vectors_parallel(v8, v9) == false);
     }
 }
-// NOLINTEND(misc-include-cleaner)
+// NOLINTEND(misc-include-cleaner, bugprone-chained-comparison)

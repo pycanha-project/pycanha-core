@@ -430,8 +430,8 @@ void has_same_structure_test() {
         // Different reserved boundaries per row (capacity) -> false
         {
             const auto rows = static_cast<int>(a.rows());
-            Eigen::VectorXi cap_a = Eigen::VectorXi::Constant(rows, 2);
-            Eigen::VectorXi cap_b = Eigen::VectorXi::Constant(rows, 6);
+            const Eigen::VectorXi cap_a = Eigen::VectorXi::Constant(rows, 2);
+            const Eigen::VectorXi cap_b = Eigen::VectorXi::Constant(rows, 6);
             a.reserve(cap_a);
             b.reserve(cap_b);
             REQUIRE_FALSE(has_same_structure(a, b));

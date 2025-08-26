@@ -1,15 +1,13 @@
 #include <catch2/catch_test_macros.hpp>
-#include <catch2/matchers/catch_matchers.hpp>
-#include <catch2/matchers/catch_matchers_floating_point.hpp>
-#include <iostream>
 #include <string>
 
 #include "pycanha-core/tmm/node.hpp"
 
 // NOLINTBEGIN(readability-function-cognitive-complexity)
 
-void assert_node_default_values(Node &tn) {
-    // Test default values for tn
+void assert_node_default_values(Node& tn) {
+    // Suppress false positives from Catch2 expression decomposition.
+    // NOLINTBEGIN(bugprone-chained-comparison)
     REQUIRE(tn.get_int_node_num() == -1);
     REQUIRE(tn.get_type() == 'D');
     REQUIRE(tn.get_T() == 0.0);
@@ -28,11 +26,12 @@ void assert_node_default_values(Node &tn) {
 
     // Literals
     REQUIRE(tn.get_literal_C().empty());
+    // NOLINTEND(bugprone-chained-comparison)
 }
 
-void assert_nodes_have_same_attribute_values_except_usr_number(Node &tn1,
-                                                               Node &tn2) {
-    // Test attributes are equal
+void assert_nodes_have_same_attribute_values_except_usr_number(Node& tn1,
+                                                               Node& tn2) {
+    // NOLINTBEGIN(bugprone-chained-comparison)
     REQUIRE(tn1.get_int_node_num() == tn2.get_int_node_num());
     REQUIRE(tn1.get_type() == tn2.get_type());
     REQUIRE(tn1.get_T() == tn2.get_T());
@@ -48,15 +47,15 @@ void assert_nodes_have_same_attribute_values_except_usr_number(Node &tn1,
     REQUIRE(tn1.get_fz() == tn2.get_fz());
     REQUIRE(tn1.get_eps() == tn2.get_eps());
     REQUIRE(tn1.get_aph() == tn2.get_aph());
-
     REQUIRE(tn1.get_literal_C() == tn2.get_literal_C());
+    // NOLINTEND(bugprone-chained-comparison)
 }
 
-void assert_nodes_have_same_attribute_values(Node &tn1, Node &tn2) {
-    // Test usr node number is the same
+void assert_nodes_have_same_attribute_values(Node& tn1, Node& tn2) {
+    // NOLINTBEGIN(bugprone-chained-comparison)
     REQUIRE(tn1.get_node_num() == tn2.get_node_num());
+    // NOLINTEND(bugprone-chained-comparison)
 
-    // Test the other attributes
     assert_nodes_have_same_attribute_values_except_usr_number(tn1, tn2);
 }
 
@@ -64,8 +63,9 @@ TEST_CASE("Node Default Values", "[node]") {
     int usr_num = 5;
     Node tn(usr_num);
 
-    // Test usr_num supplied is the same as the stored one
+    // NOLINTBEGIN(bugprone-chained-comparison)
     REQUIRE(usr_num == tn.get_node_num());
+    // NOLINTEND(bugprone-chained-comparison)
 
     // For Changing default values and testing the new values has been stored
     usr_num = 9;
@@ -85,10 +85,7 @@ TEST_CASE("Node Default Values", "[node]") {
     const double aph = 13.3;
     std::string literal_c = "7e3*5.0/2+2.1";
 
-    // Test a blank node has default values
     assert_node_default_values(tn);
-
-    // Test that getting values from a tn does not change the attributes
     assert_node_default_values(tn);
 
     SECTION(
@@ -117,6 +114,7 @@ TEST_CASE("Node Default Values", "[node]") {
             tn2.set_aph(aph);
             tn2.set_literal_C(literal_c);
 
+            // NOLINTBEGIN(bugprone-chained-comparison)
             REQUIRE(usr_num == tn2.get_node_num());
             REQUIRE(tn2.get_int_node_num() == -1);
             REQUIRE(tn2.get_type() == type);
@@ -133,15 +131,16 @@ TEST_CASE("Node Default Values", "[node]") {
             REQUIRE(tn2.get_fz() == fz);
             REQUIRE(tn2.get_eps() == eps);
             REQUIRE(tn2.get_aph() == aph);
-
             REQUIRE(literal_c == tn2.get_literal_C());
+            // NOLINTEND(bugprone-chained-comparison)
 
-            // Check the copied node is a copy, so the first one still holds the
-            // old values
+            // Check the copied node is a copy, so tn still holds old values
             assert_node_default_values(tn);
 
             // Check if copy assignment works
             tn = tn2;
+
+            // NOLINTBEGIN(bugprone-chained-comparison)
             REQUIRE(usr_num == tn.get_node_num());
             REQUIRE(tn.get_int_node_num() == -1);
             REQUIRE(tn.get_type() == type);
@@ -159,9 +158,11 @@ TEST_CASE("Node Default Values", "[node]") {
             REQUIRE(tn.get_eps() == eps);
             REQUIRE(tn.get_aph() == aph);
             REQUIRE(literal_c == tn.get_literal_C());
+            // NOLINTEND(bugprone-chained-comparison)
         }
 
-        // tn2 object is destroyed. check that tn still holds the values
+        // tn2 destroyed: tn should still hold the values
+        // NOLINTBEGIN(bugprone-chained-comparison)
         REQUIRE(usr_num == tn.get_node_num());
         REQUIRE(tn.get_int_node_num() == -1);
         REQUIRE(tn.get_type() == type);
@@ -179,9 +180,10 @@ TEST_CASE("Node Default Values", "[node]") {
         REQUIRE(tn.get_eps() == eps);
         REQUIRE(tn.get_aph() == aph);
         REQUIRE(literal_c == tn.get_literal_C());
+        // NOLINTEND(bugprone-chained-comparison)
     }
 
-    // TODO test the rest of the methods.
+    // TODO: test the rest of the methods.
 }
 
 // NOLINTEND(readability-function-cognitive-complexity)
