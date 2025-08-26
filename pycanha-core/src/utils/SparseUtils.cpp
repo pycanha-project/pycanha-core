@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <cstring>
+#include <iomanip>
 #include <iostream>
 #include <memory>
 #include <tuple>
@@ -431,6 +432,8 @@ void move_rows(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
     }
 }
 
+// TODO: Fix complexity and remove supression
+// NOLINTBEGIN(readability-function-cognitive-complexity)
 void move_cols(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
                Index from_idx, Index to_idx) {
     PROFILE_FUNCTION();
@@ -576,6 +579,8 @@ void move_cols(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
     }
 }
 
+// NOLINTEND(readability-function-cognitive-complexity)
+
 void move_row_col(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
                   Index from_idx, Index to_idx) {
     move_rows(sparse, from_idx, to_idx);
@@ -693,8 +698,8 @@ bool are_compressed_sparse_identical(
 }
 
 [[nodiscard]] bool has_same_structure(
-    const Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse1,
-    const Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse2) noexcept {
+    Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse1,
+    Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse2) {
     // Fast-shape checks (size, compression mode, and # of stored entries)
     const bool same_size = (sparse1.rows() == sparse2.rows()) &&
                            (sparse1.cols() == sparse2.cols());

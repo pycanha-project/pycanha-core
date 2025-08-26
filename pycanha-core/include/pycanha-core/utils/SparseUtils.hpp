@@ -50,8 +50,10 @@ bool is_trivial_zero(const Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
 bool are_compressed_sparse_identical(
     Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse1,
     Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse2);
-bool has_same_structure(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse1,
-                        Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse2);
+
+[[nodiscard]] bool has_same_structure(
+    Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse1,
+    Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse2);
 
 void random_fill_sparse(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
                         double sparsity_ratio, double min = 0.0,

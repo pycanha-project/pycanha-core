@@ -380,6 +380,129 @@ void remove_test() {
     remove_col(sp2, 0);
 }
 
+void has_same_structure_test() {
+    using Sparse = Eigen::SparseMatrix<double, Eigen::RowMajor>;
+
+    // Small helpers
+    const auto pick_nonzero = [](const Sparse& m, Index& r, Index& c) -> bool {
+        for (Index row = 0; row < m.rows(); row++) {
+            for (typename Sparse::InnerIterator it(m, row); it; ++it) {
+                r = static_cast<Index>(it.row());
+                c = static_cast<Index>(it.col());
+                return true;
+            }
+        }
+        return false;
+    };
+    const auto pick_zero = [](const Sparse& m, Index& r, Index& c) -> bool {
+        for (Index i = 0; i < m.rows(); i++) {
+            for (Index j = 0; j < m.cols(); j++) {
+                if (m.coeff(i, j) == 0.0) {
+                    r = i;
+                    c = j;
+                    return true;
+                }
+            }
+        }
+        return false;
+    };
+
+    // --- Uncompressed: identical -> true
+    {
+        Sparse a(ROW_SIZE, COL_SIZE);
+        Sparse b(ROW_SIZE, COL_SIZE);
+        random_fill_sparse(a, 0.35, -5.0, 5.0, 4242);
+        random_fill_sparse(b, 0.35, -5.0, 5.0, 4242);
+        a.uncompress();
+        b.uncompress();
+        REQUIRE(has_same_structure(a, b));
+
+        // Value change only (keep nonzero) -> true
+        Index r = 0;
+        Index c = 0;
+        if (pick_nonzero(a, r, c)) {
+            a.coeffRef(r, c) += 1.0;
+            REQUIRE(has_same_structure(a, b));
+        }
+
+        // Different reserved boundaries per row (capacity) -> false
+        {
+            const auto rows = static_cast<int>(a.rows());
+            Eigen::VectorXi cap_a = Eigen::VectorXi::Constant(rows, 2);
+            Eigen::VectorXi cap_b = Eigen::VectorXi::Constant(rows, 6);
+            a.reserve(cap_a);
+            b.reserve(cap_b);
+            REQUIRE_FALSE(has_same_structure(a, b));
+        }
+    }
+
+    // --- Uncompressed: insert a new nonzero changes used counts -> false
+    {
+        Sparse u1(ROW_SIZE, COL_SIZE);
+        Sparse u2(ROW_SIZE, COL_SIZE);
+        random_fill_sparse(u1, 0.25, -3.0, 3.0, 777);
+        random_fill_sparse(u2, 0.25, -3.0, 3.0, 777);
+        u1.uncompress();
+        u2.uncompress();
+        Index zr = 0;
+        Index zc = 0;
+        if (pick_zero(u1, zr, zc)) {
+            u1.coeffRef(zr, zc) = 3.14;
+            REQUIRE_FALSE(has_same_structure(u1, u2));
+        }
+    }
+
+    // --- Compression mismatch -> false
+    {
+        Sparse c1(ROW_SIZE, COL_SIZE);
+        Sparse c2(ROW_SIZE, COL_SIZE);
+        random_fill_sparse(c1, 0.40, -9.0, 9.0, 9898);
+        random_fill_sparse(c2, 0.40, -9.0, 9.0, 9898);
+        c1.makeCompressed();
+        c2.uncompress();
+        REQUIRE_FALSE(has_same_structure(c1, c2));
+    }
+
+    // --- Compressed: identical -> true; remove an entry -> false
+    {
+        Sparse k1(ROW_SIZE, COL_SIZE);
+        Sparse k2(ROW_SIZE, COL_SIZE);
+        random_fill_sparse(k1, 0.40, -9.0, 9.0, 2024);
+        random_fill_sparse(k2, 0.40, -9.0, 9.0, 2024);
+        k1.makeCompressed();
+        k2.makeCompressed();
+        REQUIRE(has_same_structure(k1, k2));
+
+        // Value change only in existing slot -> true
+        Index r = 0;
+        Index c = 0;
+        if (pick_nonzero(k1, r, c)) {
+            k1.coeffRef(r, c) += 0.5;  // stays nonzero
+            REQUIRE(has_same_structure(k1, k2));
+        }
+
+        // Remove a nonzero (nnz differs) -> false
+        Index rr = 0;
+        Index cc = 0;
+        if (pick_nonzero(k1, rr, cc)) {
+            k1.coeffRef(rr, cc) = 0.0;
+            k1.prune(0.0);
+            REQUIRE_FALSE(has_same_structure(k1, k2));
+        }
+    }
+
+    // --- Size mismatch -> false
+    {
+        Sparse bigger(ROW_SIZE + 1, COL_SIZE);
+        Sparse ref(ROW_SIZE, COL_SIZE);
+        random_fill_sparse(bigger, 0.30, -2.0, 2.0, 1);
+        random_fill_sparse(ref, 0.30, -2.0, 2.0, 1);
+        bigger.makeCompressed();
+        ref.makeCompressed();
+        REQUIRE_FALSE(has_same_structure(bigger, ref));
+    }
+}
+
 }  // namespace
 
 TEST_CASE("sparse_utils Tests") {
@@ -390,6 +513,7 @@ TEST_CASE("sparse_utils Tests") {
         zero_row_col_test();
         move_test();
         remove_test();
+        has_same_structure_test();
     }
 
     SECTION("RECTANGULAR MATRICES TEST 1") {
@@ -399,6 +523,7 @@ TEST_CASE("sparse_utils Tests") {
         zero_row_col_test();
         move_test();
         remove_test();
+        has_same_structure_test();
     }
 
     SECTION("RECTANGULAR MATRICES TEST 2") {
@@ -408,6 +533,7 @@ TEST_CASE("sparse_utils Tests") {
         zero_row_col_test();
         move_test();
         remove_test();
+        has_same_structure_test();
     }
 }
 
