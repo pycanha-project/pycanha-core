@@ -384,11 +384,13 @@ void has_same_structure_test() {
     using Sparse = Eigen::SparseMatrix<double, Eigen::RowMajor>;
 
     // Small helpers
-    const auto pick_nonzero = [](const Sparse& m, Index& r, Index& c) -> bool {
-        for (Index row = 0; row < m.rows(); row++) {
-            for (typename Sparse::InnerIterator it(m, row); it; ++it) {
-                r = static_cast<Index>(it.row());
-                c = static_cast<Index>(it.col());
+    const auto pick_nonzero = [](const Sparse& m, Index& row_index,
+                                 Index& col_index) -> bool {
+        for (Index row = 0; row < m.rows(); ++row) {
+            auto it = Sparse::InnerIterator(m, row);
+            if (it) {
+                row_index = static_cast<Index>(it.row());
+                col_index = static_cast<Index>(it.col());
                 return true;
             }
         }

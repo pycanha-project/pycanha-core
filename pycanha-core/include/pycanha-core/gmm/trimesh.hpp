@@ -3,6 +3,7 @@
 #include <Eigen/Dense>
 #include <algorithm>
 #include <iostream>
+#include <limits>  // IWYU pragma: keep
 #include <memory>
 #include <numbers>
 #include <numeric>
