@@ -4,6 +4,7 @@
 #include <utility>
 #include <vector>
 
+#include "pycanha-core/parameters.hpp"
 #include "pycanha-core/utils/RandomGenerators.hpp"
 #include "pycanha-core/utils/SparseUtils.hpp"
 
