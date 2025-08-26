@@ -3,12 +3,11 @@
 #include <Eigen/Dense>
 #include <algorithm>
 #include <iostream>
-#include <limits>
+#include <limits>  // IWYU pragma: keep
 #include <memory>
 #include <numbers>
 #include <numeric>
 #include <set>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -20,6 +19,7 @@
 
 using Eigen::seq;
 using namespace pycanha;  // NOLINT
+using pycanha::utils::is_sorted;
 namespace pycanha::gmm {
 
 /**
@@ -1181,13 +1181,11 @@ using TriMeshModelPtr = std::shared_ptr<TriMeshModel>;
 namespace trimesher {
 
 inline void print_point2d(const Point2D& p) {
-    std::cout << "[" << p[0] << ", " << p[1] << "],"
-              << "\n";
+    std::cout << "[" << p[0] << ", " << p[1] << "]," << "\n";
 }
 
 inline void print_point3d(const Point3D& p) {
-    std::cout << "[" << p[0] << ", " << p[1] << ", " << p[2] << "],"
-              << "\n";
+    std::cout << "[" << p[0] << ", " << p[1] << ", " << p[2] << "]," << "\n";
 }
 
 inline void print_points(const TriMesh& trimesh) {
@@ -1253,8 +1251,8 @@ inline TriMesh create_2d_rectangular_mesh(const Eigen::VectorXd& dir1_mesh,
     assert(dir2_mesh.size() >= 2);
     assert(2 * dir1_mesh.size() * dir2_mesh.size() <=
            std::numeric_limits<MeshIndex>::max());
-    assert(utils::is_sorted(dir1_mesh));
-    assert(utils::is_sorted(dir2_mesh));
+    assert(is_sorted(dir1_mesh));
+    assert(is_sorted(dir2_mesh));
 
     // TODO(PERFORMANCE): Use Eigen instead of std::vector to avoid casting
 
@@ -1487,8 +1485,8 @@ inline TriMesh create_2d_quadrilateral_mesh(
     assert(dir2_mesh_normalized.size() >= 2);
     assert(2 * dir1_mesh_normalized.size() * dir2_mesh_normalized.size() <=
            std::numeric_limits<MeshIndex>::max());
-    assert(utils::is_sorted(dir1_mesh_normalized));
-    assert(utils::is_sorted(dir2_mesh_normalized));
+    assert(is_sorted(dir1_mesh_normalized));
+    assert(is_sorted(dir2_mesh_normalized));
 
     // Normalize the mesh
     // Eigen::VectorXd dir1_mesh_normalized = dir1_mesh;
@@ -1921,7 +1919,7 @@ inline TriMesh create_2d_triangular_only_mesh(
     assert(dir2_mesh_normalized.size() >= 2);
     assert(2 * dir2_mesh_normalized.size() <=
            std::numeric_limits<MeshIndex>::max());
-    assert(utils::is_sorted(dir2_mesh_normalized));
+    assert(is_sorted(dir2_mesh_normalized));
 
     // Normalize the mesh
     // Eigen::VectorXd dir2_mesh_normalized =
@@ -2192,8 +2190,8 @@ inline TriMesh create_2d_triangular_mesh(
     assert(dir2_mesh_normalized.size() >= 2);
     assert(2 * dir1_mesh_normalized.size() * dir2_mesh_normalized.size() <=
            std::numeric_limits<MeshIndex>::max());
-    assert(utils::is_sorted(dir1_mesh_normalized));
-    assert(utils::is_sorted(dir2_mesh_normalized));
+    assert(is_sorted(dir1_mesh_normalized));
+    assert(is_sorted(dir2_mesh_normalized));
 
     // If there are no divisions in the dir1 direction, then we use the
     // triangular only mesh
@@ -2534,8 +2532,8 @@ inline TriMesh create_2d_disc_mesh(const Eigen::VectorXd& dir1_mesh_normalized,
     assert(dir2_mesh_normalized.size() >= 2);
     assert(2 * dir1_mesh_normalized.size() * dir2_mesh_normalized.size() <=
            std::numeric_limits<MeshIndex>::max());
-    assert(utils::is_sorted(dir1_mesh_normalized));
-    assert(utils::is_sorted(dir2_mesh_normalized));
+    assert(is_sorted(dir1_mesh_normalized));
+    assert(is_sorted(dir2_mesh_normalized));
 
     // Extract the radius and the maximum angle
     const double radius = (outer_point - center).norm();

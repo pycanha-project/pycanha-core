@@ -2,7 +2,6 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
-#include <fstream>
 #include <iostream>
 #include <iterator>
 #include <limits>
@@ -1328,28 +1327,23 @@ class Sphere : public Primitive {
      */
     [[nodiscard]] bool is_valid() const override {
         if (_p1 == _p2 || _p1 == _p3 || _p2 == _p3) {
-            std::cout << "Same points in sphere definition"
-                      << "\n";
+            std::cout << "Same points in sphere definition" << "\n";
             throw std::logic_error("Same points in sphere definition");
         }
         if ((_p2 - _p1).cross(_p3 - _p1).norm() < 1e-6) {
-            std::cout << "Points are collinear"
-                      << "\n";
+            std::cout << "Points are collinear" << "\n";
             throw std::logic_error("Points are collinear");
         }
         if (_radius <= 0) {
-            std::cout << "Radius is not positive"
-                      << "\n";
+            std::cout << "Radius is not positive" << "\n";
             throw std::logic_error("Radius is not positive");
         }
         if (_base_truncation < -_radius) {
-            std::cout << "Base truncation is smaller than -radius"
-                      << "\n";
+            std::cout << "Base truncation is smaller than -radius" << "\n";
             throw std::logic_error("Base truncation is smaller than -radius");
         }
         if (_apex_truncation > _radius) {
-            std::cout << "Apex truncation is greater than radius"
-                      << "\n";
+            std::cout << "Apex truncation is greater than radius" << "\n";
             throw std::logic_error("Apex truncation is greater than radius");
         }
         if (_base_truncation >= _apex_truncation) {
@@ -1360,8 +1354,7 @@ class Sphere : public Primitive {
                 "Base truncation is greater or equal to apex truncation");
         }
         if (_start_angle < 0 || _start_angle >= 2.0 * pi) {
-            std::cout << "Start angle is not in [0, 2*pi)"
-                      << "\n";
+            std::cout << "Start angle is not in [0, 2*pi)" << "\n";
             throw std::logic_error("Start angle is not in [0, 2*pi)");
         }
         if (_end_angle < 0 || _end_angle > 2 * pi) {
@@ -1369,8 +1362,7 @@ class Sphere : public Primitive {
             throw std::logic_error("End angle is not in [0, 2*pi]");
         }
         if (_start_angle >= _end_angle) {
-            std::cout << "Start angle is greater or equal to end angle"
-                      << "\n";
+            std::cout << "Start angle is greater or equal to end angle" << "\n";
             throw std::logic_error(
                 "Start angle is greater or equal to end angle");
         }
@@ -2077,9 +2069,9 @@ inline Point2D Sphere::from_3d_to_2d_mollweide(const Point3D& p3d) const {
         theta_pre = theta;
     }
 
-    const double x =
-        _radius * 2 * sqrt(2) / pi * spherical_coordinates[0] * cos(theta);
-    const double y = _radius * sqrt(2) * sin(theta);
+    const double x = _radius * 2 * std::numbers::sqrt2 / pi *
+                     spherical_coordinates[0] * cos(theta);
+    const double y = _radius * std::numbers::sqrt2 * sin(theta);
 
     return {x, y};
 }
@@ -2090,8 +2082,9 @@ inline Point2D Sphere::from_3d_to_2d_mollweide(const Point3D& p3d) const {
 inline Point3D Sphere::from_2d_to_3d_mollweide(const Point2D& p2d) const {
     using std::numbers::pi;
 
-    const double theta = asin(p2d[1] / (_radius * sqrt(2)));
-    const double lon = pi * p2d[0] / (2 * _radius * sqrt(2) * cos(theta));
+    const double theta = asin(p2d[1] / (_radius * std::numbers::sqrt2));
+    const double lon =
+        pi * p2d[0] / (2 * _radius * std::numbers::sqrt2 * cos(theta));
     const double lat = asin((2 * theta + sin(2 * theta)) / pi);
 
     return from_spherical_to_cartesian(Eigen::Vector2d(lon, lat));
@@ -3165,8 +3158,7 @@ inline TriMesh Cone::create_mesh(const ThermalMesh& thermal_mesh,
 
         std::vector<MeshIndex> edges_to_remove(dir1_size - 1);
         for (MeshIndex i = 0; i < dir1_size - 1; ++i) {
-            edges_to_remove[i] =
-                static_cast<MeshIndex>((dir1_size - 1) * (dir2_size - 1) + i);
+            edges_to_remove[i] = (dir1_size - 1) * (dir2_size - 1) + i;
         }
 
         // int edge_idx = 0;

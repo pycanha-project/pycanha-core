@@ -1,19 +1,16 @@
 #pragma once
 
 #include <Eigen/Sparse>
-#include <iomanip>
-#include <iostream>
 #include <tuple>
 #include <vector>
 
 #include "../config.hpp"
 #include "../parameters.hpp"
-#include "./Instrumentor.hpp"
 
 namespace sparse_utils {
 
 // Print information to std output
-constexpr bool VERBOSE = true;
+using pycanha::VERBOSE;
 
 using Index = pycanha::Index;
 
@@ -53,8 +50,10 @@ bool is_trivial_zero(const Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
 bool are_compressed_sparse_identical(
     Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse1,
     Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse2);
-bool has_same_structure(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse1,
-                        Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse2);
+
+[[nodiscard]] bool has_same_structure(
+    Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse1,
+    Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse2);
 
 void random_fill_sparse(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
                         double sparsity_ratio, double min = 0.0,
@@ -78,8 +77,8 @@ void copy_sum_2_values_with_idx(double* dest, const double* from,
                                 const std::vector<int>& dest_idx_1,
                                 const std::vector<int>& dest_idx_2);
 
-std::tuple<int, int, double> get_row_col_value_from_value_idx(
-    const Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse, int vidx);
+std::tuple<Index, Index, double> get_row_col_value_from_value_idx(
+    const Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse, Index vidx);
 
 void print_sparse(const Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse);
 void print_sparse_values(
