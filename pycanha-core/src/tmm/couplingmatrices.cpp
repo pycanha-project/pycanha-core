@@ -1,7 +1,6 @@
 #include "pycanha-core/tmm/couplingmatrices.hpp"
 
 #include <cmath>
-#include <iomanip>
 #include <iostream>
 #include <tuple>
 #include <utility>
@@ -17,7 +16,7 @@ bool are_coupling_values_almost_equal(double val1, double val2) {
             ALMOST_EQUAL_COUPLING_EPSILON);
 }
 
-CouplingMatrices::CouplingMatrices() {}
+CouplingMatrices::CouplingMatrices() = default;
 
 inline int CouplingMatrices::get_num_diff_nodes() const {
     return sparse_dd.rows();

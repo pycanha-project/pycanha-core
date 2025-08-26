@@ -5,13 +5,10 @@
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
-#include <utility>
-#include <variant>
 #include <vector>
 
 #include "./geometry.hpp"
 #include "./id.hpp"
-#include "./thermalmesh.hpp"
 #include "./transformations.hpp"
 
 namespace pycanha::gmm {

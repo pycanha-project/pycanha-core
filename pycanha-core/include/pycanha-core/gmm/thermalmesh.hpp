@@ -1,20 +1,18 @@
 #pragma once
 
 #include <Eigen/Dense>
-#include <algorithm>
 #include <array>
 #include <cmath>
-#include <iostream>
-#include <limits>
 #include <memory>
 #include <utility>
 #include <vector>
 
+#include "../parameters.hpp"
 #include "./id.hpp"
 #include "./materials.hpp"
-#include "./primitives.hpp"  // NOLINT(misc-header-include-cycle)
 
 namespace pycanha::gmm {
+using pycanha::MeshIndex;
 
 class ThermalMesh : public UniqueID {
     // Private members with default values
