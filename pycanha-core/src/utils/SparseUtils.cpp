@@ -2,8 +2,11 @@
 #include "pycanha-core/utils/SparseUtils.hpp"
 
 #include <algorithm>
+#include <cstring>
 #include <iostream>
+#include <memory>
 #include <tuple>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -25,6 +28,7 @@ namespace sparse_utils {
 // TODO: After fix in add_zero_col_row_fun, refactor the internal function and
 // put the code inside the public functions
 namespace {
+
 void add_zero_row_fun(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
                       Index new_row_idx) {
     if (sparse.isCompressed()) {
@@ -163,8 +167,8 @@ void move_delete_row_fun(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
     }
 }
 
-void move_delete_row_col(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
-                         Index move_col_idx) {
+void move_delete_row_col_fun(
+    Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse, Index move_col_idx) {
     PROFILE_FUNCTION();
     // Removing a node will left a "hole", so the matrix should be in uncompress
     // mode
@@ -209,6 +213,57 @@ void move_delete_row_col(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
     }
 }
 
+template <class T>
+[[nodiscard]] inline bool equal_buffers(const T* a, const T* b,
+                                        std::size_t n) noexcept {
+    // std::equal is clear and typically vectorizes / becomes memcmp where
+    // possible.
+    return std::equal(a, a + n, b);
+}
+
+[[nodiscard]] bool compare_compressed(
+    const Eigen::SparseMatrix<double, Eigen::RowMajor>& a,
+    const Eigen::SparseMatrix<double, Eigen::RowMajor>& b) noexcept {
+    const auto nnz = static_cast<std::size_t>(a.nonZeros());
+    const auto outer_len = static_cast<std::size_t>(a.outerSize() + 1);
+
+    return equal_buffers(a.innerIndexPtr(), b.innerIndexPtr(), nnz) &&
+           equal_buffers(a.outerIndexPtr(), b.outerIndexPtr(), outer_len);
+}
+
+[[nodiscard]] bool compare_uncompressed(
+    const Eigen::SparseMatrix<double, Eigen::RowMajor>& a,
+    const Eigen::SparseMatrix<double, Eigen::RowMajor>& b) noexcept {
+    const auto outer = static_cast<std::size_t>(a.outerSize());
+    const auto outer_len = outer + 1;
+
+    // Same number of actually-used entries per outer index (row in RowMajor).
+    if (!equal_buffers(a.innerNonZeroPtr(), b.innerNonZeroPtr(), outer)) {
+        return false;
+    }
+
+    // Same reserved block boundaries for each outer index.
+    if (!equal_buffers(a.outerIndexPtr(), b.outerIndexPtr(), outer_len)) {
+        return false;
+    }
+
+    // Compare only the *used* inner indices for each outer block; ignore
+    // reserved tail.
+    const auto* ia = a.innerIndexPtr();
+    const auto* ib = b.innerIndexPtr();
+    const auto* start = a.outerIndexPtr();
+    const auto* used = a.innerNonZeroPtr();
+
+    for (std::size_t i = 0; i < outer; ++i) {
+        const auto beg = static_cast<std::size_t>(start[i]);
+        const auto cnt = static_cast<std::size_t>(used[i]);
+        if (!equal_buffers(ia + beg, ib + beg, cnt)) {
+            return false;
+        }
+    }
+    return true;
+}
+
 }  // namespace
 
 void add_zero_row(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
@@ -250,14 +305,15 @@ void add_zero_diag_square(
     sparse.makeCompressed();  // Just in case
 }
 
+// move_rows with RAII scratch buffers (C++20/23)
 void move_rows(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
                Index from_idx, Index to_idx) {
     PROFILE_FUNCTION();
 
     using StorageIndexPtr = decltype(sparse.innerIndexPtr());
     using ValuesPtr = decltype(sparse.valuePtr());
-    using StorageIndex = std::remove_pointer<StorageIndexPtr>::type;
-    using Values = std::remove_pointer<ValuesPtr>::type;
+    using StorageIndex = std::remove_pointer_t<StorageIndexPtr>;
+    using Values = std::remove_pointer_t<ValuesPtr>;
 
     // Ensure from_idx > to_idx
     if (from_idx >= to_idx) {
@@ -269,129 +325,122 @@ void move_rows(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
 
     if ((from_idx < 0) || (to_idx >= sparse.rows())) {
         if (VERBOSE) {
-            std::cout << "Error while moving rows. Invalid indexes."
-                      << std::endl;
+            std::cout << "Error while moving rows. Invalid indexes.\n";
         }
         return;
     }
 
-    // Easier to work in non-compressed mode
+    // Work in non-compressed mode
     if (sparse.isCompressed()) {
         sparse.uncompress();
     }
 
-    // Assuming from_idx and to_idx lies within the size of the matrix
-    int num_coeff_from = sparse.innerNonZeroPtr()[from_idx];
-    int num_holes_from =
-        sparse.outerIndexPtr()[from_idx + 1] - sparse.outerIndexPtr()[from_idx];
+    // Cache raw pointers once (minor perf win vs repeated calls)
+    auto* inner = sparse.innerIndexPtr();
+    auto* vals = sparse.valuePtr();
+    auto* outer = sparse.outerIndexPtr();
+    auto* nnz = sparse.innerNonZeroPtr();
 
-    int num_coeff_to = sparse.innerNonZeroPtr()[to_idx];
-    int num_holes_to =
-        sparse.outerIndexPtr()[to_idx + 1] - sparse.outerIndexPtr()[to_idx];
+    // Row metadata
+    const int num_coeff_from = nnz[from_idx];
+    const int num_holes_from = outer[from_idx + 1] - outer[from_idx];
 
-    Index from_start_vidx = sparse.outerIndexPtr()[from_idx];
-    Index to_start_vidx = sparse.outerIndexPtr()[to_idx];
+    const int num_coeff_to = nnz[to_idx];
+    const int num_holes_to = outer[to_idx + 1] - outer[to_idx];
 
-    // Same number of coefficientes: A simple swap of the values and the inners
+    const Index from_start_vidx = outer[from_idx];
+    const Index to_start_vidx = outer[to_idx];
+
+    // Same number of coefficients: swap in place
     if (num_coeff_from == num_coeff_to) {
-        std::swap_ranges(sparse.valuePtr() + from_start_vidx,
-                         sparse.valuePtr() + from_start_vidx + num_coeff_from,
-                         sparse.valuePtr() + to_start_vidx);
-        std::swap_ranges(
-            sparse.innerIndexPtr() + from_start_vidx,
-            sparse.innerIndexPtr() + from_start_vidx + num_coeff_from,
-            sparse.innerIndexPtr() + to_start_vidx);
+        std::swap_ranges(vals + from_start_vidx,
+                         vals + from_start_vidx + num_coeff_from,
+                         vals + to_start_vidx);
+        std::swap_ranges(inner + from_start_vidx,
+                         inner + from_start_vidx + num_coeff_from,
+                         inner + to_start_vidx);
         return;
     }
 
-    // When different number of coefficients, chek if fit in the holes
-    int min_number_holes = std::min(num_holes_from, num_holes_to);
-    int max_number_coeff = std::max(num_coeff_from, num_coeff_to);
+    // If they fit within existing holes, swap directly
+    const int min_number_holes = std::min(num_holes_from, num_holes_to);
+    const int max_number_coeff = std::max(num_coeff_from, num_coeff_to);
 
     if (min_number_holes >= max_number_coeff) {
-        // The values can be swapped directly. They fit.
-        std::swap_ranges(sparse.valuePtr() + from_start_vidx,
-                         sparse.valuePtr() + from_start_vidx + max_number_coeff,
-                         sparse.valuePtr() + to_start_vidx);
-        std::swap_ranges(
-            sparse.innerIndexPtr() + from_start_vidx,
-            sparse.innerIndexPtr() + from_start_vidx + max_number_coeff,
-            sparse.innerIndexPtr() + to_start_vidx);
-        std::swap(sparse.innerNonZeroPtr()[from_idx],
-                  sparse.innerNonZeroPtr()[to_idx]);
+        std::swap_ranges(vals + from_start_vidx,
+                         vals + from_start_vidx + max_number_coeff,
+                         vals + to_start_vidx);
+        std::swap_ranges(inner + from_start_vidx,
+                         inner + from_start_vidx + max_number_coeff,
+                         inner + to_start_vidx);
+        std::swap(nnz[from_idx], nnz[to_idx]);
         return;
     }
 
-    // There is not room (not enough "holes") to fit the arrays
+    // Need scratch space: use RAII arrays (no zero-init, no leaks)
+    const auto sz_if = static_cast<std::size_t>(num_holes_from);
+    const auto sz_it = static_cast<std::size_t>(num_holes_to);
 
-    // Copy the from a to row, inner and values arrays to a buffer
-    StorageIndexPtr inner_from_copy = static_cast<StorageIndexPtr>(
-        malloc(num_holes_from * sizeof(StorageIndex)));
-    ValuesPtr values_from_copy =
-        static_cast<ValuesPtr>(malloc(num_holes_from * sizeof(Values)));
-    StorageIndexPtr inner_to_copy = static_cast<StorageIndexPtr>(
-        malloc(num_holes_to * sizeof(StorageIndex)));
-    ValuesPtr values_to_copy =
-        static_cast<ValuesPtr>(malloc(num_holes_to * sizeof(Values)));
+    // NOLINTBEGIN(hicpp-avoid-c-arrays,cppcoreguidelines-avoid-c-arrays)
+    auto inner_from_copy =
+        std::make_unique_for_overwrite<StorageIndex[]>(sz_if);
+    auto values_from_copy = std::make_unique_for_overwrite<Values[]>(sz_if);
+    auto inner_to_copy = std::make_unique_for_overwrite<StorageIndex[]>(sz_it);
+    auto values_to_copy = std::make_unique_for_overwrite<Values[]>(sz_it);
+    // NOLINTEND(hicpp-avoid-c-arrays,cppcoreguidelines-avoid-c-arrays)
 
-    memcpy(inner_from_copy, sparse.innerIndexPtr() + from_start_vidx,
-           num_holes_from * sizeof(StorageIndex));
-    memcpy(values_from_copy, sparse.valuePtr() + from_start_vidx,
-           num_holes_from * sizeof(Values));
-    memcpy(inner_to_copy, sparse.innerIndexPtr() + to_start_vidx,
-           num_holes_to * sizeof(StorageIndex));
-    memcpy(values_to_copy, sparse.valuePtr() + to_start_vidx,
-           num_holes_to * sizeof(Values));
+    // Copy out the two row slots
+    std::memcpy(inner_from_copy.get(), inner + from_start_vidx,
+                sz_if * sizeof(StorageIndex));
+    std::memcpy(values_from_copy.get(), vals + from_start_vidx,
+                sz_if * sizeof(Values));
+    std::memcpy(inner_to_copy.get(), inner + to_start_vidx,
+                sz_it * sizeof(StorageIndex));
+    std::memcpy(values_to_copy.get(), vals + to_start_vidx,
+                sz_it * sizeof(Values));
 
-    // Reorder the values
-    int num_holes_between_rows =
-        sparse.outerIndexPtr()[to_idx] - sparse.outerIndexPtr()[from_idx + 1];
-    memmove(sparse.innerIndexPtr() + from_start_vidx + num_holes_to,
-            sparse.innerIndexPtr() + from_start_vidx + num_holes_from,
-            num_holes_between_rows * sizeof(*sparse.innerIndexPtr()));
+    // Move the between-rows block to make room
+    const int num_holes_between_rows = outer[to_idx] - outer[from_idx + 1];
 
-    memmove(sparse.valuePtr() + from_start_vidx + num_holes_to,
-            sparse.valuePtr() + from_start_vidx + num_holes_from,
-            num_holes_between_rows * sizeof(*sparse.valuePtr()));
+    std::memmove(
+        inner + from_start_vidx + num_holes_to,
+        inner + from_start_vidx + num_holes_from,
+        static_cast<std::size_t>(num_holes_between_rows) * sizeof(*inner));
+    std::memmove(
+        vals + from_start_vidx + num_holes_to,
+        vals + from_start_vidx + num_holes_from,
+        static_cast<std::size_t>(num_holes_between_rows) * sizeof(*vals));
 
-    memcpy(sparse.innerIndexPtr() + from_start_vidx, inner_to_copy,
-           num_holes_to * sizeof(StorageIndex));
-    memcpy(sparse.innerIndexPtr() + from_start_vidx + num_holes_between_rows +
-               num_holes_to,
-           inner_from_copy, num_holes_from * sizeof(StorageIndex));
+    // Lay down swapped rows plus preserved middle
+    std::memcpy(inner + from_start_vidx, inner_to_copy.get(),
+                sz_it * sizeof(StorageIndex));
+    std::memcpy(inner + from_start_vidx + num_holes_between_rows + num_holes_to,
+                inner_from_copy.get(), sz_if * sizeof(StorageIndex));
 
-    memcpy(sparse.valuePtr() + from_start_vidx, values_to_copy,
-           num_holes_to * sizeof(Values));
-    memcpy(sparse.valuePtr() + from_start_vidx + num_holes_between_rows +
-               num_holes_to,
-           values_from_copy, num_holes_from * sizeof(Values));
+    std::memcpy(vals + from_start_vidx, values_to_copy.get(),
+                sz_it * sizeof(Values));
+    std::memcpy(vals + from_start_vidx + num_holes_between_rows + num_holes_to,
+                values_from_copy.get(), sz_if * sizeof(Values));
 
-    // Swap nnz and outer
-    std::swap(sparse.innerNonZeroPtr()[from_idx],
-              sparse.innerNonZeroPtr()[to_idx]);
+    // Swap per-row nnz and fix the outers
+    std::swap(nnz[from_idx], nnz[to_idx]);
 
-    int diff_holes = num_holes_to - num_holes_from;
-    for (Index i = from_idx + 1; i <= to_idx; i++) {
-        sparse.outerIndexPtr()[i] += diff_holes;
+    const int diff_holes = num_holes_to - num_holes_from;
+    for (Index i = from_idx + 1; i <= to_idx; ++i) {
+        outer[i] += diff_holes;
     }
-
-    free(inner_from_copy);
-    free(values_from_copy);
-    free(inner_to_copy);
-    free(values_to_copy);
 }
 
 void move_cols(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
                Index from_idx, Index to_idx) {
     PROFILE_FUNCTION();
 
-    constexpr int LIMIT_LINEAR_SEARCH = 10;
+    constexpr int limit_linear_search = 10;
 
-    typedef decltype(sparse.innerIndexPtr()) StorageIndexPtr;
-    typedef decltype(sparse.valuePtr()) ValuesPtr;
-
-    typedef std::remove_pointer<StorageIndexPtr>::type StorageIndex;
-    typedef std::remove_pointer<ValuesPtr>::type Values;
+    using StorageIndexPtr = decltype(sparse.innerIndexPtr());
+    using ValuesPtr = decltype(sparse.valuePtr());
+    using StorageIndex = std::remove_pointer_t<StorageIndexPtr>;
+    using Values = std::remove_pointer_t<ValuesPtr>;
 
     // Ensure from_idx > to_idx
     if (from_idx >= to_idx) {
@@ -423,9 +472,9 @@ void move_cols(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
 
         bool fcol_found = false;
         bool tcol_found = false;
-        Index finnidx;  // From inner index
-        Index tinnidx;  // To inner index
-        if (nnz < LIMIT_LINEAR_SEARCH) {
+        Index finnidx = 0;  // From inner index
+        Index tinnidx = 0;  // To inner index
+        if (nnz < limit_linear_search) {
             // Linear search
             finnidx = sparse.outerIndexPtr()[iou];
             tinnidx = sparse.outerIndexPtr()[iou];
@@ -456,7 +505,7 @@ void move_cols(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
         } else {
             // Binary search. Assuming from_idx <= to_idx (the swap at the
             // beginning ensures it)
-            auto inndx_ptr = std::lower_bound(
+            auto* inndx_ptr = std::lower_bound(
                 sparse.innerIndexPtr() + sparse.outerIndexPtr()[iou],
                 sparse.innerIndexPtr() + sparse.outerIndexPtr()[iou] + nnz,
                 from_idx);
@@ -503,7 +552,8 @@ void move_cols(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
                         sparse.valuePtr() + finnidx + 1,
                         (tinnidx - finnidx - 1) * sizeof(*sparse.valuePtr()));
 
-                sparse.innerIndexPtr()[tinnidx - 1] = to_idx;
+                sparse.innerIndexPtr()[tinnidx - 1] =
+                    static_cast<StorageIndex>(to_idx);
                 sparse.valuePtr()[tinnidx - 1] = temp_value;
             }
         } else {
@@ -517,7 +567,8 @@ void move_cols(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
                         sparse.valuePtr() + finnidx,
                         (tinnidx - finnidx) * sizeof(*sparse.valuePtr()));
 
-                sparse.innerIndexPtr()[finnidx] = from_idx;
+                sparse.innerIndexPtr()[finnidx] =
+                    static_cast<StorageIndex>(from_idx);
                 sparse.valuePtr()[finnidx] = temp_value;
             }
             // else: Nothing found. Do nothing
@@ -550,7 +601,7 @@ void remove_col(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
                 Index del_col_idx) {
     PROFILE_FUNCTION();
     if ((del_col_idx < sparse.cols()) && (del_col_idx >= 0)) {
-        move_delete_row_col(sparse, del_col_idx);
+        move_delete_row_col_fun(sparse, del_col_idx);
         sparse.conservativeResize(sparse.rows(), sparse.cols() - 1);
     } else {
         if (VERBOSE) {
@@ -567,7 +618,7 @@ void remove_row_col(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
     if ((del_idx >= 0) && (del_idx < sparse.cols()) &&
         (del_idx < sparse.rows())) {
         move_delete_row_fun(sparse, del_idx);
-        move_delete_row_col(sparse, del_idx);
+        move_delete_row_col_fun(sparse, del_idx);
         sparse.conservativeResize(sparse.rows() - 1, sparse.cols() - 1);
     } else {
         if (VERBOSE) {
@@ -638,105 +689,73 @@ bool are_compressed_sparse_identical(
         }
     }
 
-    if (equal_inner && equal_outer && equal_values) {
-        return true;
-    } else {
-        return false;
-    }
+    return equal_inner && equal_outer && equal_values;
 }
 
-bool has_same_structure(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse1,
-                        Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse2) {
-    // Check if two sparse matrices have the same internal structure. They can
-    // be in compressed or uncompressed mode.
-    bool same_size;
-    bool same_compression;
-    bool same_nnz;
-    bool same_rows;
-    bool same_cols;
-
-    same_size = (sparse1.cols() == sparse2.cols()) &&
-                (sparse1.rows() == sparse2.rows());
-    same_compression = (sparse1.isCompressed() && sparse2.isCompressed()) ||
-                       ((!sparse1.isCompressed()) && (!sparse2.isCompressed()));
-    same_nnz = sparse1.nonZeros() == sparse2.nonZeros();
+[[nodiscard]] bool has_same_structure(
+    const Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse1,
+    const Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse2) noexcept {
+    // Fast-shape checks (size, compression mode, and # of stored entries)
+    const bool same_size = (sparse1.rows() == sparse2.rows()) &&
+                           (sparse1.cols() == sparse2.cols());
+    const bool same_compression =
+        (sparse1.isCompressed() == sparse2.isCompressed());
+    const bool same_nnz = (sparse1.nonZeros() == sparse2.nonZeros());
 
     if (!(same_size && same_compression && same_nnz)) {
         return false;
     }
 
-    if (sparse1.isCompressed()) {
-        same_rows =
-            memcmp(sparse1.innerIndexPtr(), sparse2.innerIndexPtr(),
-                   sparse1.nonZeros() * sizeof(*sparse1.innerIndexPtr())) == 0;
-        same_cols = memcmp(sparse1.outerIndexPtr(), sparse2.outerIndexPtr(),
-                           (sparse1.outerSize() + 1) *
-                               sizeof(*sparse1.outerIndexPtr())) == 0;
-    } else {
-        if (memcmp(sparse1.innerNonZeroPtr(), sparse2.innerNonZeroPtr(),
-                   sparse1.outerSize() * sizeof(*sparse1.innerNonZeroPtr())) ==
-            0) {
-            if (!(sparse1.outerIndexPtr()[0] == sparse2.outerIndexPtr()[0])) {
-                return false;
-            }
-            for (int i = 0; i < sparse1.outerSize(); i++) {
-                int nnz = 0;
-                if (!(sparse1.outerIndexPtr()[i + 1] ==
-                      sparse2.outerIndexPtr()[i + 1])) {
-                    return false;
-                }
-                for (int j = sparse1.outerIndexPtr()[i];
-                     j < sparse1.outerIndexPtr()[i + 1]; j++) {
-                    if (nnz < sparse1.innerNonZeroPtr()[i]) {
-                        if (!(sparse1.innerIndexPtr()[j] ==
-                              sparse2.innerIndexPtr()[j])) {
-                            return false;
-                        }
-                    } else {
-                        // Nothing, the reserved values can contain garbage.
-                    }
-                    nnz++;
-                }
-            }
-            same_rows = true;
-            same_cols = true;
-        } else {
-            same_rows = false;
-            same_cols = false;
-        }
-    }
-
-    return (same_rows && same_cols);
+    // Structural comparison depends on compression state.
+    return sparse1.isCompressed() ? compare_compressed(sparse1, sparse2)
+                                  : compare_uncompressed(sparse1, sparse2);
 }
 
 void random_fill_sparse(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
                         double sparsity_ratio, double min, double max,
                         int seed) {
-    int rows = sparse.rows();
-    int cols = sparse.cols();
+    const auto rows = static_cast<Index>(sparse.rows());
+    const auto cols = static_cast<Index>(sparse.cols());
 
     if ((sparsity_ratio < 0.0) || (sparsity_ratio > 1.0)) {
         if (VERBOSE) {
-            std::cout << "Error, sparsity ratio should be between 0 and 1"
-                      << std::endl;
+            std::cout << "Error, sparsity ratio should be between 0 and 1\n";
         }
         return;
     }
 
-    int approx_values_per_row = (1.0 - sparsity_ratio) * cols;
-    int elements_to_insert = (1.0 - sparsity_ratio) * cols * rows;
-    sparse.reserve(
-        Eigen::VectorXi::Constant(sparse.rows(), approx_values_per_row));
+    if ((rows == Index{0}) || (cols == Index{0})) {
+        return;  // nothing to do
+    }
 
-    random_generators::IntGenerator<int> rrig(0, rows - 1, seed);
-    random_generators::IntGenerator<int> rcig(0, cols - 1, seed + 1);
-    random_generators::RealGenerator<double> rdg(0.0, 9.5, seed + 2);
+    const double density = 1.0 - sparsity_ratio;
 
-    Index ir;
-    Index ic;
-    for (int i = 0; i < elements_to_insert; i++) {
-        ir = rrig.generate_random();
-        ic = rcig.generate_random();
+    // Per-row (outer) reservation, clamped to [0, cols]
+    const auto approx_values_per_outer = std::clamp<Index>(
+        static_cast<Index>(std::llround(density * static_cast<double>(cols))),
+        Index{0}, cols);
+
+    // Total number of insertions, clamped to [0, rows*cols]
+    const auto elements_to_insert = std::clamp<Index>(
+        static_cast<Index>(std::llround(density * static_cast<double>(rows) *
+                                        static_cast<double>(cols))),
+        Index{0}, rows * cols);
+
+    // Avoid Eigen::VectorXi (int) to prevent narrowing; use Index-sized vector.
+    std::vector<Index> reserve_per_outer(static_cast<std::size_t>(rows),
+                                         approx_values_per_outer);
+    sparse.reserve(reserve_per_outer);
+
+    // Use generators with Index bounds to avoid narrowing to int.
+    random_generators::IntGenerator<Index> rrig(Index{0}, rows - Index{1},
+                                                seed);
+    random_generators::IntGenerator<Index> rcig(Index{0}, cols - Index{1},
+                                                seed + 1);
+    random_generators::RealGenerator<double> rdg(min, max, seed + 2);
+
+    for (auto k = Index{0}; k < elements_to_insert; ++k) {
+        const auto ir = rrig.generate_random();
+        const auto ic = rcig.generate_random();
         sparse.coeffRef(ir, ic) = rdg.generate_random();
     }
 }
@@ -844,7 +863,7 @@ std::tuple<int, int, double> get_row_col_value_from_value_idx(
     int col = sparse.innerIndexPtr()[vidx];
 
     // We need to find the first outer idx where the value is <= vidx
-    auto upper =
+    const auto* upper =
         std::upper_bound(sparse.outerIndexPtr(),
                          sparse.outerIndexPtr() + sparse.outerSize() + 1, vidx);
     int row = std::distance(sparse.outerIndexPtr(), upper) - 1;
@@ -924,11 +943,7 @@ void print_sparse_outer(
     for (int i = 0; i < sparse.outerSize() + 1; i++) {
         std::cout << sparse.outerIndexPtr()[i] << ", ";
     }
-    if (!sparse.isCompressed()) {
-        std::cout << "\n";
-    } else {
-        std::cout << "\n";
-    }
+    std::cout << "\n";
 }
 
 void print_sparse_nnz(
