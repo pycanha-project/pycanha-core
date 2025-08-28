@@ -251,7 +251,7 @@ class Node {
      * Deallocate the memory of the local information of the node and set the
      * local storage pointer to null.
      */
-    void _local_storage_destructor();
+    void local_storage_destructor();
 };
 
 }  // namespace pycanha

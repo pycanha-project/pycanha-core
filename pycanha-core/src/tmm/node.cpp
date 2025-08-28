@@ -116,7 +116,7 @@ Node& Node::operator=(Node&& other_node) noexcept {
     return *this;
 }
 
-Node::~Node() { _local_storage_destructor(); }
+Node::~Node() { local_storage_destructor(); }
 
 /*
 Getters and setters are always the same except which atributte is needed.
@@ -289,10 +289,10 @@ uint64_t Node::get_int_parent_pointer() {
 void Node::set_thermal_nodes_parent(
     std::weak_ptr<Nodes> thermal_nodes_parent_ptr) {
     _parent_pointer = thermal_nodes_parent_ptr;
-    _local_storage_destructor();
+    local_storage_destructor();
 }
 
-void Node::_local_storage_destructor() {
+void Node::local_storage_destructor() {
     delete _local_storage_ptr;
     _local_storage_ptr = nullptr;
 }

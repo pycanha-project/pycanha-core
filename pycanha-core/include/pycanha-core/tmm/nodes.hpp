@@ -394,19 +394,19 @@ class Nodes {
      * attributes are not modified. However the (mutable) members
      * _usr_to_int_node_num and _node_num_mapped are modified.
      */
-    void _create_node_num_map() const;
+    void create_node_num_map() const;
 
     /**
      * Change the type of the node from diffusive to boundary. Because of how
      * the internal order is defined, the node structure needs to be rearranged.
      */
-    void _diffusive_to_boundary(int node_num);
+    void diffusive_to_boundary(int node_num);
 
     /**
      * Change the type of the node from boundary to diffusive. Because of how
      * the internal order is defined, the node structure needs to be rearranged.
      */
-    void _boundary_to_diffusive(int node_num);
+    void boundary_to_diffusive(int node_num);
 
     // Insert methods for SparseVectors
 
@@ -415,24 +415,24 @@ class Nodes {
      * vector. The size of the vector is increased by one, and the elements
      * after the inserted one are displaced one position.
      */
-    void _insert_displace(Eigen::SparseVector<LiteralString> &sparse,
-                          Index index, const LiteralString &string);
+    void insert_displace(Eigen::SparseVector<LiteralString> &sparse,
+                         Index index, const LiteralString &string);
 
     /**
      * Helper method to insert a string value in the middle of a Sparse
      * vector. The size of the vector is increased by one, and the elements
      * after the inserted one are displaced one position.
      */
-    void _insert_displace(Eigen::SparseVector<LiteralString> &sparse,
-                          Index index, const std::string &string);
+    void insert_displace(Eigen::SparseVector<LiteralString> &sparse,
+                         Index index, const std::string &string);
 
     /**
      * Helper method to insert a double value in the middle of a Sparse vector.
      * The size of the vector is increased by one, and the elements after the
      * inserted one are displaced one position.
      */
-    void _insert_displace(Eigen::SparseVector<double> &sparse, Index index,
-                          double value);
+    void insert_displace(Eigen::SparseVector<double> &sparse, Index index,
+                         double value);
 
     // Delete methods for SparseVectors
 
@@ -441,22 +441,21 @@ class Nodes {
      * of LiteralString. The size of the vector is decreased by one, and the
      * elements after the deleted one are displaced one position.
      */
-    void _delete_displace(Eigen::SparseVector<LiteralString> &sparse,
-                          int index);
+    void delete_displace(Eigen::SparseVector<LiteralString> &sparse, int index);
 
     /**
      * Helper method to delete an entry at position 'index' in a Sparse vector
      * of doubles. The size of the vector is decreased by one, and the elements
      * after the deleted one are displaced one position.
      */
-    void _delete_displace(Eigen::SparseVector<double> &sparse, int index);
+    void delete_displace(Eigen::SparseVector<double> &sparse, int index);
 
     /**
      * Insert the node given the positions.
      * This is an internal function to be called from
      * add_node. No checks are performed here.
      */
-    void _add_node_insert_idx(Node &node, Index insert_idx);
+    void add_node_insert_idx(Node &node, Index insert_idx);
 };
 
 }  // namespace pycanha
