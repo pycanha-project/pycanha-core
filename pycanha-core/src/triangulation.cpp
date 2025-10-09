@@ -11,13 +11,12 @@
 #include <array>
 #include <cstdint>
 // #include <iostream>
+#include <Eigen/Dense>
 #include <numeric>
 #include <unordered_set>
 #include <utility>
 #include <vector>
 
-#include "Eigen/src/Core/Matrix.h"  // Eigen::RowVectorXd (to supress clang-tidy warning)
-#include "Eigen/src/Core/util/Constants.h"  // Eigen::Dynamics (to supress clang-tidy warning)
 #include "pycanha-core/parameters.hpp"  // pycanha::MeshIndex
 
 namespace pycanha::gmm::trimesher {

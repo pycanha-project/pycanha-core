@@ -119,10 +119,13 @@ if (PYCANHA_OPTION_CPPCHECK)
                 --suppress=unusedFunction --suppress=unmatchedSuppression
                 --suppress=missingIncludeSystem --suppress=toomanyconfigs
                 --suppress=constStatement          
-                --inline-suppr                   
+                --inline-suppr
+                # Supress some warnings here about nomenclature                   
+                --suppress=shadowFunction:*/gmm/primitives.hpp
                 # Supress test files manually if you find bad warnings.
                 --suppress=*:${CMAKE_CURRENT_SOURCE_DIR}/mytest1.cpp
-                --suppress=*:${CMAKE_BINARY_DIR}/_deps/cdt-src/CDT/include/Triangulation.hpp
+                # Supress CDT library
+                --suppress=*:${CMAKE_BINARY_DIR}/_deps/cdt-src/*
                 ${CPP_CHECK_WARNING_AS_ERRORS}
             USES_TERMINAL)
     else()
