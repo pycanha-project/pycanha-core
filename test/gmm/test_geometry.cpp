@@ -1,18 +1,18 @@
 #include <catch2/catch_test_macros.hpp>
-#include <memory>  // std::make_shared
-#include <numbers>
+// #include <memory>  // std::make_shared
+// #include <numbers>
 
 #include "pycanha-core/gmm/geometry.hpp"
 #include "pycanha-core/gmm/primitives.hpp"
-#include "pycanha-core/gmm/thermalmesh.hpp"
-#include "pycanha-core/gmm/transformations.hpp"
+// #include "pycanha-core/gmm/thermalmesh.hpp"
+// #include "pycanha-core/gmm/transformations.hpp"
 #include "pycanha-core/parameters.hpp"
 
 using namespace pycanha;  // NOLINT(build/namespaces)
 
 using pycanha::Point3D;
-using pycanha::gmm::GeometryGroup;
-using pycanha::gmm::GeometryMeshedItem;
+// using pycanha::gmm::GeometryGroup;
+// using pycanha::gmm::GeometryMeshedItem;
 
 TEST_CASE("Geometry Items and Groups",
           "[gmm][geometry][GeometryItem][GeometryGroup]") {
@@ -37,7 +37,7 @@ TEST_CASE("Geometry Items and Groups",
     // TODO: SPHERE
     // TODO: other geometry
 
-    using std::numbers::pi;
+    // using std::numbers::pi;
 
     const Point3D p1(0.0, 0.0, 0.0);
     const Point3D p2(1.0, 0.0, 0.0);
