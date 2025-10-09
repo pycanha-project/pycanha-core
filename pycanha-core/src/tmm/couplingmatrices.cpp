@@ -1,7 +1,8 @@
 #include "pycanha-core/tmm/couplingmatrices.hpp"
 
+#include <bit>
 #include <cmath>
-#include <iomanip>
+#include <cstdint>
 #include <iostream>
 #include <tuple>
 #include <utility>
@@ -9,34 +10,36 @@
 #include "pycanha-core/parameters.hpp"
 #include "pycanha-core/utils/SparseUtils.hpp"
 
+using namespace pycanha;  // NOLINT(build/namespaces)
+
 bool are_coupling_values_almost_equal(double val1, double val2) {
     return fabs(val1 - val2) <=
            ((fabs(val1) < fabs(val2) ? fabs(val2) : fabs(val1)) *
             ALMOST_EQUAL_COUPLING_EPSILON);
 }
 
-CouplingMatrices::CouplingMatrices() {}
+CouplingMatrices::CouplingMatrices() = default;
 
-inline int CouplingMatrices::get_num_diff_nodes() const {
+inline Index CouplingMatrices::get_num_diff_nodes() const {
     return sparse_dd.rows();
 }
 
-inline int CouplingMatrices::get_num_bound_nodes() const {
+inline Index CouplingMatrices::get_num_bound_nodes() const {
     return sparse_db.cols();
 }
 
-inline int CouplingMatrices::get_num_nodes() const {
+inline Index CouplingMatrices::get_num_nodes() const {
     return sparse_db.rows() + sparse_db.cols();
 }
 
-const Eigen::SparseMatrix<double, Eigen::RowMajor> *
+const Eigen::SparseMatrix<double, Eigen::RowMajor>*
 CouplingMatrices::return_sparse_dd() {
     sparse_dd.makeCompressed();
     return &sparse_dd;
 }
 
-const Eigen::SparseMatrix<double, Eigen::RowMajor>
-CouplingMatrices::get_sparse_dd() const {
+Eigen::SparseMatrix<double, Eigen::RowMajor> CouplingMatrices::get_sparse_dd()
+    const {
     return sparse_dd;
 }
 
@@ -71,7 +74,9 @@ void CouplingMatrices::add_new_coupling_from_node_idxs(int idx1, int idx2,
 double CouplingMatrices::get_conductor_value_from_idx(Index idx1, Index idx2) {
     auto [sp_ptr, sp_idx1, sp_idx2] = _get_sp_ptr_and_sp_idx(idx1, idx2);
     if (sp_ptr == nullptr) {
-        if (VERBOSE) std::cout << "ERROR! Invalid indexes." << std::endl;
+        if (VERBOSE) {
+            std::cout << "ERROR! Invalid indexes." << std::endl;
+        }
         return nan("");
     }
     return sp_ptr->coeff(sp_idx1, sp_idx2);
@@ -85,16 +90,18 @@ void CouplingMatrices::set_conductor_value_from_idx(Index idx1, Index idx2,
     auto [sp_ptr, sp_idx1, sp_idx2] = _get_sp_ptr_and_sp_idx(idx1, idx2);
 
     if (sp_ptr == nullptr) {
-        if (VERBOSE)
+        if (VERBOSE) {
             std::cout << "ERROR! Conductor has not been set." << std::endl;
+        }
         return;
     }
 
     if (!_validate_conductor_value(val)) {
         // TODO: Error/log handling
-        if (VERBOSE)
+        if (VERBOSE) {
             std::cout << "VALUE ERROR. Conductor should be positive."
                       << std::endl;
+        }
         return;
     }
 
@@ -102,14 +109,15 @@ void CouplingMatrices::set_conductor_value_from_idx(Index idx1, Index idx2,
     if (!sparse_utils::is_trivial_zero(*sp_ptr, sp_idx1, sp_idx2)) {
         sp_ptr->coeffRef(sp_idx1, sp_idx2) = val;
     } else {
-        if (VERBOSE)
+        if (VERBOSE) {
             std::cout << "Conductor does not exist. Value has not been set. "
                          "Add it before trying to change the value. "
                       << std::endl;
+        }
     }
 }
 
-double *CouplingMatrices::get_conductor_value_ref_from_idx(Index idx1,
+double* CouplingMatrices::get_conductor_value_ref_from_idx(Index idx1,
                                                            Index idx2) {
     // TODO: make this method const, it does not change the model
 
@@ -132,8 +140,12 @@ double *CouplingMatrices::get_conductor_value_ref_from_idx(Index idx1,
 IntAddress CouplingMatrices::get_conductor_value_address_from_idx(Index idx1,
                                                                   Index idx2) {
     // TODO: make this method const, it does not change the model
-    return reinterpret_cast<IntAddress>(
-        get_conductor_value_ref_from_idx(idx1, idx2));
+    auto* ptr = get_conductor_value_ref_from_idx(idx1, idx2);  // double*
+    static_assert(sizeof(IntAddress) >= sizeof(ptr),
+                  "IntAddress must be at least pointer-sized.");
+
+    const auto addr = std::bit_cast<std::uintptr_t>(ptr);
+    return static_cast<IntAddress>(addr);  // IntAddress == uint64_t
 }
 
 Eigen::SparseMatrix<double, Eigen::RowMajor>
@@ -154,26 +166,26 @@ CouplingMatrices::sparse_bb_copy() {
     return sparse_bb;
 }
 
-int CouplingMatrices::get_num_diff_diff_couplings() const {
+Index CouplingMatrices::get_num_diff_diff_couplings() const {
     return sparse_dd.nonZeros();
 }
 
-int CouplingMatrices::get_num_diff_bound_couplings() const {
+Index CouplingMatrices::get_num_diff_bound_couplings() const {
     return sparse_db.nonZeros();
 }
 
-int CouplingMatrices::get_num_bound_bound_couplings() const {
+Index CouplingMatrices::get_num_bound_bound_couplings() const {
     return sparse_bb.nonZeros();
 }
 
-int CouplingMatrices::get_num_total_couplings() const {
+Index CouplingMatrices::get_num_total_couplings() const {
     return get_num_diff_diff_couplings() + get_num_diff_bound_couplings() +
            get_num_bound_bound_couplings();
 }
 
-std::tuple<int, int, double>
+std::tuple<Index, Index, double>
 CouplingMatrices::get_idxs_and_coupling_value_from_coupling_idx(
-    int cidx) const {
+    Index cidx) const {
     if (cidx < 0) {
         std::cout << "Invalid coupling index: " << cidx << std::endl;
         std::cout << "Coupling Index should be positive." << std::endl;
@@ -217,12 +229,12 @@ CouplingMatrices::get_idxs_and_coupling_value_from_coupling_idx(
     return std::make_tuple(-1, -1, nan(""));
 }
 
-bool CouplingMatrices::coupling_exists_from_idxs(int idx1, int idx2) {
+bool CouplingMatrices::coupling_exists_from_idxs(Index idx1, Index idx2) {
     // The function get_conductor_value_ref_from_idx return nullptr if
     //  wrong indices or if the coupling doesn't exists. Maybe is not the most
     //  efficcient way of checking this, but it works for now
 
-    auto val_ptr = get_conductor_value_ref_from_idx(idx1, idx2);
+    const auto* val_ptr = get_conductor_value_ref_from_idx(idx1, idx2);
     return val_ptr != nullptr;
 }
 
@@ -234,7 +246,7 @@ void CouplingMatrices::_move_node(Index to_idx, Index from_idx) {
     // TODO
 }
 
-void CouplingMatrices::print_sparse() {
+void CouplingMatrices::print_sparse() const {
     std::cout << std::endl;
     std::cout << "     Kdd matrix    \n";
     std::cout << "-------------------\n";
@@ -251,16 +263,16 @@ void CouplingMatrices::print_sparse() {
     sparse_utils::print_sparse(sparse_bb);
 }
 
-void CouplingMatrices::_add_node_diff(Index insert_position) {
+void CouplingMatrices::_add_node_diff(Index insert_idx) {
     // NEW STORAGE USING K_dd and K_db
-    sparse_utils::add_zero_row(sparse_db, insert_position);
-    sparse_utils::add_zero_row_col(sparse_dd, insert_position, insert_position);
+    sparse_utils::add_zero_row(sparse_db, insert_idx);
+    sparse_utils::add_zero_row_col(sparse_dd, insert_idx, insert_idx);
 }
 
-void CouplingMatrices::_add_node_bound(Index insert_position) {
+void CouplingMatrices::_add_node_bound(Index insert_idx) {
     // NEW STORAGE USING K_dd and K_db
-    sparse_utils::add_zero_col(sparse_db, insert_position);
-    sparse_utils::add_zero_row_col(sparse_bb, insert_position, insert_position);
+    sparse_utils::add_zero_col(sparse_db, insert_idx);
+    sparse_utils::add_zero_row_col(sparse_bb, insert_idx, insert_idx);
 }
 
 void CouplingMatrices::_remove_node_diff(Index idx) {
@@ -276,22 +288,19 @@ void CouplingMatrices::_remove_node_bound(Index idx) {
 }
 
 void CouplingMatrices::_add_ovw_coupling_sparse(
-    Eigen::SparseMatrix<double, Eigen::RowMajor> &sparse, int sp_idx1,
-    int sp_idx2, double val) {
+    Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse, Index sp_idx1,
+    Index sp_idx2, double val) {
     sparse.coeffRef(sp_idx1, sp_idx2) = val;
 }
 
 void CouplingMatrices::_add_ovw_coupling_sparse_verbose(
-    Eigen::SparseMatrix<double, Eigen::RowMajor> &sparse, int sp_idx1,
-    int sp_idx2, double val) {
+    Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse, Index sp_idx1,
+    Index sp_idx2, double val) {
     if (!sparse_utils::is_trivial_zero(sparse, sp_idx1, sp_idx2)) {
-        // (VERBOSE) -> left this as a tag to find messages that should be
-        // logged in the future
-        double &coupling_val = sparse.coeffRef(sp_idx1, sp_idx2);
+        double& coupling_val = sparse.coeffRef(sp_idx1, sp_idx2);
         if (!are_coupling_values_almost_equal(coupling_val, val)) {
             std::cout << "Duplicated coupling at indexes (" << sp_idx1 << ", "
-                      << sp_idx2;
-            std::cout << "). Overwritting old value: "
+                      << sp_idx2 << "). Overwritting old value: "
                       << sparse.coeff(sp_idx1, sp_idx2) << " with: " << val
                       << std::endl;
         }
@@ -302,60 +311,54 @@ void CouplingMatrices::_add_ovw_coupling_sparse_verbose(
 }
 
 void CouplingMatrices::_add_sum_coupling_sparse(
-    Eigen::SparseMatrix<double, Eigen::RowMajor> &sparse, int sp_idx1,
-    int sp_idx2, double val) {
+    Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse, Index sp_idx1,
+    Index sp_idx2, double val) {
     sparse.coeffRef(sp_idx1, sp_idx2) += val;
 }
 
 void CouplingMatrices::_add_sum_coupling_sparse_verbose(
-    Eigen::SparseMatrix<double, Eigen::RowMajor> &sparse, int sp_idx1,
-    int sp_idx2, double val) {
+    Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse, Index sp_idx1,
+    Index sp_idx2, double val) {
     if (!sparse_utils::is_trivial_zero(sparse, sp_idx1, sp_idx2)) {
-        // (VERBOSE) -> left this as a tag to find messages that should be
-        // logged in the future
         std::cout << "Duplicated coupling at indexes (" << sp_idx1 << ", "
-                  << sp_idx2;
-        std::cout << "). Adding up old value: "
+                  << sp_idx2 << "). Adding up old value: "
                   << sparse.coeff(sp_idx1, sp_idx2) << " with: " << val
                   << std::endl;
     }
-
     _add_sum_coupling_sparse(sparse, sp_idx1, sp_idx2, val);
 }
 
 void CouplingMatrices::_add_new_coupling_sparse(
-    Eigen::SparseMatrix<double, Eigen::RowMajor> &sparse, int sp_idx1,
-    int sp_idx2, double val) {
+    Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse, Index sp_idx1,
+    Index sp_idx2, double val) {
     if (!sparse_utils::is_trivial_zero(sparse, sp_idx1, sp_idx2)) {
-        // TODO: RAISE EXCEPTION
         std::cout << "Duplicated coupling at indexes (" << sp_idx1 << ", "
-                  << sp_idx2;
-        std::cout << "). Old value: " << sparse.coeff(sp_idx1, sp_idx2)
+                  << sp_idx2
+                  << "). Old value: " << sparse.coeff(sp_idx1, sp_idx2)
                   << " left unchanged." << std::endl;
         return;
     }
-
     _add_ovw_coupling_sparse(sparse, sp_idx1, sp_idx2, val);
 }
 
-inline std::tuple<Eigen::SparseMatrix<double, Eigen::RowMajor> *, Index, Index>
+inline std::tuple<Eigen::SparseMatrix<double, Eigen::RowMajor>*, Index, Index>
 CouplingMatrices::_get_sp_ptr_and_sp_idx(Index idx1, Index idx2) {
     if (!_validate_idxs(idx1, idx2)) {
         return {nullptr, -1, -1};
     }
 
-    Eigen::SparseMatrix<double, Eigen::RowMajor> *sparse_ptr;
-    int num_diff_nodes = get_num_diff_nodes();
+    // Initialize to silence cppcoreguidelines-init-variables
+    auto* sparse_ptr =
+        static_cast<Eigen::SparseMatrix<double, Eigen::RowMajor>*>(nullptr);
+    Index num_diff_nodes = get_num_diff_nodes();  // no narrowing
 
-    // Check quadrant (Kdd, Kdb or Kbb)
     if (idx2 < num_diff_nodes) {
-        sparse_ptr = &(sparse_dd);
-
+        sparse_ptr = &sparse_dd;
     } else if (idx1 < num_diff_nodes) {
-        sparse_ptr = &(sparse_db);
+        sparse_ptr = &sparse_db;
         idx2 = idx2 - num_diff_nodes;
     } else {
-        sparse_ptr = &(sparse_bb);
+        sparse_ptr = &sparse_bb;
         idx2 = idx2 - num_diff_nodes;
         idx1 = idx1 - num_diff_nodes;
     }
@@ -363,7 +366,7 @@ CouplingMatrices::_get_sp_ptr_and_sp_idx(Index idx1, Index idx2) {
     return {sparse_ptr, idx1, idx2};
 }
 
-inline bool CouplingMatrices::_validate_idxs(Index &idx1, Index &idx2) {
+inline bool CouplingMatrices::_validate_idxs(Index& idx1, Index& idx2) const {
     if (idx1 < 0 || idx2 < 0 || idx2 >= get_num_nodes() ||
         idx1 >= get_num_nodes()) {
         return false;
@@ -376,35 +379,31 @@ inline bool CouplingMatrices::_validate_idxs(Index &idx1, Index &idx2) {
     return true;
 }
 
-inline bool CouplingMatrices::_validate_idx(Index idx) {
-    if (idx < 0 || idx > get_num_nodes()) {
-        return false;
-    }
-    return true;
+inline bool CouplingMatrices::_validate_idx(Index idx) const {
+    // return !(idx < 0 || idx > get_num_nodes());
+    return idx >= 0 && idx <= get_num_nodes();
 }
 
 inline bool CouplingMatrices::_validate_conductor_value(double value) {
-    if (value < 0.0) {
-        return false;
-    }
-    return true;
+    return value >= 0.0;
 }
 
 void CouplingMatrices::_validate_coupling_call_add_generic(
     int idx1, int idx2, double val, AddCouplingGeneric add_coupling_fun) {
-    // NOTE: All add_coupling function use this method, so invalid indexes or
-    // invalid coupling values error are always printed.
     auto [sp_ptr, sp_idx1, sp_idx2] = _get_sp_ptr_and_sp_idx(idx1, idx2);
     if (sp_ptr == nullptr) {
-        if (VERBOSE) std::cout << "ERROR! Invalid indexes.\n";
+        if (VERBOSE) {
+            std::cout << "ERROR! Invalid indexes.\n";
+        }  // braces
         return;
     }
     if (!_validate_conductor_value(val)) {
-        // TODO: Error/log handling
-        if (VERBOSE) std::cout << "VALUE ERROR. Coupling should be positive.\n";
+        if (VERBOSE) {
+            std::cout << "VALUE ERROR. Coupling should be positive.\n";
+        }
         return;
     }
 
-    // Call the appropiate add_coupling function
-    (this->*add_coupling_fun)(*sp_ptr, sp_idx1, sp_idx2, val);
+    // Call the plain function pointer (no narrowing: Index -> Index)
+    add_coupling_fun(*sp_ptr, sp_idx1, sp_idx2, val);
 }

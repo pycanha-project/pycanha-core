@@ -39,9 +39,7 @@
 #include <memory>
 #include <string>
 
-#include "./nodes.hpp"
-
-using namespace pycanha;  // NOLINT
+namespace pycanha {
 
 enum NodeType : unsigned char { DIFFUSIVE_NODE = 'D', BOUNDARY_NODE = 'B' };
 
@@ -253,5 +251,7 @@ class Node {
      * Deallocate the memory of the local information of the node and set the
      * local storage pointer to null.
      */
-    void _local_storage_destructor();
+    void local_storage_destructor();
 };
+
+}  // namespace pycanha

@@ -8,7 +8,6 @@
 
 #include "./id.hpp"
 
-using namespace pycanha;  // NOLINT
 namespace pycanha::gmm {
 
 using ColorRGB = std::array<uint8_t, 3>;

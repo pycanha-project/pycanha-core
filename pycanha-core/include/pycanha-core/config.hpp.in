@@ -80,7 +80,7 @@ void PYCANHA_ASSERT([[maybe_unused]] const T& expr,
                     [[maybe_unused]] const char* msg) {
 #ifndef NDEBUG
     if (!(expr)) {
-        std::cerr << "Assertion failed: " << msg << std::endl;
+        std::cerr << "Assertion failed: " << msg << "\n";
         assert(false);
     }
 #endif

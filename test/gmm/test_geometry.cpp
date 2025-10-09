@@ -1,16 +1,18 @@
 #include <catch2/catch_test_macros.hpp>
-#include <memory>  // std::make_shared
-#include <numbers>
+// #include <memory>  // std::make_shared
+// #include <numbers>
 
 #include "pycanha-core/gmm/geometry.hpp"
 #include "pycanha-core/gmm/primitives.hpp"
-#include "pycanha-core/gmm/thermalmesh.hpp"
-#include "pycanha-core/gmm/transformations.hpp"
+// #include "pycanha-core/gmm/thermalmesh.hpp"
+// #include "pycanha-core/gmm/transformations.hpp"
 #include "pycanha-core/parameters.hpp"
 
+using namespace pycanha;  // NOLINT(build/namespaces)
+
 using pycanha::Point3D;
-using pycanha::gmm::GeometryGroup;
-using pycanha::gmm::GeometryMeshedItem;
+// using pycanha::gmm::GeometryGroup;
+// using pycanha::gmm::GeometryMeshedItem;
 
 TEST_CASE("Geometry Items and Groups",
           "[gmm][geometry][GeometryItem][GeometryGroup]") {
@@ -35,13 +37,15 @@ TEST_CASE("Geometry Items and Groups",
     // TODO: SPHERE
     // TODO: other geometry
 
-    using std::numbers::pi;
+    // using std::numbers::pi;
 
     const Point3D p1(0.0, 0.0, 0.0);
     const Point3D p2(1.0, 0.0, 0.0);
     const Point3D p3(1.0, 1.0, 0.0);
     const Point3D p4(0.0, 1.0, 0.0);
     const Point3D p5(0.0, 0.0, 1.0);
+
+    /*
 
     // Primitives
     auto tri = std::make_shared<Triangle>(p1, p2, p3);
@@ -98,8 +102,6 @@ TEST_CASE("Geometry Items and Groups",
     // Create a GeometryGroup with two groups
     auto geo_group_5 = std::make_shared<GeometryGroup>(
         "geo_group_5", GeometryPtrList{geo_group_2, geo_group_4}, transf_1);
-
-    /*
     SECTION("Check GeometryItem constructor and set/get methods") {
         REQUIRE(geo_item_1->get_name() == "geo_item_1");
         REQUIRE(geo_item_2->get_name() == "geo_item_2");

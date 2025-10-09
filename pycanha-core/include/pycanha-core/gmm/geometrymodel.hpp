@@ -5,16 +5,11 @@
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
-#include <utility>
-#include <variant>
 #include <vector>
 
 #include "./geometry.hpp"
 #include "./id.hpp"
-#include "./thermalmesh.hpp"
 #include "./transformations.hpp"
-
-using namespace pycanha;  // NOLINT
 
 namespace pycanha::gmm {
 
@@ -81,7 +76,7 @@ class GeometryModel : public UniqueID,
         // Try to add the GeometryItem to the root GeometryGroup
         // Exception will be thrown if not possible (e.g. if the name already
         // exists)
-        _add_configure_geometry_item(item);
+        add_configure_geometry_item(item);
         return item;
     }
 
@@ -101,7 +96,7 @@ class GeometryModel : public UniqueID,
         auto group =
             std::make_shared<GeometryGroup>(name, geometries, transformation);
 
-        _add_configure_geometry_group(group);
+        add_configure_geometry_group(group);
 
         return group;
     }
@@ -123,7 +118,7 @@ class GeometryModel : public UniqueID,
         auto group = std::make_shared<GeometryGroupCutted>(
             name, geometries, cutting_geometry_items, transformation);
 
-        _add_configure_geometry_group(group);
+        add_configure_geometry_group(group);
 
         return group;
     }
@@ -194,7 +189,7 @@ class GeometryModel : public UniqueID,
     TriMeshModel& get_trimesh_model() { return _trimesh_model; }
 
   private:
-    void _add_configure_geometry_item(
+    void add_configure_geometry_item(
         const std::shared_ptr<GeometryMeshedItem>& item) {
         const std::string name = item->get_name();
 
@@ -226,7 +221,7 @@ class GeometryModel : public UniqueID,
             get_id());
     }
 
-    void _add_configure_geometry_group(
+    void add_configure_geometry_group(
         const std::shared_ptr<GeometryGroup>& item) {
         const std::string name = item->get_name();
 

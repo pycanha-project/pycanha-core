@@ -2,6 +2,8 @@
 
 #include "pycanha-core/gmm/triangulation.hpp"
 
+#include "pycanha-core/gmm/trimesh.hpp"
+
 // #include "CDT/include/CDT.h"
 // cppcheck-suppress *
 #include <CDT/include/Triangulation.h>
@@ -9,14 +11,12 @@
 #include <array>
 #include <cstdint>
 // #include <iostream>
+#include <Eigen/Dense>
 #include <numeric>
 #include <unordered_set>
 #include <utility>
 #include <vector>
 
-#include "Eigen/src/Core/Matrix.h"  // Eigen::RowVectorXd (to supress clang-tidy warning)
-#include "Eigen/src/Core/util/Constants.h"  // Eigen::Dynamics (to supress clang-tidy warning)
-#include "pycanha-core/gmm/trimesh.hpp"
 #include "pycanha-core/parameters.hpp"  // pycanha::MeshIndex
 
 namespace pycanha::gmm::trimesher {
@@ -160,7 +160,7 @@ void cdt_trimesher(TriMesh& trimesh) {
 
     for (pycanha::MeshIndex i = 0;
          i < static_cast<pycanha::MeshIndex>(cdt.triangles.size()); i++) {
-        auto& cdt_triangles = cdt.triangles[i].vertices;
+        const auto& cdt_triangles = cdt.triangles[i].vertices;
         triangles.row(i) << cdt_triangles[0], cdt_triangles[1],
             cdt_triangles[2];
     }

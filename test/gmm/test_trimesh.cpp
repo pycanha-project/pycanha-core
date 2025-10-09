@@ -1,5 +1,4 @@
-// NOLINTBEGIN(misc-include-cleaner)
-// #include <Eigen/Core>
+// NOLINTBEGIN(misc-include-cleaner, bugprone-chained-comparison)
 #include <algorithm>
 #include <catch2/catch_test_macros.hpp>
 #include <memory>
@@ -11,6 +10,8 @@
 #include "pycanha-core/gmm/thermalmesh.hpp"
 #include "pycanha-core/gmm/trimesh.hpp"
 #include "pycanha-core/parameters.hpp"
+
+using namespace pycanha;  // NOLINT(build/namespaces)
 
 TEST_CASE("Create rectangular mesh", "[gmm][trimesh]") {
     using pycanha::gmm::Edges;
@@ -430,7 +431,8 @@ TEST_CASE("Mesh a cylinder", "[gmm][trimesh][cylinder]") {
 }
 // NOLINTEND(readability-function-cognitive-complexity)
 
-// NOLINTBEGIN(readability-function-cognitive-complexity)
+// NOLINTBEGIN(readability-function-cognitive-complexity,
+// modernize-use-std-numbers)
 TEST_CASE("Mesh a disc", "[gmm][trimesh][disc]") {
     using pycanha::Point3D;
     using pycanha::gmm::Disc;
@@ -499,7 +501,8 @@ TEST_CASE("Mesh a disc", "[gmm][trimesh][disc]") {
                 (Edges(4) << 12, 13, 14, 15).finished());
     }
 }
-// NOLINTEND(readability-function-cognitive-complexity)
+// NOLINTEND(readability-function-cognitive-complexity,
+// modernize-use-std-numbers)
 
 TEST_CASE("Test the model mesh", "[gmm][trimesh][model]") {
     using pycanha::Point3D;
@@ -590,4 +593,4 @@ TEST_CASE("Test the model mesh", "[gmm][trimesh][model]") {
         // REQUIRE(submesh_cyl.get_face_ids() == trimesh_cyl.get_face_ids());
     }
 }
-// NOLINTEND(misc-include-cleaner)
+// NOLINTEND(misc-include-cleaner, bugprone-chained-comparison)

@@ -23,7 +23,9 @@
 // clang-tidy is suppressed
 // NOLINTBEGIN(cppcoreguidelines-pro-bounds-pointer-arithmetic)
 
-namespace sparse_utils {
+using namespace pycanha;  // NOLINT(build/namespaces)
+
+namespace pycanha::sparse_utils {
 
 // Internal functions
 // TODO: After fix in add_zero_col_row_fun, refactor the internal function and
@@ -468,7 +470,7 @@ void move_cols(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
 
     // Iterate each row
     for (Index iou = 0; iou < sparse.outerSize(); iou++) {
-        int& nnz = sparse.innerNonZeroPtr()[iou];
+        const int& nnz = sparse.innerNonZeroPtr()[iou];
         if (nnz == 0) {
             continue;
         }  // Next-row if there are no coefficients
@@ -483,7 +485,7 @@ void move_cols(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
             tinnidx = sparse.outerIndexPtr()[iou];
             for (Index inn = sparse.outerIndexPtr()[iou];
                  inn < sparse.outerIndexPtr()[iou] + nnz; inn++) {
-                int& col = sparse.innerIndexPtr()[inn];
+                const int& col = sparse.innerIndexPtr()[inn];
                 if (col <= from_idx) {
                     tinnidx++;
                     finnidx++;
@@ -986,6 +988,6 @@ void print_sparse_structure(
     std::cout.flush();
 }
 
-}  // namespace sparse_utils
+}  // namespace pycanha::sparse_utils
 
 // NOLINTEND(cppcoreguidelines-pro-bounds-pointer-arithmetic)

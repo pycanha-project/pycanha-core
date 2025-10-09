@@ -7,8 +7,11 @@
 #include "pycanha-core/gmm/primitives.hpp"
 #include "pycanha-core/parameters.hpp"
 
+using namespace pycanha;  // NOLINT(build/namespaces)
+
 using pycanha::Point3D;
 
+// NOLINTBEGIN(bugprone-chained-comparison)
 TEST_CASE("Triangle Primitive", "[gmm][primitive][triangle]") {
     using pycanha::gmm::Triangle;
 
@@ -666,3 +669,5 @@ TEST_CASE("Cylinder Primitive", "[gmm][primitive][cylinder]") {
         REQUIRE(cyl.from_2d_to_3d(p4_2d).isApprox(p4_3d, LENGTH_TOL));
     }
 }
+
+// NOLINTEND(bugprone-chained-comparison)

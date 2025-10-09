@@ -1,7 +1,7 @@
 #pragma once
 #include <random>
 
-namespace random_generators {
+namespace pycanha::random_generators {
 template <typename RandT>
 class RealGenerator {
   public:
@@ -40,11 +40,12 @@ class IntGenerator {
         _seed = rd();
         _rng.seed(_seed);
     }
-
+    // NOLINTBEGIN(cert-msc51-cpp, cert-msc32-c)
     IntGenerator(RandT min, RandT max, unsigned int seed)
         : _dist(min, max), _seed(seed) {
         _rng.seed(_seed);
     }
+    // NOLINTEND(cert-msc51-cpp, cert-msc32-c)
 
     // Generator fun
     RandT generate_random() { return _dist(_rng); }
@@ -59,4 +60,4 @@ class IntGenerator {
     // Seed
     unsigned int _seed;
 };
-}  // namespace random_generators
+}  // namespace pycanha::random_generators

@@ -1,3 +1,3 @@
 #include "pycanha-core/pycanha-core.hpp"
 
-int main() { print_package_info(); }
+int main() { pycanha::print_package_info(); }

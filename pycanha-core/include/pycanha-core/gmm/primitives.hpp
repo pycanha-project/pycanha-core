@@ -23,7 +23,6 @@
 
 using std::numbers::pi;
 
-using namespace pycanha;  // NOLINT
 // using pycanha::gmm::trimesher::print_point3d;
 // using pycanha::gmm::trimesher::print_point2d;
 

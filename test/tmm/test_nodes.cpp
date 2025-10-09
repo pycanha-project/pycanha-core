@@ -1,14 +1,18 @@
 #include <Eigen/Sparse>
+#include <algorithm>
 #include <catch2/catch_test_macros.hpp>
-#include <catch2/matchers/catch_matchers.hpp>
-#include <catch2/matchers/catch_matchers_floating_point.hpp>
 #include <memory>
 #include <random>
 #include <vector>
 
+#include "pycanha-core/parameters.hpp"
+#include "pycanha-core/tmm/node.hpp"
 #include "pycanha-core/tmm/nodes.hpp"
 
-// NOLINTBEGIN(readability-function-cognitive-complexity)
+using namespace pycanha;  // NOLINT(build/namespaces)
+
+// NOLINTBEGIN(readability-function-cognitive-complexity,
+// bugprone-chained-comparison)
 
 // The seed is constant making the random number generator deterministic (which
 // is what we want for testing)
@@ -114,7 +118,7 @@ TEST_CASE("Node Constructor with Nodes pointer", "[node]") {
     Node tn(usr_num, weak_tns);
 
     // TODO: Add checks
-}  // NOLINTEND(readability-function-cognitive-complexity)
+}
 
 TEST_CASE("Nodes Testing", "[nodes]") {
     // Random double generator for assigning values to node attributes
@@ -218,8 +222,8 @@ TEST_CASE("Nodes Testing", "[nodes]") {
     // NOLINTBEGIN(cppcoreguidelines-pro-bounds-pointer-arithmetic)
 
     // Assert temperatures and capacities are contiguous in memory
-    double* temperatures_vector = tns.T_vector.data();
-    double* capacities_vector = tns.C_vector.data();
+    const double* temperatures_vector = tns.T_vector.data();
+    const double* capacities_vector = tns.C_vector.data();
     for (SizeType i = 0; i < static_cast<SizeType>(N); i++) {
         const auto int_ix = static_cast<SizeType>(internal_order[i]);
         const double node_temp = nodes_vector_copy[int_ix].get_T();
@@ -263,4 +267,5 @@ TEST_CASE("Nodes Testing", "[nodes]") {
     // Additional tests can be added here...
 }
 
-// NOLINTEND(readability-function-cognitive-complexity)
+// NOLINTEND(readability-function-cognitive-complexity,
+// bugprone-chained-comparison)

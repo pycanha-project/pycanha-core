@@ -18,7 +18,6 @@
 #include "pycanha-core/utils/eigenutils.hpp"
 
 using Eigen::seq;
-using namespace pycanha;  // NOLINT
 using pycanha::utils::is_sorted;
 namespace pycanha::gmm {
 

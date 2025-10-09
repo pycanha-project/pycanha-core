@@ -7,6 +7,9 @@
 
 #include "pycanha-core/config.hpp"
 #include "pycanha-core/parameters.hpp"
+#include "pycanha-core/tmm/node.hpp"
+
+using namespace pycanha;  // NOLINT(build/namespaces)
 
 // Default constructor
 Nodes::Nodes() : estimated_number_of_nodes(100), _node_num_mapped(false) {
@@ -240,7 +243,7 @@ void Nodes::add_node(Node& node) {
         return;
     }
 
-    _add_node_insert_idx(node, insert_idx);
+    add_node_insert_idx(node, insert_idx);
 }
 
 void Nodes::add_nodes(std::vector<Node>& node_vector) {
@@ -263,7 +266,7 @@ Getters and setters are always the same except which atributte is needed.
 #define GET_SET_DOUBLE_ATTR(attr)                             \
     bool Nodes::set_##attr(int node_num, double attr) {       \
         if (!_node_num_mapped) {                              \
-            _create_node_num_map();                           \
+            create_node_num_map();                            \
         }                                                     \
         auto it = _usr_to_int_node_num.find(node_num);        \
         if (it != _usr_to_int_node_num.end()) {               \
@@ -276,7 +279,7 @@ Getters and setters are always the same except which atributte is needed.
     }                                                         \
     double Nodes::get_##attr(int node_num) {                  \
         if (!_node_num_mapped) {                              \
-            _create_node_num_map();                           \
+            create_node_num_map();                            \
         }                                                     \
         auto it = _usr_to_int_node_num.find(node_num);        \
         if (it != _usr_to_int_node_num.end()) {               \
@@ -288,7 +291,7 @@ Getters and setters are always the same except which atributte is needed.
     }                                                         \
     double* Nodes::get_##attr##_value_ref(int node_num) {     \
         if (!_node_num_mapped) {                              \
-            _create_node_num_map();                           \
+            create_node_num_map();                            \
         }                                                     \
         auto it = _usr_to_int_node_num.find(node_num);        \
         if (it != _usr_to_int_node_num.end()) {               \
@@ -302,7 +305,7 @@ Getters and setters are always the same except which atributte is needed.
 #define GET_SET_DOUBLE_SPARSE(attr)                           \
     double Nodes::get_##attr(int node_num) {                  \
         if (!_node_num_mapped) {                              \
-            _create_node_num_map();                           \
+            create_node_num_map();                            \
         }                                                     \
         auto it = _usr_to_int_node_num.find(node_num);        \
         if (it != _usr_to_int_node_num.end()) {               \
@@ -314,7 +317,7 @@ Getters and setters are always the same except which atributte is needed.
     }                                                         \
     bool Nodes::set_##attr(int node_num, double value) {      \
         if (!_node_num_mapped) {                              \
-            _create_node_num_map();                           \
+            create_node_num_map();                            \
         }                                                     \
         auto it = _usr_to_int_node_num.find(node_num);        \
         if (it != _usr_to_int_node_num.end()) {               \
@@ -327,7 +330,7 @@ Getters and setters are always the same except which atributte is needed.
     }                                                         \
     double* Nodes::get_##attr##_value_ref(int node_num) {     \
         if (!_node_num_mapped) {                              \
-            _create_node_num_map();                           \
+            create_node_num_map();                            \
         }                                                     \
         auto it = _usr_to_int_node_num.find(node_num);        \
         if (it != _usr_to_int_node_num.end()) {               \
@@ -359,7 +362,7 @@ GET_SET_DOUBLE_SPARSE(aph)
 
 bool Nodes::set_type(int node_num, char Type) {
     if (!_node_num_mapped) {
-        _create_node_num_map();
+        create_node_num_map();
     }
     if (!(Type == 'D' || Type == 'B')) {
         if (VERBOSE) {
@@ -376,12 +379,12 @@ bool Nodes::set_type(int node_num, char Type) {
 
     if (current_type == 'D') {
         if (Type == 'B') {
-            _diffusive_to_boundary(node_num);
+            diffusive_to_boundary(node_num);
         }
         return true;
     } else if (current_type == 'B') {
         if (Type == 'D') {
-            _boundary_to_diffusive(node_num);
+            boundary_to_diffusive(node_num);
         }
         return true;
     } else {
@@ -391,7 +394,7 @@ bool Nodes::set_type(int node_num, char Type) {
 }
 char Nodes::get_type(int node_num) {
     if (!_node_num_mapped) {
-        _create_node_num_map();
+        create_node_num_map();
     }
     auto it = _usr_to_int_node_num.find(node_num);
     if (it != _usr_to_int_node_num.end()) {
@@ -406,7 +409,7 @@ char Nodes::get_type(int node_num) {
     }
 }
 
-void Nodes::_create_node_num_map() const {
+void Nodes::create_node_num_map() const {
     int int_num;
     for (int_num = 0; int_num < _diff_node_num_vector.size(); int_num++) {
         _usr_to_int_node_num[_diff_node_num_vector[int_num]] = int_num;
@@ -420,7 +423,7 @@ void Nodes::_create_node_num_map() const {
     _node_num_mapped = true;
 }
 
-void Nodes::_diffusive_to_boundary(int usr_node_num) {
+void Nodes::diffusive_to_boundary(int usr_node_num) {
     std::cout << "TODO: Not implemented yet\n";
     // 1. Copy all the info of usr_node_num to a new node not associated with
     // any TNs
@@ -429,7 +432,7 @@ void Nodes::_diffusive_to_boundary(int usr_node_num) {
     // 4. Insert the copy of the node in the model
 }
 
-void Nodes::_boundary_to_diffusive(int usr_node_num) {
+void Nodes::boundary_to_diffusive(int usr_node_num) {
     std::cout << "TODO: Not implemented yet\n";
     // 1. Copy all the info of usr_node_num to a new node not associated with
     // any TNs
@@ -440,7 +443,7 @@ void Nodes::_boundary_to_diffusive(int usr_node_num) {
 
 Index Nodes::get_idx_from_node_num(int node_num) const {
     if (!_node_num_mapped) {
-        _create_node_num_map();
+        create_node_num_map();
     }
     auto it = _usr_to_int_node_num.find(node_num);
     if (it != _usr_to_int_node_num.end()) {
@@ -453,7 +456,7 @@ Index Nodes::get_idx_from_node_num(int node_num) const {
 
 int Nodes::get_node_num_from_idx(Index idx) const {
     if (!_node_num_mapped) {
-        _create_node_num_map();
+        create_node_num_map();
     }
     if (0 <= idx && idx < _diff_node_num_vector.size()) {
         return _diff_node_num_vector[idx];
@@ -487,8 +490,8 @@ Node Nodes::get_node_from_idx(Index idx) {
     return Node(get_node_num_from_idx(idx), _self_pointer);
 }
 
-void Nodes::_insert_displace(Eigen::SparseVector<LiteralString>& sparse,
-                             Index index, const LiteralString& string) {
+void Nodes::insert_displace(Eigen::SparseVector<LiteralString>& sparse,
+                            Index index, const LiteralString& string) {
     sparse.conservativeResize(sparse.size() + 1);
     for (int i = sparse.nonZeros() - 1;
          i >= 0 && sparse.innerIndexPtr()[i] >= index; i--) {
@@ -499,13 +502,13 @@ void Nodes::_insert_displace(Eigen::SparseVector<LiteralString>& sparse,
     }
 }
 
-void Nodes::_insert_displace(Eigen::SparseVector<LiteralString>& sparse,
-                             Eigen::Index index, const std::string& string) {
-    _insert_displace(sparse, index, LiteralString(string));
+void Nodes::insert_displace(Eigen::SparseVector<LiteralString>& sparse,
+                            Eigen::Index index, const std::string& string) {
+    insert_displace(sparse, index, LiteralString(string));
 }
 
-void Nodes::_insert_displace(Eigen::SparseVector<double>& sparse, Index index,
-                             double value) {
+void Nodes::insert_displace(Eigen::SparseVector<double>& sparse, Index index,
+                            double value) {
     sparse.conservativeResize(sparse.size() + 1);
     for (int i = sparse.nonZeros() - 1;
          i >= 0 && sparse.innerIndexPtr()[i] >= index; i--) {
@@ -516,8 +519,8 @@ void Nodes::_insert_displace(Eigen::SparseVector<double>& sparse, Index index,
     }
 }
 
-void Nodes::_delete_displace(Eigen::SparseVector<LiteralString>& sparse,
-                             int index) {
+void Nodes::delete_displace(Eigen::SparseVector<LiteralString>& sparse,
+                            int index) {
     int to_remove_index = -1;
     for (int i = 0; i < sparse.nonZeros(); i++) {
         if (sparse.innerIndexPtr()[i] == index) {
@@ -534,7 +537,7 @@ void Nodes::_delete_displace(Eigen::SparseVector<LiteralString>& sparse,
     }
 }
 
-void Nodes::_delete_displace(Eigen::SparseVector<double>& sparse, int index) {
+void Nodes::delete_displace(Eigen::SparseVector<double>& sparse, int index) {
     sparse.coeffRef(index) = 0.0;
     sparse.prune(ZERO_THR_ATTR, 1.0);  // sparse.prune(ref,prec); num <=
                                        // ref*prec
@@ -542,7 +545,7 @@ void Nodes::_delete_displace(Eigen::SparseVector<double>& sparse, int index) {
 
 std::string Nodes::get_literal_C(int node_num) const {
     if (!_node_num_mapped) {
-        _create_node_num_map();
+        create_node_num_map();
     }
     auto it = _usr_to_int_node_num.find(node_num);
     if (it != _usr_to_int_node_num.end()) {
@@ -555,7 +558,7 @@ std::string Nodes::get_literal_C(int node_num) const {
 
 bool Nodes::set_literal_C(int node_num, const std::string& str) {
     if (!_node_num_mapped) {
-        _create_node_num_map();
+        create_node_num_map();
     }
     auto it = _usr_to_int_node_num.find(node_num);
     if (it != _usr_to_int_node_num.end()) {
@@ -584,19 +587,19 @@ void Nodes::remove_node(int node_num) {
     T_vector.erase(T_vector.begin() + idx);
     C_vector.erase(C_vector.begin() + idx);
 
-    _delete_displace(qs_vector, idx);
-    _delete_displace(qa_vector, idx);
-    _delete_displace(qe_vector, idx);
-    _delete_displace(qi_vector, idx);
-    _delete_displace(qr_vector, idx);
-    _delete_displace(a_vector, idx);
-    _delete_displace(fx_vector, idx);
-    _delete_displace(fy_vector, idx);
-    _delete_displace(fz_vector, idx);
-    _delete_displace(eps_vector, idx);
-    _delete_displace(aph_vector, idx);
+    delete_displace(qs_vector, idx);
+    delete_displace(qa_vector, idx);
+    delete_displace(qe_vector, idx);
+    delete_displace(qi_vector, idx);
+    delete_displace(qr_vector, idx);
+    delete_displace(a_vector, idx);
+    delete_displace(fx_vector, idx);
+    delete_displace(fy_vector, idx);
+    delete_displace(fz_vector, idx);
+    delete_displace(eps_vector, idx);
+    delete_displace(aph_vector, idx);
 
-    _delete_displace(literals_C, idx);
+    delete_displace(literals_C, idx);
 
     // Reshape node vector and conductors
     if (idx < _diff_node_num_vector.size()) {
@@ -608,7 +611,7 @@ void Nodes::remove_node(int node_num) {
     _node_num_mapped = false;
 }
 
-void Nodes::_add_node_insert_idx(Node& node, Index insert_idx) {
+void Nodes::add_node_insert_idx(Node& node, Index insert_idx) {
     // Info obtained from "node"
     char type = node.get_type();
     int node_num = node.get_node_num();
@@ -639,17 +642,17 @@ void Nodes::_add_node_insert_idx(Node& node, Index insert_idx) {
     FILL_VECTOR_ATTR(C)
 
     // FILL_VECTOR_ATTR(aph)
-    _insert_displace(qs_vector, insert_idx, node.get_qs());
-    _insert_displace(qa_vector, insert_idx, node.get_qa());
-    _insert_displace(qe_vector, insert_idx, node.get_qe());
-    _insert_displace(qi_vector, insert_idx, node.get_qi());
-    _insert_displace(qr_vector, insert_idx, node.get_qr());
-    _insert_displace(a_vector, insert_idx, node.get_a());
-    _insert_displace(fx_vector, insert_idx, node.get_fx());
-    _insert_displace(fy_vector, insert_idx, node.get_fy());
-    _insert_displace(fz_vector, insert_idx, node.get_fz());
-    _insert_displace(eps_vector, insert_idx, node.get_eps());
-    _insert_displace(aph_vector, insert_idx, node.get_aph());
+    insert_displace(qs_vector, insert_idx, node.get_qs());
+    insert_displace(qa_vector, insert_idx, node.get_qa());
+    insert_displace(qe_vector, insert_idx, node.get_qe());
+    insert_displace(qi_vector, insert_idx, node.get_qi());
+    insert_displace(qr_vector, insert_idx, node.get_qr());
+    insert_displace(a_vector, insert_idx, node.get_a());
+    insert_displace(fx_vector, insert_idx, node.get_fx());
+    insert_displace(fy_vector, insert_idx, node.get_fy());
+    insert_displace(fz_vector, insert_idx, node.get_fz());
+    insert_displace(eps_vector, insert_idx, node.get_eps());
+    insert_displace(aph_vector, insert_idx, node.get_aph());
 
     // TODO: The Sparse Vector for LiteralString is not working properly. FIX
     // _insert_displace(literals_C, insert_idx, node.get_literal_C());

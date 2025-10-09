@@ -41,6 +41,7 @@
 
 #include "../config.hpp"
 
+namespace pycanha {
 // Enable/Disable Profiling
 using pycanha::PROFILING;
 
@@ -172,3 +173,5 @@ class InstrumentationTimer {
 #define PROFILE_SCOPE(name)
 #define PROFILE_FUNCTION()
 #endif
+
+}  // namespace pycanha

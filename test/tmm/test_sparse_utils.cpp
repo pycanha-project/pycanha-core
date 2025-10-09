@@ -4,12 +4,15 @@
 #include <utility>
 #include <vector>
 
+#include "pycanha-core/parameters.hpp"
 #include "pycanha-core/utils/RandomGenerators.hpp"
 #include "pycanha-core/utils/SparseUtils.hpp"
 
 // NOLINTBEGIN(readability-function-cognitive-complexity)
 
-using namespace sparse_utils;  // NOLINT
+using namespace pycanha;  // NOLINT(build/namespaces)
+
+using namespace pycanha::sparse_utils;  // NOLINT(build/namespaces)
 
 namespace {
 using VectorIndex = pycanha::VectorIndex;  // NOLINT(misc-include-cleaner)
@@ -300,7 +303,7 @@ void remove_test() {
     random_generators::IntGenerator<Index> random_bool(0, 1, 666);
     constexpr int compress_matrix_every = 4;
 
-    bool row_or_col_to_remove = false;
+    bool row_or_col_to_remove = false;  // cppcheck-suppress unreadVariable
     int remove_count = 0;
 
     while ((sparse.rows() > 1) && (sparse.cols() > 1)) {
@@ -430,8 +433,8 @@ void has_same_structure_test() {
         // Different reserved boundaries per row (capacity) -> false
         {
             const auto rows = static_cast<int>(a.rows());
-            Eigen::VectorXi cap_a = Eigen::VectorXi::Constant(rows, 2);
-            Eigen::VectorXi cap_b = Eigen::VectorXi::Constant(rows, 6);
+            const Eigen::VectorXi cap_a = Eigen::VectorXi::Constant(rows, 2);
+            const Eigen::VectorXi cap_b = Eigen::VectorXi::Constant(rows, 6);
             a.reserve(cap_a);
             b.reserve(cap_b);
             REQUIRE_FALSE(has_same_structure(a, b));

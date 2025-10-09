@@ -15,7 +15,7 @@
 
 #include "./nodes.hpp"
 
-using namespace pycanha;  // NOLINT
+namespace pycanha {
 
 class CouplingMatrices {
     friend class Nodes;
@@ -24,9 +24,9 @@ class CouplingMatrices {
 
   public:
     // Interface
-    [[nodiscard]] inline int get_num_diff_nodes() const;
-    [[nodiscard]] inline int get_num_bound_nodes() const;
-    [[nodiscard]] inline int get_num_nodes() const;
+    [[nodiscard]] inline Index get_num_diff_nodes() const;
+    [[nodiscard]] inline Index get_num_bound_nodes() const;
+    [[nodiscard]] inline Index get_num_nodes() const;
 
     // Numerical values. TODO: Make private
     Eigen::SparseMatrix<double, Eigen::RowMajor> sparse_dd;
@@ -59,18 +59,18 @@ class CouplingMatrices {
     double get_conductor_value_from_idx(Index idx1, Index idx2);
 
     // Set value
-    void set_conductor_value_from_idx(Index i, Index j, double val);
+    void set_conductor_value_from_idx(Index idx1, Index idx2, double val);
 
     // Get value ref
-    double *get_conductor_value_ref_from_idx(Index idx1, Index idx2);
+    double* get_conductor_value_ref_from_idx(Index idx1, Index idx2);
 
     // Get address of value
-    IntAddress get_conductor_value_address_from_idx(Index i, Index j);
+    IntAddress get_conductor_value_address_from_idx(Index idx1, Index idx2);
 
     // Return the sparse matrix representation
-    const Eigen::SparseMatrix<double, Eigen::RowMajor> *return_sparse_dd();
-    [[nodiscard]] const Eigen::SparseMatrix<double, Eigen::RowMajor>
-    get_sparse_dd() const;
+    const Eigen::SparseMatrix<double, Eigen::RowMajor>* return_sparse_dd();
+    [[nodiscard]] Eigen::SparseMatrix<double, Eigen::RowMajor> get_sparse_dd()
+        const;
 
     // Return a copy of the sparse matrix
     Eigen::SparseMatrix<double, Eigen::RowMajor> sparse_dd_copy();
@@ -78,17 +78,17 @@ class CouplingMatrices {
     Eigen::SparseMatrix<double, Eigen::RowMajor> sparse_bb_copy();
 
     // Num couplings
-    [[nodiscard]] int get_num_diff_diff_couplings() const;
-    [[nodiscard]] int get_num_diff_bound_couplings() const;
-    [[nodiscard]] int get_num_bound_bound_couplings() const;
-    [[nodiscard]] int get_num_total_couplings() const;
+    [[nodiscard]] Index get_num_diff_diff_couplings() const;
+    [[nodiscard]] Index get_num_diff_bound_couplings() const;
+    [[nodiscard]] Index get_num_bound_bound_couplings() const;
+    [[nodiscard]] Index get_num_total_couplings() const;
 
     // For coupling iteration
-    [[nodiscard]] std::tuple<int, int, double>
-    get_idxs_and_coupling_value_from_coupling_idx(int cidx) const;
-    bool coupling_exists_from_idxs(int idx1, int idx2);
+    [[nodiscard]] std::tuple<Index, Index, double>
+    get_idxs_and_coupling_value_from_coupling_idx(Index cidx) const;
+    bool coupling_exists_from_idxs(Index idx1, Index idx2);
 
-    void print_sparse();
+    void print_sparse() const;
 
     void reserve(int nnz);
 
@@ -107,48 +107,40 @@ class CouplingMatrices {
     void _remove_node_diff(Index idx);
     void _remove_node_bound(Index idx);
 
-    using AddCouplingGeneric = void (CouplingMatrices::*)(
-        Eigen::SparseMatrix<double, Eigen::RowMajor> &, int, int, double);
+    using AddCouplingGeneric = void (*)(
+        Eigen::SparseMatrix<double, Eigen::RowMajor>&, Index, Index, double);
 
-    void _add_ovw_coupling_sparse(
-        Eigen::SparseMatrix<double, Eigen::RowMajor> &sparse, int sp_idx1,
-        int sp_idx2, double val);  ///< Add entry to the sparse matrix,
-                                   ///< overwriting if already exists.
+    // Static helpers
+    static void _add_ovw_coupling_sparse(
+        Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse, Index sp_idx1,
+        Index sp_idx2, double val);
 
-    void _add_ovw_coupling_sparse_verbose(
-        Eigen::SparseMatrix<double, Eigen::RowMajor> &sparse, int sp_idx1,
-        int sp_idx2,
-        double val);  ///< Add entry to the sparse matrix, overwriting if
-                      ///< already exists. Prints message if overwrite.
+    static void _add_sum_coupling_sparse(
+        Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse, Index sp_idx1,
+        Index sp_idx2, double val);
 
-    void _add_sum_coupling_sparse(
-        Eigen::SparseMatrix<double, Eigen::RowMajor> &sparse, int sp_idx1,
-        int sp_idx2, double val);  ///< Add entry to the sparse matrix, sum the
-                                   ///< values if already exists.
+    // These can also be static (they don't use `this`)
+    static void _add_ovw_coupling_sparse_verbose(
+        Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse, Index sp_idx1,
+        Index sp_idx2, double val);
 
-    void _add_sum_coupling_sparse_verbose(
-        Eigen::SparseMatrix<double, Eigen::RowMajor> &sparse, int sp_idx1,
-        int sp_idx2,
-        double val);  ///< Add entry to the sparse matrix, sum the values if
-                      ///< already exists. Prints message if already exists.
+    static void _add_sum_coupling_sparse_verbose(
+        Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse, Index sp_idx1,
+        Index sp_idx2, double val);
 
-    void _add_new_coupling_sparse(
-        Eigen::SparseMatrix<double, Eigen::RowMajor> &sparse, int sp_idx1,
-        int sp_idx2, double val);  ///< Add entry to the sparse matrix, only if
-                                   ///< wasn't there already.
+    static void _add_new_coupling_sparse(
+        Eigen::SparseMatrix<double, Eigen::RowMajor>&, Index, Index, double);
 
-    // From internal numbers idx1 and idx2, get the correct matrix ptr (Kdd, Kdb
-    // or Kbb) and the indexes in that matrix
-    inline std::tuple<Eigen::SparseMatrix<double, Eigen::RowMajor> *, Index,
+    inline std::tuple<Eigen::SparseMatrix<double, Eigen::RowMajor>*, Index,
                       Index>
     _get_sp_ptr_and_sp_idx(Index idx1, Index idx2);
 
-    // Ensures idx2 > idx1 (swap values if not) and that the indexes
-    //  are inside the matrices. Return fale otherwise.
-    // TODO Raise exception instead of returning bool
-    inline bool _validate_idxs(Index &idx1, Index &idx2);
-    inline bool _validate_idx(Index idx);
-    inline bool _validate_conductor_value(double value);
+    // These don’t mutate object state -> const
+    inline bool _validate_idxs(Index& idx1, Index& idx2) const;
+    inline bool _validate_idx(Index idx) const;
+
+    // Doesn’t depend on object state -> static
+    static inline bool _validate_conductor_value(double value);
 
     void _validate_coupling_call_add_generic(
         int idx1, int idx2, double val, AddCouplingGeneric add_coupling_fun);
@@ -156,3 +148,5 @@ class CouplingMatrices {
     // TODO
     void _diff_to_bound(Index insert_position, Index int_bound_num);
 };
+
+}  // namespace pycanha

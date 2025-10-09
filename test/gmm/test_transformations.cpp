@@ -1,4 +1,4 @@
-// NOLINTBEGIN(misc-include-cleaner)
+// NOLINTBEGIN(misc-include-cleaner, bugprone-chained-comparison)
 #include <Eigen/Core>
 #include <catch2/catch_test_macros.hpp>
 #include <numbers>
@@ -198,4 +198,4 @@ TEST_CASE("CoordinateTransformation", "[gmm][coordinate_transformation]") {
     }
 }
 
-// NOLINTEND(misc-include-cleaner)
+// NOLINTEND(misc-include-cleaner, bugprone-chained-comparison)
