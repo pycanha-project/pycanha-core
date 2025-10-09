@@ -470,7 +470,7 @@ void move_cols(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
 
     // Iterate each row
     for (Index iou = 0; iou < sparse.outerSize(); iou++) {
-        int& nnz = sparse.innerNonZeroPtr()[iou];
+        const int& nnz = sparse.innerNonZeroPtr()[iou];
         if (nnz == 0) {
             continue;
         }  // Next-row if there are no coefficients
@@ -485,7 +485,7 @@ void move_cols(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
             tinnidx = sparse.outerIndexPtr()[iou];
             for (Index inn = sparse.outerIndexPtr()[iou];
                  inn < sparse.outerIndexPtr()[iou] + nnz; inn++) {
-                int& col = sparse.innerIndexPtr()[inn];
+                const int& col = sparse.innerIndexPtr()[inn];
                 if (col <= from_idx) {
                     tinnidx++;
                     finnidx++;

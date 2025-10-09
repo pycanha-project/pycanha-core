@@ -303,7 +303,7 @@ void remove_test() {
     random_generators::IntGenerator<Index> random_bool(0, 1, 666);
     constexpr int compress_matrix_every = 4;
 
-    bool row_or_col_to_remove = false;
+    bool row_or_col_to_remove = false;  // cppcheck-suppress unreadVariable
     int remove_count = 0;
 
     while ((sparse.rows() > 1) && (sparse.cols() > 1)) {

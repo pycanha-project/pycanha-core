@@ -759,10 +759,10 @@ inline void GeometryGroup::iterate_create_cut_groups(
         cutting_primitives.emplace_back();
     }
 
-    std::vector<std::shared_ptr<Primitive>> this_group_cutting_primitives;
     // Check if I'm actually a GeometryGroupCutted by trying to dynamic casting
     // *this to GeometryGroupCutted
     if (auto* group_cutted = dynamic_cast<GeometryGroupCutted*>(this)) {
+        std::vector<std::shared_ptr<Primitive>> this_group_cutting_primitives;
         // If I'm a GeometryGroupCutted, iterate over all cutting primitives
         for (const auto& item : group_cutted->get_cutting_geometry_items()) {
             auto current_coord_transf =

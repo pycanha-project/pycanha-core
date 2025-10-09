@@ -160,7 +160,7 @@ void cdt_trimesher(TriMesh& trimesh) {
 
     for (pycanha::MeshIndex i = 0;
          i < static_cast<pycanha::MeshIndex>(cdt.triangles.size()); i++) {
-        auto& cdt_triangles = cdt.triangles[i].vertices;
+        const auto& cdt_triangles = cdt.triangles[i].vertices;
         triangles.row(i) << cdt_triangles[0], cdt_triangles[1],
             cdt_triangles[2];
     }

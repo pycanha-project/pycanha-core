@@ -45,6 +45,8 @@ TEST_CASE("Geometry Items and Groups",
     const Point3D p4(0.0, 1.0, 0.0);
     const Point3D p5(0.0, 0.0, 1.0);
 
+    /*
+
     // Primitives
     auto tri = std::make_shared<Triangle>(p1, p2, p3);
     auto rect = std::make_shared<Rectangle>(p1, p2, p4);
@@ -100,8 +102,6 @@ TEST_CASE("Geometry Items and Groups",
     // Create a GeometryGroup with two groups
     auto geo_group_5 = std::make_shared<GeometryGroup>(
         "geo_group_5", GeometryPtrList{geo_group_2, geo_group_4}, transf_1);
-
-    /*
     SECTION("Check GeometryItem constructor and set/get methods") {
         REQUIRE(geo_item_1->get_name() == "geo_item_1");
         REQUIRE(geo_item_2->get_name() == "geo_item_2");

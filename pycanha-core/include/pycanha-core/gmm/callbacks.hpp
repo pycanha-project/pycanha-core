@@ -19,7 +19,7 @@ class GeometryUpdateCallback {
     void callback_with_id(GeometryIdType id) {
         std::cout << "Callback fun. Id: " << id << '\n';
         // Do something
-        for (auto& callback : _callbacks) {
+        for (const auto& callback : _callbacks) {
             std::cout << "Calling callback\n";
             if (callback) {
                 callback(id);

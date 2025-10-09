@@ -234,7 +234,7 @@ bool CouplingMatrices::coupling_exists_from_idxs(Index idx1, Index idx2) {
     //  wrong indices or if the coupling doesn't exists. Maybe is not the most
     //  efficcient way of checking this, but it works for now
 
-    auto* val_ptr = get_conductor_value_ref_from_idx(idx1, idx2);
+    const auto* val_ptr = get_conductor_value_ref_from_idx(idx1, idx2);
     return val_ptr != nullptr;
 }
 

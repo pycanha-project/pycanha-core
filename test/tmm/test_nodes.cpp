@@ -222,8 +222,8 @@ TEST_CASE("Nodes Testing", "[nodes]") {
     // NOLINTBEGIN(cppcoreguidelines-pro-bounds-pointer-arithmetic)
 
     // Assert temperatures and capacities are contiguous in memory
-    double* temperatures_vector = tns.T_vector.data();
-    double* capacities_vector = tns.C_vector.data();
+    const double* temperatures_vector = tns.T_vector.data();
+    const double* capacities_vector = tns.C_vector.data();
     for (SizeType i = 0; i < static_cast<SizeType>(N); i++) {
         const auto int_ix = static_cast<SizeType>(internal_order[i]);
         const double node_temp = nodes_vector_copy[int_ix].get_T();
