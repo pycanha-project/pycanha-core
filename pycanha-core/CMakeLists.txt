@@ -106,3 +106,8 @@ if(${PYCANHA_OPTION_LTO})
     target_enable_lto(${LIB_NAME} optimized)
 endif()
 
+# Add clang-tidy to the library
+if (PYCANHA_OPTION_CLANG_TIDY)
+  add_clang_tidy_to_target(${LIB_NAME})
+endif()
+
