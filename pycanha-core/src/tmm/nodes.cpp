@@ -1,9 +1,13 @@
 #include "pycanha-core/tmm/nodes.hpp"
 
+#include <algorithm>
+#include <cmath>
+#include <cstdint>
 #include <iostream>
 #include <memory>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "pycanha-core/config.hpp"
 #include "pycanha-core/parameters.hpp"
@@ -21,7 +25,7 @@ Nodes::Nodes() : estimated_number_of_nodes(100), _node_num_mapped(false) {
     // Create the shared pointer with a dummy destructor, otherwise TNs
     // destructor would be called twice
     _self_pointer = std::shared_ptr<Nodes>(
-        this, [](Nodes* p) { std::cout << "Self deleting \n"; });
+        this, [](Nodes* /*p*/) { std::cout << "Self deleting \n"; });
 }
 
 // Copy Constructor
@@ -64,7 +68,7 @@ Nodes::Nodes(const Nodes& other)
     // Create the shared pointer with a dummy destructor, otherwise TNs
     // destructor would be called twice
     _self_pointer = std::shared_ptr<Nodes>(
-        this, [](Nodes* p) { std::cout << "Self deleting \n"; });
+        this, [](Nodes* /*p*/) { std::cout << "Self deleting \n"; });
 }
 
 // Copy Assignment Operator
@@ -109,7 +113,7 @@ Nodes& Nodes::operator=(const Nodes& other) {
 
         // Recreate self_pointer
         _self_pointer = std::shared_ptr<Nodes>(
-            this, [](Nodes* p) { std::cout << "Self deleting \n"; });
+            this, [](Nodes* /*p*/) { std::cout << "Self deleting \n"; });
     }
     return *this;
 }
@@ -216,11 +220,11 @@ Nodes::~Nodes() {
 
 void Nodes::add_node(Node& node) {
     // Info obtained from "node"
-    char type = node.get_type();
-    int node_num = node.get_node_num();
+    const char type = node.get_type();
+    const int node_num = node.get_node_num();
 
     // Update the node number mapping
-    Index insert_idx;
+    Index insert_idx = 0;
 
     if (_usr_to_int_node_num.find(node_num) != _usr_to_int_node_num.end()) {
         // TODO: ERROR. Duplicated node
@@ -364,7 +368,7 @@ bool Nodes::set_type(int node_num, char Type) {
     if (!_node_num_mapped) {
         create_node_num_map();
     }
-    if (!(Type == 'D' || Type == 'B')) {
+    if (Type != 'D' && Type != 'B') {
         if (VERBOSE) {
             std::cout << "Error: Invalid node type. It should be 'D' or 'B'.\n";
         }
@@ -410,7 +414,7 @@ char Nodes::get_type(int node_num) {
 }
 
 void Nodes::create_node_num_map() const {
-    int int_num;
+    int int_num = 0;
     for (int_num = 0; int_num < _diff_node_num_vector.size(); int_num++) {
         _usr_to_int_node_num[_diff_node_num_vector[int_num]] = int_num;
     }
@@ -449,7 +453,7 @@ Index Nodes::get_idx_from_node_num(int node_num) const {
     if (it != _usr_to_int_node_num.end()) {
         return it->second;
     } else {
-        std::cout << "Error: Node does not exists" << std::endl;
+        std::cout << "Error: Node does not exists" << '\n';
         return -1;
     }
 }
@@ -470,12 +474,8 @@ int Nodes::get_node_num_from_idx(Index idx) const {
     }
 }
 
-bool Nodes::is_node(int node_num) {
-    if (get_idx_from_node_num(node_num) != -1) {
-        return true;
-    } else {
-        return false;
-    }
+bool Nodes::is_node(int node_num) const {
+    return get_idx_from_node_num(node_num) != -1;
 }
 
 Node Nodes::get_node_from_node_num(int node_num) {
@@ -487,7 +487,7 @@ Node Nodes::get_node_from_node_num(int node_num) {
 }
 
 Node Nodes::get_node_from_idx(Index idx) {
-    return Node(get_node_num_from_idx(idx), _self_pointer);
+    return {get_node_num_from_idx(idx), _self_pointer};
 }
 
 void Nodes::insert_displace(Eigen::SparseVector<LiteralString>& sparse,
@@ -520,24 +520,23 @@ void Nodes::insert_displace(Eigen::SparseVector<double>& sparse, Index index,
 }
 
 void Nodes::delete_displace(Eigen::SparseVector<LiteralString>& sparse,
-                            int index) {
-    int to_remove_index = -1;
-    for (int i = 0; i < sparse.nonZeros(); i++) {
-        if (sparse.innerIndexPtr()[i] == index) {
-            to_remove_index = i;
-            break;
+                            Index index) {
+    std::vector<int> indices;
+    std::vector<LiteralString> values;
+    for (typename Eigen::SparseVector<LiteralString>::InnerIterator it(sparse);
+         it; ++it) {
+        if (it.index() != index) {
+            indices.push_back(it.index() > index ? it.index() - 1 : it.index());
+            values.push_back(it.value());
         }
     }
-    if (to_remove_index >= 0) {
-        for (int i = to_remove_index + 1; i < sparse.nonZeros(); i++) {
-            sparse.innerIndexPtr()[i - 1] = sparse.innerIndexPtr()[i] - 1;
-            sparse.valuePtr()[i - 1] = sparse.valuePtr()[i];
-        }
-        sparse.conservativeResize(sparse.size() - 1);
+    sparse.setZero();
+    for (size_t i = 0; i < indices.size(); ++i) {
+        sparse.coeffRef(indices[i]) = values[i];
     }
 }
 
-void Nodes::delete_displace(Eigen::SparseVector<double>& sparse, int index) {
+void Nodes::delete_displace(Eigen::SparseVector<double>& sparse, Index index) {
     sparse.coeffRef(index) = 0.0;
     sparse.prune(ZERO_THR_ATTR, 1.0);  // sparse.prune(ref,prec); num <=
                                        // ref*prec
@@ -552,7 +551,7 @@ std::string Nodes::get_literal_C(int node_num) const {
         return literals_C.coeff(it->second).get_literal();
     } else {
         std::cout << "Get Error: Node does not exist.\n";
-        return std::string();
+        return {};
     }
 }
 
@@ -576,8 +575,7 @@ void Nodes::remove_node(int node_num) {
     if (idx < 0) {
         // Node does not exist
         if (VERBOSE) {
-            std::cout << "Node " << node_num << " does not exists."
-                      << std::endl;
+            std::cout << "Node " << node_num << " does not exists." << '\n';
         }
         return;
     }
@@ -605,16 +603,17 @@ void Nodes::remove_node(int node_num) {
     if (idx < _diff_node_num_vector.size()) {
         _diff_node_num_vector.erase(_diff_node_num_vector.begin() + idx);
     } else {
-        _bound_node_num_vector.erase(_bound_node_num_vector.begin() +
-                                     (idx - _diff_node_num_vector.size()));
+        _bound_node_num_vector.erase(
+            _bound_node_num_vector.begin() +
+            (idx - static_cast<Index>(_diff_node_num_vector.size())));
     }
     _node_num_mapped = false;
 }
 
 void Nodes::add_node_insert_idx(Node& node, Index insert_idx) {
     // Info obtained from "node"
-    char type = node.get_type();
-    int node_num = node.get_node_num();
+    const char type = node.get_type();
+    const int node_num = node.get_node_num();
 
     if (type == 'D') {
         _diff_node_num_vector.insert(_diff_node_num_vector.begin() + insert_idx,
@@ -633,13 +632,11 @@ void Nodes::add_node_insert_idx(Node& node, Index insert_idx) {
     _node_num_mapped = false;
     // int nn = num_nodes() + 1;
 
-// Fill the containers with the node properties
-#define FILL_VECTOR_ATTR(attr)                           \
-    auto it_##attr = attr##_vector.begin() + insert_idx; \
-    attr##_vector.insert(it_##attr, node.get_##attr());
-
-    FILL_VECTOR_ATTR(T)
-    FILL_VECTOR_ATTR(C)
+    // Fill the containers with the node properties
+    auto it_t = T_vector.begin() + insert_idx;
+    T_vector.insert(it_t, node.get_T());
+    auto it_c = C_vector.begin() + insert_idx;
+    C_vector.insert(it_c, node.get_C());
 
     // FILL_VECTOR_ATTR(aph)
     insert_displace(qs_vector, insert_idx, node.get_qs());
@@ -660,8 +657,6 @@ void Nodes::add_node_insert_idx(Node& node, Index insert_idx) {
 
     // The node instance now points to this TNs instance
     node.set_thermal_nodes_parent(_self_pointer);
-
-    return;
 }
 
 bool Nodes::is_mapped() const { return _node_num_mapped; }

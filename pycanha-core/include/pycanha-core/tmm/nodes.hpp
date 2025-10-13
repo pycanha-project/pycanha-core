@@ -368,8 +368,8 @@ class Nodes {
     Index get_idx_from_node_num(
         int node_num) const;  ///< Get internal node numbre from user number.
     int get_node_num_from_idx(
-        Index idx) const;        ///< Get internal node numbre from user number.
-    bool is_node(int node_num);  ///< Check if node is stored.
+        Index idx) const;  ///< Get internal node numbre from user number.
+    bool is_node(int node_num) const;  ///< Check if node is stored.
     Node get_node_from_node_num(
         int node_num);                  ///< Get node object from node number.
     Node get_node_from_idx(Index idx);  ///< Get node object from idx.
@@ -441,14 +441,16 @@ class Nodes {
      * of LiteralString. The size of the vector is decreased by one, and the
      * elements after the deleted one are displaced one position.
      */
-    void delete_displace(Eigen::SparseVector<LiteralString> &sparse, int index);
+    static void delete_displace(Eigen::SparseVector<LiteralString> &sparse,
+                                Index index);
 
     /**
      * Helper method to delete an entry at position 'index' in a Sparse vector
      * of doubles. The size of the vector is decreased by one, and the elements
      * after the deleted one are displaced one position.
      */
-    void delete_displace(Eigen::SparseVector<double> &sparse, int index);
+    static void delete_displace(Eigen::SparseVector<double> &sparse,
+                                Index index);
 
     /**
      * Insert the node given the positions.

@@ -131,7 +131,7 @@ class Node {
      * Similar to the previous one, but given directly the weak pointer to the
      * Nodes instance.
      */
-    Node(int node_num, std::weak_ptr<Nodes> parent_pointer);
+    Node(int node_num, const std::weak_ptr<Nodes>& parent_pointer);
 
     // Move constructor
     Node(Node&& other_node) noexcept;
@@ -153,8 +153,8 @@ class Node {
     //-----------------------------------------
 
     // TODO: Inconsistent nomenclature
-    int get_node_num();      ///< User node number getter.
-    int get_int_node_num();  ///< Internal node number getter.
+    int get_node_num() const;  ///< User node number getter.
+    int get_int_node_num();    ///< Internal node number getter.
     /**
      * Two valid types:
      * - 'D': Diffusive
@@ -207,7 +207,8 @@ class Node {
     void set_aph(double aph);  ///< Solar absortivity setter.
 
     // NOLINTBEGIN(readability-identifier-naming)
-    void set_literal_C(std::string str);  ///< Literal thermal capacity setter.
+    void set_literal_C(
+        const std::string& str);  ///< Literal thermal capacity setter.
     // NOLINTEND(readability-identifier-naming)
 
     // Other getters
@@ -243,7 +244,7 @@ class Node {
      */
     // TODO: is really useful this method????
     void set_thermal_nodes_parent(
-        std::weak_ptr<Nodes> thermal_nodes_parent_ptr);
+        std::weak_ptr<Nodes>&& thermal_nodes_parent_ptr);
 
     // Private methods
   private:

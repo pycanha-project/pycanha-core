@@ -1,6 +1,9 @@
 
 #include "pycanha-core/tmm/node.hpp"
 
+#include <algorithm>
+#include <cmath>
+#include <cstdint>
 #include <iostream>
 #include <memory>
 #include <string>
@@ -16,7 +19,7 @@ Node::Node(int node_num) : _node_num(node_num) {
                                           0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 }
 
-Node::Node(int node_num, std::weak_ptr<Nodes> parent_pointer)
+Node::Node(int node_num, const std::weak_ptr<Nodes>& parent_pointer)
     : _node_num(node_num),
       _parent_pointer(parent_pointer),
       _local_storage_ptr(nullptr) {}
@@ -71,9 +74,7 @@ Node& Node::operator=(const Node& other_node) {
     }
 
     // First, delete the old buffer if exists
-    if (_local_storage_ptr) {
-        delete _local_storage_ptr;
-    }
+    delete _local_storage_ptr;
 
     // Shallow copy. Instead of copyng attributes individually, call memcpy
     // memcpy(this, &other_node, sizeof(Node)); //DON'T!!!!
@@ -82,7 +83,7 @@ Node& Node::operator=(const Node& other_node) {
     this->_parent_pointer = other_node._parent_pointer;
     this->_local_storage_ptr = other_node._local_storage_ptr;
 
-    if (_local_storage_ptr) {
+    if (_local_storage_ptr != nullptr) {
         // Pointer is not null and the node is local, not associated with TNs
 
         // Copy memory buffer containing the node info to other place
@@ -126,7 +127,7 @@ A macro is used to get/set most of them.
 #define GET_SET_DOUBLE_ATTR(attr)                                              \
     double Node::get_##attr() {                                                \
         if (auto ptr_TNs = _parent_pointer.lock()) {                           \
-            double temp = ptr_TNs->get_##attr(_node_num);                      \
+            const double temp = ptr_TNs->get_##attr(_node_num);                \
             if (std::isnan(temp)) {                                            \
                 _parent_pointer.reset();                                       \
                 if (VERBOSE) {                                                 \
@@ -136,7 +137,7 @@ A macro is used to get/set most of them.
                 }                                                              \
             }                                                                  \
             return temp;                                                       \
-        } else if (_local_storage_ptr) {                                       \
+        } else if (_local_storage_ptr != nullptr) {                            \
             return _local_storage_ptr->attr;                                   \
         } else {                                                               \
             std::cout << "WARNING: The node is an unvalid container. "         \
@@ -181,7 +182,7 @@ GET_SET_DOUBLE_ATTR(aph)
 
 char Node::get_type() {
     if (auto ptr_TNs = _parent_pointer.lock()) {
-        char temp = ptr_TNs->get_type(_node_num);
+        const char temp = ptr_TNs->get_type(_node_num);
         if (temp == static_cast<char>(0)) {
             _parent_pointer.reset();
             if (VERBOSE) {
@@ -191,7 +192,7 @@ char Node::get_type() {
             }
         }
         return temp;
-    } else if (_local_storage_ptr) {
+    } else if (_local_storage_ptr != nullptr) {
         return _local_storage_ptr->type;
     } else {
         std::cout << "WARNING: The node is an unvalid container. "
@@ -210,7 +211,7 @@ void Node::set_type(char type) {
                           << "The node is now an unvalid container.\n";
             }
         }
-    } else if (_local_storage_ptr) {
+    } else if (_local_storage_ptr != nullptr) {
         _local_storage_ptr->type = type;
     } else {
         if (VERBOSE) {
@@ -223,7 +224,7 @@ void Node::set_type(char type) {
 std::string Node::get_literal_C() const {
     if (auto ptr_TNs = _parent_pointer.lock()) {
         return ptr_TNs->get_literal_C(_node_num);
-    } else if (_local_storage_ptr) {
+    } else if (_local_storage_ptr != nullptr) {
         return _local_storage_ptr->literal_C;
     } else {
         std::cout << "WARNING: The node is an unvalid container. "
@@ -232,7 +233,7 @@ std::string Node::get_literal_C() const {
     }
 }
 
-void Node::set_literal_C(std::string str) {
+void Node::set_literal_C(const std::string& str) {
     if (auto ptr_TNs = _parent_pointer.lock()) {
         if (!(ptr_TNs->set_literal_C(_node_num, str))) {
             _parent_pointer.reset();
@@ -242,7 +243,7 @@ void Node::set_literal_C(std::string str) {
                           << "The node is now an unvalid container.\n";
             }
         }
-    } else if (_local_storage_ptr) {
+    } else if (_local_storage_ptr != nullptr) {
         _local_storage_ptr->literal_C = str;
     } else {
         if (VERBOSE) {
@@ -255,11 +256,11 @@ void Node::set_literal_C(std::string str) {
 
 void Node::set_node_num(int node_num) { this->_node_num = node_num; }
 
-int Node::get_node_num() { return _node_num; }
+int Node::get_node_num() const { return _node_num; }
 
 int Node::get_int_node_num() {
     if (auto PtrTNs = _parent_pointer.lock()) {
-        int temp = PtrTNs->get_idx_from_node_num(_node_num);
+        const Index temp = PtrTNs->get_idx_from_node_num(_node_num);
         if (temp < 0) {
             if (DEBUG) {
                 std::cout << "WARNING: Attribute unavailable. "
@@ -268,7 +269,7 @@ int Node::get_int_node_num() {
             }
             _parent_pointer.reset();
         }
-        return temp;
+        return static_cast<int>(temp);
     } else {
         if (DEBUG) {
             std::cout << "WARNING: Node is not associated to any TNs. "
@@ -287,8 +288,8 @@ uint64_t Node::get_int_parent_pointer() {
 }
 
 void Node::set_thermal_nodes_parent(
-    std::weak_ptr<Nodes> thermal_nodes_parent_ptr) {
-    _parent_pointer = thermal_nodes_parent_ptr;
+    std::weak_ptr<Nodes>&& thermal_nodes_parent_ptr) {
+    _parent_pointer = std::move(thermal_nodes_parent_ptr);
     local_storage_destructor();
 }
 
