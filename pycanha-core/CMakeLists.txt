@@ -69,7 +69,7 @@ target_include_directories(${LIB_NAME}
     PUBLIC 
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
-    PRIVATE
+    SYSTEM PRIVATE
     $<BUILD_INTERFACE:${cdt_SOURCE_DIR}> # This adds the parent directory of CDT. So  #include <CDT/include/CDT.h> will work
 )
 

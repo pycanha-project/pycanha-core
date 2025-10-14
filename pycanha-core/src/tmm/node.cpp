@@ -1,7 +1,6 @@
 
 #include "pycanha-core/tmm/node.hpp"
 
-#include <algorithm>
 #include <cmath>
 #include <cstdint>
 #include <iostream>
@@ -14,52 +13,31 @@
 
 using namespace pycanha;  // NOLINT(build/namespaces)
 
-Node::Node(int node_num) : _node_num(node_num) {
-    _local_storage_ptr = new LocalStorage{'D', 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-                                          0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-}
+Node::Node(int node_num)
+    : _node_num(node_num),
+      _local_storage_ptr(std::make_unique<LocalStorage>()) {}
 
 Node::Node(int node_num, const std::weak_ptr<Nodes>& parent_pointer)
-    : _node_num(node_num),
-      _parent_pointer(parent_pointer),
-      _local_storage_ptr(nullptr) {}
+    : _node_num(node_num), _parent_pointer(parent_pointer) {}
 
 // Move constructor
 Node::Node(Node&& other_node) noexcept
     : _node_num(other_node._node_num),
-      _parent_pointer(other_node._parent_pointer),
-      _local_storage_ptr(other_node._local_storage_ptr) {
+      _parent_pointer(std::move(other_node._parent_pointer)),
+      _local_storage_ptr(std::move(other_node._local_storage_ptr)) {
     if (DEBUG) {
         std::cout << "Move constructor called \n";
     }
-
-    // When other_node call its destructor, the storage (if exists) its not
-    // deleted.
-    other_node._local_storage_ptr = nullptr;
 }
 
 // Copy constructor
 Node::Node(const Node& other_node)
     : _node_num(other_node._node_num),
-      _parent_pointer(other_node._parent_pointer),
-      _local_storage_ptr(other_node._local_storage_ptr) {
-    // Instead of copyng attributes individually, call memcpy
-    // memcpy(this, &other_node, sizeof(Node)); //THIS IS EVIL DON'T DO IT.
-    // PROGRAM WILL CRASH
-    // TODO: I need to manually write a copy constructor because I need to
-    // handle the LocalStorage. If I change the local storage to be an RII
-    // class that manage the storage itself (it would be like std::string or
-    // std::vector), then can I use the default constructors?
-
-    if (_local_storage_ptr) {
-        // Pointer is not null and the node is local, not associated with TNs
-
-        // Copy memory buffer containing the node info to other place
-        _local_storage_ptr = new LocalStorage;
-        *_local_storage_ptr = *other_node._local_storage_ptr;
+      _parent_pointer(other_node._parent_pointer) {
+    if (other_node._local_storage_ptr) {
+        _local_storage_ptr =
+            std::make_unique<LocalStorage>(*other_node._local_storage_ptr);
     }
-    // else: _local_storage_ptr is nullptr, and ParentPointer should be valid
-    // (is not checked)
 
     if (DEBUG) {
         std::cout << "Copy constructor called \n";
@@ -73,25 +51,15 @@ Node& Node::operator=(const Node& other_node) {
         return *this;
     }
 
-    // First, delete the old buffer if exists
-    delete _local_storage_ptr;
+    _node_num = other_node._node_num;
+    _parent_pointer = other_node._parent_pointer;
 
-    // Shallow copy. Instead of copyng attributes individually, call memcpy
-    // memcpy(this, &other_node, sizeof(Node)); //DON'T!!!!
-
-    this->_node_num = other_node._node_num;
-    this->_parent_pointer = other_node._parent_pointer;
-    this->_local_storage_ptr = other_node._local_storage_ptr;
-
-    if (_local_storage_ptr != nullptr) {
-        // Pointer is not null and the node is local, not associated with TNs
-
-        // Copy memory buffer containing the node info to other place
-        _local_storage_ptr = new LocalStorage;
-        *_local_storage_ptr = *other_node._local_storage_ptr;
+    if (other_node._local_storage_ptr) {
+        _local_storage_ptr =
+            std::make_unique<LocalStorage>(*other_node._local_storage_ptr);
+    } else {
+        _local_storage_ptr.reset();
     }
-    // else: _local_storage_ptr is nullptr, and ParentPointer should be valid
-    // (is not checked)
 
     return *this;
 }
@@ -99,16 +67,10 @@ Node& Node::operator=(const Node& other_node) {
 // Move assignment operator
 Node& Node::operator=(Node&& other_node) noexcept {
     if (this != &other_node) {
-        // Release any resources currently held by this object
-        delete _local_storage_ptr;
-
         // Transfer ownership of resources from other_node to this object
         _node_num = other_node._node_num;
         _parent_pointer = std::move(other_node._parent_pointer);
-        _local_storage_ptr = other_node._local_storage_ptr;
-
-        // Invalidate the resources of the other_node
-        other_node._local_storage_ptr = nullptr;
+        _local_storage_ptr = std::move(other_node._local_storage_ptr);
 
         if (DEBUG) {
             std::cout << "Move assignment operator called \n";
@@ -117,7 +79,7 @@ Node& Node::operator=(Node&& other_node) noexcept {
     return *this;
 }
 
-Node::~Node() { local_storage_destructor(); }
+Node::~Node() = default;
 
 /*
 Getters and setters are always the same except which atributte is needed.
@@ -293,7 +255,4 @@ void Node::set_thermal_nodes_parent(
     local_storage_destructor();
 }
 
-void Node::local_storage_destructor() {
-    delete _local_storage_ptr;
-    _local_storage_ptr = nullptr;
-}
+void Node::local_storage_destructor() { _local_storage_ptr.reset(); }

@@ -65,22 +65,22 @@ class Node {
      * The storage is dynamically de/allocated.
      */
     struct LocalStorage {
-        char type;  // Type
+        char type = DIFFUSIVE_NODE;  // Type
         // NOLINTBEGIN(readability-identifier-naming)
-        double T;  // Temperature
-        double C;  // Thermal capacity
+        double T = 0.0;  // Temperature
+        double C = 0.0;  // Thermal capacity
         // NOLINTEND(readability-identifier-naming)
-        double qs;   // Solar load
-        double qa;   // Albedo load
-        double qe;   // Earth IR load
-        double qi;   // Internal load
-        double qr;   // Other load
-        double a;    // Area
-        double fx;   // X coordinate
-        double fy;   // Y coordinate
-        double fz;   // Z coordinate
-        double eps;  // IR emissivity
-        double aph;  // Solar absortivity
+        double qs = 0.0;   // Solar load
+        double qa = 0.0;   // Albedo load
+        double qe = 0.0;   // Earth IR load
+        double qi = 0.0;   // Internal load
+        double qr = 0.0;   // Other load
+        double a = 0.0;    // Area
+        double fx = 0.0;   // X coordinate
+        double fy = 0.0;   // Y coordinate
+        double fz = 0.0;   // Z coordinate
+        double eps = 0.0;  // IR emissivity
+        double aph = 0.0;  // Solar absortivity
 
         // NOLINTBEGIN(readability-identifier-naming)
         std::string literal_C;  // Literal Thermal capacity
@@ -104,7 +104,7 @@ class Node {
      * the TNs class it is a valid pointer to an existing struct. Otherwise is a
      * nullptr.
      */
-    LocalStorage* _local_storage_ptr;
+    std::unique_ptr<LocalStorage> _local_storage_ptr;
 
     /**
      * Node attribute: User node number
