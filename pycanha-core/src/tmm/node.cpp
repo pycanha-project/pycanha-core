@@ -39,8 +39,7 @@ double Node::resolve_get_double(double (Nodes::*nodes_getter)(int),
     }
 
     if (_local_storage_ptr != nullptr) {
-        auto* const storage = _local_storage_ptr.get();
-        return storage->*local_member;
+        return (*_local_storage_ptr).*local_member;
     }
 
     std::cout << "WARNING: The node is an unvalid container. "
@@ -65,8 +64,7 @@ void Node::resolve_set_double(bool (Nodes::*nodes_setter)(int, double),
     }
 
     if (_local_storage_ptr) {
-        auto* const storage = _local_storage_ptr.get();
-        storage->*local_member = value;
+        (*_local_storage_ptr).*local_member = value;
         return;
     }
 
