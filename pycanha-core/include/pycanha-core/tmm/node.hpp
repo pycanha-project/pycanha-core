@@ -153,8 +153,8 @@ class Node {
     //-----------------------------------------
 
     // TODO: Inconsistent nomenclature
-    int get_node_num() const;  ///< User node number getter.
-    int get_int_node_num();    ///< Internal node number getter.
+    [[nodiscard]] int get_node_num() const;  ///< User node number getter.
+    int get_int_node_num();                  ///< Internal node number getter.
     /**
      * Two valid types:
      * - 'D': Diffusive
@@ -191,20 +191,20 @@ class Node {
      */
     void set_type(char type);  ///< Type setter.
     // NOLINTBEGIN(readability-identifier-naming)
-    void set_T(double T);  ///< Temperature [K] setter.
-    void set_C(double C);  ///< Thermal capacity [J/K] setter.
+    void set_T(double value);  ///< Temperature [K] setter.
+    void set_C(double value);  ///< Thermal capacity [J/K] setter.
     // NOLINTEND(readability-identifier-naming)
-    void set_qs(double qs);    ///< Solar load [W] setter.
-    void set_qa(double qa);    ///< Albedo load [W] setter.
-    void set_qe(double qe);    ///< Earth IR load [W] setter.
-    void set_qi(double qi);    ///< Internal load [W] setter.
-    void set_qr(double qr);    ///< Other load [W] setter.
-    void set_a(double a);      ///< Area [m^2] setter.
-    void set_fx(double fx);    ///< X coordinate [m] setter.
-    void set_fy(double fy);    ///< Y coordinate [m] setter.
-    void set_fz(double fz);    ///< Z coordinate [m] setter.
-    void set_eps(double eps);  ///< IR emissivity setter.
-    void set_aph(double aph);  ///< Solar absortivity setter.
+    void set_qs(double value);   ///< Solar load [W] setter.
+    void set_qa(double value);   ///< Albedo load [W] setter.
+    void set_qe(double value);   ///< Earth IR load [W] setter.
+    void set_qi(double value);   ///< Internal load [W] setter.
+    void set_qr(double value);   ///< Other load [W] setter.
+    void set_a(double value);    ///< Area [m^2] setter.
+    void set_fx(double value);   ///< X coordinate [m] setter.
+    void set_fy(double value);   ///< Y coordinate [m] setter.
+    void set_fz(double value);   ///< Z coordinate [m] setter.
+    void set_eps(double value);  ///< IR emissivity setter.
+    void set_aph(double value);  ///< Solar absortivity setter.
 
     // NOLINTBEGIN(readability-identifier-naming)
     void set_literal_C(

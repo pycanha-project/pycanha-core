@@ -16,7 +16,7 @@
 using namespace pycanha;  // NOLINT(build/namespaces)
 
 // Default constructor
-Nodes::Nodes() : estimated_number_of_nodes(100), _node_num_mapped(false) {
+Nodes::Nodes() {
     if (DEBUG) {
         std::cout << "Default constructor of TNs called " << _self_pointer
                   << "\n";
@@ -364,11 +364,11 @@ GET_SET_DOUBLE_SPARSE(aph)
 
 /////////////////////////////////////////////////////////////////////////
 
-bool Nodes::set_type(int node_num, char Type) {
+bool Nodes::set_type(int node_num, char type) {
     if (!_node_num_mapped) {
         create_node_num_map();
     }
-    if (Type != 'D' && Type != 'B') {
+    if (type != 'D' && type != 'B') {
         if (VERBOSE) {
             std::cout << "Error: Invalid node type. It should be 'D' or 'B'.\n";
         }
@@ -377,17 +377,17 @@ bool Nodes::set_type(int node_num, char Type) {
 
     auto current_type = get_type(node_num);
 
-    if (current_type == Type) {
+    if (current_type == type) {
         return false;
     }
 
     if (current_type == 'D') {
-        if (Type == 'B') {
+        if (type == 'B') {
             diffusive_to_boundary(node_num);
         }
         return true;
     } else if (current_type == 'B') {
-        if (Type == 'D') {
+        if (type == 'D') {
             boundary_to_diffusive(node_num);
         }
         return true;
@@ -429,6 +429,8 @@ void Nodes::create_node_num_map() const {
 
 void Nodes::diffusive_to_boundary(int usr_node_num) {
     std::cout << "TODO: Not implemented yet\n";
+    static_cast<void>(_node_num_mapped);
+    static_cast<void>(usr_node_num);
     // 1. Copy all the info of usr_node_num to a new node not associated with
     // any TNs
     // 2. Change 'D' to 'B'
@@ -438,6 +440,8 @@ void Nodes::diffusive_to_boundary(int usr_node_num) {
 
 void Nodes::boundary_to_diffusive(int usr_node_num) {
     std::cout << "TODO: Not implemented yet\n";
+    static_cast<void>(_node_num_mapped);
+    static_cast<void>(usr_node_num);
     // 1. Copy all the info of usr_node_num to a new node not associated with
     // any TNs
     // 2. Change 'B' to 'D'

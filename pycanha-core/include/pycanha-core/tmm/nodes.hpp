@@ -60,7 +60,7 @@ class Nodes {
     friend class ThermalNetwork;
 
   public:
-    int estimated_number_of_nodes;  // TODO: Is this useful? Delete?
+    int estimated_number_of_nodes{100};  // TODO: Is this useful? Delete?
 
   private:
     /**
@@ -195,7 +195,7 @@ class Nodes {
      * (_usr_to_int_node_num) this variable is checked. If false the map is
      * updated before accesing it.
      */
-    mutable bool _node_num_mapped;
+    mutable bool _node_num_mapped{false};
 
   public:
     // Constructors
@@ -287,17 +287,17 @@ class Nodes {
     bool set_T(int node_num, double T);  ///< Temperature [K] setter.
     bool set_C(int node_num, double C);  ///< Thermal capacity [J/K] setter.
     // NOLINTEND(readability-identifier-naming)
-    bool set_qs(int node_num, double qs);    ///< Solar load [W] setter.
-    bool set_qa(int node_num, double qa);    ///< Albedo load [W] setter.
-    bool set_qe(int node_num, double qe);    ///< Earth IR load [W] setter.
-    bool set_qi(int node_num, double qi);    ///< Internal load [W] setter.
-    bool set_qr(int node_num, double qr);    ///< Other load [W] setter.
-    bool set_a(int node_num, double a);      ///< Area [m^2] setter.
-    bool set_fx(int node_num, double fx);    ///< X coordinate [m] setter.
-    bool set_fy(int node_num, double fy);    ///< Y coordinate [m] setter.
-    bool set_fz(int node_num, double fz);    ///< Z coordinate [m] setter.
-    bool set_eps(int node_num, double eps);  ///< IR emissivity setter.
-    bool set_aph(int node_num, double aph);  ///< Solar absortivity setter.
+    bool set_qs(int node_num, double value);   ///< Solar load [W] setter.
+    bool set_qa(int node_num, double value);   ///< Albedo load [W] setter.
+    bool set_qe(int node_num, double value);   ///< Earth IR load [W] setter.
+    bool set_qi(int node_num, double value);   ///< Internal load [W] setter.
+    bool set_qr(int node_num, double value);   ///< Other load [W] setter.
+    bool set_a(int node_num, double value);    ///< Area [m^2] setter.
+    bool set_fx(int node_num, double value);   ///< X coordinate [m] setter.
+    bool set_fy(int node_num, double value);   ///< Y coordinate [m] setter.
+    bool set_fz(int node_num, double value);   ///< Z coordinate [m] setter.
+    bool set_eps(int node_num, double value);  ///< IR emissivity setter.
+    bool set_aph(int node_num, double value);  ///< Solar absortivity setter.
 
     // NOLINTBEGIN(readability-identifier-naming)
     bool set_literal_C(
@@ -400,13 +400,13 @@ class Nodes {
      * Change the type of the node from diffusive to boundary. Because of how
      * the internal order is defined, the node structure needs to be rearranged.
      */
-    void diffusive_to_boundary(int node_num);
+    void diffusive_to_boundary(int usr_node_num);
 
     /**
      * Change the type of the node from boundary to diffusive. Because of how
      * the internal order is defined, the node structure needs to be rearranged.
      */
-    void boundary_to_diffusive(int node_num);
+    void boundary_to_diffusive(int usr_node_num);
 
     // Insert methods for SparseVectors
 
