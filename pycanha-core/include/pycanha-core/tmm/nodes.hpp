@@ -396,6 +396,28 @@ class Nodes {
      */
     void create_node_num_map() const;
 
+    void ensure_node_map() const;
+    bool find_node_index(int node_num, Index &index,
+                         const char *error_prefix) const;
+    double resolve_get_dense_attr(int node_num,
+                                  const std::vector<double> &storage) const;
+    bool resolve_set_dense_attr(int node_num, std::vector<double> &storage,
+                                double value);
+    double *resolve_get_dense_attr_ref(int node_num,
+                                       std::vector<double> &storage);
+    double resolve_get_sparse_attr(
+        int node_num, const Eigen::SparseVector<double> &storage) const;
+    bool resolve_set_sparse_attr(int node_num,
+                                 Eigen::SparseVector<double> &storage,
+                                 double value);
+    double *resolve_get_sparse_attr_ref(int node_num,
+                                        Eigen::SparseVector<double> &storage);
+    std::string resolve_get_literal_attr(
+        int node_num, const Eigen::SparseVector<LiteralString> &storage) const;
+    bool resolve_set_literal_attr(int node_num,
+                                  Eigen::SparseVector<LiteralString> &storage,
+                                  const std::string &value);
+
     /**
      * Change the type of the node from diffusive to boundary. Because of how
      * the internal order is defined, the node structure needs to be rearranged.
@@ -415,24 +437,24 @@ class Nodes {
      * vector. The size of the vector is increased by one, and the elements
      * after the inserted one are displaced one position.
      */
-    void insert_displace(Eigen::SparseVector<LiteralString> &sparse,
-                         Index index, const LiteralString &string);
+    static void insert_displace(Eigen::SparseVector<LiteralString> &sparse,
+                                Index index, const LiteralString &string);
 
     /**
      * Helper method to insert a string value in the middle of a Sparse
      * vector. The size of the vector is increased by one, and the elements
      * after the inserted one are displaced one position.
      */
-    void insert_displace(Eigen::SparseVector<LiteralString> &sparse,
-                         Index index, const std::string &string);
+    static void insert_displace(Eigen::SparseVector<LiteralString> &sparse,
+                                Index index, const std::string &string);
 
     /**
      * Helper method to insert a double value in the middle of a Sparse vector.
      * The size of the vector is increased by one, and the elements after the
      * inserted one are displaced one position.
      */
-    void insert_displace(Eigen::SparseVector<double> &sparse, Index index,
-                         double value);
+    static void insert_displace(Eigen::SparseVector<double> &sparse,
+                                Index index, double value);
 
     // Delete methods for SparseVectors
 

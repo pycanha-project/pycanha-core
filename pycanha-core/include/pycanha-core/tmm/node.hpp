@@ -248,6 +248,11 @@ class Node {
 
     // Private methods
   private:
+    double resolve_get_double(double (Nodes::*nodes_getter)(int),
+                              double LocalStorage::*local_member);
+    void resolve_set_double(bool (Nodes::*nodes_setter)(int, double),
+                            double LocalStorage::*local_member, double value);
+
     /**
      * Deallocate the memory of the local information of the node and set the
      * local storage pointer to null.

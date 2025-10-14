@@ -2,8 +2,9 @@
 
 #include <algorithm>
 #include <cmath>
-#include <cstdint>
+#include <cstddef>
 #include <iostream>
+#include <iterator>
 #include <memory>
 #include <string>
 #include <utility>
@@ -11,6 +12,7 @@
 
 #include "pycanha-core/config.hpp"
 #include "pycanha-core/parameters.hpp"
+#include "pycanha-core/tmm/literalstring.hpp"
 #include "pycanha-core/tmm/node.hpp"
 
 using namespace pycanha;  // NOLINT(build/namespaces)
@@ -125,29 +127,29 @@ Nodes::Nodes(Nodes&& other) noexcept
       _bound_node_num_vector(std::move(other._bound_node_num_vector)),
       T_vector(std::move(other.T_vector)),
       C_vector(std::move(other.C_vector)),
-      qs_vector(std::move(other.qs_vector)),
-      qa_vector(std::move(other.qa_vector)),
-      qe_vector(std::move(other.qe_vector)),
-      qi_vector(std::move(other.qi_vector)),
-      qr_vector(std::move(other.qr_vector)),
-      a_vector(std::move(other.a_vector)),
-      fx_vector(std::move(other.fx_vector)),
-      fy_vector(std::move(other.fy_vector)),
-      fz_vector(std::move(other.fz_vector)),
-      eps_vector(std::move(other.eps_vector)),
-      aph_vector(std::move(other.aph_vector)),
-      literals_C(std::move(other.literals_C)),
-      literals_qs(std::move(other.literals_qs)),
-      literals_qa(std::move(other.literals_qa)),
-      literals_qe(std::move(other.literals_qe)),
-      literals_qi(std::move(other.literals_qi)),
-      literals_qr(std::move(other.literals_qr)),
-      literals_a(std::move(other.literals_a)),
-      literals_fx(std::move(other.literals_fx)),
-      literals_fy(std::move(other.literals_fy)),
-      literals_fz(std::move(other.literals_fz)),
-      literals_eps(std::move(other.literals_eps)),
-      literals_aph(std::move(other.literals_aph)),
+      qs_vector(other.qs_vector),
+      qa_vector(other.qa_vector),
+      qe_vector(other.qe_vector),
+      qi_vector(other.qi_vector),
+      qr_vector(other.qr_vector),
+      a_vector(other.a_vector),
+      fx_vector(other.fx_vector),
+      fy_vector(other.fy_vector),
+      fz_vector(other.fz_vector),
+      eps_vector(other.eps_vector),
+      aph_vector(other.aph_vector),
+      literals_C(other.literals_C),
+      literals_qs(other.literals_qs),
+      literals_qa(other.literals_qa),
+      literals_qe(other.literals_qe),
+      literals_qi(other.literals_qi),
+      literals_qr(other.literals_qr),
+      literals_a(other.literals_a),
+      literals_fx(other.literals_fx),
+      literals_fy(other.literals_fy),
+      literals_fz(other.literals_fz),
+      literals_eps(other.literals_eps),
+      literals_aph(other.literals_aph),
       _usr_to_int_node_num(std::move(other._usr_to_int_node_num)),
       _node_num_mapped(other._node_num_mapped) {
     if (DEBUG) {
@@ -176,29 +178,29 @@ Nodes& Nodes::operator=(Nodes&& other) noexcept {
         _bound_node_num_vector = std::move(other._bound_node_num_vector);
         T_vector = std::move(other.T_vector);
         C_vector = std::move(other.C_vector);
-        qs_vector = std::move(other.qs_vector);
-        qa_vector = std::move(other.qa_vector);
-        qe_vector = std::move(other.qe_vector);
-        qi_vector = std::move(other.qi_vector);
-        qr_vector = std::move(other.qr_vector);
-        a_vector = std::move(other.a_vector);
-        fx_vector = std::move(other.fx_vector);
-        fy_vector = std::move(other.fy_vector);
-        fz_vector = std::move(other.fz_vector);
-        eps_vector = std::move(other.eps_vector);
-        aph_vector = std::move(other.aph_vector);
-        literals_C = std::move(other.literals_C);
-        literals_qs = std::move(other.literals_qs);
-        literals_qa = std::move(other.literals_qa);
-        literals_qe = std::move(other.literals_qe);
-        literals_qi = std::move(other.literals_qi);
-        literals_qr = std::move(other.literals_qr);
-        literals_a = std::move(other.literals_a);
-        literals_fx = std::move(other.literals_fx);
-        literals_fy = std::move(other.literals_fy);
-        literals_fz = std::move(other.literals_fz);
-        literals_eps = std::move(other.literals_eps);
-        literals_aph = std::move(other.literals_aph);
+        qs_vector = other.qs_vector;
+        qa_vector = other.qa_vector;
+        qe_vector = other.qe_vector;
+        qi_vector = other.qi_vector;
+        qr_vector = other.qr_vector;
+        a_vector = other.a_vector;
+        fx_vector = other.fx_vector;
+        fy_vector = other.fy_vector;
+        fz_vector = other.fz_vector;
+        eps_vector = other.eps_vector;
+        aph_vector = other.aph_vector;
+        literals_C = other.literals_C;
+        literals_qs = other.literals_qs;
+        literals_qa = other.literals_qa;
+        literals_qe = other.literals_qe;
+        literals_qi = other.literals_qi;
+        literals_qr = other.literals_qr;
+        literals_a = other.literals_a;
+        literals_fx = other.literals_fx;
+        literals_fy = other.literals_fy;
+        literals_fz = other.literals_fz;
+        literals_eps = other.literals_eps;
+        literals_aph = other.literals_aph;
         _usr_to_int_node_num = std::move(other._usr_to_int_node_num);
         _node_num_mapped = other._node_num_mapped;
 
@@ -218,6 +220,103 @@ Nodes::~Nodes() {
     }
 }
 
+void Nodes::ensure_node_map() const {
+    if (!_node_num_mapped) {
+        create_node_num_map();
+    }
+}
+
+bool Nodes::find_node_index(int node_num, Index& index,
+                            const char* error_prefix) const {
+    ensure_node_map();
+    auto it = _usr_to_int_node_num.find(node_num);
+    if (it == _usr_to_int_node_num.end()) {
+        if (error_prefix != nullptr) {
+            std::cout << error_prefix << " Error: Node does not exist.\n";
+        }
+        return false;
+    }
+    index = it->second;
+    return true;
+}
+
+double Nodes::resolve_get_dense_attr(int node_num,
+                                     const std::vector<double>& storage) const {
+    Index index = 0;
+    if (!find_node_index(node_num, index, "Get")) {
+        return std::nan("");
+    }
+    return storage[static_cast<std::size_t>(index)];
+}
+
+bool Nodes::resolve_set_dense_attr(int node_num, std::vector<double>& storage,
+                                   double value) {
+    Index index = 0;
+    if (!find_node_index(node_num, index, "Set")) {
+        return false;
+    }
+    storage[static_cast<std::size_t>(index)] = value;
+    return true;
+}
+
+double* Nodes::resolve_get_dense_attr_ref(int node_num,
+                                          std::vector<double>& storage) {
+    Index index = 0;
+    if (!find_node_index(node_num, index, "Get")) {
+        return nullptr;
+    }
+    return &storage[static_cast<std::size_t>(index)];
+}
+
+double Nodes::resolve_get_sparse_attr(
+    int node_num, const Eigen::SparseVector<double>& storage) const {
+    Index index = 0;
+    if (!find_node_index(node_num, index, "Get")) {
+        return std::nan("");
+    }
+    return storage.coeff(index);
+}
+
+bool Nodes::resolve_set_sparse_attr(int node_num,
+                                    Eigen::SparseVector<double>& storage,
+                                    double value) {
+    Index index = 0;
+    if (!find_node_index(node_num, index, "Set")) {
+        return false;
+    }
+    storage.coeffRef(index) = value;
+    return true;
+}
+
+double* Nodes::resolve_get_sparse_attr_ref(
+    int node_num, Eigen::SparseVector<double>& storage) {
+    Index index = 0;
+    if (!find_node_index(node_num, index, "Get")) {
+        return nullptr;
+    }
+    return &storage.coeffRef(index);
+}
+
+std::string Nodes::resolve_get_literal_attr(
+    int node_num, const Eigen::SparseVector<LiteralString>& storage) const {
+    Index index = 0;
+    if (!find_node_index(node_num, index, "Get")) {
+        return {};
+    }
+    return storage.coeff(index).get_literal();
+}
+
+bool Nodes::resolve_set_literal_attr(
+    int node_num, Eigen::SparseVector<LiteralString>& storage,
+    const std::string& value) {
+    Index index = 0;
+    if (!find_node_index(node_num, index, "Set")) {
+        return false;
+    }
+    storage.coeffRef(index) = value;
+    return true;
+}
+
 void Nodes::add_node(Node& node) {
     // Info obtained from "node"
     const char type = node.get_type();
@@ -235,12 +334,14 @@ void Nodes::add_node(Node& node) {
     if (type == 'D') {
         auto it = std::upper_bound(_diff_node_num_vector.begin(),
                                    _diff_node_num_vector.end(), node_num);
-        insert_idx = std::distance(_diff_node_num_vector.begin(), it);
+        insert_idx = static_cast<Index>(
+            std::distance(_diff_node_num_vector.begin(), it));
     } else if (type == 'B') {
         auto it = std::upper_bound(_bound_node_num_vector.begin(),
                                    _bound_node_num_vector.end(), node_num);
-        insert_idx = std::distance(_bound_node_num_vector.begin(), it);
-        insert_idx += _diff_node_num_vector.size();
+        insert_idx = static_cast<Index>(
+            std::distance(_bound_node_num_vector.begin(), it));
+        insert_idx += static_cast<Index>(_diff_node_num_vector.size());
     } else {
         // TODO: ERROR. WRONG NODE TYPE
         std::cout << "ERROR. Wrong node type?\n";
@@ -251,123 +352,183 @@ void Nodes::add_node(Node& node) {
 }
 
 void Nodes::add_nodes(std::vector<Node>& node_vector) {
-    for (int i = 0; i < node_vector.size(); i++) {
-        add_node(node_vector[i]);
+    for (auto& node : node_vector) {
+        add_node(node);
     }
 }
 
-int Nodes::num_nodes() const { return T_vector.size(); }
+int Nodes::num_nodes() const { return static_cast<int>(T_vector.size()); }
 
-int Nodes::get_num_nodes() const { return T_vector.size(); }
+int Nodes::get_num_nodes() const { return static_cast<int>(T_vector.size()); }
 
-int Nodes::get_num_diff_nodes() const { return _diff_node_num_vector.size(); }
+int Nodes::get_num_diff_nodes() const {
+    return static_cast<int>(_diff_node_num_vector.size());
+}
 
-int Nodes::get_num_bound_nodes() const { return _bound_node_num_vector.size(); }
+int Nodes::get_num_bound_nodes() const {
+    return static_cast<int>(_bound_node_num_vector.size());
+}
 
-/*
-Getters and setters are always the same except which atributte is needed.
-*/
-#define GET_SET_DOUBLE_ATTR(attr)                             \
-    bool Nodes::set_##attr(int node_num, double attr) {       \
-        if (!_node_num_mapped) {                              \
-            create_node_num_map();                            \
-        }                                                     \
-        auto it = _usr_to_int_node_num.find(node_num);        \
-        if (it != _usr_to_int_node_num.end()) {               \
-            attr##_vector[it->second] = attr;                 \
-            return true;                                      \
-        } else {                                              \
-            std::cout << "Set Error: Node does not exist.\n"; \
-            return false;                                     \
-        }                                                     \
-    }                                                         \
-    double Nodes::get_##attr(int node_num) {                  \
-        if (!_node_num_mapped) {                              \
-            create_node_num_map();                            \
-        }                                                     \
-        auto it = _usr_to_int_node_num.find(node_num);        \
-        if (it != _usr_to_int_node_num.end()) {               \
-            return attr##_vector[it->second];                 \
-        } else {                                              \
-            std::cout << "Get Error: Node does not exist.\n"; \
-            return std::nan("");                              \
-        }                                                     \
-    }                                                         \
-    double* Nodes::get_##attr##_value_ref(int node_num) {     \
-        if (!_node_num_mapped) {                              \
-            create_node_num_map();                            \
-        }                                                     \
-        auto it = _usr_to_int_node_num.find(node_num);        \
-        if (it != _usr_to_int_node_num.end()) {               \
-            return &(attr##_vector[it->second]);              \
-        } else {                                              \
-            std::cout << "Get Error: Node does not exist.\n"; \
-            return nullptr;                                   \
-        }                                                     \
-    }
+double Nodes::get_T(int node_num) {
+    return resolve_get_dense_attr(node_num, T_vector);
+}
 
-#define GET_SET_DOUBLE_SPARSE(attr)                           \
-    double Nodes::get_##attr(int node_num) {                  \
-        if (!_node_num_mapped) {                              \
-            create_node_num_map();                            \
-        }                                                     \
-        auto it = _usr_to_int_node_num.find(node_num);        \
-        if (it != _usr_to_int_node_num.end()) {               \
-            return attr##_vector.coeff(it->second);           \
-        } else {                                              \
-            std::cout << "Get Error: Node does not exist.\n"; \
-            return std::nan("");                              \
-        }                                                     \
-    }                                                         \
-    bool Nodes::set_##attr(int node_num, double value) {      \
-        if (!_node_num_mapped) {                              \
-            create_node_num_map();                            \
-        }                                                     \
-        auto it = _usr_to_int_node_num.find(node_num);        \
-        if (it != _usr_to_int_node_num.end()) {               \
-            attr##_vector.insert(it->second) = value;         \
-            return true;                                      \
-        } else {                                              \
-            std::cout << "Set Error: Node does not exist.\n"; \
-            return false;                                     \
-        }                                                     \
-    }                                                         \
-    double* Nodes::get_##attr##_value_ref(int node_num) {     \
-        if (!_node_num_mapped) {                              \
-            create_node_num_map();                            \
-        }                                                     \
-        auto it = _usr_to_int_node_num.find(node_num);        \
-        if (it != _usr_to_int_node_num.end()) {               \
-            return &(attr##_vector.coeffRef(it->second));     \
-        } else {                                              \
-            std::cout << "Get Error: Node does not exist.\n"; \
-            return nullptr;                                   \
-        }                                                     \
-    }
+double Nodes::get_C(int node_num) {
+    return resolve_get_dense_attr(node_num, C_vector);
+}
 
-#define GET_SET_DOUBLE_ATTR_AND_LITERAL(attr) GET_SET_DOUBLE_ATTR(attr)
+bool Nodes::set_T(int node_num, double T) {
+    return resolve_set_dense_attr(node_num, T_vector, T);
+}
 
-GET_SET_DOUBLE_ATTR(T)
-GET_SET_DOUBLE_ATTR(C)
+bool Nodes::set_C(int node_num, double C) {
+    return resolve_set_dense_attr(node_num, C_vector, C);
+}
 
-GET_SET_DOUBLE_SPARSE(qs)
-GET_SET_DOUBLE_SPARSE(qa)
-GET_SET_DOUBLE_SPARSE(qe)
-GET_SET_DOUBLE_SPARSE(qi)
-GET_SET_DOUBLE_SPARSE(qr)
-GET_SET_DOUBLE_SPARSE(a)
-GET_SET_DOUBLE_SPARSE(fx)
-GET_SET_DOUBLE_SPARSE(fy)
-GET_SET_DOUBLE_SPARSE(fz)
-GET_SET_DOUBLE_SPARSE(eps)
-GET_SET_DOUBLE_SPARSE(aph)
+double* Nodes::get_T_value_ref(int node_num) {
+    return resolve_get_dense_attr_ref(node_num, T_vector);
+}
+
+double* Nodes::get_C_value_ref(int node_num) {
+    return resolve_get_dense_attr_ref(node_num, C_vector);
+}
+
+double Nodes::get_qs(int node_num) {
+    return resolve_get_sparse_attr(node_num, qs_vector);
+}
+
+double Nodes::get_qa(int node_num) {
+    return resolve_get_sparse_attr(node_num, qa_vector);
+}
+
+double Nodes::get_qe(int node_num) {
+    return resolve_get_sparse_attr(node_num, qe_vector);
+}
+
+double Nodes::get_qi(int node_num) {
+    return resolve_get_sparse_attr(node_num, qi_vector);
+}
+
+double Nodes::get_qr(int node_num) {
+    return resolve_get_sparse_attr(node_num, qr_vector);
+}
+
+double Nodes::get_a(int node_num) {
+    return resolve_get_sparse_attr(node_num, a_vector);
+}
+
+double Nodes::get_fx(int node_num) {
+    return resolve_get_sparse_attr(node_num, fx_vector);
+}
+
+double Nodes::get_fy(int node_num) {
+    return resolve_get_sparse_attr(node_num, fy_vector);
+}
+
+double Nodes::get_fz(int node_num) {
+    return resolve_get_sparse_attr(node_num, fz_vector);
+}
+
+double Nodes::get_eps(int node_num) {
+    return resolve_get_sparse_attr(node_num, eps_vector);
+}
+
+double Nodes::get_aph(int node_num) {
+    return resolve_get_sparse_attr(node_num, aph_vector);
+}
+
+bool Nodes::set_qs(int node_num, double value) {
+    return resolve_set_sparse_attr(node_num, qs_vector, value);
+}
+
+bool Nodes::set_qa(int node_num, double value) {
+    return resolve_set_sparse_attr(node_num, qa_vector, value);
+}
+
+bool Nodes::set_qe(int node_num, double value) {
+    return resolve_set_sparse_attr(node_num, qe_vector, value);
+}
+
+bool Nodes::set_qi(int node_num, double value) {
+    return resolve_set_sparse_attr(node_num, qi_vector, value);
+}
+
+bool Nodes::set_qr(int node_num, double value) {
+    return resolve_set_sparse_attr(node_num, qr_vector, value);
+}
+
+bool Nodes::set_a(int node_num, double value) {
+    return resolve_set_sparse_attr(node_num, a_vector, value);
+}
+
+bool Nodes::set_fx(int node_num, double value) {
+    return resolve_set_sparse_attr(node_num, fx_vector, value);
+}
+
+bool Nodes::set_fy(int node_num, double value) {
+    return resolve_set_sparse_attr(node_num, fy_vector, value);
+}
+
+bool Nodes::set_fz(int node_num, double value) {
+    return resolve_set_sparse_attr(node_num, fz_vector, value);
+}
+
+bool Nodes::set_eps(int node_num, double value) {
+    return resolve_set_sparse_attr(node_num, eps_vector, value);
+}
+
+bool Nodes::set_aph(int node_num, double value) {
+    return resolve_set_sparse_attr(node_num, aph_vector, value);
+}
+
+double* Nodes::get_qs_value_ref(int node_num) {
+    return resolve_get_sparse_attr_ref(node_num, qs_vector);
+}
+
+double* Nodes::get_qa_value_ref(int node_num) {
+    return resolve_get_sparse_attr_ref(node_num, qa_vector);
+}
+
+double* Nodes::get_qe_value_ref(int node_num) {
+    return resolve_get_sparse_attr_ref(node_num, qe_vector);
+}
+
+double* Nodes::get_qi_value_ref(int node_num) {
+    return resolve_get_sparse_attr_ref(node_num, qi_vector);
+}
+
+double* Nodes::get_qr_value_ref(int node_num) {
+    return resolve_get_sparse_attr_ref(node_num, qr_vector);
+}
+
+double* Nodes::get_a_value_ref(int node_num) {
+    return resolve_get_sparse_attr_ref(node_num, a_vector);
+}
+
+double* Nodes::get_fx_value_ref(int node_num) {
+    return resolve_get_sparse_attr_ref(node_num, fx_vector);
+}
+
+double* Nodes::get_fy_value_ref(int node_num) {
+    return resolve_get_sparse_attr_ref(node_num, fy_vector);
+}
+
+double* Nodes::get_fz_value_ref(int node_num) {
+    return resolve_get_sparse_attr_ref(node_num, fz_vector);
+}
+
+double* Nodes::get_eps_value_ref(int node_num) {
+    return resolve_get_sparse_attr_ref(node_num, eps_vector);
+}
+
+double* Nodes::get_aph_value_ref(int node_num) {
+    return resolve_get_sparse_attr_ref(node_num, aph_vector);
+}
 
 /////////////////////////////////////////////////////////////////////////
 
 bool Nodes::set_type(int node_num, char type) {
-    if (!_node_num_mapped) {
-        create_node_num_map();
-    }
+    ensure_node_map();
     if (type != 'D' && type != 'B') {
         if (VERBOSE) {
             std::cout << "Error: Invalid node type. It should be 'D' or 'B'.\n";
@@ -375,7 +536,7 @@ bool Nodes::set_type(int node_num, char type) {
         return false;
     }
 
-    auto current_type = get_type(node_num);
+    const auto current_type = get_type(node_num);
 
     if (current_type == type) {
         return false;
@@ -397,31 +558,29 @@ bool Nodes::set_type(int node_num, char type) {
     }
 }
 char Nodes::get_type(int node_num) {
-    if (!_node_num_mapped) {
-        create_node_num_map();
-    }
-    auto it = _usr_to_int_node_num.find(node_num);
-    if (it != _usr_to_int_node_num.end()) {
-        if (it->second < _diff_node_num_vector.size()) {
-            return 'D';
-        } else {
-            return 'B';
-        }
-    } else {
-        std::cout << "Error: Node does not exists.\n";
+    Index index = 0;
+    if (!find_node_index(node_num, index, "Get")) {
         return static_cast<char>(0);
     }
+
+    const auto diff_size = static_cast<Index>(_diff_node_num_vector.size());
+    if (index < diff_size) {
+        return 'D';
+    }
+    return 'B';
 }
 
 void Nodes::create_node_num_map() const {
-    int int_num = 0;
-    for (int_num = 0; int_num < _diff_node_num_vector.size(); int_num++) {
-        _usr_to_int_node_num[_diff_node_num_vector[int_num]] = int_num;
+    _usr_to_int_node_num.clear();
+
+    Index internal_index = 0;
+    for (const int diff_node_num : _diff_node_num_vector) {
+        _usr_to_int_node_num[diff_node_num] = static_cast<int>(internal_index);
+        ++internal_index;
     }
-    for (int bound_num = 0; bound_num < _bound_node_num_vector.size();
-         bound_num++) {
-        _usr_to_int_node_num[_bound_node_num_vector[bound_num]] = int_num;
-        int_num++;
+    for (const int bound_node_num : _bound_node_num_vector) {
+        _usr_to_int_node_num[bound_node_num] = static_cast<int>(internal_index);
+        ++internal_index;
     }
 
     _node_num_mapped = true;
@@ -450,41 +609,45 @@ void Nodes::boundary_to_diffusive(int usr_node_num) {
 }
 
 Index Nodes::get_idx_from_node_num(int node_num) const {
-    if (!_node_num_mapped) {
-        create_node_num_map();
-    }
-    auto it = _usr_to_int_node_num.find(node_num);
-    if (it != _usr_to_int_node_num.end()) {
-        return it->second;
-    } else {
+    Index index = 0;
+    if (!find_node_index(node_num, index, nullptr)) {
         std::cout << "Error: Node does not exists" << '\n';
         return -1;
     }
+    return index;
 }
 
 int Nodes::get_node_num_from_idx(Index idx) const {
-    if (!_node_num_mapped) {
-        create_node_num_map();
-    }
-    if (0 <= idx && idx < _diff_node_num_vector.size()) {
-        return _diff_node_num_vector[idx];
-    } else if (idx <
-               _diff_node_num_vector.size() + _bound_node_num_vector.size()) {
-        idx -= _diff_node_num_vector.size();
-        return _bound_node_num_vector[idx];
-    } else {
+    ensure_node_map();
+    const auto diff_size = static_cast<Index>(_diff_node_num_vector.size());
+    const auto bound_size = static_cast<Index>(_bound_node_num_vector.size());
+
+    if (idx < 0) {
         std::cout << "Error: Node does not exists\n";
         return -1;
     }
+
+    if (idx < diff_size) {
+        return _diff_node_num_vector[static_cast<std::size_t>(idx)];
+    }
+
+    const auto adjusted = idx - diff_size;
+    if (adjusted >= 0 && adjusted < bound_size) {
+        return _bound_node_num_vector[static_cast<std::size_t>(adjusted)];
+    }
+
+    std::cout << "Error: Node does not exists\n";
+    return -1;
 }
 
 bool Nodes::is_node(int node_num) const {
-    return get_idx_from_node_num(node_num) != -1;
+    Index index = 0;
+    return find_node_index(node_num, index, nullptr);
 }
 
 Node Nodes::get_node_from_node_num(int node_num) {
     if (is_node(node_num)) {
-        return Node(node_num, _self_pointer);
+        return {node_num, _self_pointer};
     } else {
         return Node(-1);
     }
@@ -496,14 +659,21 @@ Node Nodes::get_node_from_idx(Index idx) {
 
 void Nodes::insert_displace(Eigen::SparseVector<LiteralString>& sparse,
                             Index index, const LiteralString& string) {
-    sparse.conservativeResize(sparse.size() + 1);
-    for (int i = sparse.nonZeros() - 1;
-         i >= 0 && sparse.innerIndexPtr()[i] >= index; i--) {
-        sparse.innerIndexPtr()[i] += 1;
+    Eigen::SparseVector<LiteralString> result(sparse.size() + 1);
+    result.reserve(sparse.nonZeros() + (string.is_empty() ? 0 : 1));
+
+    for (typename Eigen::SparseVector<LiteralString>::InnerIterator it(sparse);
+         it; ++it) {
+        const Index target_index =
+            it.index() >= index ? it.index() + 1 : it.index();
+        result.coeffRef(target_index) = it.value();
     }
+
     if (!string.is_empty()) {
-        sparse.insert(index) = string;
+        result.coeffRef(index) = string;
     }
+
+    sparse = result;
 }
 
 void Nodes::insert_displace(Eigen::SparseVector<LiteralString>& sparse,
@@ -513,14 +683,22 @@ void Nodes::insert_displace(Eigen::SparseVector<LiteralString>& sparse,
 
 void Nodes::insert_displace(Eigen::SparseVector<double>& sparse, Index index,
                             double value) {
-    sparse.conservativeResize(sparse.size() + 1);
-    for (int i = sparse.nonZeros() - 1;
-         i >= 0 && sparse.innerIndexPtr()[i] >= index; i--) {
-        sparse.innerIndexPtr()[i] += 1;
+    Eigen::SparseVector<double> result(sparse.size() + 1);
+    const bool store_value = std::abs(value) > ZERO_THR_ATTR;
+    result.reserve(sparse.nonZeros() + (store_value ? 1 : 0));
+
+    for (typename Eigen::SparseVector<double>::InnerIterator it(sparse); it;
+         ++it) {
+        const Index target_index =
+            it.index() >= index ? it.index() + 1 : it.index();
+        result.coeffRef(target_index) = it.value();
     }
-    if (std::abs(value) > ZERO_THR_ATTR) {
-        sparse.insert(index) = value;
+
+    if (store_value) {
+        result.coeffRef(index) = value;
     }
+
+    sparse = result;
 }
 
 void Nodes::delete_displace(Eigen::SparseVector<LiteralString>& sparse,
@@ -547,30 +725,11 @@ void Nodes::delete_displace(Eigen::SparseVector<double>& sparse, Index index) {
 }
 
 std::string Nodes::get_literal_C(int node_num) const {
-    if (!_node_num_mapped) {
-        create_node_num_map();
-    }
-    auto it = _usr_to_int_node_num.find(node_num);
-    if (it != _usr_to_int_node_num.end()) {
-        return literals_C.coeff(it->second).get_literal();
-    } else {
-        std::cout << "Get Error: Node does not exist.\n";
-        return {};
-    }
+    return resolve_get_literal_attr(node_num, literals_C);
 }
 
 bool Nodes::set_literal_C(int node_num, const std::string& str) {
-    if (!_node_num_mapped) {
-        create_node_num_map();
-    }
-    auto it = _usr_to_int_node_num.find(node_num);
-    if (it != _usr_to_int_node_num.end()) {
-        literals_C.insert(it->second) = str;
-        return true;
-    } else {
-        std::cout << "Set Error: Node does not exist.\n";
-        return false;
-    }
+    return resolve_set_literal_attr(node_num, literals_C, str);
 }
 
 void Nodes::remove_node(int node_num) {
