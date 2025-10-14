@@ -2,15 +2,18 @@
 #include "pycanha-core/utils/SparseUtils.hpp"
 
 #include <algorithm>
+#include <cmath>
 #include <cstring>
 #include <iomanip>
 #include <iostream>
-#include <memory>
+#include <iterator>
+#include <stdexcept>
 #include <tuple>
 #include <type_traits>
 #include <utility>
 #include <vector>
 
+#include "pycanha-core/config.hpp"
 #include "pycanha-core/utils/Instrumentor.hpp"
 #include "pycanha-core/utils/RandomGenerators.hpp"
 
@@ -44,7 +47,7 @@ void add_zero_row_fun(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
         // Copy the outer and nnz indices to the new positions
         auto* src_ptr_outer = sparse.outerIndexPtr() + new_row_idx;
         auto* src_ptr_nnz = sparse.innerNonZeroPtr() + new_row_idx;
-        size_t elems_to_copy = (sparse.outerSize() - new_row_idx - 1);
+        const size_t elems_to_copy = (sparse.outerSize() - new_row_idx - 1);
         memmove(src_ptr_outer + 1, src_ptr_outer,
                 elems_to_copy * sizeof(*src_ptr_outer));
         memmove(src_ptr_nnz + 1, src_ptr_nnz,
@@ -69,8 +72,8 @@ void add_zero_col_fun(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
         // The column index (innerIndexPtr) of any coefficient equal or bigger
         // than new_index should be increased in one.
         for (Index row = 0; row < sparse.outerSize(); row++) {
-            Index ival_start = sparse.outerIndexPtr()[row];
-            Index nnz = sparse.innerNonZeroPtr()[row];
+            const Index ival_start = sparse.outerIndexPtr()[row];
+            const Index nnz = sparse.innerNonZeroPtr()[row];
             for (Index ival = ival_start; ival < ival_start + nnz; ival++) {
                 if (sparse.innerIndexPtr()[ival] >= new_col_idx) {
                     sparse.innerIndexPtr()[ival]++;
@@ -106,8 +109,8 @@ void add_zero_row_col_fun(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
         // The column index (innerIndexPtr) of any coefficient equal or bigger
         // than new_index should be increased in one.
         for (Index row = 0; row < sparse.outerSize(); row++) {
-            Index ival_start = sparse.outerIndexPtr()[row];
-            Index nnz = sparse.innerNonZeroPtr()[row];
+            const Index ival_start = sparse.outerIndexPtr()[row];
+            const Index nnz = sparse.innerNonZeroPtr()[row];
             for (Index ival = ival_start; ival < ival_start + nnz; ival++) {
                 if (sparse.innerIndexPtr()[ival] >= new_col_idx) {
                     sparse.innerIndexPtr()[ival]++;
@@ -118,7 +121,7 @@ void add_zero_row_col_fun(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
         // Copy the outer and nnz indices to the new positions
         auto* src_ptr_outer = sparse.outerIndexPtr() + new_row_idx;
         auto* src_ptr_nnz = sparse.innerNonZeroPtr() + new_row_idx;
-        size_t elems_to_copy = (sparse.outerSize() - new_row_idx - 1);
+        const size_t elems_to_copy = (sparse.outerSize() - new_row_idx - 1);
         memmove(src_ptr_outer + 1, src_ptr_outer,
                 elems_to_copy * sizeof(*src_ptr_outer));
         memmove(src_ptr_nnz + 1, src_ptr_nnz,
@@ -183,7 +186,7 @@ void move_delete_row_col_fun(
 
     // All inner indices should be reduced in 1
     for (Index iouter = 0; iouter < sparse.outerSize(); iouter++) {
-        Index ival_start =
+        const Index ival_start =
             sparse.outerIndexPtr()[iouter];  // Index of the first value of the
                                              // row
         auto nnz = sparse.innerNonZeroPtr()[iouter];
@@ -384,22 +387,21 @@ void move_rows(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
     const auto sz_if = static_cast<std::size_t>(num_holes_from);
     const auto sz_it = static_cast<std::size_t>(num_holes_to);
 
-    // NOLINTBEGIN(hicpp-avoid-c-arrays,cppcoreguidelines-avoid-c-arrays)
-    auto inner_from_copy =
-        std::make_unique_for_overwrite<StorageIndex[]>(sz_if);
-    auto values_from_copy = std::make_unique_for_overwrite<Values[]>(sz_if);
-    auto inner_to_copy = std::make_unique_for_overwrite<StorageIndex[]>(sz_it);
-    auto values_to_copy = std::make_unique_for_overwrite<Values[]>(sz_it);
-    // NOLINTEND(hicpp-avoid-c-arrays,cppcoreguidelines-avoid-c-arrays)
+    // NOLINTBEGIN(hicpp-avoid-c-arrays,cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays)
+    auto inner_from_copy = std::vector<StorageIndex>(sz_if);
+    auto values_from_copy = std::vector<Values>(sz_if);
+    auto inner_to_copy = std::vector<StorageIndex>(sz_it);
+    auto values_to_copy = std::vector<Values>(sz_it);
+    // NOLINTEND(hicpp-avoid-c-arrays,cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays)
 
     // Copy out the two row slots
-    std::memcpy(inner_from_copy.get(), inner + from_start_vidx,
+    std::memcpy(inner_from_copy.data(), inner + from_start_vidx,
                 sz_if * sizeof(StorageIndex));
-    std::memcpy(values_from_copy.get(), vals + from_start_vidx,
+    std::memcpy(values_from_copy.data(), vals + from_start_vidx,
                 sz_if * sizeof(Values));
-    std::memcpy(inner_to_copy.get(), inner + to_start_vidx,
+    std::memcpy(inner_to_copy.data(), inner + to_start_vidx,
                 sz_it * sizeof(StorageIndex));
-    std::memcpy(values_to_copy.get(), vals + to_start_vidx,
+    std::memcpy(values_to_copy.data(), vals + to_start_vidx,
                 sz_it * sizeof(Values));
 
     // Move the between-rows block to make room
@@ -415,15 +417,15 @@ void move_rows(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
         static_cast<std::size_t>(num_holes_between_rows) * sizeof(*vals));
 
     // Lay down swapped rows plus preserved middle
-    std::memcpy(inner + from_start_vidx, inner_to_copy.get(),
+    std::memcpy(inner + from_start_vidx, inner_to_copy.data(),
                 sz_it * sizeof(StorageIndex));
     std::memcpy(inner + from_start_vidx + num_holes_between_rows + num_holes_to,
-                inner_from_copy.get(), sz_if * sizeof(StorageIndex));
+                inner_from_copy.data(), sz_if * sizeof(StorageIndex));
 
-    std::memcpy(vals + from_start_vidx, values_to_copy.get(),
+    std::memcpy(vals + from_start_vidx, values_to_copy.data(),
                 sz_it * sizeof(Values));
     std::memcpy(vals + from_start_vidx + num_holes_between_rows + num_holes_to,
-                values_from_copy.get(), sz_if * sizeof(Values));
+                values_from_copy.data(), sz_if * sizeof(Values));
 
     // Swap per-row nnz and fix the outers
     std::swap(nnz[from_idx], nnz[to_idx]);
@@ -457,8 +459,7 @@ void move_cols(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
 
     if ((from_idx < 0) || (to_idx >= sparse.cols())) {
         if (VERBOSE) {
-            std::cout << "Error while moving cols. Invalid indexes."
-                      << std::endl;
+            std::cout << "Error while moving cols. Invalid indexes." << '\n';
         }
         return;
     }
@@ -599,7 +600,7 @@ void remove_row(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
         if (VERBOSE) {
             std::cout
                 << "Error: At removing row from sparse, invalid row index."
-                << std::endl;
+                << '\n';
         }
     }
 }
@@ -614,7 +615,7 @@ void remove_col(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
         if (VERBOSE) {
             std::cout
                 << "Error: At removing col from sparse, invalid col index."
-                << std::endl;
+                << '\n';
         }
     }
 }
@@ -631,7 +632,7 @@ void remove_row_col(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
         if (VERBOSE) {
             std::cout << "Error: At removing row and col from sparse, invalid "
                          "row or col index."
-                      << std::endl;
+                      << '\n';
         }
     }
 }
@@ -749,8 +750,8 @@ void random_fill_sparse(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
         Index{0}, rows * cols);
 
     // Avoid Eigen::VectorXi (int) to prevent narrowing; use Index-sized vector.
-    std::vector<Index> reserve_per_outer(static_cast<std::size_t>(rows),
-                                         approx_values_per_outer);
+    const std::vector<Index> reserve_per_outer(static_cast<std::size_t>(rows),
+                                               approx_values_per_outer);
     sparse.reserve(reserve_per_outer);
 
     // Use generators with Index bounds to avoid narrowing to int.
@@ -866,20 +867,20 @@ std::tuple<Index, Index, double> get_row_col_value_from_value_idx(
     PYCANHA_ASSERT(vidx < sparse.nonZeros(),
                    "vidx out of limits of sparse non zeros");
 
-    double val = sparse.valuePtr()[vidx];
-    Index col = sparse.innerIndexPtr()[vidx];
+    const double val = sparse.valuePtr()[vidx];
+    const Index col = sparse.innerIndexPtr()[vidx];
 
     // We need to find the first outer idx where the value is <= vidx
     const auto* upper =
         std::upper_bound(sparse.outerIndexPtr(),
                          sparse.outerIndexPtr() + sparse.outerSize() + 1, vidx);
-    Index row = std::distance(sparse.outerIndexPtr(), upper) - 1;
+    const Index row = std::distance(sparse.outerIndexPtr(), upper) - 1;
 
     return std::make_tuple(row, col, val);
 }
 
 void print_sparse(const Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse) {
-    std::cout << std::endl;
+    std::cout << '\n';
     std::cout << "   Sparse matrix   \n";
     std::cout << "-------------------\n";
 
@@ -888,10 +889,10 @@ void print_sparse(const Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse) {
             std::cout << std::fixed << std::setprecision(0)
                       << sparse.coeff(row, col) << " ";
         }
-        std::cout << std::endl;
+        std::cout << '\n';
     }
     std::cout << "-------------------\n";
-    std::cout << std::endl;
+    std::cout << '\n';
 }
 
 void print_sparse_values(

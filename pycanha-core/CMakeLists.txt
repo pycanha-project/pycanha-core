@@ -69,7 +69,7 @@ target_include_directories(${LIB_NAME}
     PUBLIC 
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
-    PRIVATE
+    SYSTEM PRIVATE
     $<BUILD_INTERFACE:${cdt_SOURCE_DIR}> # This adds the parent directory of CDT. So  #include <CDT/include/CDT.h> will work
 )
 
@@ -104,5 +104,10 @@ target_set_warnings(
 
 if(${PYCANHA_OPTION_LTO})
     target_enable_lto(${LIB_NAME} optimized)
+endif()
+
+# Add clang-tidy to the library
+if (PYCANHA_OPTION_CLANG_TIDY)
+  add_clang_tidy_to_target(${LIB_NAME})
 endif()
 

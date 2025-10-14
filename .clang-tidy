@@ -28,6 +28,7 @@ Checks: "*,
 # bugprone-implicit-widening-of-multiplication-result
 
 WarningsAsErrors: ''
+HeaderFilterRegex: '^(?:.*/pycanha-core/pycanha-core/(?:include|src)/.*|.*/pycanha-core/test/.*|.*/pycanha-core/examples/.*)$'
 CheckOptions:
   - key: 'bugprone-argument-comment.StrictMode'
     value: 'true'

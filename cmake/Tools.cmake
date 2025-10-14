@@ -68,7 +68,6 @@ function(add_clang_tidy_to_target target)
                 ${CLANG_TIDY_EXE}
                 --config-file ${CMAKE_SOURCE_DIR}/.clang-tidy
                 --extra-arg-before=-std=${CMAKE_CXX_STANDARD}
-                --header-filter=.*
                 ${CLANG_TIDY_WARNING_AS_ERRORS}
                 -p ${CMAKE_BINARY_DIR}
                 ${TARGET_SOURCES}

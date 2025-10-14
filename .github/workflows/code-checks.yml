@@ -54,7 +54,9 @@ jobs:
         cmake --preset=conan-debug
         
     - name: Run clang-tidy
-      run: cmake --build build/Debug  --target tests_clangtidy
+      run: |
+        cmake --build build/Debug  --target tests_clangtidy
+        cmake --build build/Debug  --target pycanha-core_clangtidy
       
     - name: Run cppcheck
       run: cmake --build build/Debug  --target tests_lib_cppcheck

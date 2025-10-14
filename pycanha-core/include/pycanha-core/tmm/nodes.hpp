@@ -60,7 +60,7 @@ class Nodes {
     friend class ThermalNetwork;
 
   public:
-    int estimated_number_of_nodes;  // TODO: Is this useful? Delete?
+    int estimated_number_of_nodes{100};  // TODO: Is this useful? Delete?
 
   private:
     /**
@@ -195,7 +195,7 @@ class Nodes {
      * (_usr_to_int_node_num) this variable is checked. If false the map is
      * updated before accesing it.
      */
-    mutable bool _node_num_mapped;
+    mutable bool _node_num_mapped{false};
 
   public:
     // Constructors
@@ -287,17 +287,17 @@ class Nodes {
     bool set_T(int node_num, double T);  ///< Temperature [K] setter.
     bool set_C(int node_num, double C);  ///< Thermal capacity [J/K] setter.
     // NOLINTEND(readability-identifier-naming)
-    bool set_qs(int node_num, double qs);    ///< Solar load [W] setter.
-    bool set_qa(int node_num, double qa);    ///< Albedo load [W] setter.
-    bool set_qe(int node_num, double qe);    ///< Earth IR load [W] setter.
-    bool set_qi(int node_num, double qi);    ///< Internal load [W] setter.
-    bool set_qr(int node_num, double qr);    ///< Other load [W] setter.
-    bool set_a(int node_num, double a);      ///< Area [m^2] setter.
-    bool set_fx(int node_num, double fx);    ///< X coordinate [m] setter.
-    bool set_fy(int node_num, double fy);    ///< Y coordinate [m] setter.
-    bool set_fz(int node_num, double fz);    ///< Z coordinate [m] setter.
-    bool set_eps(int node_num, double eps);  ///< IR emissivity setter.
-    bool set_aph(int node_num, double aph);  ///< Solar absortivity setter.
+    bool set_qs(int node_num, double value);   ///< Solar load [W] setter.
+    bool set_qa(int node_num, double value);   ///< Albedo load [W] setter.
+    bool set_qe(int node_num, double value);   ///< Earth IR load [W] setter.
+    bool set_qi(int node_num, double value);   ///< Internal load [W] setter.
+    bool set_qr(int node_num, double value);   ///< Other load [W] setter.
+    bool set_a(int node_num, double value);    ///< Area [m^2] setter.
+    bool set_fx(int node_num, double value);   ///< X coordinate [m] setter.
+    bool set_fy(int node_num, double value);   ///< Y coordinate [m] setter.
+    bool set_fz(int node_num, double value);   ///< Z coordinate [m] setter.
+    bool set_eps(int node_num, double value);  ///< IR emissivity setter.
+    bool set_aph(int node_num, double value);  ///< Solar absortivity setter.
 
     // NOLINTBEGIN(readability-identifier-naming)
     bool set_literal_C(
@@ -368,8 +368,8 @@ class Nodes {
     Index get_idx_from_node_num(
         int node_num) const;  ///< Get internal node numbre from user number.
     int get_node_num_from_idx(
-        Index idx) const;        ///< Get internal node numbre from user number.
-    bool is_node(int node_num);  ///< Check if node is stored.
+        Index idx) const;  ///< Get internal node numbre from user number.
+    bool is_node(int node_num) const;  ///< Check if node is stored.
     Node get_node_from_node_num(
         int node_num);                  ///< Get node object from node number.
     Node get_node_from_idx(Index idx);  ///< Get node object from idx.
@@ -396,17 +396,39 @@ class Nodes {
      */
     void create_node_num_map() const;
 
+    void ensure_node_map() const;
+    bool find_node_index(int node_num, Index &index,
+                         const char *error_prefix) const;
+    double resolve_get_dense_attr(int node_num,
+                                  const std::vector<double> &storage) const;
+    bool resolve_set_dense_attr(int node_num, std::vector<double> &storage,
+                                double value);
+    double *resolve_get_dense_attr_ref(int node_num,
+                                       std::vector<double> &storage);
+    double resolve_get_sparse_attr(
+        int node_num, const Eigen::SparseVector<double> &storage) const;
+    bool resolve_set_sparse_attr(int node_num,
+                                 Eigen::SparseVector<double> &storage,
+                                 double value);
+    double *resolve_get_sparse_attr_ref(int node_num,
+                                        Eigen::SparseVector<double> &storage);
+    std::string resolve_get_literal_attr(
+        int node_num, const Eigen::SparseVector<LiteralString> &storage) const;
+    bool resolve_set_literal_attr(int node_num,
+                                  Eigen::SparseVector<LiteralString> &storage,
+                                  const std::string &value);
+
     /**
      * Change the type of the node from diffusive to boundary. Because of how
      * the internal order is defined, the node structure needs to be rearranged.
      */
-    void diffusive_to_boundary(int node_num);
+    void diffusive_to_boundary(int usr_node_num);
 
     /**
      * Change the type of the node from boundary to diffusive. Because of how
      * the internal order is defined, the node structure needs to be rearranged.
      */
-    void boundary_to_diffusive(int node_num);
+    void boundary_to_diffusive(int usr_node_num);
 
     // Insert methods for SparseVectors
 
@@ -415,24 +437,24 @@ class Nodes {
      * vector. The size of the vector is increased by one, and the elements
      * after the inserted one are displaced one position.
      */
-    void insert_displace(Eigen::SparseVector<LiteralString> &sparse,
-                         Index index, const LiteralString &string);
+    static void insert_displace(Eigen::SparseVector<LiteralString> &sparse,
+                                Index index, const LiteralString &string);
 
     /**
      * Helper method to insert a string value in the middle of a Sparse
      * vector. The size of the vector is increased by one, and the elements
      * after the inserted one are displaced one position.
      */
-    void insert_displace(Eigen::SparseVector<LiteralString> &sparse,
-                         Index index, const std::string &string);
+    static void insert_displace(Eigen::SparseVector<LiteralString> &sparse,
+                                Index index, const std::string &string);
 
     /**
      * Helper method to insert a double value in the middle of a Sparse vector.
      * The size of the vector is increased by one, and the elements after the
      * inserted one are displaced one position.
      */
-    void insert_displace(Eigen::SparseVector<double> &sparse, Index index,
-                         double value);
+    static void insert_displace(Eigen::SparseVector<double> &sparse,
+                                Index index, double value);
 
     // Delete methods for SparseVectors
 
@@ -441,14 +463,16 @@ class Nodes {
      * of LiteralString. The size of the vector is decreased by one, and the
      * elements after the deleted one are displaced one position.
      */
-    void delete_displace(Eigen::SparseVector<LiteralString> &sparse, int index);
+    static void delete_displace(Eigen::SparseVector<LiteralString> &sparse,
+                                Index index);
 
     /**
      * Helper method to delete an entry at position 'index' in a Sparse vector
      * of doubles. The size of the vector is decreased by one, and the elements
      * after the deleted one are displaced one position.
      */
-    void delete_displace(Eigen::SparseVector<double> &sparse, int index);
+    static void delete_displace(Eigen::SparseVector<double> &sparse,
+                                Index index);
 
     /**
      * Insert the node given the positions.

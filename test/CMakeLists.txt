@@ -50,7 +50,7 @@ target_set_warnings(
 
 
 
-
+# Add Clang-Tidy to the tests (only)
 if (PYCANHA_OPTION_CLANG_TIDY)
   add_clang_tidy_to_target(${TEST_TARGET_NAME})
 endif()

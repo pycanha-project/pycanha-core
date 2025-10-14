@@ -6,7 +6,7 @@
 
 // #include "CDT/include/CDT.h"
 // cppcheck-suppress *
-#include <CDT/include/Triangulation.h>
+#include <CDT/include/Triangulation.h>  // NOLINT(misc-header-include-cycle)
 
 #include <array>
 #include <cstdint>
@@ -39,6 +39,7 @@ void cdt_trimesher(TriMesh& trimesh) {
     // internal K-D tree The indexes are maintained, so it should be safe to
     // retrieve the triangles from ctd and use the original points. Source:
     // https://artem-ogre.github.io/CDT/structCDT_1_1VertexInsertionOrder.html
+    // NOLINTBEGIN(clang-analyzer-optin.cplusplus.UninitializedObject)
     CDT::Triangulation<double> cdt(CDT::VertexInsertionOrder::Auto);
 
     // Points
@@ -155,6 +156,7 @@ void cdt_trimesher(TriMesh& trimesh) {
 
     // Triangulate the surface
     cdt.eraseOuterTrianglesAndHoles();
+    // NOLINTEND(clang-analyzer-optin.cplusplus.UninitializedObject)
 
     TrianglesList triangles(cdt.triangles.size(), 3);
 
