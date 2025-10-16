@@ -19,6 +19,18 @@ namespace pycanha {
 
 namespace {
 
+[[nodiscard]] std::optional<int> to_int_node_number(Index node_num) {
+    if (node_num > static_cast<Index>(std::numeric_limits<int>::max()) ||
+        node_num < static_cast<Index>(std::numeric_limits<int>::min())) {
+        if (VERBOSE) {
+            std::cout << "Couplings: Node number " << node_num
+                      << " exceeds supported int range." << '\n';
+        }
+        return std::nullopt;
+    }
+    return static_cast<int>(node_num);
+}
+
 template <typename SparseMatrix>
 void ensure_sparse_dimensions(SparseMatrix& matrix, Index rows, Index cols) {
     if (matrix.rows() >= rows && matrix.cols() >= cols) {
@@ -54,8 +66,8 @@ CouplingMatrices& Couplings::get_coupling_matrices() noexcept {
     return _matrices;
 }
 
-double Couplings::get_coupling_value(int usr_num_1, int usr_num_2) {
-    const auto indices = get_indices_from_node_numbers(usr_num_1, usr_num_2);
+double Couplings::get_coupling_value(Index node_num_1, Index node_num_2) {
+    const auto indices = get_indices_from_node_numbers(node_num_1, node_num_2);
     if (!indices.has_value()) {
         return std::numeric_limits<double>::quiet_NaN();
     }
@@ -64,8 +76,9 @@ double Couplings::get_coupling_value(int usr_num_1, int usr_num_2) {
                                                   indices->second);
 }
 
-void Couplings::set_coupling_value(int usr_num_1, int usr_num_2, double value) {
-    const auto indices = get_indices_from_node_numbers(usr_num_1, usr_num_2);
+void Couplings::set_coupling_value(Index node_num_1, Index node_num_2,
+                                   double value) {
+    const auto indices = get_indices_from_node_numbers(node_num_1, node_num_2);
     if (!indices.has_value()) {
         return;
     }
@@ -74,7 +87,8 @@ void Couplings::set_coupling_value(int usr_num_1, int usr_num_2, double value) {
                                            value);
 }
 
-void Couplings::add_ovw_coupling(int node_num_1, int node_num_2, double value) {
+void Couplings::add_ovw_coupling(Index node_num_1, Index node_num_2,
+                                 double value) {
     const auto indices = get_indices_from_node_numbers(node_num_1, node_num_2);
     if (!indices.has_value()) {
         return;
@@ -85,12 +99,11 @@ void Couplings::add_ovw_coupling(int node_num_1, int node_num_2, double value) {
 }
 
 void Couplings::add_ovw_coupling(const Coupling& coupling) {
-    add_ovw_coupling(static_cast<int>(coupling.get_node_1()),
-                     static_cast<int>(coupling.get_node_2()),
+    add_ovw_coupling(coupling.get_node_1(), coupling.get_node_2(),
                      coupling.get_value());
 }
 
-void Couplings::add_ovw_coupling_verbose(int node_num_1, int node_num_2,
+void Couplings::add_ovw_coupling_verbose(Index node_num_1, Index node_num_2,
                                          double value) {
     const auto indices = get_indices_from_node_numbers(node_num_1, node_num_2);
     if (!indices.has_value()) {
@@ -102,12 +115,12 @@ void Couplings::add_ovw_coupling_verbose(int node_num_1, int node_num_2,
 }
 
 void Couplings::add_ovw_coupling_verbose(const Coupling& coupling) {
-    add_ovw_coupling_verbose(static_cast<int>(coupling.get_node_1()),
-                             static_cast<int>(coupling.get_node_2()),
+    add_ovw_coupling_verbose(coupling.get_node_1(), coupling.get_node_2(),
                              coupling.get_value());
 }
 
-void Couplings::add_sum_coupling(int node_num_1, int node_num_2, double value) {
+void Couplings::add_sum_coupling(Index node_num_1, Index node_num_2,
+                                 double value) {
     const auto indices = get_indices_from_node_numbers(node_num_1, node_num_2);
     if (!indices.has_value()) {
         return;
@@ -118,12 +131,11 @@ void Couplings::add_sum_coupling(int node_num_1, int node_num_2, double value) {
 }
 
 void Couplings::add_sum_coupling(const Coupling& coupling) {
-    add_sum_coupling(static_cast<int>(coupling.get_node_1()),
-                     static_cast<int>(coupling.get_node_2()),
+    add_sum_coupling(coupling.get_node_1(), coupling.get_node_2(),
                      coupling.get_value());
 }
 
-void Couplings::add_sum_coupling_verbose(int node_num_1, int node_num_2,
+void Couplings::add_sum_coupling_verbose(Index node_num_1, Index node_num_2,
                                          double value) {
     const auto indices = get_indices_from_node_numbers(node_num_1, node_num_2);
     if (!indices.has_value()) {
@@ -135,12 +147,12 @@ void Couplings::add_sum_coupling_verbose(int node_num_1, int node_num_2,
 }
 
 void Couplings::add_sum_coupling_verbose(const Coupling& coupling) {
-    add_sum_coupling_verbose(static_cast<int>(coupling.get_node_1()),
-                             static_cast<int>(coupling.get_node_2()),
+    add_sum_coupling_verbose(coupling.get_node_1(), coupling.get_node_2(),
                              coupling.get_value());
 }
 
-void Couplings::add_new_coupling(int node_num_1, int node_num_2, double value) {
+void Couplings::add_new_coupling(Index node_num_1, Index node_num_2,
+                                 double value) {
     const auto indices = get_indices_from_node_numbers(node_num_1, node_num_2);
     if (!indices.has_value()) {
         return;
@@ -151,21 +163,20 @@ void Couplings::add_new_coupling(int node_num_1, int node_num_2, double value) {
 }
 
 void Couplings::add_new_coupling(const Coupling& coupling) {
-    add_new_coupling(static_cast<int>(coupling.get_node_1()),
-                     static_cast<int>(coupling.get_node_2()),
+    add_new_coupling(coupling.get_node_1(), coupling.get_node_2(),
                      coupling.get_value());
 }
 
-void Couplings::add_coupling(int usr_num_1, int usr_num_2, double value) {
-    add_new_coupling(usr_num_1, usr_num_2, value);
+void Couplings::add_coupling(Index node_num_1, Index node_num_2, double value) {
+    add_new_coupling(node_num_1, node_num_2, value);
 }
 
 void Couplings::add_coupling(const Coupling& coupling) {
     add_new_coupling(coupling);
 }
 
-double* Couplings::get_coupling_value_ref(int usr_num_1, int usr_num_2) {
-    const auto indices = get_indices_from_node_numbers(usr_num_1, usr_num_2);
+double* Couplings::get_coupling_value_ref(Index node_num_1, Index node_num_2) {
+    const auto indices = get_indices_from_node_numbers(node_num_1, node_num_2);
     if (!indices.has_value()) {
         return nullptr;
     }
@@ -174,8 +185,9 @@ double* Couplings::get_coupling_value_ref(int usr_num_1, int usr_num_2) {
                                                       indices->second);
 }
 
-IntAddress Couplings::get_coupling_value_address(int usr_num_1, int usr_num_2) {
-    const auto indices = get_indices_from_node_numbers(usr_num_1, usr_num_2);
+IntAddress Couplings::get_coupling_value_address(Index node_num_1,
+                                                 Index node_num_2) {
+    const auto indices = get_indices_from_node_numbers(node_num_1, node_num_2);
     if (!indices.has_value()) {
         return 0U;
     }
@@ -184,7 +196,7 @@ IntAddress Couplings::get_coupling_value_address(int usr_num_1, int usr_num_2) {
                                                           indices->second);
 }
 
-bool Couplings::coupling_exists(int node_num_1, int node_num_2) {
+bool Couplings::coupling_exists(Index node_num_1, Index node_num_2) {
     const auto indices = get_indices_from_node_numbers(node_num_1, node_num_2);
     if (!indices.has_value()) {
         return false;
@@ -197,15 +209,17 @@ Coupling Couplings::get_coupling_from_coupling_idx(Index cidx) {
     const auto [idx1, idx2, value] =
         _matrices.get_idxs_and_coupling_value_from_coupling_idx(cidx);
     if (idx1 < 0 || idx2 < 0) {
-        return {-1, -1, std::numeric_limits<double>::quiet_NaN()};
+        return {Index{-1}, Index{-1}, std::numeric_limits<double>::quiet_NaN()};
     }
 
-    const int node_num_1 = _nodes != nullptr
-                               ? _nodes->get_node_num_from_idx(idx1)
-                               : static_cast<int>(idx1);
-    const int node_num_2 = _nodes != nullptr
-                               ? _nodes->get_node_num_from_idx(idx2)
-                               : static_cast<int>(idx2);
+    const Index node_num_1 =
+        _nodes != nullptr
+            ? static_cast<Index>(_nodes->get_node_num_from_idx(idx1))
+            : idx1;
+    const Index node_num_2 =
+        _nodes != nullptr
+            ? static_cast<Index>(_nodes->get_node_num_from_idx(idx2))
+            : idx2;
     return {node_num_1, node_num_2, value};
 }
 
@@ -225,7 +239,7 @@ void Couplings::synchronize_structure() {
 }
 
 std::optional<std::pair<Index, Index>> Couplings::get_indices_from_node_numbers(
-    int node_num_1, int node_num_2) {
+    Index node_num_1, Index node_num_2) {
     if (_nodes == nullptr) {
         if (VERBOSE) {
             std::cout << "Couplings::get_indices_from_node_numbers called with "
@@ -237,8 +251,14 @@ std::optional<std::pair<Index, Index>> Couplings::get_indices_from_node_numbers(
 
     synchronize_structure();
 
-    auto idx1 = _nodes->get_idx_from_node_num(node_num_1);
-    auto idx2 = _nodes->get_idx_from_node_num(node_num_2);
+    const auto node_num_1_int = to_int_node_number(node_num_1);
+    const auto node_num_2_int = to_int_node_number(node_num_2);
+    if (!node_num_1_int.has_value() || !node_num_2_int.has_value()) {
+        return std::nullopt;
+    }
+
+    auto idx1 = _nodes->get_idx_from_node_num(*node_num_1_int);
+    auto idx2 = _nodes->get_idx_from_node_num(*node_num_2_int);
 
     if (idx1 < 0 || idx2 < 0) {
         if (VERBOSE) {
@@ -264,8 +284,8 @@ std::optional<std::pair<Index, Index>> Couplings::get_indices_from_node_numbers(
 }
 
 std::tuple<Index, Index, Eigen::SparseMatrix<double, Eigen::RowMajor>*>
-Couplings::get_indices_and_sparse_from_node_numbers(int node_num_1,
-                                                    int node_num_2) {
+Couplings::get_indices_and_sparse_from_node_numbers(Index node_num_1,
+                                                    Index node_num_2) {
     const auto indices = get_indices_from_node_numbers(node_num_1, node_num_2);
     if (!indices.has_value()) {
         return {Index{-1}, Index{-1}, nullptr};
@@ -292,8 +312,8 @@ Couplings::get_indices_and_sparse_from_node_numbers(int node_num_1,
     return {sp_idx1, sp_idx2, sparse_ptr};
 }
 
-bool Couplings::is_coupling_trivial_zero_from_node_numbers(int node_num_1,
-                                                           int node_num_2) {
+bool Couplings::is_coupling_trivial_zero_from_node_numbers(Index node_num_1,
+                                                           Index node_num_2) {
     auto [idx1, idx2, sparse_ptr] =
         get_indices_and_sparse_from_node_numbers(node_num_1, node_num_2);
     if (sparse_ptr == nullptr) {
