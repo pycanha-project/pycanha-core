@@ -19,21 +19,6 @@ namespace pycanha {
 
 namespace {
 
-[[nodiscard]] std::optional<std::pair<int, int>> convert_to_int_indices(
-    const std::pair<Index, Index>& indices) {
-    const auto max_int_index =
-        static_cast<Index>(std::numeric_limits<int>::max());
-    if (indices.first > max_int_index || indices.second > max_int_index) {
-        if (VERBOSE) {
-            std::cout << "Couplings: Node index exceeds int range." << '\n';
-        }
-        return std::nullopt;
-    }
-
-    return std::pair<int, int>{static_cast<int>(indices.first),
-                               static_cast<int>(indices.second)};
-}
-
 template <typename SparseMatrix>
 void ensure_sparse_dimensions(SparseMatrix& matrix, Index rows, Index cols) {
     if (matrix.rows() >= rows && matrix.cols() >= cols) {
@@ -95,13 +80,8 @@ void Couplings::add_ovw_coupling(int node_num_1, int node_num_2, double value) {
         return;
     }
 
-    const auto int_indices = convert_to_int_indices(*indices);
-    if (!int_indices.has_value()) {
-        return;
-    }
-
-    _matrices.add_ovw_coupling_from_node_idxs(int_indices->first,
-                                              int_indices->second, value);
+    _matrices.add_ovw_coupling_from_node_idxs(indices->first, indices->second,
+                                              value);
 }
 
 void Couplings::add_ovw_coupling(const Coupling& coupling) {
@@ -117,13 +97,8 @@ void Couplings::add_ovw_coupling_verbose(int node_num_1, int node_num_2,
         return;
     }
 
-    const auto int_indices = convert_to_int_indices(*indices);
-    if (!int_indices.has_value()) {
-        return;
-    }
-
-    _matrices.add_ovw_coupling_from_node_idxs_verbose(
-        int_indices->first, int_indices->second, value);
+    _matrices.add_ovw_coupling_from_node_idxs_verbose(indices->first,
+                                                      indices->second, value);
 }
 
 void Couplings::add_ovw_coupling_verbose(const Coupling& coupling) {
@@ -138,13 +113,8 @@ void Couplings::add_sum_coupling(int node_num_1, int node_num_2, double value) {
         return;
     }
 
-    const auto int_indices = convert_to_int_indices(*indices);
-    if (!int_indices.has_value()) {
-        return;
-    }
-
-    _matrices.add_sum_coupling_from_node_idxs(int_indices->first,
-                                              int_indices->second, value);
+    _matrices.add_sum_coupling_from_node_idxs(indices->first, indices->second,
+                                              value);
 }
 
 void Couplings::add_sum_coupling(const Coupling& coupling) {
@@ -160,13 +130,8 @@ void Couplings::add_sum_coupling_verbose(int node_num_1, int node_num_2,
         return;
     }
 
-    const auto int_indices = convert_to_int_indices(*indices);
-    if (!int_indices.has_value()) {
-        return;
-    }
-
-    _matrices.add_sum_coupling_from_node_idxs_verbose(
-        int_indices->first, int_indices->second, value);
+    _matrices.add_sum_coupling_from_node_idxs_verbose(indices->first,
+                                                      indices->second, value);
 }
 
 void Couplings::add_sum_coupling_verbose(const Coupling& coupling) {
@@ -181,13 +146,8 @@ void Couplings::add_new_coupling(int node_num_1, int node_num_2, double value) {
         return;
     }
 
-    const auto int_indices = convert_to_int_indices(*indices);
-    if (!int_indices.has_value()) {
-        return;
-    }
-
-    _matrices.add_new_coupling_from_node_idxs(int_indices->first,
-                                              int_indices->second, value);
+    _matrices.add_new_coupling_from_node_idxs(indices->first, indices->second,
+                                              value);
 }
 
 void Couplings::add_new_coupling(const Coupling& coupling) {

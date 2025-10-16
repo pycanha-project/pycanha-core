@@ -44,29 +44,29 @@ Eigen::SparseMatrix<double, Eigen::RowMajor> CouplingMatrices::get_sparse_dd()
     return sparse_dd;
 }
 
-void CouplingMatrices::add_ovw_coupling_from_node_idxs(int idx1, int idx2,
+void CouplingMatrices::add_ovw_coupling_from_node_idxs(Index idx1, Index idx2,
                                                        double val) {
     _validate_coupling_call_add_generic(
         idx1, idx2, val, &CouplingMatrices::_add_ovw_coupling_sparse);
 }
-void CouplingMatrices::add_ovw_coupling_from_node_idxs_verbose(int idx1,
-                                                               int idx2,
+void CouplingMatrices::add_ovw_coupling_from_node_idxs_verbose(Index idx1,
+                                                               Index idx2,
                                                                double val) {
     _validate_coupling_call_add_generic(
         idx1, idx2, val, &CouplingMatrices::_add_ovw_coupling_sparse_verbose);
 }
-void CouplingMatrices::add_sum_coupling_from_node_idxs(int idx1, int idx2,
+void CouplingMatrices::add_sum_coupling_from_node_idxs(Index idx1, Index idx2,
                                                        double val) {
     _validate_coupling_call_add_generic(
         idx1, idx2, val, &CouplingMatrices::_add_sum_coupling_sparse);
 }
-void CouplingMatrices::add_sum_coupling_from_node_idxs_verbose(int idx1,
-                                                               int idx2,
+void CouplingMatrices::add_sum_coupling_from_node_idxs_verbose(Index idx1,
+                                                               Index idx2,
                                                                double val) {
     _validate_coupling_call_add_generic(
         idx1, idx2, val, &CouplingMatrices::_add_sum_coupling_sparse_verbose);
 }
-void CouplingMatrices::add_new_coupling_from_node_idxs(int idx1, int idx2,
+void CouplingMatrices::add_new_coupling_from_node_idxs(Index idx1, Index idx2,
                                                        double val) {
     _validate_coupling_call_add_generic(
         idx1, idx2, val, &CouplingMatrices::_add_new_coupling_sparse);
@@ -387,7 +387,7 @@ inline bool CouplingMatrices::_validate_conductor_value(double value) {
 }
 
 void CouplingMatrices::_validate_coupling_call_add_generic(
-    int idx1, int idx2, double val, AddCouplingGeneric add_coupling_fun) {
+    Index idx1, Index idx2, double val, AddCouplingGeneric add_coupling_fun) {
     auto [sp_ptr, sp_idx1, sp_idx2] = _get_sp_ptr_and_sp_idx(idx1, idx2);
     if (sp_ptr == nullptr) {
         if (VERBOSE) {

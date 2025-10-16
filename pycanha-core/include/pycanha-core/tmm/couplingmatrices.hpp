@@ -38,21 +38,21 @@ class CouplingMatrices {
 
     // Add couplings
     void add_ovw_coupling_from_node_idxs(
-        int idx1, int idx2,
+        Index idx1, Index idx2,
         double val);  ///< Add coupling, overwriting if already exists.
     void add_ovw_coupling_from_node_idxs_verbose(
-        int idx1, int idx2,
+        Index idx1, Index idx2,
         double val);  ///< Add coupling, overwriting if already exists. Prints
                       ///< message if overwrite.
     void add_sum_coupling_from_node_idxs(
-        int idx1, int idx2,
+        Index idx1, Index idx2,
         double val);  ///< Add coupling, sum the values if already exists.
     void add_sum_coupling_from_node_idxs_verbose(
-        int idx1, int idx2,
+        Index idx1, Index idx2,
         double val);  ///< Add coupling, sum the values if already exists.
                       ///< Prints message if sum.
     void add_new_coupling_from_node_idxs(
-        int idx1, int idx2,
+        Index idx1, Index idx2,
         double val);  ///< Add coupling, only if wasn't there already.
 
     // Get value
@@ -143,7 +143,8 @@ class CouplingMatrices {
     static inline bool _validate_conductor_value(double value);
 
     void _validate_coupling_call_add_generic(
-        int idx1, int idx2, double val, AddCouplingGeneric add_coupling_fun);
+        Index idx1, Index idx2, double val,
+        AddCouplingGeneric add_coupling_fun);
 
     // TODO
     void _diff_to_bound(Index insert_position, Index int_bound_num);

@@ -1,4 +1,5 @@
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 #include <cmath>
 #include <memory>
@@ -40,12 +41,12 @@ TEST_CASE("Couplings stores and retrieves conductances", "[couplings]") {
                      Catch::Matchers::WithinAbs(coupling_value, 1e-12));
 
         auto* value_ptr = couplings.get_coupling_value_ref(10, 20);
-        REQUIRE(value_ptr != nullptr);
+        REQUIRE((value_ptr != nullptr));
         REQUIRE_THAT(*value_ptr,
                      Catch::Matchers::WithinAbs(coupling_value, 1e-12));
 
         const auto value_address = couplings.get_coupling_value_address(10, 20);
-        REQUIRE(value_address != 0U);
+        REQUIRE((value_address != 0U));
     }
 
     SECTION("Sum and overwrite semantics work correctly") {
@@ -68,16 +69,16 @@ TEST_CASE("Couplings stores and retrieves conductances", "[couplings]") {
     }
 
     SECTION("Coupling objects can be used as inputs") {
-        Coupling coupling(10, 30, 9.0);
+        const Coupling coupling(10, 30, 9.0);
         couplings.add_coupling(coupling);
         REQUIRE(couplings.coupling_exists(10, 30));
 
-        Coupling increment(10, 30, 3.0);
+        const Coupling increment(10, 30, 3.0);
         couplings.add_sum_coupling(increment);
         REQUIRE_THAT(couplings.get_coupling_value(10, 30),
                      Catch::Matchers::WithinAbs(12.0, 1e-12));
 
-        Coupling overwrite(10, 30, 2.0);
+        const Coupling overwrite(10, 30, 2.0);
         couplings.add_ovw_coupling(overwrite);
         REQUIRE_THAT(couplings.get_coupling_value(10, 30),
                      Catch::Matchers::WithinAbs(2.0, 1e-12));
@@ -101,7 +102,7 @@ TEST_CASE("Couplings stores and retrieves conductances", "[couplings]") {
     SECTION("Invalid nodes return safe defaults") {
         REQUIRE_FALSE(couplings.coupling_exists(99, 100));
         REQUIRE(std::isnan(couplings.get_coupling_value(99, 100)));
-        REQUIRE(couplings.get_coupling_value_ref(99, 100) == nullptr);
-        REQUIRE(couplings.get_coupling_value_address(99, 100) == 0U);
+        REQUIRE((couplings.get_coupling_value_ref(99, 100) == nullptr));
+        REQUIRE((couplings.get_coupling_value_address(99, 100) == 0U));
     }
 }
