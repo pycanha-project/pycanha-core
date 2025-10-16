@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <iostream>
 #include <limits>
+#include <memory>
 #include <utility>
 
 #include "pycanha-core/config.hpp"
