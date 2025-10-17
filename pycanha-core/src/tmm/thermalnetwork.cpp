@@ -2,11 +2,13 @@
 
 #include <algorithm>
 #include <iostream>
+#include <iterator>
 #include <limits>
 #include <memory>
 #include <utility>
 
 #include "pycanha-core/config.hpp"
+#include "pycanha-core/parameters.hpp"
 #include "pycanha-core/tmm/conductivecouplings.hpp"
 #include "pycanha-core/tmm/node.hpp"
 #include "pycanha-core/tmm/nodes.hpp"

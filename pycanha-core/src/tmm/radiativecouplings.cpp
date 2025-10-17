@@ -1,6 +1,11 @@
 #include "pycanha-core/tmm/radiativecouplings.hpp"
 
+#include <memory>
 #include <utility>
+
+#include "pycanha-core/parameters.hpp"
+#include "pycanha-core/tmm/coupling.hpp"
+#include "pycanha-core/tmm/nodes.hpp"
 
 namespace pycanha {
 
