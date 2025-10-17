@@ -59,7 +59,12 @@ endif()
 add_library(${LIB_NAME} STATIC 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/triangulation.cpp
 
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/tmm/coupling.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/tmm/couplings.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/tmm/couplingmatrices.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/tmm/conductivecouplings.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/tmm/radiativecouplings.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/tmm/thermalnetwork.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/tmm/node.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/tmm/nodes.cpp
 
