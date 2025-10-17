@@ -1,4 +1,17 @@
 var searchData=
 [
-  ['quadrilateral_148',['Quadrilateral',['../classpycanha_1_1gmm_1_1Quadrilateral.html',1,'pycanha::gmm::Quadrilateral'],['../classpycanha_1_1gmm_1_1Quadrilateral.html#a7fffabde9d7ce27eafd258e24547d956',1,'pycanha::gmm::Quadrilateral::Quadrilateral()']]]
+  ['faq_0',['FAQ',['../md_docs_2faq.html',1,'']]],
+  ['for_20a_20release_1',['Workflows for a Release',['../md_docs_2cicd.html#autotoc_md45',1,'']]],
+  ['for_20every_20commit_20pull_20request_20to_20main_2',['Workflows for every commit/pull request to main',['../md_docs_2cicd.html#autotoc_md39',1,'']]],
+  ['for_20vs_20code_3',['Configuration for VS Code',['../md_docs_2configuring.html',1,'']]],
+  ['format_4',['clang-format',['../md_docs_2tools.html#autotoc_md4',1,'']]],
+  ['formatting_20tools_5',['Code formatting tools',['../md_docs_2tools.html#autotoc_md3',1,'']]],
+  ['found_6',['CMake not found',['../md_docs_2faq.html#autotoc_md48',1,'']]],
+  ['from_5f2d_5fto_5f3d_7',['from_2d_to_3d',['../classpycanha_1_1gmm_1_1Triangle.html#ad8405cc3fb6b587860fd4df1813ae6c1',1,'pycanha::gmm::Triangle::from_2d_to_3d()'],['../classpycanha_1_1gmm_1_1Primitive.html#a8db680311234ab88d6014e3346720e9e',1,'pycanha::gmm::Primitive::from_2d_to_3d()'],['../classpycanha_1_1gmm_1_1Rectangle.html#aecc55306d3bbe8195520eef33990cdc5',1,'pycanha::gmm::Rectangle::from_2d_to_3d()'],['../classpycanha_1_1gmm_1_1Quadrilateral.html#a73193629bf24bc896f00d9888b053368',1,'pycanha::gmm::Quadrilateral::from_2d_to_3d()'],['../classpycanha_1_1gmm_1_1Disc.html#a1010f80f61b08fb6113893a32a7ceff5',1,'pycanha::gmm::Disc::from_2d_to_3d()'],['../classpycanha_1_1gmm_1_1Cylinder.html#a6bf9a74e8eaf64b40ac6f45c59ea3f65',1,'pycanha::gmm::Cylinder::from_2d_to_3d()'],['../classpycanha_1_1gmm_1_1Cone.html#aedf93bbfdbfcae836eb8fe626eb3ecc7',1,'pycanha::gmm::Cone::from_2d_to_3d()'],['../classpycanha_1_1gmm_1_1Sphere.html#a5097f94c6a775083f8ac6d10b2af9919',1,'pycanha::gmm::Sphere::from_2d_to_3d(const Point2D &amp;p2d) const override']]],
+  ['from_5f2d_5fto_5f3d_5fmollweide_8',['from_2d_to_3d_mollweide',['../classpycanha_1_1gmm_1_1Sphere.html#ad3e4e89ea3c1af53bf55de3c7cc8d4ec',1,'pycanha::gmm::Sphere']]],
+  ['from_5f3d_5fto_5f2d_9',['from_3d_to_2d',['../classpycanha_1_1gmm_1_1Primitive.html#a1c551d7cf1d68f4027234eb45483d45f',1,'pycanha::gmm::Primitive::from_3d_to_2d()'],['../classpycanha_1_1gmm_1_1Sphere.html#aa245ee1bdddec69bcd77032f8456383d',1,'pycanha::gmm::Sphere::from_3d_to_2d()'],['../classpycanha_1_1gmm_1_1Cone.html#a84b7db6c1af17dba1e699af61e2dab71',1,'pycanha::gmm::Cone::from_3d_to_2d()'],['../classpycanha_1_1gmm_1_1Cylinder.html#a71b71cb82b3a557855a3d2da51363a9f',1,'pycanha::gmm::Cylinder::from_3d_to_2d()'],['../classpycanha_1_1gmm_1_1Disc.html#a15e488ca7d69c8d41c80ab70342689f5',1,'pycanha::gmm::Disc::from_3d_to_2d()'],['../classpycanha_1_1gmm_1_1Quadrilateral.html#a75d240e94a5545d07123a5657b24c82b',1,'pycanha::gmm::Quadrilateral::from_3d_to_2d()'],['../classpycanha_1_1gmm_1_1Rectangle.html#a0101d44b916ed5c5cbf42dd96c2ac0ac',1,'pycanha::gmm::Rectangle::from_3d_to_2d()'],['../classpycanha_1_1gmm_1_1Triangle.html#a63ee40470d93361a8c4462b4fdde2127',1,'pycanha::gmm::Triangle::from_3d_to_2d()']]],
+  ['from_5f3d_5fto_5f2d_5falbers_10',['from_3d_to_2d_albers',['../classpycanha_1_1gmm_1_1Sphere.html#aa1039d11264db7b9f88d55b44ff0a60c',1,'pycanha::gmm::Sphere']]],
+  ['fx_5fvector_11',['fx_vector',['../classpycanha_1_1Nodes.html#ab8139f1a2b380407ec78466dd7792773',1,'pycanha::Nodes']]],
+  ['fy_5fvector_12',['fy_vector',['../classpycanha_1_1Nodes.html#afa67110a50a5e4aca837ffcbd6135d9e',1,'pycanha::Nodes']]],
+  ['fz_5fvector_13',['fz_vector',['../classpycanha_1_1Nodes.html#a99d0fa93487beb5dd56b1d6ea478246a',1,'pycanha::Nodes']]]
 ];

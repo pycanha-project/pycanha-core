@@ -1,8 +1,13 @@
 <map id="pycanha::gmm::Geometry" name="pycanha::gmm::Geometry">
-<area shape="rect" id="node1" title="Base class for geometric items." alt="" coords="162,80,354,107"/>
-<area shape="rect" id="node3" href="$classpycanha_1_1gmm_1_1GeometryGroup.html" title="Class representing a group of geometric items. Inherits from Geometry." alt="" coords="17,155,248,181"/>
-<area shape="rect" id="node5" href="$classpycanha_1_1gmm_1_1GeometryItem.html" title="The base class for all geometry items." alt="" coords="279,155,501,181"/>
-<area shape="rect" id="node2" href="$classpycanha_1_1gmm_1_1UniqueID.html" title="Provides a unique integer id." alt="" coords="165,5,351,32"/>
-<area shape="rect" id="node4" href="$classpycanha_1_1gmm_1_1GeometryGroupCutted.html" title="Class representing a cutted geometry." alt="" coords="5,229,236,271"/>
-<area shape="rect" id="node6" href="$classpycanha_1_1gmm_1_1GeometryMeshedItem.html" title="A geometry item that contains mesh data." alt="" coords="260,237,533,263"/>
+<area shape="rect" id="Node000001" title="Base class for geometric items." alt="" coords="162,79,354,104"/>
+<area shape="rect" id="Node000003" href="$classpycanha_1_1gmm_1_1GeometryGroup.html" title="Class representing a group of geometric items. Inherits from Geometry." alt="" coords="17,152,248,177"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="227,113,154,154,152,149,225,108"/>
+<area shape="rect" id="Node000005" href="$classpycanha_1_1gmm_1_1GeometryItem.html" title="The base class for all geometry items." alt="" coords="279,152,501,177"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="292,108,370,149,367,154,290,113"/>
+<area shape="rect" id="Node000002" href="$classpycanha_1_1gmm_1_1UniqueID.html" title="Provides a unique integer id." alt="" coords="165,5,351,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="261,44,261,79,255,79,255,44"/>
+<area shape="rect" id="Node000004" href="$classpycanha_1_1gmm_1_1GeometryGroupCutted.html" title="Class representing a cutted geometry." alt="" coords="5,225,236,265"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="131,191,126,226,121,225,126,190"/>
+<area shape="rect" id="Node000006" href="$classpycanha_1_1gmm_1_1GeometryMeshedItem.html" title="A geometry item that contains mesh data." alt="" coords="260,233,533,258"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="395,191,398,232,393,233,389,191"/>
 </map>

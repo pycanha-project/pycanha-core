@@ -1,8 +1,7 @@
 var searchData=
 [
-  ['add_5fcutting_5fgeometry_5fitem_46',['add_cutting_geometry_item',['../classpycanha_1_1gmm_1_1GeometryGroupCutted.html#ac92939b500984cb6488fe61a8c56ce9c',1,'pycanha::gmm::GeometryGroupCutted']]],
-  ['add_5fgeometry_5fgroup_47',['add_geometry_group',['../classpycanha_1_1gmm_1_1GeometryGroup.html#a071de3df4d9d83e3edf221cf8d3ad7a7',1,'pycanha::gmm::GeometryGroup']]],
-  ['add_5fgeometry_5fgroup_5fcutted_48',['add_geometry_group_cutted',['../classpycanha_1_1gmm_1_1GeometryGroup.html#a66e6e5add5684119ef38d21f70484d4b',1,'pycanha::gmm::GeometryGroup']]],
-  ['add_5fgeometry_5fitem_49',['add_geometry_item',['../classpycanha_1_1gmm_1_1GeometryGroup.html#af310e7c7fa1034f186f9983724fd3771',1,'pycanha::gmm::GeometryGroup']]],
-  ['add_5fmesh_50',['add_mesh',['../classpycanha_1_1gmm_1_1TriMeshModel.html#ad7303091b268e94f5a617b36ac1139da',1,'pycanha::gmm::TriMeshModel']]]
+  ['2_20a_20automatic_20configuration_20by_20importing_20a_20vs_20code_20profile_0',['2.a. Automatic configuration by importing a VS Code profile',['../md_docs_2configuring.html#autotoc_md29',1,'']]],
+  ['2_20b_20manual_20configuration_1',['2.b Manual configuration',['../md_docs_2configuring.html#autotoc_md30',1,'']]],
+  ['2_20configure_20vs_20code_2',['2. Configure VS Code',['../md_docs_2configuring.html#autotoc_md28',1,'']]],
+  ['2_20create_20a_20python_20virtual_20environment_20and_20activate_20it_20in_20vs_20code_3',['3.2. Create a Python virtual environment and activate it in VS Code',['../md_docs_2configuring.html#autotoc_md33',1,'']]]
 ];

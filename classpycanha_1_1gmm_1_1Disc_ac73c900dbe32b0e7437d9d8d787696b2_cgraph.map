@@ -1,4 +1,5 @@
 <map id="pycanha::gmm::Disc::v2" name="pycanha::gmm::Disc::v2">
-<area shape="rect" id="node1" title="Returns the second direction v2 = p3 &#45; p2." alt="" coords="5,5,184,32"/>
-<area shape="rect" id="node2" href="$classpycanha_1_1gmm_1_1Disc.html#a517c77be943d5862ac5bb77ceaf91e78" title="Returns the first direction v1 = p2 &#45; p1." alt="" coords="232,5,411,32"/>
+<area shape="rect" id="Node000001" title="Returns the second direction v2 = p3 &#45; p2." alt="" coords="5,5,184,31"/>
+<area shape="rect" id="Node000002" href="$classpycanha_1_1gmm_1_1Disc.html#a517c77be943d5862ac5bb77ceaf91e78" title="Returns the first direction v1 = p2 &#45; p1." alt="" coords="232,5,411,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="185,15,218,15,218,21,185,21"/>
 </map>

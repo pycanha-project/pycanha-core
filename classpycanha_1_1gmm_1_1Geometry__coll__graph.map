@@ -1,4 +1,5 @@
 <map id="pycanha::gmm::Geometry" name="pycanha::gmm::Geometry">
-<area shape="rect" id="node1" title="Base class for geometric items." alt="" coords="5,80,197,107"/>
-<area shape="rect" id="node2" href="$classpycanha_1_1gmm_1_1UniqueID.html" title="Provides a unique integer id." alt="" coords="8,5,195,32"/>
+<area shape="rect" id="Node000001" title="Base class for geometric items." alt="" coords="5,79,197,104"/>
+<area shape="rect" id="Node000002" href="$classpycanha_1_1gmm_1_1UniqueID.html" title="Provides a unique integer id." alt="" coords="8,5,195,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="104,44,104,79,99,79,99,44"/>
 </map>

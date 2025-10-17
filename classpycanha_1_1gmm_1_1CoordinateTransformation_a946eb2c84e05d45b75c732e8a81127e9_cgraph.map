@@ -1,4 +1,5 @@
 <map id="pycanha::gmm::CoordinateTransformation::set_rotation_angles" name="pycanha::gmm::CoordinateTransformation::set_rotation_angles">
-<area shape="rect" id="node1" title="Sets the rotation matrix." alt="" coords="5,5,212,61"/>
-<area shape="rect" id="node2" href="$classpycanha_1_1gmm_1_1CoordinateTransformation.html#a0dbf6edb3fa3f7b89204170aed3ca64e" title="Create rotation matrix." alt="" coords="260,5,459,61"/>
+<area shape="rect" id="Node000001" title="Sets the rotation matrix." alt="" coords="5,5,212,60"/>
+<area shape="rect" id="Node000002" href="$classpycanha_1_1gmm_1_1CoordinateTransformation.html#a0dbf6edb3fa3f7b89204170aed3ca64e" title="Create rotation matrix." alt="" coords="260,5,459,60"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="212,30,246,30,246,35,212,35"/>
 </map>

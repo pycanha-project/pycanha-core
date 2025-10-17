@@ -1,5 +1,8 @@
 <map id="pycanha::gmm::Disc::from_2d_to_3d" name="pycanha::gmm::Disc::from_2d_to_3d">
-<area shape="rect" id="node1" title="3D coordinates of a point ON the primitive surface from 2D coordinates. Note: The method is not valid..." alt="" coords="5,5,160,47"/>
-<area shape="rect" id="node2" href="$classpycanha_1_1gmm_1_1Disc.html#a517c77be943d5862ac5bb77ceaf91e78" title="Returns the first direction v1 = p2 &#45; p1." alt="" coords="435,13,613,39"/>
-<area shape="rect" id="node3" href="$classpycanha_1_1gmm_1_1Disc.html#ac73c900dbe32b0e7437d9d8d787696b2" title="Returns the second direction v2 = p3 &#45; p2." alt="" coords="208,38,387,65"/>
+<area shape="rect" id="Node000001" title="3D coordinates of a point ON the primitive surface from 2D coordinates. Note: The method is not valid..." alt="" coords="5,5,160,45"/>
+<area shape="rect" id="Node000002" href="$classpycanha_1_1gmm_1_1Disc.html#a517c77be943d5862ac5bb77ceaf91e78" title="Returns the first direction v1 = p2 &#45; p1." alt="" coords="435,13,613,38"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="160,23,421,23,421,28,160,28"/>
+<area shape="rect" id="Node000003" href="$classpycanha_1_1gmm_1_1Disc.html#ac73c900dbe32b0e7437d9d8d787696b2" title="Returns the second direction v2 = p3 &#45; p2." alt="" coords="208,38,387,63"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="161,32,195,36,194,41,160,37"/>
+<area shape="poly" id="edge3_Node000003_Node000002" title=" " alt="" coords="387,38,421,34,421,40,387,43"/>
 </map>

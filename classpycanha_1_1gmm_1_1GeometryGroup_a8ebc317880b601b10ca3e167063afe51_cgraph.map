@@ -1,4 +1,7 @@
 <map id="pycanha::gmm::GeometryGroup::iterate_geometry_meshed_items" name="pycanha::gmm::GeometryGroup::iterate_geometry_meshed_items">
-<area shape="rect" id="node1" title="Recursively iterates over all GeometryMeshedItem in the GeometryGroup. Skips recursive GeometryGroupC..." alt="" coords="5,5,252,47"/>
-<area shape="rect" id="node2" href="$classpycanha_1_1gmm_1_1CoordinateTransformation.html#a2223d8c13985136ad110d1cb4126f9d9" title="Creates a new transformation equivalent to applying other and then this." alt="" coords="300,5,499,47"/>
+<area shape="rect" id="Node000001" title="Recursively iterates over all GeometryMeshedItem in the GeometryGroup. Skips recursive GeometryGroupC..." alt="" coords="5,5,252,45"/>
+<area shape="rect" id="Node000002" href="$classpycanha_1_1gmm_1_1CoordinateTransformation.html#a2223d8c13985136ad110d1cb4126f9d9" title="Creates a new transformation equivalent to applying other and then this." alt="" coords="300,5,499,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="252,23,286,23,286,28,252,28"/>
+<area shape="rect" id="Node000003" href="$classpycanha_1_1gmm_1_1CoordinateTransformation.html#adb564610750eb3d80d29e8a4de0d7aae" title="Default constructor for CoordinateTransformation class." alt="" coords="547,5,844,45"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="499,23,533,23,533,28,499,28"/>
 </map>

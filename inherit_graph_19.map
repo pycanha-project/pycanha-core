@@ -1,0 +1,45 @@
+<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
+<area shape="rect" id="Node000000" title=" " alt="" coords="52,135,197,175"/>
+<area shape="rect" id="Node000001" href="$classpycanha_1_1gmm_1_1GeometryModel.html" title="Class representing a geometrical mathematical model." alt="" coords="292,147,524,172"/>
+<area shape="poly" id="edge1_Node000000_Node000001" title=" " alt="" coords="211,154,292,155,292,160,211,159"/>
+<area shape="rect" id="Node000020" href="$classpycanha_1_1gmm_1_1GeometryUpdateCallback.html" title=" " alt="" coords="5,199,244,239"/>
+<area shape="rect" id="Node000012" href="$classpycanha_1_1gmm_1_1Primitive.html" title="A geometry primitive." alt="" coords="315,203,501,228"/>
+<area shape="poly" id="edge2_Node000020_Node000012" title=" " alt="" coords="258,215,315,214,315,219,258,220"/>
+<area shape="rect" id="Node000013" href="$classpycanha_1_1gmm_1_1Cone.html" title="A class representing a cone in 3D space." alt="" coords="607,252,767,277"/>
+<area shape="poly" id="edge3_Node000012_Node000013" title=" " alt="" coords="494,228,615,249,614,255,493,233"/>
+<area shape="rect" id="Node000014" href="$classpycanha_1_1gmm_1_1Cylinder.html" title="A class representing a cylinder in 3D space." alt="" coords="597,301,778,327"/>
+<area shape="poly" id="edge4_Node000012_Node000014" title=" " alt="" coords="447,232,505,260,573,286,619,299,617,304,571,291,503,264,444,237"/>
+<area shape="rect" id="Node000015" href="$classpycanha_1_1gmm_1_1Disc.html" title="A class representing a disc in 3D space." alt="" coords="610,5,765,31"/>
+<area shape="poly" id="edge5_Node000012_Node000015" title=" " alt="" coords="504,194,522,181,536,165,542,148,545,112,548,76,555,57,570,40,588,28,609,20,611,25,591,33,574,44,560,60,553,77,550,112,547,149,540,167,526,185,507,199"/>
+<area shape="rect" id="Node000016" href="$classpycanha_1_1gmm_1_1Quadrilateral.html" title="A class representing a quadrilateral in 3D space." alt="" coords="581,55,793,80"/>
+<area shape="poly" id="edge6_Node000012_Node000016" title=" " alt="" coords="499,195,522,181,533,171,539,160,545,136,552,112,559,100,570,89,590,78,593,82,574,93,563,104,556,114,550,138,544,162,537,174,526,185,502,200"/>
+<area shape="rect" id="Node000017" href="$classpycanha_1_1gmm_1_1Rectangle.html" title="A class representing a rectangle in 3D space." alt="" coords="591,104,783,129"/>
+<area shape="poly" id="edge7_Node000012_Node000017" title=" " alt="" coords="487,196,523,181,537,171,546,160,555,149,571,138,600,127,602,132,573,143,559,153,550,163,540,175,525,186,489,201"/>
+<area shape="rect" id="Node000018" href="$classpycanha_1_1gmm_1_1Sphere.html" title="A class representing a sphere in 3D space." alt="" coords="601,153,773,179"/>
+<area shape="poly" id="edge8_Node000012_Node000018" title=" " alt="" coords="493,198,614,176,615,181,494,203"/>
+<area shape="rect" id="Node000019" href="$classpycanha_1_1gmm_1_1Triangle.html" title="A class representing a triangle in 3D space." alt="" coords="598,203,777,228"/>
+<area shape="poly" id="edge9_Node000012_Node000019" title=" " alt="" coords="515,213,598,213,598,218,515,218"/>
+<area shape="rect" id="Node000002" href="$classpycanha_1_1gmm_1_1UniqueID.html" title="Provides a unique integer id." alt="" coords="31,357,218,383"/>
+<area shape="poly" id="edge16_Node000002_Node000001" title=" " alt="" coords="148,346,242,250,264,217,274,202,291,188,330,170,332,175,293,192,278,206,268,220,246,253,152,350"/>
+<area shape="poly" id="edge20_Node000002_Node000012" title=" " alt="" coords="160,348,382,226,385,230,163,353"/>
+<area shape="rect" id="Node000003" href="$classpycanha_1_1gmm_1_1CoordinateTransformation.html" title="A class that represents a coordinate transformation." alt="" coords="309,433,507,473"/>
+<area shape="poly" id="edge10_Node000002_Node000003" title=" " alt="" coords="180,384,293,418,335,430,333,435,291,423,179,389"/>
+<area shape="rect" id="Node000004" href="$classpycanha_1_1gmm_1_1Geometry.html" title="Base class for geometric items." alt="" coords="312,497,504,523"/>
+<area shape="poly" id="edge11_Node000002_Node000004" title=" " alt="" coords="152,389,214,437,252,461,293,482,330,495,329,500,291,487,250,466,211,441,149,394"/>
+<area shape="rect" id="Node000009" href="$classpycanha_1_1gmm_1_1NamedMaterial.html" title=" " alt="" coords="294,333,522,359"/>
+<area shape="poly" id="edge17_Node000002_Node000009" title=" " alt="" coords="232,358,294,353,294,358,232,364"/>
+<area shape="rect" id="Node000021" href="$classpycanha_1_1gmm_1_1ThermalMesh.html" title=" " alt="" coords="300,383,516,408"/>
+<area shape="poly" id="edge21_Node000002_Node000021" title=" " alt="" coords="232,377,300,383,299,388,232,382"/>
+<area shape="rect" id="Node000005" href="$classpycanha_1_1gmm_1_1GeometryGroup.html" title="Class representing a group of geometric items. Inherits from Geometry." alt="" coords="572,532,803,557"/>
+<area shape="poly" id="edge12_Node000004_Node000005" title=" " alt="" coords="518,521,585,529,584,535,517,526"/>
+<area shape="rect" id="Node000007" href="$classpycanha_1_1gmm_1_1GeometryItem.html" title="The base class for all geometry items." alt="" coords="576,481,799,507"/>
+<area shape="poly" id="edge14_Node000004_Node000007" title=" " alt="" coords="518,501,575,498,576,503,518,506"/>
+<area shape="rect" id="Node000006" href="$classpycanha_1_1gmm_1_1GeometryGroupCutted.html" title="Class representing a cutted geometry." alt="" coords="872,529,1103,569"/>
+<area shape="poly" id="edge13_Node000005_Node000006" title=" " alt="" coords="816,544,872,544,872,550,816,549"/>
+<area shape="rect" id="Node000008" href="$classpycanha_1_1gmm_1_1GeometryMeshedItem.html" title="A geometry item that contains mesh data." alt="" coords="851,479,1124,504"/>
+<area shape="poly" id="edge15_Node000007_Node000008" title=" " alt="" coords="812,490,850,490,850,495,812,496"/>
+<area shape="rect" id="Node000010" href="$classpycanha_1_1gmm_1_1BulkMaterial.html" title=" " alt="" coords="582,400,793,425"/>
+<area shape="poly" id="edge18_Node000009_Node000010" title=" " alt="" coords="492,359,525,367,573,385,622,397,621,402,571,390,523,373,491,364"/>
+<area shape="rect" id="Node000011" href="$classpycanha_1_1gmm_1_1OpticalMaterial.html" title=" " alt="" coords="574,351,801,376"/>
+<area shape="poly" id="edge19_Node000009_Node000011" title=" " alt="" coords="536,351,574,354,574,359,536,357"/>
+</map>

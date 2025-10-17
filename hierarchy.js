@@ -1,6 +1,10 @@
 var hierarchy =
 [
     [ "pycanha::gmm::Color", "classpycanha_1_1gmm_1_1Color.html", null ],
+    [ "pycanha::ConductiveCouplings", "classpycanha_1_1ConductiveCouplings.html", null ],
+    [ "pycanha::Coupling", "classpycanha_1_1Coupling.html", null ],
+    [ "pycanha::CouplingMatrices", "classpycanha_1_1CouplingMatrices.html", null ],
+    [ "pycanha::Couplings", "classpycanha_1_1Couplings.html", null ],
     [ "std::enable_shared_from_this", null, [
       [ "pycanha::gmm::GeometryModel", "classpycanha_1_1gmm_1_1GeometryModel.html", null ]
     ] ],
@@ -15,6 +19,18 @@ var hierarchy =
         [ "pycanha::gmm::Triangle", "classpycanha_1_1gmm_1_1Triangle.html", null ]
       ] ]
     ] ],
+    [ "pycanha::InstrumentationSession", "structpycanha_1_1InstrumentationSession.html", null ],
+    [ "pycanha::InstrumentationTimer", "classpycanha_1_1InstrumentationTimer.html", null ],
+    [ "pycanha::Instrumentor", "classpycanha_1_1Instrumentor.html", null ],
+    [ "pycanha::random_generators::IntGenerator< RandT >", "classpycanha_1_1random__generators_1_1IntGenerator.html", null ],
+    [ "pycanha::LiteralString", "classpycanha_1_1LiteralString.html", null ],
+    [ "pycanha::Node::LocalStorage", "structpycanha_1_1Node_1_1LocalStorage.html", null ],
+    [ "pycanha::Node", "classpycanha_1_1Node.html", null ],
+    [ "pycanha::Nodes", "classpycanha_1_1Nodes.html", null ],
+    [ "pycanha::ProfileResult", "structpycanha_1_1ProfileResult.html", null ],
+    [ "pycanha::RadiativeCouplings", "classpycanha_1_1RadiativeCouplings.html", null ],
+    [ "pycanha::random_generators::RealGenerator< RandT >", "classpycanha_1_1random__generators_1_1RealGenerator.html", null ],
+    [ "pycanha::ThermalNetwork", "classpycanha_1_1ThermalNetwork.html", null ],
     [ "pycanha::gmm::TriMesh", "classpycanha_1_1gmm_1_1TriMesh.html", null ],
     [ "pycanha::gmm::TriMeshModel", "classpycanha_1_1gmm_1_1TriMeshModel.html", null ],
     [ "pycanha::gmm::UniqueID", "classpycanha_1_1gmm_1_1UniqueID.html", [

@@ -1,5 +1,7 @@
 <map id="pycanha::gmm::GeometryModel" name="pycanha::gmm::GeometryModel">
-<area shape="rect" id="node1" title="Class representing a geometrical mathematical model." alt="" coords="97,95,329,121"/>
-<area shape="rect" id="node2" href="$classpycanha_1_1gmm_1_1UniqueID.html" title="Provides a unique integer id." alt="" coords="5,13,192,39"/>
-<area shape="rect" id="node3" title=" " alt="" coords="216,5,443,47"/>
+<area shape="rect" id="Node000001" title="Class representing a geometrical mathematical model." alt="" coords="97,93,329,119"/>
+<area shape="rect" id="Node000002" href="$classpycanha_1_1gmm_1_1UniqueID.html" title="Provides a unique integer id." alt="" coords="5,13,192,38"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="128,44,198,91,195,95,125,48"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="216,5,443,45"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="291,55,232,95,229,91,288,51"/>
 </map>

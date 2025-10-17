@@ -1,4 +1,0 @@
-<map id="pycanha::gmm::Cylinder::transform" name="pycanha::gmm::Cylinder::transform">
-<area shape="rect" id="node1" title="Creates a new transformed primitive." alt="" coords="5,5,187,47"/>
-<area shape="rect" id="node2" href="$classpycanha_1_1gmm_1_1CoordinateTransformation.html#a1665c98196f9775e18cfcbbe5083097a" title="Transforms a point using the stored translation and rotation vectors." alt="" coords="235,5,467,47"/>
-</map>

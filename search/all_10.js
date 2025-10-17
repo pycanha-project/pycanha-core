@@ -1,5 +1,9 @@
 var searchData=
 [
-  ['v1_217',['v1',['../classpycanha_1_1gmm_1_1Triangle.html#af4f67a2841391839a57889d67443ef0c',1,'pycanha::gmm::Triangle::v1()'],['../classpycanha_1_1gmm_1_1Rectangle.html#a7f0930c0081f540f3b7efd6543e151a0',1,'pycanha::gmm::Rectangle::v1()'],['../classpycanha_1_1gmm_1_1Quadrilateral.html#a3c2cecd1d2adf11cb3c619dceb6baa1f',1,'pycanha::gmm::Quadrilateral::v1()'],['../classpycanha_1_1gmm_1_1Disc.html#a517c77be943d5862ac5bb77ceaf91e78',1,'pycanha::gmm::Disc::v1()']]],
-  ['v2_218',['v2',['../classpycanha_1_1gmm_1_1Triangle.html#a113cd18f27bd12d15681af628524300c',1,'pycanha::gmm::Triangle::v2()'],['../classpycanha_1_1gmm_1_1Rectangle.html#af00e73251e4ccf0cec5e645aee3f22e1',1,'pycanha::gmm::Rectangle::v2()'],['../classpycanha_1_1gmm_1_1Quadrilateral.html#a6037ada729f3b3aaa6c9a1392019a799',1,'pycanha::gmm::Quadrilateral::v2()'],['../classpycanha_1_1gmm_1_1Disc.html#ac73c900dbe32b0e7437d9d8d787696b2',1,'pycanha::gmm::Disc::v2()']]]
+  ['namedmaterial_0',['NamedMaterial',['../classpycanha_1_1gmm_1_1NamedMaterial.html',1,'pycanha::gmm']]],
+  ['node_1',['node',['../classpycanha_1_1Node.html',1,'pycanha::Node'],['../classpycanha_1_1Node.html#abbd6e2986a578eda277d020f11f70e47',1,'pycanha::Node::Node(int node_num)'],['../classpycanha_1_1Node.html#a1bbcc530cee5ea6191bb194919b1addf',1,'pycanha::Node::Node(int node_num, const std::weak_ptr&lt; Nodes &gt; &amp;parent_pointer)']]],
+  ['nodes_2',['nodes',['../classpycanha_1_1Nodes.html',1,'pycanha::Nodes'],['../classpycanha_1_1Nodes.html#a2997cd286bfea8e687eab639ce2ec0c5',1,'pycanha::Nodes::Nodes()']]],
+  ['not_20found_3',['CMake not found',['../md_docs_2faq.html#autotoc_md48',1,'']]],
+  ['note_20on_20vcpkg_20vs_20conan_4',['Note on vcpkg vs conan',['../md_docs_2tools.html#autotoc_md18',1,'']]],
+  ['num_5fnodes_5',['num_nodes',['../classpycanha_1_1Nodes.html#a4d5f3cb2114c487192405599f813d7dd',1,'pycanha::Nodes']]]
 ];

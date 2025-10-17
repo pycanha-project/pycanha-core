@@ -1,8 +1,13 @@
 <map id="pycanha::gmm::Cylinder::get_faceid_from_uv" name="pycanha::gmm::Cylinder::get_faceid_from_uv">
-<area shape="rect" id="node1" title="Returns the ID of the face in the thermal mesh that contains the given UV coordinates...." alt="" coords="5,136,187,177"/>
-<area shape="rect" id="node2" href="$classpycanha_1_1gmm_1_1Cylinder.html#a6beb7ed803cea0337ed3cb8a22365792" title="Returns the end angle of the cylinder." alt="" coords="235,5,416,47"/>
-<area shape="rect" id="node3" href="$classpycanha_1_1gmm_1_1Cylinder.html#ae88cc5f161c9b1b8451e8743f0165140" title="Returns the first point of the cylinder." alt="" coords="235,71,416,112"/>
-<area shape="rect" id="node4" href="$classpycanha_1_1gmm_1_1Cylinder.html#af8c604069c7bb98a807e9e8348929935" title="Returns the second point of the cylinder." alt="" coords="235,136,416,177"/>
-<area shape="rect" id="node5" href="$classpycanha_1_1gmm_1_1Cylinder.html#a9311fb67f5f5a26986ec7c872a9e8344" title="Returns the radius of the cylinder." alt="" coords="235,201,416,243"/>
-<area shape="rect" id="node6" href="$classpycanha_1_1gmm_1_1Cylinder.html#aff728f73d0160468bb95fe907db65a77" title="Returns the start angle of the cylinder." alt="" coords="235,267,416,308"/>
+<area shape="rect" id="Node000001" title="Returns the ID of the face in the thermal mesh that contains the given UV coordinates...." alt="" coords="5,133,187,173"/>
+<area shape="rect" id="Node000002" href="$classpycanha_1_1gmm_1_1Cylinder.html#a6beb7ed803cea0337ed3cb8a22365792" title="Returns the end angle of the cylinder." alt="" coords="235,5,416,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="120,131,171,93,233,55,247,48,250,53,236,60,174,98,123,135"/>
+<area shape="rect" id="Node000003" href="$classpycanha_1_1gmm_1_1Cylinder.html#a104eeb1b5c9e52e1fa96c8be01efa6ca" title="Returns the first point of the cylinder." alt="" coords="235,69,416,109"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="168,131,240,110,241,116,169,136"/>
+<area shape="rect" id="Node000004" href="$classpycanha_1_1gmm_1_1Cylinder.html#ab9a8e314a7f31627585f2c05412cfbdf" title="Returns the second point of the cylinder." alt="" coords="235,133,416,173"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="187,151,221,151,221,156,187,156"/>
+<area shape="rect" id="Node000005" href="$classpycanha_1_1gmm_1_1Cylinder.html#a9311fb67f5f5a26986ec7c872a9e8344" title="Returns the radius of the cylinder." alt="" coords="235,197,416,237"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="169,171,241,191,240,196,168,176"/>
+<area shape="rect" id="Node000006" href="$classpycanha_1_1gmm_1_1Cylinder.html#aff728f73d0160468bb95fe907db65a77" title="Returns the start angle of the cylinder." alt="" coords="235,261,416,301"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="123,171,174,209,236,247,250,254,247,258,233,252,171,213,120,176"/>
 </map>

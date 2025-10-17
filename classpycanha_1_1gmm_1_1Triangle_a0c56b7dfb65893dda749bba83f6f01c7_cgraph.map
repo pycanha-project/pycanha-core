@@ -1,18 +1,36 @@
 <map id="pycanha::gmm::Triangle::create_mesh" name="pycanha::gmm::Triangle::create_mesh">
-<area shape="rect" id="node1" title="Creates the triangular mesh from the primitive." alt="" coords="5,376,184,417"/>
-<area shape="rect" id="node2" href="$classpycanha_1_1gmm_1_1Triangle.html#ad8405cc3fb6b587860fd4df1813ae6c1" title="3D coordinates of a point ON the primitive surface from 2D coordinates. Note: The method is not valid..." alt="" coords="471,5,649,47"/>
-<area shape="rect" id="node4" href="$classpycanha_1_1gmm_1_1Triangle.html#a63ee40470d93361a8c4462b4fdde2127" title="2D coordinates of a point ON the primitive surface from 3D coordinates. Note: It is assumed that the ..." alt="" coords="471,71,649,112"/>
-<area shape="rect" id="node5" href="$classpycanha_1_1gmm_1_1TriMesh.html#a81f6628b978aaeac9d36fafc63e0eead" title="Get face ids vector." alt="" coords="233,115,410,156"/>
-<area shape="rect" id="node6" href="$classpycanha_1_1gmm_1_1Triangle.html#a691cd31a1c3f5de250e32ed063eb5496" title="Returns the ID of the face in the thermal mesh that contains the given UV coordinates...." alt="" coords="232,180,411,221"/>
-<area shape="rect" id="node8" href="$classpycanha_1_1gmm_1_1Triangle.html#a9ceec935ef361eb7735ee96da585fe46" title="Returns the first vertex of the triangle." alt="" coords="232,245,411,287"/>
-<area shape="rect" id="node9" href="$classpycanha_1_1gmm_1_1Triangle.html#aac62eb826a36358ad9811172d0825979" title="Returns the second vertex of the triangle." alt="" coords="232,311,411,352"/>
-<area shape="rect" id="node10" href="$classpycanha_1_1gmm_1_1Triangle.html#a99ffbb35ea0374cc0fcbd44b62b05bf3" title="Returns the third vertex of the triangle." alt="" coords="232,376,411,417"/>
-<area shape="rect" id="node11" href="$classpycanha_1_1gmm_1_1Color.html#a6b0ff80336dd7c71b042dd65fb5534da" title="Get the RGB values." alt="" coords="241,441,402,483"/>
-<area shape="rect" id="node12" href="$classpycanha_1_1gmm_1_1TriMesh.html#a113cdc2728d6b47e8841ef9732ebd9b2" title="Get triangles matrix." alt="" coords="233,507,410,548"/>
-<area shape="rect" id="node13" href="$classpycanha_1_1gmm_1_1TriMesh.html#a5e7a2cc9ec97ba48a13277d2c391e928" title="Get vertices matrix." alt="" coords="233,572,410,613"/>
-<area shape="rect" id="node14" href="$classpycanha_1_1gmm_1_1TriMesh.html#a27e1232524b78c47b58b8d4d45d8172d" title="Set the surface 1 color." alt="" coords="233,637,410,679"/>
-<area shape="rect" id="node15" href="$classpycanha_1_1gmm_1_1TriMesh.html#a331d5c97a882188d4454694b4a2a4af9" title="Set the surface 2 color." alt="" coords="233,703,410,744"/>
-<area shape="rect" id="node16" href="$classpycanha_1_1gmm_1_1TriMesh.html#a7f0a8a501de5c2d065f71e164b956b39" title="Sort the triangles according to the face ids." alt="" coords="233,768,410,809"/>
-<area shape="rect" id="node3" href="$classpycanha_1_1gmm_1_1Triangle.html#af4f67a2841391839a57889d67443ef0c" title="Returns the first direction v1 = p2 &#45; p1." alt="" coords="709,78,912,105"/>
-<area shape="rect" id="node7" href="$classpycanha_1_1gmm_1_1Triangle.html#a113cd18f27bd12d15681af628524300c" title="Returns the second direction v2 = p3 &#45; p2." alt="" coords="459,187,661,214"/>
+<area shape="rect" id="Node000001" title="Creates the triangular mesh from the primitive." alt="" coords="5,369,184,409"/>
+<area shape="rect" id="Node000002" href="$classpycanha_1_1gmm_1_1Triangle.html#ad8405cc3fb6b587860fd4df1813ae6c1" title="3D coordinates of a point ON the primitive surface from 2D coordinates. Note: The method is not valid..." alt="" coords="471,5,649,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="95,369,104,307,126,223,144,178,166,135,195,95,230,62,256,46,283,33,341,16,401,9,457,10,457,15,401,15,343,21,285,38,258,50,234,66,199,99,171,138,148,180,131,225,109,308,100,369"/>
+<area shape="rect" id="Node000004" href="$classpycanha_1_1gmm_1_1Triangle.html#a63ee40470d93361a8c4462b4fdde2127" title="2D coordinates of a point ON the primitive surface from 3D coordinates. Note: It is assumed that the ..." alt="" coords="471,69,649,109"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="96,369,107,312,130,237,147,198,170,161,197,127,230,99,257,85,285,74,343,62,403,60,458,65,457,70,402,65,344,67,286,79,259,89,234,104,201,131,174,164,152,201,135,239,112,314,101,370"/>
+<area shape="rect" id="Node000005" href="$classpycanha_1_1gmm_1_1TriMesh.html#a719e49a87330de4cc80fe24f8d871d77" title="Get face ids vector." alt="" coords="233,113,410,153"/>
+<area shape="poly" id="edge5_Node000001_Node000005" title=" " alt="" coords="101,368,118,326,145,271,183,214,205,187,230,163,237,158,240,163,234,167,209,191,187,217,150,273,123,328,106,370"/>
+<area shape="rect" id="Node000006" href="$classpycanha_1_1gmm_1_1Triangle.html#a691cd31a1c3f5de250e32ed063eb5496" title="Returns the ID of the face in the thermal mesh that contains the given UV coordinates...." alt="" coords="232,177,411,217"/>
+<area shape="poly" id="edge6_Node000001_Node000006" title=" " alt="" coords="106,368,155,300,190,261,230,227,240,221,242,226,234,231,194,265,159,303,110,371"/>
+<area shape="rect" id="Node000008" href="$classpycanha_1_1gmm_1_1Triangle.html#a6136942eab367dc7ead06260c2c86ac5" title="Returns the first vertex of the triangle." alt="" coords="232,241,411,281"/>
+<area shape="poly" id="edge10_Node000001_Node000008" title=" " alt="" coords="119,367,169,329,231,291,244,284,247,289,233,296,172,334,122,371"/>
+<area shape="rect" id="Node000009" href="$classpycanha_1_1gmm_1_1Triangle.html#af09d689922fc27642700a10678702737" title="Returns the second vertex of the triangle." alt="" coords="232,305,411,345"/>
+<area shape="poly" id="edge11_Node000001_Node000009" title=" " alt="" coords="166,367,236,347,237,352,167,372"/>
+<area shape="rect" id="Node000010" href="$classpycanha_1_1gmm_1_1Triangle.html#ae0d26d6ae6b3ccf188a3e0ccb4d6debf" title="Returns the third vertex of the triangle." alt="" coords="232,369,411,409"/>
+<area shape="poly" id="edge12_Node000001_Node000010" title=" " alt="" coords="185,387,218,387,218,392,185,392"/>
+<area shape="rect" id="Node000011" href="$classpycanha_1_1gmm_1_1Color.html#a6b0ff80336dd7c71b042dd65fb5534da" title="Get the RGB values." alt="" coords="241,433,402,473"/>
+<area shape="poly" id="edge13_Node000001_Node000011" title=" " alt="" coords="167,407,237,427,236,432,166,412"/>
+<area shape="rect" id="Node000012" href="$classpycanha_1_1gmm_1_1TriMesh.html#aa20d192b636f4453f79d6fd4a3aafcd4" title="Get triangles matrix." alt="" coords="233,497,410,537"/>
+<area shape="poly" id="edge14_Node000001_Node000012" title=" " alt="" coords="122,407,172,445,233,483,247,489,244,494,231,488,169,449,119,412"/>
+<area shape="rect" id="Node000013" href="$classpycanha_1_1gmm_1_1TriMesh.html#a4ed00ebc28ddc7ef836cabed7f9b1881" title="Get vertices matrix." alt="" coords="233,561,410,601"/>
+<area shape="poly" id="edge15_Node000001_Node000013" title=" " alt="" coords="110,408,159,476,194,514,234,547,242,553,240,557,230,551,190,518,155,479,106,411"/>
+<area shape="rect" id="Node000014" href="$classpycanha_1_1gmm_1_1TriMesh.html#a27e1232524b78c47b58b8d4d45d8172d" title="Set the surface 1 color." alt="" coords="233,625,410,665"/>
+<area shape="poly" id="edge16_Node000001_Node000014" title=" " alt="" coords="106,409,123,451,150,505,187,562,209,588,234,611,240,616,237,620,230,615,205,592,183,565,145,508,118,453,101,411"/>
+<area shape="rect" id="Node000015" href="$classpycanha_1_1gmm_1_1TriMesh.html#a331d5c97a882188d4454694b4a2a4af9" title="Set the surface 2 color." alt="" coords="233,689,410,729"/>
+<area shape="poly" id="edge17_Node000001_Node000015" title=" " alt="" coords="103,409,116,462,141,533,180,609,205,644,234,675,239,680,236,684,230,679,201,648,175,612,136,535,111,463,97,410"/>
+<area shape="rect" id="Node000016" href="$classpycanha_1_1gmm_1_1TriMesh.html#a7f0a8a501de5c2d065f71e164b956b39" title="Sort the triangles according to the face ids." alt="" coords="233,753,410,793"/>
+<area shape="poly" id="edge18_Node000001_Node000016" title=" " alt="" coords="101,409,111,472,133,561,151,609,173,656,200,700,234,739,238,743,235,747,230,743,196,703,168,658,146,611,128,562,105,473,95,410"/>
+<area shape="rect" id="Node000003" href="$classpycanha_1_1gmm_1_1Triangle.html#af4f67a2841391839a57889d67443ef0c" title="Returns the first direction v1 = p2 &#45; p1." alt="" coords="709,77,912,102"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="640,43,748,71,746,76,638,48"/>
+<area shape="poly" id="edge4_Node000004_Node000003" title=" " alt="" coords="649,87,696,87,696,92,649,92"/>
+<area shape="poly" id="edge8_Node000006_Node000003" title=" " alt="" coords="410,175,738,102,739,108,411,180"/>
+<area shape="poly" id="edge7_Node000006_Node000004" title=" " alt="" coords="384,175,409,163,433,145,457,126,484,112,487,117,460,130,436,149,412,168,386,180"/>
+<area shape="rect" id="Node000007" href="$classpycanha_1_1gmm_1_1Triangle.html#a113cd18f27bd12d15681af628524300c" title="Returns the second direction v2 = p3 &#45; p2." alt="" coords="459,185,661,210"/>
+<area shape="poly" id="edge9_Node000006_Node000007" title=" " alt="" coords="411,195,445,195,445,200,411,200"/>
 </map>

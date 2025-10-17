@@ -1,5 +1,7 @@
 <map id="pycanha::gmm::Primitive" name="pycanha::gmm::Primitive">
-<area shape="rect" id="node1" title="A geometry primitive." alt="" coords="124,95,311,121"/>
-<area shape="rect" id="node2" href="$classpycanha_1_1gmm_1_1UniqueID.html" title="Provides a unique integer id." alt="" coords="5,13,192,39"/>
-<area shape="rect" id="node3" href="$classpycanha_1_1gmm_1_1GeometryUpdateCallback.html" title=" " alt="" coords="217,5,455,47"/>
+<area shape="rect" id="Node000001" title="A geometry primitive." alt="" coords="124,93,311,119"/>
+<area shape="rect" id="Node000002" href="$classpycanha_1_1gmm_1_1UniqueID.html" title="Provides a unique integer id." alt="" coords="5,13,192,38"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="129,44,201,91,198,95,126,48"/>
+<area shape="rect" id="Node000003" href="$classpycanha_1_1gmm_1_1GeometryUpdateCallback.html" title=" " alt="" coords="217,5,455,45"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="297,55,236,95,233,91,294,51"/>
 </map>

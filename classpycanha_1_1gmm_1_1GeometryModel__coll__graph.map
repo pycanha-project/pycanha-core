@@ -1,6 +1,9 @@
 <map id="pycanha::gmm::GeometryModel" name="pycanha::gmm::GeometryModel">
-<area shape="rect" id="node1" title="Class representing a geometrical mathematical model." alt="" coords="389,64,621,91"/>
-<area shape="rect" id="node2" href="$classpycanha_1_1gmm_1_1UniqueID.html" title="Provides a unique integer id." alt="" coords="25,5,212,32"/>
-<area shape="rect" id="node3" title=" " alt="" coords="5,57,232,98"/>
-<area shape="rect" id="node4" href="$classpycanha_1_1gmm_1_1TriMeshModel.html" title="A collection of TriMeshes in a compacted cache&#45;friendly format." alt="" coords="10,123,227,149"/>
+<area shape="rect" id="Node000001" title="Class representing a geometrical mathematical model." alt="" coords="389,63,621,88"/>
+<area shape="rect" id="Node000002" href="$classpycanha_1_1gmm_1_1UniqueID.html" title="Provides a unique integer id." alt="" coords="25,5,212,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="219,30,419,60,419,65,218,35"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="5,55,232,95"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="246,73,389,73,389,78,246,78"/>
+<area shape="rect" id="Node000004" href="$classpycanha_1_1gmm_1_1TriMeshModel.html" title="A collection of TriMeshes in a compacted cache&#45;friendly format." alt="" coords="10,120,227,145"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="218,115,419,85,419,91,219,121"/>
 </map>

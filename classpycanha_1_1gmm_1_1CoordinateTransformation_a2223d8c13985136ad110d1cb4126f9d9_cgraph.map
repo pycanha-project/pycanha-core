@@ -1,0 +1,5 @@
+<map id="pycanha::gmm::CoordinateTransformation::chain" name="pycanha::gmm::CoordinateTransformation::chain">
+<area shape="rect" id="Node000001" title="Creates a new transformation equivalent to applying other and then this." alt="" coords="5,5,204,45"/>
+<area shape="rect" id="Node000002" href="$classpycanha_1_1gmm_1_1CoordinateTransformation.html#adb564610750eb3d80d29e8a4de0d7aae" title="Default constructor for CoordinateTransformation class." alt="" coords="252,5,549,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="204,23,238,23,238,28,204,28"/>
+</map>

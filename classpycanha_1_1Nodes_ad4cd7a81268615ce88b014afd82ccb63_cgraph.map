@@ -1,0 +1,7 @@
+<map id="pycanha::Nodes::remove_node" name="pycanha::Nodes::remove_node">
+<area shape="rect" id="Node000001" title="Method to delete a node of the model." alt="" coords="5,45,228,70"/>
+<area shape="rect" id="Node000002" href="$classpycanha_1_1Nodes.html#a81700922fc0fd0e15b785233a71b315c" title=" " alt="" coords="276,5,451,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="214,42,262,36,262,41,215,47"/>
+<area shape="rect" id="Node000003" href="$classpycanha_1_1Nodes.html#aea1777a63bd88acb2368d5ab614cd813" title="Get internal node numbre from user number." alt="" coords="282,69,445,109"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="215,67,269,74,268,80,214,73"/>
+</map>

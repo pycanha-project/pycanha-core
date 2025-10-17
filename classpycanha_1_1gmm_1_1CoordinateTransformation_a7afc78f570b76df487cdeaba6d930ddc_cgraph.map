@@ -1,6 +1,9 @@
 <map id="pycanha::gmm::CoordinateTransformation::transform_trimesh" name="pycanha::gmm::CoordinateTransformation::transform_trimesh">
-<area shape="rect" id="node1" title="Transform trimesh." alt="" coords="5,35,204,91"/>
-<area shape="rect" id="node2" href="$classpycanha_1_1gmm_1_1CoordinateTransformation.html#abd93075ef06eea44103105a272a29c40" title="Transform trimesh inplace." alt="" coords="252,35,451,91"/>
-<area shape="rect" id="node3" href="$classpycanha_1_1gmm_1_1TriMesh.html#a5e7a2cc9ec97ba48a13277d2c391e928" title="Get vertices matrix." alt="" coords="509,5,687,47"/>
-<area shape="rect" id="node4" href="$classpycanha_1_1gmm_1_1CoordinateTransformation.html#a2e2c25f5f8672173950bf9c0878222c3" title="Transform trimesh points inplace." alt="" coords="499,71,697,127"/>
+<area shape="rect" id="Node000001" title="Transform trimesh." alt="" coords="5,34,204,89"/>
+<area shape="rect" id="Node000002" href="$classpycanha_1_1gmm_1_1CoordinateTransformation.html#abd93075ef06eea44103105a272a29c40" title="Transform trimesh inplace." alt="" coords="252,34,451,89"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="204,59,238,59,238,64,204,64"/>
+<area shape="rect" id="Node000003" href="$classpycanha_1_1gmm_1_1TriMesh.html#a4ed00ebc28ddc7ef836cabed7f9b1881" title="Get vertices matrix." alt="" coords="509,5,687,45"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="450,44,495,38,496,43,451,49"/>
+<area shape="rect" id="Node000004" href="$classpycanha_1_1gmm_1_1CoordinateTransformation.html#a2e2c25f5f8672173950bf9c0878222c3" title="Transform trimesh points inplace." alt="" coords="499,70,697,125"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="451,73,485,78,485,83,450,78"/>
 </map>

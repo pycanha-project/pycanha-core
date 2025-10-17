@@ -1,6 +1,9 @@
 <map id="pycanha::gmm::NamedMaterial" name="pycanha::gmm::NamedMaterial">
-<area shape="rect" id="node1" title=" " alt="" coords="118,80,346,107"/>
-<area shape="rect" id="node3" href="$classpycanha_1_1gmm_1_1BulkMaterial.html" title=" " alt="" coords="5,155,216,181"/>
-<area shape="rect" id="node4" href="$classpycanha_1_1gmm_1_1OpticalMaterial.html" title=" " alt="" coords="240,155,467,181"/>
-<area shape="rect" id="node2" href="$classpycanha_1_1gmm_1_1UniqueID.html" title="Provides a unique integer id." alt="" coords="139,5,325,32"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="118,79,346,104"/>
+<area shape="rect" id="Node000003" href="$classpycanha_1_1gmm_1_1BulkMaterial.html" title=" " alt="" coords="5,152,216,177"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="202,113,132,154,129,149,199,109"/>
+<area shape="rect" id="Node000004" href="$classpycanha_1_1gmm_1_1OpticalMaterial.html" title=" " alt="" coords="240,152,467,177"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="265,109,335,149,332,154,262,113"/>
+<area shape="rect" id="Node000002" href="$classpycanha_1_1gmm_1_1UniqueID.html" title="Provides a unique integer id." alt="" coords="139,5,325,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="235,44,235,79,229,79,229,44"/>
 </map>

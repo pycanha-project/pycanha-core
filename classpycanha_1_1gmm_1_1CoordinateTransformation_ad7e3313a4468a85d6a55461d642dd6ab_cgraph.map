@@ -1,4 +1,5 @@
 <map id="pycanha::gmm::CoordinateTransformation::transform_point_list" name="pycanha::gmm::CoordinateTransformation::transform_point_list">
-<area shape="rect" id="node1" title="Transform point list." alt="" coords="5,5,204,61"/>
-<area shape="rect" id="node2" href="$classpycanha_1_1gmm_1_1CoordinateTransformation.html#a2e2c25f5f8672173950bf9c0878222c3" title="Transform trimesh points inplace." alt="" coords="252,5,451,61"/>
+<area shape="rect" id="Node000001" title="Transform point list." alt="" coords="5,5,204,60"/>
+<area shape="rect" id="Node000002" href="$classpycanha_1_1gmm_1_1CoordinateTransformation.html#a2e2c25f5f8672173950bf9c0878222c3" title="Transform trimesh points inplace." alt="" coords="252,5,451,60"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="204,30,238,30,238,35,204,35"/>
 </map>
