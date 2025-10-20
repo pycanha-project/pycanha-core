@@ -25,8 +25,8 @@ jobs:
             compiler: msvc2022
             profile_base: windows-msvc2022-amd64
           - os: macos
-            compiler: gcc12
-            profile_base: macos-gcc12-arm64
+            compiler: clang
+            profile_base: macos-clang-arm64
         build_type: [release, debug]
 
     name: ${{matrix.config.os}} ${{matrix.config.compiler}} ${{matrix.build_type}} built and tests
@@ -40,14 +40,11 @@ jobs:
       run: |
         pip install conan
         pip install cmake
-    - name: Install GCC 12 on macOS
+    - name: Configure Apple Clang
       if: matrix.config.os == 'macos'
       run: |
-        brew update
-        brew install gcc@12
-        GCC_PREFIX=$(brew --prefix gcc@12)
-        echo "CC=${GCC_PREFIX}/bin/gcc-12" >> $GITHUB_ENV
-        echo "CXX=${GCC_PREFIX}/bin/g++-12" >> $GITHUB_ENV
+        echo "CC=clang" >> $GITHUB_ENV
+        echo "CXX=clang++" >> $GITHUB_ENV
     - name: Install conan profiles
       run: |
         conan config install .conan
