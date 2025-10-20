@@ -17,18 +17,20 @@ jobs:
     strategy:
       fail-fast: False
       matrix:
-        os: [ubuntu, windows]
-        #Using now gcc12 because gcc13 was removed from github 
-        compiler: [gcc12, msvc2022]
-        build_type: [release, debug]
-        exclude:
-          - os: windows
-            compiler: gcc12
+        config:
           - os: ubuntu
+            compiler: gcc12
+            profile_base: ubuntu-gcc12-amd64
+          - os: windows
             compiler: msvc2022
+            profile_base: windows-msvc2022-amd64
+          - os: macos
+            compiler: clang
+            profile_base: macos-clang-arm64
+        build_type: [release, debug]
 
-    name: ${{matrix.compiler}} ${{matrix.build_type}} built and tests
-    runs-on: ${{matrix.os}}-latest
+    name: ${{matrix.config.os}} ${{matrix.config.compiler}} ${{matrix.build_type}} built and tests
+    runs-on: ${{matrix.config.os}}-latest
     timeout-minutes: 20
 
     steps:
@@ -38,11 +40,16 @@ jobs:
       run: |
         pip install conan
         pip install cmake
+    - name: Configure Apple Clang
+      if: matrix.config.os == 'macos'
+      run: |
+        echo "CC=clang" >> $GITHUB_ENV
+        echo "CXX=clang++" >> $GITHUB_ENV
     - name: Install conan profiles
       run: |
         conan config install .conan
     - name: Build and test application in ${{matrix.build_type}} mode
       run: >        
         conan create . --build=missing 
-        -pr:h=${{matrix.os}}-${{matrix.compiler}}-amd64 -pr:h=build-${{matrix.build_type}} -pr:h=options-ci 
-        -pr:b=${{matrix.os}}-${{matrix.compiler}}-amd64 -pr:b=build-${{matrix.build_type}} -pr:b=options-ci
+        -pr:h=${{matrix.config.profile_base}} -pr:h=build-${{matrix.build_type}} -pr:h=options-ci 
+        -pr:b=${{matrix.config.profile_base}} -pr:b=build-${{matrix.build_type}} -pr:b=options-ci

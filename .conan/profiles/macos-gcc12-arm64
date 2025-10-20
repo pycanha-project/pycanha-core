@@ -1,0 +1,13 @@
+[settings]
+arch = armv8
+compiler = gcc
+compiler.cppstd = 23
+compiler.libcxx = libstdc++11
+compiler.version = 12
+os = Macos
+
+[buildenv]
+CC = /opt/homebrew/opt/gcc@12/bin/gcc-12
+CXX = /opt/homebrew/opt/gcc@12/bin/g++-12
+CFLAGS = -include stdio.h
+CXXFLAGS = -include stdio.h
