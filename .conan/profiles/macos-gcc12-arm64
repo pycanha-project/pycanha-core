@@ -9,3 +9,5 @@ os = Macos
 [buildenv]
 CC = /opt/homebrew/opt/gcc@12/bin/gcc-12
 CXX = /opt/homebrew/opt/gcc@12/bin/g++-12
+CFLAGS = -include stdio.h
+CXXFLAGS = -include cstdio
