@@ -4,7 +4,7 @@
 #include <tuple>
 #include <vector>
 
-#include "../config.hpp"
+#include "pycanha-core/config.hpp"
 #include "pycanha-core/globals.hpp"
 
 namespace pycanha::sparse_utils {

@@ -3,15 +3,15 @@
 // NOLINTBEGIN(misc-include-cleaner)
 
 // General config (not really used here)
-#include "./config.hpp"  // IWYU pragma: export
+#include "pycanha-core/config.hpp"  // IWYU pragma: export
 
 // Utilities
-#include "./utils/package_info.hpp"  // IWYU pragma: export
+#include "pycanha-core/utils/package_info.hpp"  // IWYU pragma: export
 
 // Modules:
-#include "./globals.hpp"  // IWYU pragma: export
+#include "pycanha-core/globals.hpp"  // IWYU pragma: export
 
 // Geometric module
-#include "./gmm/gmm.hpp"  // IWYU pragma: export
+#include "pycanha-core/gmm/gmm.hpp"  // IWYU pragma: export
 
 // NOLINTEND(misc-include-cleaner)

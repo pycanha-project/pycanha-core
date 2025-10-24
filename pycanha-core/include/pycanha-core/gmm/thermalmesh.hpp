@@ -8,9 +8,9 @@
 #include <utility>
 #include <vector>
 
-#include "./id.hpp"
-#include "./materials.hpp"
 #include "pycanha-core/globals.hpp"
+#include "pycanha-core/gmm/id.hpp"
+#include "pycanha-core/gmm/materials.hpp"
 
 namespace pycanha::gmm {
 using pycanha::MeshIndex;
