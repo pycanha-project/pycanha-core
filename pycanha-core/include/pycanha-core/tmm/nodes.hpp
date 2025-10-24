@@ -48,8 +48,8 @@
 #include <unordered_map>
 #include <vector>
 
-#include "../parameters.hpp"
 #include "./literalstring.hpp"
+#include "pycanha-core/globals.hpp"
 
 namespace pycanha {
 

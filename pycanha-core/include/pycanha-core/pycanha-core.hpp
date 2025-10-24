@@ -9,7 +9,7 @@
 #include "./utils/package_info.hpp"  // IWYU pragma: export
 
 // Modules:
-#include "./parameters.hpp"  // IWYU pragma: export
+#include "./globals.hpp"  // IWYU pragma: export
 
 // Geometric module
 #include "./gmm/gmm.hpp"  // IWYU pragma: export

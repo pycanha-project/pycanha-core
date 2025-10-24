@@ -5,7 +5,7 @@
 #include <vector>
 
 #include "../config.hpp"
-#include "../parameters.hpp"
+#include "pycanha-core/globals.hpp"
 
 namespace pycanha::sparse_utils {
 

@@ -1,6 +1,6 @@
 #include <catch2/catch_test_macros.hpp>
 
-#include "pycanha-core/parameters.hpp"
+#include "pycanha-core/globals.hpp"
 #include "pycanha-core/tmm/coupling.hpp"
 
 using namespace pycanha;  // NOLINT(build/namespaces)
