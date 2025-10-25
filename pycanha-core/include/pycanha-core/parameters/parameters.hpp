@@ -18,8 +18,8 @@ class Parameters {
         Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
     using MatrixRXd =
         Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
-    using ThermalValue = std::variant<bool, int, double, std::string, MatrixRXb,
-                                      MatrixRXi, MatrixRXd>;
+    using ThermalValue = std::variant<bool, std::int64_t, double, std::string,
+                                      MatrixRXb, MatrixRXi, MatrixRXd>;
     using ParametersDict = std::unordered_map<std::string, ThermalValue>;
 
     Parameters() = default;

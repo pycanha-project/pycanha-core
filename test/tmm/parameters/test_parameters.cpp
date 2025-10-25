@@ -16,10 +16,12 @@ TEST_CASE("Parameters add and retrieve scalars", "[parameters]") {
 
     params.add_parameter("temp", 295.0);
     params.add_parameter("enabled", true);
+    params.add_parameter("count", std::int64_t{42});
 
-    REQUIRE(params.size() == 2);
+    REQUIRE(params.size() == 3);
     REQUIRE(params.contains("temp"));
     REQUIRE(params.contains("enabled"));
+    REQUIRE(params.contains("count"));
 
     const auto temp = params.get_parameter("temp");
     REQUIRE(std::holds_alternative<double>(temp));
@@ -29,9 +31,17 @@ TEST_CASE("Parameters add and retrieve scalars", "[parameters]") {
     REQUIRE(std::holds_alternative<bool>(enabled));
     REQUIRE(std::get<bool>(enabled));
 
+    const auto count = params.get_parameter("count");
+    REQUIRE(std::holds_alternative<std::int64_t>(count));
+    REQUIRE(std::get<std::int64_t>(count) == 42);
+
+    params.set_parameter("count", std::int64_t{128});
+    const auto updated_count = params.get_parameter("count");
+    REQUIRE(std::get<std::int64_t>(updated_count) == 128);
+
     params.remove_parameter("enabled");
     REQUIRE_FALSE(params.contains("enabled"));
-    REQUIRE(params.size() == 1);
+    REQUIRE(params.size() == 2);
 }
 
 TEST_CASE("Parameters update values when type and shape match",
