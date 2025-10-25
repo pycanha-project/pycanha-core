@@ -13,7 +13,7 @@
 #include <Eigen/Sparse>
 #include <tuple>
 
-#include "./nodes.hpp"
+#include "pycanha-core/tmm/nodes.hpp"
 
 namespace pycanha {
 

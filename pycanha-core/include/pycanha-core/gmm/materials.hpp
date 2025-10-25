@@ -6,7 +6,7 @@
 #include <string>
 #include <utility>
 
-#include "./id.hpp"
+#include "pycanha-core/gmm/id.hpp"
 
 namespace pycanha::gmm {
 

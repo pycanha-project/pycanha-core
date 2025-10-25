@@ -11,7 +11,7 @@
 #include <vector>
 
 #include "pycanha-core/config.hpp"
-#include "pycanha-core/parameters.hpp"
+#include "pycanha-core/globals.hpp"
 #include "pycanha-core/tmm/literalstring.hpp"
 #include "pycanha-core/tmm/node.hpp"
 

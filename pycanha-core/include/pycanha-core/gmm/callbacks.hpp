@@ -4,7 +4,7 @@
 #include <iostream>
 #include <vector>
 
-#include "./id.hpp"
+#include "pycanha-core/gmm/id.hpp"
 
 namespace pycanha::gmm {
 

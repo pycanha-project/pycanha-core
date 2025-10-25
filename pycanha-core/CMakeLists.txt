@@ -59,6 +59,8 @@ endif()
 add_library(${LIB_NAME} STATIC 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/triangulation.cpp
 
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/parameters/parameters.cpp
+
     ${CMAKE_CURRENT_SOURCE_DIR}/src/tmm/coupling.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/tmm/couplings.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/tmm/couplingmatrices.cpp

@@ -17,7 +17,7 @@
 #include <utility>
 #include <vector>
 
-#include "pycanha-core/parameters.hpp"  // pycanha::MeshIndex
+#include "pycanha-core/globals.hpp"  // pycanha::MeshIndex
 
 namespace pycanha::gmm::trimesher {
 

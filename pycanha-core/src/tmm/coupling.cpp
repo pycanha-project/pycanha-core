@@ -1,7 +1,7 @@
 
 #include "pycanha-core/tmm/coupling.hpp"
 
-#include "pycanha-core/parameters.hpp"
+#include "pycanha-core/globals.hpp"
 
 using namespace pycanha;  // NOLINT(build/namespaces)
 

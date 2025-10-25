@@ -13,13 +13,13 @@
 #include <utility>
 #include <vector>
 
-#include "../parameters.hpp"
-#include "./callbacks.hpp"
-#include "./geometryutils.hpp"
-#include "./id.hpp"
-#include "./thermalmesh.hpp"
-#include "./transformations.hpp"
-#include "./trimesh.hpp"
+#include "pycanha-core/globals.hpp"
+#include "pycanha-core/gmm/callbacks.hpp"
+#include "pycanha-core/gmm/geometryutils.hpp"
+#include "pycanha-core/gmm/id.hpp"
+#include "pycanha-core/gmm/thermalmesh.hpp"
+#include "pycanha-core/gmm/transformations.hpp"
+#include "pycanha-core/gmm/trimesh.hpp"
 
 using std::numbers::pi;
 

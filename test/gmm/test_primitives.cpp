@@ -4,8 +4,8 @@
 #include <cmath>
 #include <numbers>
 
+#include "pycanha-core/globals.hpp"
 #include "pycanha-core/gmm/primitives.hpp"
-#include "pycanha-core/parameters.hpp"
 
 using namespace pycanha;  // NOLINT(build/namespaces)
 

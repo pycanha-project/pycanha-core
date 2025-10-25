@@ -6,7 +6,7 @@
 #include "pycanha-core/gmm/primitives.hpp"
 // #include "pycanha-core/gmm/thermalmesh.hpp"
 // #include "pycanha-core/gmm/transformations.hpp"
-#include "pycanha-core/parameters.hpp"
+#include "pycanha-core/globals.hpp"
 
 using namespace pycanha;  // NOLINT(build/namespaces)
 

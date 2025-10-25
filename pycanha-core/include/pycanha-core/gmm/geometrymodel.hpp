@@ -7,9 +7,9 @@
 #include <unordered_set>
 #include <vector>
 
-#include "./geometry.hpp"
-#include "./id.hpp"
-#include "./transformations.hpp"
+#include "pycanha-core/gmm/geometry.hpp"
+#include "pycanha-core/gmm/id.hpp"
+#include "pycanha-core/gmm/transformations.hpp"
 
 namespace pycanha::gmm {
 

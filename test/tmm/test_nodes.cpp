@@ -5,7 +5,7 @@
 #include <random>
 #include <vector>
 
-#include "pycanha-core/parameters.hpp"
+#include "pycanha-core/globals.hpp"
 #include "pycanha-core/tmm/node.hpp"
 #include "pycanha-core/tmm/nodes.hpp"
 

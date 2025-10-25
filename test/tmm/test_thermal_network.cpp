@@ -2,7 +2,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <cmath>
 
-#include "pycanha-core/parameters.hpp"
+#include "pycanha-core/globals.hpp"
 #include "pycanha-core/tmm/conductivecouplings.hpp"
 #include "pycanha-core/tmm/node.hpp"
 #include "pycanha-core/tmm/nodes.hpp"

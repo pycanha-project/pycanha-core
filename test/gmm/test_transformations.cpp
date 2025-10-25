@@ -3,9 +3,9 @@
 #include <catch2/catch_test_macros.hpp>
 #include <numbers>
 
+#include "pycanha-core/globals.hpp"
 #include "pycanha-core/gmm/transformations.hpp"
 #include "pycanha-core/gmm/trimesh.hpp"
-#include "pycanha-core/parameters.hpp"
 
 using pycanha::Point3D;
 using pycanha::Vector3D;

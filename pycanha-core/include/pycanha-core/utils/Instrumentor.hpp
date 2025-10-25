@@ -39,7 +39,7 @@
 #include <string>
 #include <thread>
 
-#include "../config.hpp"
+#include "pycanha-core/config.hpp"
 
 namespace pycanha {
 // Enable/Disable Profiling

@@ -11,10 +11,10 @@
 #include <utility>
 #include <vector>
 
+#include "pycanha-core/globals.hpp"
 #include "pycanha-core/gmm/id.hpp"
 #include "pycanha-core/gmm/materials.hpp"
 #include "pycanha-core/gmm/triangulation.hpp"
-#include "pycanha-core/parameters.hpp"
 #include "pycanha-core/utils/eigenutils.hpp"
 
 using Eigen::seq;

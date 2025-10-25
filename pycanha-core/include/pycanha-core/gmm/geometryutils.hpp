@@ -3,7 +3,7 @@
 #include <Eigen/Dense>
 #include <initializer_list>
 
-#include "../parameters.hpp"
+#include "pycanha-core/globals.hpp"
 
 namespace pycanha::gmm {
 

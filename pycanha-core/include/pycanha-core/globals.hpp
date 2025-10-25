@@ -5,6 +5,8 @@
 
 namespace pycanha {
 
+// Global constants and type aliases used across the library.
+
 // Tolerances (SI Units)
 
 // Constexpr should be usually lowercase (checked by clang-tidy), but I want

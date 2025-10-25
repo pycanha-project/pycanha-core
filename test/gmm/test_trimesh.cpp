@@ -6,10 +6,10 @@
 #include <set>
 #include <vector>
 
+#include "pycanha-core/globals.hpp"
 #include "pycanha-core/gmm/primitives.hpp"
 #include "pycanha-core/gmm/thermalmesh.hpp"
 #include "pycanha-core/gmm/trimesh.hpp"
-#include "pycanha-core/parameters.hpp"
 
 using namespace pycanha;  // NOLINT(build/namespaces)
 

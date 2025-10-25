@@ -6,11 +6,11 @@
 #include <variant>
 #include <vector>
 
-#include "./id.hpp"
-#include "./primitives.hpp"
-#include "./thermalmesh.hpp"
-#include "./transformations.hpp"
-#include "./trimesh.hpp"
+#include "pycanha-core/gmm/id.hpp"
+#include "pycanha-core/gmm/primitives.hpp"
+#include "pycanha-core/gmm/thermalmesh.hpp"
+#include "pycanha-core/gmm/transformations.hpp"
+#include "pycanha-core/gmm/trimesh.hpp"
 
 namespace pycanha::gmm {
 

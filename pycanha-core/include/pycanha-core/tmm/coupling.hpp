@@ -3,7 +3,7 @@
 
 #include <Eigen/Sparse>
 
-#include "pycanha-core/parameters.hpp"
+#include "pycanha-core/globals.hpp"
 
 namespace pycanha {
 

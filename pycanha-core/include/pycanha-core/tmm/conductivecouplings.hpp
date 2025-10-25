@@ -2,7 +2,7 @@
 
 #include <memory>
 
-#include "pycanha-core/parameters.hpp"
+#include "pycanha-core/globals.hpp"
 #include "pycanha-core/tmm/coupling.hpp"
 #include "pycanha-core/tmm/couplings.hpp"
 #include "pycanha-core/tmm/nodes.hpp"
