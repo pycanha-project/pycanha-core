@@ -14,6 +14,8 @@ set(TEST_SOURCES
       "${CMAKE_CURRENT_SOURCE_DIR}/tmm/test_sparse_utils.cpp"
       "${CMAKE_CURRENT_SOURCE_DIR}/tmm/test_nodes.cpp"
       "${CMAKE_CURRENT_SOURCE_DIR}/tmm/test_thermal_network.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/tmm/parameters/test_parameters.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/tmm/thermaldata/test_thermaldata.cpp"
 )
 
 set(TEST_HEADERS "")
