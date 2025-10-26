@@ -9,6 +9,8 @@
 
 using namespace pycanha;  // NOLINT(build/namespaces)
 
+// NOLINTBEGIN(bugprone-chained-comparison)
+
 TEST_CASE("ThermalData associates a thermal network", "[thermaldata]") {
     auto network = std::make_shared<ThermalNetwork>();
 
@@ -78,3 +80,5 @@ TEST_CASE("ThermalData removes tables and throws on missing ones",
     const auto& const_data = static_cast<const ThermalData&>(data);
     REQUIRE_THROWS_AS(const_data.get_table("unknown"), std::out_of_range);
 }
+
+// NOLINTEND(bugprone-chained-comparison)

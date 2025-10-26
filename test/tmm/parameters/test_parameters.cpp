@@ -11,6 +11,8 @@
 
 using namespace pycanha;  // NOLINT(build/namespaces)
 
+// NOLINTBEGIN(bugprone-chained-comparison)
+
 TEST_CASE("Parameters add and retrieve scalars", "[parameters]") {
     Parameters params;
 
@@ -79,7 +81,7 @@ TEST_CASE("Parameters update values when type and shape match",
 }
 
 TEST_CASE("Parameters report missing entries with NaN", "[parameters]") {
-    Parameters params;
+    const Parameters params;
 
     const auto missing = params.get_parameter("missing");
     REQUIRE(std::holds_alternative<double>(missing));
@@ -114,3 +116,5 @@ TEST_CASE("Parameters expose memory pointers and sizes", "[parameters]") {
     REQUIRE(params.get_idx("scalar") >= 0);
     REQUIRE(params.get_idx("label") >= 0);
 }
+
+// NOLINTEND(bugprone-chained-comparison)
