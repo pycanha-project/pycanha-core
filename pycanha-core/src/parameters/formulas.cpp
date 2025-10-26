@@ -1,6 +1,8 @@
 #include "pycanha-core/parameters/formulas.hpp"
 
+#include <memory>
 #include <stdexcept>
+#include <string>
 #include <utility>
 
 namespace pycanha {
