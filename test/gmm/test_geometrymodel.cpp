@@ -2,12 +2,12 @@
 #include <memory>  // std::make_shared
 #include <numbers>
 
+#include "pycanha-core/globals.hpp"
 #include "pycanha-core/gmm/geometry.hpp"
 #include "pycanha-core/gmm/geometrymodel.hpp"
 #include "pycanha-core/gmm/primitives.hpp"
 #include "pycanha-core/gmm/thermalmesh.hpp"
 #include "pycanha-core/gmm/transformations.hpp"
-#include "pycanha-core/parameters.hpp"
 
 using namespace pycanha;  // NOLINT(build/namespaces)
 

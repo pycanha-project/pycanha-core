@@ -2,9 +2,9 @@
 #include <Eigen/Dense>
 #include <utility>
 
-#include "../parameters.hpp"
-#include "./id.hpp"
-#include "./trimesh.hpp"
+#include "pycanha-core/globals.hpp"
+#include "pycanha-core/gmm/id.hpp"
+#include "pycanha-core/gmm/trimesh.hpp"
 
 namespace pycanha::gmm {
 

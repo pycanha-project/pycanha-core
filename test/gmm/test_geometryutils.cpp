@@ -5,8 +5,8 @@
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 #include <cmath>
 
+#include "pycanha-core/globals.hpp"
 #include "pycanha-core/gmm/geometryutils.hpp"
-#include "pycanha-core/parameters.hpp"
 
 using namespace pycanha;  // NOLINT(build/namespaces)
 

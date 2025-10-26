@@ -8,7 +8,7 @@
 #include <utility>
 
 #include "pycanha-core/config.hpp"
-#include "pycanha-core/parameters.hpp"
+#include "pycanha-core/globals.hpp"
 #include "pycanha-core/utils/SparseUtils.hpp"
 
 using namespace pycanha;  // NOLINT(build/namespaces)
