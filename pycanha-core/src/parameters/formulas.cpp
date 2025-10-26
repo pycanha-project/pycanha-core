@@ -46,9 +46,9 @@ void Formulas::associate(std::shared_ptr<ThermalNetwork> network,
 
 ParameterFormula Formulas::create_parameter_formula(
     ThermalEntity& entity, const std::string& parameter) {
-    [[maybe_unused]] auto network = ensure_network(_network);
-    auto parameters = ensure_parameters(_parameters);
-    return {entity, *parameters, parameter};
+    [[maybe_unused]] auto validated_network = ensure_network(_network);
+    auto parameter_storage = ensure_parameters(_parameters);
+    return {entity, *parameter_storage, parameter};
 }
 
 void Formulas::add_formula(const Formula& formula) {
