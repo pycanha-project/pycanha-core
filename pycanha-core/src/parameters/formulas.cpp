@@ -5,6 +5,11 @@
 #include <string>
 #include <utility>
 
+#include "pycanha-core/parameters/entity.hpp"
+#include "pycanha-core/parameters/formula.hpp"
+#include "pycanha-core/parameters/parameters.hpp"
+#include "pycanha-core/tmm/thermalnetwork.hpp"
+
 namespace pycanha {
 
 namespace {
@@ -43,7 +48,7 @@ ParameterFormula Formulas::create_parameter_formula(
     ThermalEntity& entity, const std::string& parameter) {
     [[maybe_unused]] auto network = ensure_network(_network);
     auto parameters = ensure_parameters(_parameters);
-    return ParameterFormula(entity, *parameters, parameter);
+    return {entity, *parameters, parameter};
 }
 
 void Formulas::add_formula(const Formula& formula) {
