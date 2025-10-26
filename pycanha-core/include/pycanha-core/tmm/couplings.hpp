@@ -4,6 +4,7 @@
 #include <memory>
 #include <optional>
 #include <tuple>
+#include <utility>
 
 #include "pycanha-core/globals.hpp"
 #include "pycanha-core/tmm/coupling.hpp"
