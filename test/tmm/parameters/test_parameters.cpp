@@ -14,6 +14,7 @@ using namespace pycanha;  // NOLINT(build/namespaces)
 // NOLINTBEGIN(bugprone-chained-comparison)
 
 TEST_CASE("Parameters add and retrieve scalars", "[parameters]") {
+    // NOLINTNEXTLINE(misc-const-correctness)
     Parameters params;
 
     params.add_parameter("temp", 295.0);
@@ -48,6 +49,7 @@ TEST_CASE("Parameters add and retrieve scalars", "[parameters]") {
 
 TEST_CASE("Parameters update values when type and shape match",
           "[parameters]") {
+    // NOLINTNEXTLINE(misc-const-correctness)
     Parameters params;
 
     Parameters::MatrixRXd matrix(2, 2);
@@ -92,6 +94,7 @@ TEST_CASE("Parameters report missing entries with NaN", "[parameters]") {
 }
 
 TEST_CASE("Parameters expose memory pointers and sizes", "[parameters]") {
+    // NOLINTNEXTLINE(misc-const-correctness)
     Parameters params;
 
     params.add_parameter("scalar", 10.0);
@@ -111,7 +114,8 @@ TEST_CASE("Parameters expose memory pointers and sizes", "[parameters]") {
     REQUIRE(scalar_size == sizeof(double));
 
     const auto label_size = params.get_size_of_parameter("label");
-    REQUIRE(label_size == (std::string("alpha").size() + 1U));
+    const auto expected_label_size = std::string("alpha").size() + 1U;
+    REQUIRE(label_size == expected_label_size);
 
     REQUIRE(params.get_idx("scalar") >= 0);
     REQUIRE(params.get_idx("label") >= 0);

@@ -25,6 +25,8 @@ class RadiativeCouplings {
 
     void set_coupling_value(Index node_num_1, Index node_num_2, double value);
     [[nodiscard]] double get_coupling_value(Index node_num_1, Index node_num_2);
+    [[nodiscard]] double* get_coupling_value_ref(Index node_num_1,
+                                                 Index node_num_2);
 
   private:
     [[nodiscard]] Couplings& couplings() noexcept { return _couplings; }

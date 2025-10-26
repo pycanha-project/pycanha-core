@@ -31,4 +31,9 @@ double ConductiveCouplings::get_coupling_value(Index node_num_1,
     return _couplings.get_coupling_value(node_num_1, node_num_2);
 }
 
+double* ConductiveCouplings::get_coupling_value_ref(Index node_num_1,
+                                                    Index node_num_2) {
+    return _couplings.get_coupling_value_ref(node_num_1, node_num_2);
+}
+
 }  // namespace pycanha
