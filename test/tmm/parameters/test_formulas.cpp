@@ -41,26 +41,32 @@ TEST_CASE("Parameter formulas propagate parameter values", "[formulas]") {
 
     formulas.apply_formulas();
 
+    // NOLINTBEGIN(bugprone-chained-comparison)
     REQUIRE(network->nodes().get_qi(1) == Catch::Approx(10.0));
     REQUIRE(network->nodes().get_T(2) == Catch::Approx(11.0));
     REQUIRE(network->conductive_couplings().get_coupling_value(1, 2) ==
             Catch::Approx(12.0));
+    // NOLINTEND(bugprone-chained-comparison)
 
     parameters->set_parameter("P1", 21.0);
     parameters->set_parameter("P2", 22.0);
     parameters->set_parameter("P3", 23.0);
 
+    // NOLINTBEGIN(bugprone-chained-comparison)
     REQUIRE(network->nodes().get_qi(1) == Catch::Approx(10.0));
     REQUIRE(network->nodes().get_T(2) == Catch::Approx(11.0));
     REQUIRE(network->conductive_couplings().get_coupling_value(1, 2) ==
             Catch::Approx(12.0));
+    // NOLINTEND(bugprone-chained-comparison)
 
     formulas.apply_formulas();
 
+    // NOLINTBEGIN(bugprone-chained-comparison)
     REQUIRE(network->nodes().get_qi(1) == Catch::Approx(21.0));
     REQUIRE(network->nodes().get_T(2) == Catch::Approx(22.0));
     REQUIRE(network->conductive_couplings().get_coupling_value(1, 2) ==
             Catch::Approx(23.0));
+    // NOLINTEND(bugprone-chained-comparison)
 }
 
 TEST_CASE("Value formulas capture static snapshots", "[formulas]") {
@@ -77,10 +83,12 @@ TEST_CASE("Value formulas capture static snapshots", "[formulas]") {
     network->nodes().set_T(1, -5.0);
     snapshot.apply_compiled_formula();
 
+    // NOLINTBEGIN(bugprone-chained-comparison)
     REQUIRE(network->nodes().get_T(1) == Catch::Approx(42.0));
 
     snapshot.set_value(77.0);
     snapshot.apply_formula();
 
     REQUIRE(network->nodes().get_T(1) == Catch::Approx(77.0));
+    // NOLINTEND(bugprone-chained-comparison)
 }
