@@ -2,8 +2,12 @@
 
 #include <chrono>
 #include <iostream>
+#include <memory>
 #include <utility>
 
+#include "pycanha-core/solvers/solver.hpp"
+#include "pycanha-core/solvers/ss.hpp"
+#include "pycanha-core/tmm/thermalmathematicalmodel.hpp"
 #include "pycanha-core/utils/SparseUtils.hpp"
 
 namespace pycanha {

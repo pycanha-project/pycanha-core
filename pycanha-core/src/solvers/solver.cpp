@@ -1,9 +1,14 @@
 #include "pycanha-core/solvers/solver.hpp"
 
 #include <iostream>
+#include <memory>
+#include <unordered_set>
 #include <utility>
 
+#include "pycanha-core/config.hpp"
+#include "pycanha-core/globals.hpp"
 #include "pycanha-core/tmm/nodes.hpp"
+#include "pycanha-core/tmm/thermalmathematicalmodel.hpp"
 #include "pycanha-core/tmm/thermalnetwork.hpp"
 
 namespace pycanha {

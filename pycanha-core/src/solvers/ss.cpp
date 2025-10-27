@@ -1,7 +1,11 @@
 #include "pycanha-core/solvers/ss.hpp"
 
 #include <iostream>
+#include <memory>
 #include <utility>
+
+#include "pycanha-core/solvers/solver.hpp"
+#include "pycanha-core/tmm/thermalmathematicalmodel.hpp"
 
 namespace pycanha {
 
