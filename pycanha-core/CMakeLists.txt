@@ -70,6 +70,7 @@ add_library(${LIB_NAME} STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/tmm/thermalnetwork.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/tmm/node.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/tmm/nodes.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/tmm/thermalmathematicalmodel.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/utils/SparseUtils.cpp
 )
