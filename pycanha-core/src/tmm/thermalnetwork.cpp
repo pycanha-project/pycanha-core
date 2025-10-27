@@ -161,6 +161,22 @@ Nodes& ThermalNetwork::nodes() noexcept { return *_nodes; }
 
 const Nodes& ThermalNetwork::nodes() const noexcept { return *_nodes; }
 
+CouplingMatrices& ThermalNetwork::conductive_matrices() noexcept {
+    return _conductive_couplings->matrices();
+}
+
+const CouplingMatrices& ThermalNetwork::conductive_matrices() const noexcept {
+    return _conductive_couplings->matrices();
+}
+
+CouplingMatrices& ThermalNetwork::radiative_matrices() noexcept {
+    return _radiative_couplings->matrices();
+}
+
+const CouplingMatrices& ThermalNetwork::radiative_matrices() const noexcept {
+    return _radiative_couplings->matrices();
+}
+
 ConductiveCouplings& ThermalNetwork::conductive_couplings() noexcept {
     return *_conductive_couplings;
 }

@@ -1,0 +1,17 @@
+#include "pycanha-core/solvers/ss.hpp"
+
+#include <iostream>
+#include <utility>
+
+namespace pycanha {
+
+SteadyStateSolver::SteadyStateSolver(
+    std::shared_ptr<ThermalMathematicalModel> tmm_shptr)
+    : Solver(std::move(tmm_shptr)) {}
+
+void SteadyStateSolver::restart_solve() {
+    std::cout << "Re-starting solve..." << '\n';
+    std::cout << "ERROR: Not implemented yet." << '\n';
+}
+
+}  // namespace pycanha

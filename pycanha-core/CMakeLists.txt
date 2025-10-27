@@ -73,6 +73,9 @@ add_library(${LIB_NAME} STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/tmm/thermalmathematicalmodel.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/utils/SparseUtils.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/solver.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/ss.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/sslu.cpp
 )
 target_include_directories(${LIB_NAME} 
     PUBLIC 

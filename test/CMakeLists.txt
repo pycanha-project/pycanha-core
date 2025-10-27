@@ -18,6 +18,7 @@ set(TEST_SOURCES
   "${CMAKE_CURRENT_SOURCE_DIR}/tmm/parameters/test_parameters.cpp"
       "${CMAKE_CURRENT_SOURCE_DIR}/tmm/parameters/test_formulas.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/tmm/thermaldata/test_thermaldata.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/solvers/test_sslu.cpp"
 )
 
 set(TEST_HEADERS "")

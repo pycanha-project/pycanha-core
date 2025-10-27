@@ -36,6 +36,11 @@ class ThermalNetwork {
     [[nodiscard]] Nodes& nodes() noexcept;
     [[nodiscard]] const Nodes& nodes() const noexcept;
 
+    [[nodiscard]] CouplingMatrices& conductive_matrices() noexcept;
+    [[nodiscard]] const CouplingMatrices& conductive_matrices() const noexcept;
+    [[nodiscard]] CouplingMatrices& radiative_matrices() noexcept;
+    [[nodiscard]] const CouplingMatrices& radiative_matrices() const noexcept;
+
     [[nodiscard]] ConductiveCouplings& conductive_couplings() noexcept;
     [[nodiscard]] const ConductiveCouplings& conductive_couplings()
         const noexcept;
