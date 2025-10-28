@@ -12,10 +12,7 @@
 
 # Configure the header "config.hpp" to pass the library name and version
 set(LIB_VERSION ${PROJECT_VERSION})
-configure_file(
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/${LIB_NAME}/config.hpp.in" 
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/${LIB_NAME}/config.hpp" 
-)
+set(PYCANHA_USE_MKL_INT 0)
 
 #set(LIBRARY_INCLUDES "./" "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_BINARY_DIR}/configured_files/include")
 #set(LIBRARY_INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/include")
@@ -76,6 +73,11 @@ add_library(${LIB_NAME} STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/solver.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/ss.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/sslu.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/ts.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/tscn.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/tscnrl.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/tscnrlds.cpp
+
 )
 target_include_directories(${LIB_NAME} 
     PUBLIC 
@@ -90,6 +92,45 @@ target_link_libraries( ${LIB_NAME}
     Eigen3::Eigen  
     PRIVATE
     CDT::CDT
+)
+
+set(PYCANHA_USE_MKL_EFFECTIVE OFF)
+if(PYCANHA_OPTION_USE_MKL)
+    find_package(MKL CONFIG QUIET)
+    if(NOT MKL_FOUND)
+        find_package(MKL QUIET)
+    endif()
+
+    if(TARGET MKL::MKL)
+        target_link_libraries(${LIB_NAME} PUBLIC MKL::MKL)
+        set(PYCANHA_USE_MKL_EFFECTIVE ON)
+    elseif(TARGET MKL::mkl)
+        target_link_libraries(${LIB_NAME} PUBLIC MKL::mkl)
+        set(PYCANHA_USE_MKL_EFFECTIVE ON)
+    elseif(DEFINED MKL_LIBRARIES)
+        target_link_libraries(${LIB_NAME} PUBLIC ${MKL_LIBRARIES})
+        set(PYCANHA_USE_MKL_EFFECTIVE ON)
+    else()
+        find_library(MKL_RT_LIBRARY mkl_rt HINTS $ENV{MKLROOT} PATH_SUFFIXES lib lib/intel64)
+        if(MKL_RT_LIBRARY)
+            target_link_libraries(${LIB_NAME} PUBLIC ${MKL_RT_LIBRARY})
+            set(PYCANHA_USE_MKL_EFFECTIVE ON)
+        else()
+            message(WARNING "Intel MKL requested (PYCANHA_OPTION_USE_MKL=ON) but no MKL package or library was found. Building without MKL support.")
+        endif()
+    endif()
+endif()
+
+if(PYCANHA_USE_MKL_EFFECTIVE)
+    set(PYCANHA_USE_MKL_INT 1)
+    target_compile_definitions(${LIB_NAME} PUBLIC PYCANHA_USE_MKL=1)
+else()
+    target_compile_definitions(${LIB_NAME} PUBLIC PYCANHA_USE_MKL=0)
+endif()
+
+configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/${LIB_NAME}/config.hpp.in" 
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/${LIB_NAME}/config.hpp" 
 )
 
 # For a header-only library:

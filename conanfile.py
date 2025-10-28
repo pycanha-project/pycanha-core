@@ -35,6 +35,7 @@ class Recipe_pycanha_core(ConanFile):
     settings = "os", "compiler", "build_type", "arch"
     options = {
         "PYCANHA_OPTION_LIBRARY": [True, False],
+        "PYCANHA_OPTION_USE_MKL": [True, False],
         "PYCANHA_OPTION_LTO": [True, False],
         "PYCANHA_OPTION_DOCS": [True, False],
         "PYCANHA_OPTION_WARNINGS": [True, False],
@@ -49,6 +50,7 @@ class Recipe_pycanha_core(ConanFile):
 
     default_options = {
         "PYCANHA_OPTION_LIBRARY": True,
+        "PYCANHA_OPTION_USE_MKL": True,
         "PYCANHA_OPTION_LTO": True,
         "PYCANHA_OPTION_DOCS": False,
         "PYCANHA_OPTION_WARNINGS": False,

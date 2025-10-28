@@ -18,8 +18,8 @@
 #include "pycanha-core/utils/RandomGenerators.hpp"
 
 // USE MKL FUNCTION IF AVAILABLE
-#if defined(CYCANHA_USE_MKL)
-#include "mkl.h"
+#if PYCANHA_USE_MKL
+#include <mkl/mkl.h>
 #endif
 
 // This file use a lot of pointer arithmetic for performance, the warning from
@@ -786,10 +786,10 @@ void copy_values_same_nnz(
     // only done in debug.
     PYCANHA_ASSERT(has_same_structure(sp_from, sp_dest),
                    "Matrices don't have the same structure");
-#if defined(CYCANHA_USE_ONLY_EIGEN)
+#if !PYCANHA_USE_MKL
     memcpy(sp_dest.valuePtr(), sp_from.valuePtr(),
            sp_dest.nonZeros() * sizeof(*sp_dest.valuePtr()));
-#elif defined(CYCANHA_USE_MKL)
+#elif PYCANHA_USE_MKL
     // A little bit better than memcpy
     cblas_dcopy(sp_dest.nonZeros(), sp_from.valuePtr(), 1, sp_dest.valuePtr(),
                 1);
@@ -809,12 +809,12 @@ void copy_sum_values_same_nnz(
     PYCANHA_ASSERT(has_same_structure(sp_from, sp_dest),
                    "Matrices don't have the same structure");
 
-#if defined(CYCANHA_USE_ONLY_EIGEN)
+#if !PYCANHA_USE_MKL
     // Slow, but Eigen sum with wrapped vector doesn't work....
     for (int i = 0; i < sp_dest.nonZeros(); i++) {
         sp_dest.valuePtr()[i] += sp_from.valuePtr()[i];
     }
-#elif defined(CYCANHA_USE_MKL)
+#elif PYCANHA_USE_MKL
     cblas_daxpy(sp_dest.nonZeros(), 1.0, sp_from.valuePtr(), 1,
                 sp_dest.valuePtr(), 1);
 #endif
