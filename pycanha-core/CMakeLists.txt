@@ -14,6 +14,45 @@
 set(LIB_VERSION ${PROJECT_VERSION})
 set(PYCANHA_USE_MKL_INT 0)
 
+# Prime CMake package lookup with hints provided by Intel oneMKL installers.
+# MKLROOT is defined across platforms (Windows, Linux) when sourcing the
+# oneAPI environment. Inject its CMake package locations so modern
+# find_package() calls pick up the shipped config files.
+if(PYCANHA_OPTION_USE_MKL AND DEFINED ENV{MKLROOT})
+    cmake_path(NORMALIZE ENV{MKLROOT} OUTPUT_VARIABLE _pycanha_mklroot)
+    set(_pycanha_mkl_hint_dirs
+        "${_pycanha_mklroot}"
+        "${_pycanha_mklroot}/lib/cmake"
+        "${_pycanha_mklroot}/lib/cmake/mkl"
+        "${_pycanha_mklroot}/lib/cmake/oneMKL"
+    )
+
+    foreach(_pycanha_hint IN LISTS _pycanha_mkl_hint_dirs)
+        if(EXISTS "${_pycanha_hint}")
+            list(FIND CMAKE_PREFIX_PATH "${_pycanha_hint}" _pycanha_hint_index)
+            if(_pycanha_hint_index EQUAL -1)
+                list(PREPEND CMAKE_PREFIX_PATH "${_pycanha_hint}")
+            endif()
+        endif()
+    endforeach()
+
+    set(_pycanha_mkl_config_dir "${_pycanha_mklroot}/lib/cmake/mkl")
+    if(EXISTS "${_pycanha_mkl_config_dir}" AND NOT DEFINED MKL_DIR)
+        set(MKL_DIR "${_pycanha_mkl_config_dir}" CACHE PATH "Directory containing MKLConfig.cmake")
+    endif()
+
+    set(_pycanha_onemkl_config_dir "${_pycanha_mklroot}/lib/cmake/oneMKL")
+    if(EXISTS "${_pycanha_onemkl_config_dir}" AND NOT DEFINED oneMKL_DIR)
+        set(oneMKL_DIR "${_pycanha_onemkl_config_dir}" CACHE PATH "Directory containing oneMKLConfig.cmake")
+    endif()
+
+    unset(_pycanha_mkl_hint_dirs)
+    unset(_pycanha_hint_index)
+    unset(_pycanha_mkl_config_dir)
+    unset(_pycanha_onemkl_config_dir)
+    unset(_pycanha_hint)
+endif()
+
 #set(LIBRARY_INCLUDES "./" "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_BINARY_DIR}/configured_files/include")
 #set(LIBRARY_INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/include")
 
@@ -97,28 +136,50 @@ target_link_libraries( ${LIB_NAME}
 set(PYCANHA_USE_MKL_EFFECTIVE OFF)
 if(PYCANHA_OPTION_USE_MKL)
     find_package(MKL CONFIG QUIET)
-    if(NOT MKL_FOUND)
-        find_package(MKL QUIET)
+    find_package(oneMKL CONFIG QUIET)
+
+    # Try the modern imported targets provided by the official MKL/oneMKL
+    # CMake configuration packages first, covering both static and dynamic
+    # variants exposed on Windows and Linux.
+    set(_pycanha_mkl_candidate_targets
+        MKL::MKL
+        MKL::MKL_Static
+        MKL::MKL_Dynamic
+        MKL::mkl
+        MKL::mkl_rt
+        MKL::mkl_intel_ilp64
+        oneMKL::oneMKL
+        oneMKL::static_mkl
+        oneMKL::mkl
+    )
+
+    foreach(_pycanha_candidate IN LISTS _pycanha_mkl_candidate_targets)
+        if(TARGET ${_pycanha_candidate})
+            set(_pycanha_mkl_target ${_pycanha_candidate})
+            break()
+        endif()
+    endforeach()
+
+    if(NOT DEFINED _pycanha_mkl_target AND DEFINED MKL_IMPORTED_TARGETS)
+        list(FILTER MKL_IMPORTED_TARGETS INCLUDE REGEX ".+")
+        list(GET MKL_IMPORTED_TARGETS 0 _pycanha_mkl_target)
     endif()
 
-    if(TARGET MKL::MKL)
-        target_link_libraries(${LIB_NAME} PUBLIC MKL::MKL)
+    if(DEFINED _pycanha_mkl_target)
+        target_link_libraries(${LIB_NAME} PUBLIC ${_pycanha_mkl_target})
         set(PYCANHA_USE_MKL_EFFECTIVE ON)
-    elseif(TARGET MKL::mkl)
-        target_link_libraries(${LIB_NAME} PUBLIC MKL::mkl)
-        set(PYCANHA_USE_MKL_EFFECTIVE ON)
-    elseif(DEFINED MKL_LIBRARIES)
+        message(STATUS "pycanha-core: MKL support enabled via target '${_pycanha_mkl_target}'.")
+    elseif(MKL_FOUND AND DEFINED MKL_LIBRARIES)
         target_link_libraries(${LIB_NAME} PUBLIC ${MKL_LIBRARIES})
         set(PYCANHA_USE_MKL_EFFECTIVE ON)
+        message(STATUS "pycanha-core: MKL support enabled with MKL_LIBRARIES list from package.")
     else()
-        find_library(MKL_RT_LIBRARY mkl_rt HINTS $ENV{MKLROOT} PATH_SUFFIXES lib lib/intel64)
-        if(MKL_RT_LIBRARY)
-            target_link_libraries(${LIB_NAME} PUBLIC ${MKL_RT_LIBRARY})
-            set(PYCANHA_USE_MKL_EFFECTIVE ON)
-        else()
-            message(WARNING "Intel MKL requested (PYCANHA_OPTION_USE_MKL=ON) but no MKL package or library was found. Building without MKL support.")
-        endif()
+        message(WARNING "Intel MKL requested (PYCANHA_OPTION_USE_MKL=ON) but no CMake package targets were found. Building without MKL support.")
     endif()
+
+    unset(_pycanha_mkl_candidate_targets)
+    unset(_pycanha_mkl_target)
+    unset(_pycanha_candidate)
 endif()
 
 if(PYCANHA_USE_MKL_EFFECTIVE)
