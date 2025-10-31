@@ -174,7 +174,7 @@ if(PYCANHA_OPTION_USE_MKL)
         set(PYCANHA_USE_MKL_EFFECTIVE ON)
         message(STATUS "pycanha-core: MKL support enabled with MKL_LIBRARIES list from package.")
     else()
-        message(WARNING "Intel MKL requested (PYCANHA_OPTION_USE_MKL=ON) but no CMake package targets were found. Building without MKL support.")
+        message(FATAL_ERROR "Intel MKL requested (PYCANHA_OPTION_USE_MKL=ON) but no compatible CMake package targets were found. Please install oneMKL and expose it via MKLROOT.")
     endif()
 
     unset(_pycanha_mkl_candidate_targets)
