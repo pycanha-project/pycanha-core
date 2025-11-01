@@ -199,6 +199,11 @@ PYCANHA_OPTION_SANITIZE_ADDR = False
 PYCANHA_OPTION_SANITIZE_UNDEF = False
 
 ```
+
+If you disable `PYCANHA_OPTION_USE_MKL`, the build now falls back to Eigen's
+`SparseLU` solver automatically. This allows running the transient `TSCNRLDS`
+solver without the Intel oneMKL runtime, which is useful on machines where MKL
+isn't available.
 You can check what each option is intended for here in the root `CMakeList.txt` file.
 
 

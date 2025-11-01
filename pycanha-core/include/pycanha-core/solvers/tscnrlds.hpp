@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Eigen/SparseCholesky>
+#include <Eigen/SparseLU>
 #include <array>
 #include <memory>
 #include <vector>
@@ -40,6 +41,8 @@ class TSCNRLDS : public TSCNRL {
     MKL_INT _pardiso_nrhs = 1;
     MKL_INT _pardiso_msglvl = 0;
     MKL_INT _pardiso_error = 0;
+#else
+  Eigen::SparseLU<SpMatRow> _eigen_solver;
 #endif
 
     VectorXd _t3_domain;

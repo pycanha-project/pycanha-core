@@ -19,15 +19,14 @@ TSCNRLDS::TSCNRLDS(std::shared_ptr<ThermalMathematicalModel> tmm_shptr)
 }
 
 void TSCNRLDS::initialize() {
-#if !PYCANHA_USE_MKL
-    throw std::runtime_error(
-        "TSCNRLDS requires Intel MKL. Configure with "
-        "PYCANHA_OPTION_USE_MKL=ON.");
-#else
     TSCNRL::initialize_common();
 
+#if PYCANHA_USE_MKL
     std::cout << "TSCNRLDS (MKL) initializing..." << '\n';
     std::cout << "MKL threads: " << mkl_get_max_threads() << '\n';
+#else
+    std::cout << "TSCNRLDS (Eigen) initializing..." << '\n';
+#endif
 
     sparse_utils::add_zero_diag_square(_k_matrix);
     sparse_utils::set_to_zero(_k_matrix);
@@ -80,6 +79,7 @@ void TSCNRLDS::initialize() {
 
     build_conductance_matrix();
 
+#if PYCANHA_USE_MKL
     _pardiso_perm.assign(static_cast<std::size_t>(nd), MKL_INT{0});
     _pardiso_size = static_cast<MKL_INT>(nd);
     _pardiso_maxfct = 1;
@@ -112,15 +112,18 @@ void TSCNRLDS::initialize() {
     }
 
     solver_initialized = true;
+#else
+    _k_matrix.makeCompressed();
+    _eigen_solver.analyzePattern(_k_matrix);
+    if (_eigen_solver.info() != Eigen::Success) {
+        throw std::runtime_error(
+            "Eigen SparseLU analyzePattern failed during initialization");
+    }
+    solver_initialized = true;
 #endif
 }
 
 void TSCNRLDS::solve() {
-#if !PYCANHA_USE_MKL
-    throw std::runtime_error(
-        "TSCNRLDS requires Intel MKL. Configure with "
-        "PYCANHA_OPTION_USE_MKL=ON.");
-#else
     if constexpr (PROFILING) {
         Instrumentor::get().begin_session("TSCNRLDS SOLVER");
     }
@@ -181,7 +184,6 @@ void TSCNRLDS::solve() {
     if constexpr (PROFILING) {
         Instrumentor::get().end_session();
     }
-#endif
 }
 
 void TSCNRLDS::deinitialize() {
@@ -202,8 +204,6 @@ void TSCNRLDS::deinitialize() {
 #endif
     solver_initialized = false;
 }
-
-#if PYCANHA_USE_MKL
 
 void TSCNRLDS::build_capacities() {
     SOLVER_PROFILE_SCOPE("Build C");
@@ -279,6 +279,8 @@ void TSCNRLDS::add_capacities_to_matrix() {
 void TSCNRLDS::solve_step() {
     SOLVER_PROFILE_SCOPE("Solver Step");
     _rhs = Qd + _heat_flux_n0;
+    
+#if PYCANHA_USE_MKL
     cblas_dscal(static_cast<int>(_k_matrix.nonZeros()), -1.0,
                 _k_matrix.valuePtr(), 1);
 
@@ -294,18 +296,20 @@ void TSCNRLDS::solve_step() {
         throw std::runtime_error("MKL PARDISO solve failed with error " +
                                  std::to_string(_pardiso_error));
     }
+#else
+    _k_matrix *= -1.0;
+    _k_matrix.makeCompressed();
+    _eigen_solver.factorize(_k_matrix);
+    if (_eigen_solver.info() != Eigen::Success) {
+        throw std::runtime_error(
+            "Eigen SparseLU factorization failed during solve");
+    }
+    Td_solver = _eigen_solver.solve(_rhs);
+    if (_eigen_solver.info() != Eigen::Success) {
+        throw std::runtime_error("Eigen SparseLU solve failed");
+    }
+    _k_matrix *= -1.0;
+#endif
 }
-
-#else  // PYCANHA_USE_MKL
-
-void TSCNRLDS::build_capacities() {}
-void TSCNRLDS::build_conductance_matrix() {}
-void TSCNRLDS::build_heat_flux() {}
-void TSCNRLDS::store_heat_flux_at_n0() {}
-void TSCNRLDS::euler_step() {}
-void TSCNRLDS::add_capacities_to_matrix() {}
-void TSCNRLDS::solve_step() {}
-
-#endif  // PYCANHA_USE_MKL
 
 }  // namespace pycanha
