@@ -21,12 +21,22 @@ jobs:
           - os: ubuntu
             compiler: gcc12
             profile_base: ubuntu-gcc12-amd64
+            mkl: true
+            mkl_option: "True"
+            mkl_installer: intel-onemkl-2025.3.0.462_offline.sh
+            mkl_url: https://registrationcenter-download.intel.com/akdlm/IRC_NAS/2ad98b49-1fb2-4294-ab3d-6889b434ebd3/intel-onemkl-2025.3.0.462_offline.sh
           - os: windows
             compiler: msvc2022
             profile_base: windows-msvc2022-amd64
+            mkl: true
+            mkl_option: "True"
+            mkl_installer: w_onemkl_p_2025.3.0.462_offline.exe
+            mkl_url: https://registrationcenter-download.intel.com/akdlm/IRC_NAS/2ad98b49-1fb2-4294-ab3d-6889b434ebd3/w_onemkl_p_2025.3.0.462_offline.exe
           - os: macos
             compiler: clang
             profile_base: macos-clang-arm64
+            mkl: false
+            mkl_option: "False"
         build_type: [release, debug]
 
     name: ${{matrix.config.os}} ${{matrix.config.compiler}} ${{matrix.build_type}} built and tests
@@ -35,11 +45,69 @@ jobs:
 
     steps:
     - name: Check out repo's default branch
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
     - name: Install conan and cmake
       run: |
         pip install conan
         pip install cmake
+    - name: Cache Intel oneMKL offline installer
+      if: matrix.config.mkl
+      id: cache-onemkl
+      uses: actions/cache@v4
+      with:
+        path: ${{ runner.temp }}/intel/installers
+        key: onemkl-${{ runner.os }}-${{ matrix.config.mkl_installer }}
+    - name: Download Intel oneMKL offline installer (Linux)
+      if: matrix.config.os == 'ubuntu' && steps.cache-onemkl.outputs.cache-hit != 'true'
+      run: |
+        mkdir -p "${{ runner.temp }}/intel/installers"
+        curl -L -o "${{ runner.temp }}/intel/installers/${{ matrix.config.mkl_installer }}" "${{ matrix.config.mkl_url }}"
+    - name: Download Intel oneMKL offline installer (Windows)
+      if: matrix.config.os == 'windows' && steps.cache-onemkl.outputs.cache-hit != 'true'
+      shell: pwsh
+      run: |
+        $dir = Join-Path $Env:RUNNER_TEMP 'intel/installers'
+        New-Item -ItemType Directory -Path $dir -Force | Out-Null
+        $outFile = Join-Path $dir '${{ matrix.config.mkl_installer }}'
+        Invoke-WebRequest -Uri '${{ matrix.config.mkl_url }}' -OutFile $outFile
+    - name: Install Intel oneMKL (Linux)
+      if: matrix.config.os == 'ubuntu' && matrix.config.mkl
+      run: |
+        sudo sh "${{ runner.temp }}/intel/installers/${{ matrix.config.mkl_installer }}" -a --silent --eula accept
+    - name: Install Intel oneMKL (Windows)
+      if: matrix.config.os == 'windows' && matrix.config.mkl
+      shell: pwsh
+      run: |
+        $installer = Join-Path $Env:RUNNER_TEMP 'intel/installers/${{ matrix.config.mkl_installer }}'
+        & $installer -s -a --silent --eula accept
+    - name: Configure Intel oneMKL environment (Linux)
+      if: matrix.config.os == 'ubuntu' && matrix.config.mkl
+      shell: bash
+      run: |
+        source /opt/intel/oneapi/setvars.sh --force >/dev/null
+        printf 'MKLROOT=%s\n' "$MKLROOT" >> "$GITHUB_ENV"
+        printf 'LD_LIBRARY_PATH=%s\n' "$LD_LIBRARY_PATH" >> "$GITHUB_ENV"
+        printf 'LIBRARY_PATH=%s\n' "$LIBRARY_PATH" >> "$GITHUB_ENV"
+        printf 'CPATH=%s\n' "$CPATH" >> "$GITHUB_ENV"
+        printf '/opt/intel/oneapi/mkl/latest/lib/intel64\n' >> "$GITHUB_PATH"
+        printf '/opt/intel/oneapi/compiler/latest/linux/lib\n' >> "$GITHUB_PATH"
+    - name: Configure Intel oneMKL environment (Windows)
+      if: matrix.config.os == 'windows' && matrix.config.mkl
+      shell: pwsh
+      run: |
+        $mklRoot = Join-Path ${Env:ProgramFiles(x86)} 'Intel\oneAPI\mkl\latest'
+        if (-not (Test-Path $mklRoot)) {
+          throw "Intel oneMKL installation not found at $mklRoot"
+        }
+        @(
+          "MKLROOT=$mklRoot"
+          "INCLUDE=$mklRoot\include;$Env:INCLUDE"
+          "LIB=$mklRoot\lib\intel64;$Env:LIB"
+        ) | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
+        @(
+          "$mklRoot\redist\intel64"
+          "$mklRoot\bin"
+        ) | Out-File -FilePath $Env:GITHUB_PATH -Encoding utf8 -Append
     - name: Configure Apple Clang
       if: matrix.config.os == 'macos'
       run: |
@@ -49,7 +117,10 @@ jobs:
       run: |
         conan config install .conan
     - name: Build and test application in ${{matrix.build_type}} mode
+      env:
+        PYCANHA_OPTION_USE_MKL: ${{ matrix.config.mkl_option }}
       run: >        
         conan create . --build=missing 
         -pr:h=${{matrix.config.profile_base}} -pr:h=build-${{matrix.build_type}} -pr:h=options-ci 
         -pr:b=${{matrix.config.profile_base}} -pr:b=build-${{matrix.build_type}} -pr:b=options-ci
+        -o PYCANHA_OPTION_USE_MKL=${{ env.PYCANHA_OPTION_USE_MKL }}
