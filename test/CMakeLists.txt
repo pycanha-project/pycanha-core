@@ -35,6 +35,11 @@ target_link_libraries(${TEST_TARGET_NAME}_lib PRIVATE ${LIB_NAME})
 #Create the target "tests" 
 add_executable(${TEST_TARGET_NAME} ${TEST_SOURCES} ${TEST_HEADERS})
 
+target_sources(
+  ${TEST_TARGET_NAME}
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/lsan_suppressions.cpp)
+
 #Link with the lib and catch2
 target_link_libraries(${TEST_TARGET_NAME} PRIVATE ${LIB_NAME})
 target_link_libraries(${TEST_TARGET_NAME} PRIVATE Catch2::Catch2WithMain)
