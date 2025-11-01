@@ -19,7 +19,7 @@
 
 // USE MKL FUNCTION IF AVAILABLE
 #if PYCANHA_USE_MKL
-#include <mkl/mkl.h>
+#include <mkl.h>
 #endif
 
 // This file use a lot of pointer arithmetic for performance, the warning from

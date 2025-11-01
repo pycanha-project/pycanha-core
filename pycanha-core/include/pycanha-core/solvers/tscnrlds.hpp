@@ -10,9 +10,7 @@
 #include "pycanha-core/utils/SparseUtils.hpp"
 
 #if PYCANHA_USE_MKL
-#if __has_include(<mkl/mkl.h>)
-#include <mkl/mkl.h>
-#endif
+#include <mkl.h>
 #endif
 
 namespace pycanha {

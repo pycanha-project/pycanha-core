@@ -80,7 +80,7 @@ void TSCNRLDS::initialize() {
     build_conductance_matrix();
 
 #if PYCANHA_USE_MKL
-    _pardiso_perm.assign(static_cast<std::size_t>(nd), MKL_INT{0});
+    _pardiso_perm.assign(static_cast<std::size_t>(nd), MKL_INT(0));
     _pardiso_size = static_cast<MKL_INT>(nd);
     _pardiso_maxfct = 1;
     _pardiso_mnum = 1;
