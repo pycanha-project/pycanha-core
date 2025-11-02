@@ -10,12 +10,12 @@
 
 namespace {
 
-constexpr double kInitialDiffusiveTemp = 280.0;
-constexpr double kBoundaryTemp = 290.0;
-constexpr double kHeatInput = 5.0;
-constexpr double kThermalCapacity = 100.0;
-constexpr double kConductiveCoupling = 0.1;
-constexpr double kRadiativeCoupling = 0.05;
+constexpr double kInitialDiffusiveTemp = 280.0;  // NOLINT(readability-identifier-naming)
+constexpr double kBoundaryTemp = 290.0;          // NOLINT(readability-identifier-naming)
+constexpr double kHeatInput = 5.0;               // NOLINT(readability-identifier-naming)
+constexpr double kThermalCapacity = 100.0;       // NOLINT(readability-identifier-naming)
+constexpr double kConductiveCoupling = 0.1;      // NOLINT(readability-identifier-naming)
+constexpr double kRadiativeCoupling = 0.05;      // NOLINT(readability-identifier-naming)
 
 struct SolverContext {
     std::shared_ptr<pycanha::ThermalMathematicalModel> model;
@@ -43,6 +43,46 @@ SolverContext make_solver_context() {
     return context;
 }
 
+void initialize_solver(pycanha::TSCNRLDS& solver) {
+    REQUIRE_NOTHROW(solver.initialize());
+    REQUIRE(solver.solver_initialized);
+}
+
+void execute_solver(pycanha::TSCNRLDS& solver) {
+    REQUIRE_NOTHROW(solver.solve());
+    REQUIRE(solver.solver_converged);
+}
+
+void verify_solver_outputs(pycanha::ThermalMathematicalModel& model) {
+    auto& thermal_data = model.thermal_data;
+    REQUIRE(thermal_data.has_table("TSCNRLDS_OUTPUT"));
+    const auto& results = thermal_data.get_table("TSCNRLDS_OUTPUT");
+    const bool has_rows = results.rows() > 0;
+    const bool has_min_columns = results.cols() >= 2;
+    REQUIRE(has_rows);
+    REQUIRE(has_min_columns);
+}
+
+void verify_node_temperatures(pycanha::ThermalMathematicalModel& model) {
+    auto& nodes = model.nodes();
+    const double diffusive_temp_after = nodes.get_T(1);
+    const double boundary_temp_after = nodes.get_T(2);
+
+    const auto initial_temp = Catch::Approx(kInitialDiffusiveTemp);
+    const auto boundary_temp = Catch::Approx(kBoundaryTemp);
+
+    const bool diffusive_temp_changed = diffusive_temp_after != initial_temp;
+    const bool boundary_temp_stable = boundary_temp_after == boundary_temp;
+
+    REQUIRE(diffusive_temp_changed);
+    REQUIRE(boundary_temp_stable);
+}
+
+void shutdown_solver(pycanha::TSCNRLDS& solver) {
+    REQUIRE_NOTHROW(solver.deinitialize());
+    REQUIRE_FALSE(solver.solver_initialized);
+}
+
 }  // namespace
 
 TEST_CASE("TSCNRLDS solves a simple transient case", "[solver][tscnrlds]") {
@@ -57,25 +97,9 @@ TEST_CASE("TSCNRLDS solves a simple transient case", "[solver][tscnrlds]") {
     solver.MAX_ITERS = 50;
     solver.set_simulation_time(0.0, 1.0, 0.05, 0.1);
 
-    REQUIRE_NOTHROW(solver.initialize());
-    REQUIRE(solver.solver_initialized);
-
-    REQUIRE_NOTHROW(solver.solve());
-    REQUIRE(solver.solver_converged);
-
-    auto& thermal_data = context.model->thermal_data;
-    REQUIRE(thermal_data.has_table("TSCNRLDS_OUTPUT"));
-    const auto& results = thermal_data.get_table("TSCNRLDS_OUTPUT");
-    REQUIRE(results.rows() > 0);
-    REQUIRE(results.cols() >= 2);
-
-    auto& nodes = context.model->nodes();
-    const double diffusive_temp_after = nodes.get_T(1);
-    const double boundary_temp_after = nodes.get_T(2);
-
-    REQUIRE(diffusive_temp_after != Catch::Approx(kInitialDiffusiveTemp));
-    REQUIRE(boundary_temp_after == Catch::Approx(kBoundaryTemp));
-
-    REQUIRE_NOTHROW(solver.deinitialize());
-    REQUIRE_FALSE(solver.solver_initialized);
+    initialize_solver(solver);
+    execute_solver(solver);
+    verify_solver_outputs(*context.model);
+    verify_node_temperatures(*context.model);
+    shutdown_solver(solver);
 }

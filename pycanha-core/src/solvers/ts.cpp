@@ -1,7 +1,9 @@
 #include "pycanha-core/solvers/ts.hpp"
 
 #include <Eigen/Dense>
+#include <algorithm>
 #include <cmath>
+#include <cstddef>
 #include <cstring>
 #include <iostream>
 #include <iterator>
