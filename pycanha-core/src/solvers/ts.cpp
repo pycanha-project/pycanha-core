@@ -39,6 +39,9 @@ void TransientSolver::set_simulation_time(double start_time, double end_time,
     dtime_out = output_stride;
 }
 
+// TODO: Refactor initialize_common naming throughout the solver hierarchy to
+// avoid duplicate inherited member warnings once the API is stabilized.
+// cppcheck-suppress duplInheritedMember
 void TransientSolver::initialize_common() {
     Solver::initialize_common();
 

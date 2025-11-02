@@ -12,6 +12,9 @@ namespace pycanha {
 TSCN::TSCN(std::shared_ptr<ThermalMathematicalModel> tmm_shptr)
     : TransientSolver(std::move(tmm_shptr)) {}
 
+// TODO: Refactor initialize_common naming throughout the solver hierarchy to
+// avoid duplicate inherited member warnings once the API is stabilized.
+// cppcheck-suppress duplInheritedMember
 void TSCN::initialize_common() {
     TransientSolver::initialize_common();
 

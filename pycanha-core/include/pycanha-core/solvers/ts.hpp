@@ -19,6 +19,9 @@ class TransientSolver : public Solver {
                              double output_stride);
 
   protected:
+    // TODO: Refactor initialize_common naming throughout the solver hierarchy
+    // to avoid duplicate inherited member warnings once the API is stabilized.
+    // cppcheck-suppress duplInheritedMember
     void initialize_common();
 
     void save_temp_data();

@@ -15,6 +15,9 @@ class TSCN : public TransientSolver {
     ~TSCN() override = default;
 
   protected:
+    // TODO: Refactor initialize_common naming throughout the solver hierarchy
+    // to avoid duplicate inherited member warnings once the API is stabilized.
+    // cppcheck-suppress duplInheritedMember
     void initialize_common();
 
     SpMatRow _k_matrix;
