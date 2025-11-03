@@ -1,7 +1,7 @@
 // Copyright (c) 2025, pycanha-project
 // SPDX-License-Identifier: Apache-2.0
 
-// LeakSanitizer support ------------------------------------------------------------
+// LeakSanitizer support ------------------------------------------------
 //
 // Intel MKL allocates internal structures inside `mkl_pds_lp64_sfinit_pardiso`
 // that are not released before program termination. This shows up as a leak
@@ -18,27 +18,26 @@
 namespace {
 [[maybe_unused]] constexpr const char* k_mkl_leak_suppression =
     "leak:mkl_pds_lp64_sfinit_pardiso\n";
-}  // namespace
 
+constexpr bool k_with_asan() {
 #if defined(__SANITIZE_ADDRESS__)
-#define PYCANHA_WITH_ASAN 1
+    return true;
 #elif defined(__has_feature)
 #if __has_feature(address_sanitizer)
-#define PYCANHA_WITH_ASAN 1
+    return true;
+#else
+    return false;
 #endif
+#else
+    return false;
 #endif
-
-#ifndef PYCANHA_WITH_ASAN
-#define PYCANHA_WITH_ASAN 0
-#endif
-
-#if PYCANHA_WITH_ASAN
+}
+}  // namespace
 
 // NOLINTNEXTLINE(readability-identifier-naming,bugprone-reserved-identifier,cert-dcl37-c,cert-dcl51-cpp)
 extern "C" const char* __lsan_default_suppressions() noexcept {
+    if (!k_with_asan()) {
+        return nullptr;
+    }
     return k_mkl_leak_suppression;
 }
-
-#endif  // AddressSanitizer enabled
-
-#undef PYCANHA_WITH_ASAN

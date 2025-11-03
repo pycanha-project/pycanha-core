@@ -10,12 +10,14 @@
 
 namespace {
 
-constexpr double kInitialDiffusiveTemp = 280.0;  // NOLINT(readability-identifier-naming)
-constexpr double kBoundaryTemp = 290.0;          // NOLINT(readability-identifier-naming)
-constexpr double kHeatInput = 5.0;               // NOLINT(readability-identifier-naming)
-constexpr double kThermalCapacity = 100.0;       // NOLINT(readability-identifier-naming)
-constexpr double kConductiveCoupling = 0.1;      // NOLINT(readability-identifier-naming)
-constexpr double kRadiativeCoupling = 0.05;      // NOLINT(readability-identifier-naming)
+// NOLINTBEGIN(readability-identifier-naming)
+constexpr double kInitialDiffusiveTemp = 280.0;
+constexpr double kBoundaryTemp = 290.0;
+constexpr double kHeatInput = 5.0;
+constexpr double kThermalCapacity = 100.0;
+constexpr double kConductiveCoupling = 0.1;
+constexpr double kRadiativeCoupling = 0.05;
+// NOLINTEND(readability-identifier-naming)
 
 struct SolverContext {
     std::shared_ptr<pycanha::ThermalMathematicalModel> model;
