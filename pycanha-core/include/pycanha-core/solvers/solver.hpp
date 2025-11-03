@@ -41,7 +41,7 @@ class Solver {
 
   public:
     // NOLINTBEGIN(readability-identifier-naming)
-    static constexpr double STPH_BOLTZ = 5.670374419184429e-8;
+    static constexpr double STF_BOLTZ = 5.670374419e-8; // DOI: 10.1103/RevModPhys.97.025002
 
     explicit Solver(std::shared_ptr<ThermalMathematicalModel> tmm_shptr);
     virtual ~Solver() = default;

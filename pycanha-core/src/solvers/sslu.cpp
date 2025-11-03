@@ -65,14 +65,14 @@ void SSLU::solve() {
         // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
         new (&_t_fourth_boundary) WrappVectorXd(_t_fourth.data() + nd, nb);
 
-        Qd -= (KLdb * Tb + STPH_BOLTZ * (KRdb * _t_fourth_boundary));
+        Qd -= (KLdb * Tb + STF_BOLTZ * (KRdb * _t_fourth_boundary));
 
         sparse_utils::set_to_zero(_k_matrix);
         _k_matrix += KRdd.selfadjointView<Eigen::Upper>();
         add_radiative_diagonal_to_matrix();
 
         _k_matrix =
-            STPH_BOLTZ * 4.0 * (_k_matrix * _t_cubed_domain.asDiagonal());
+            STF_BOLTZ * 4.0 * (_k_matrix * _t_cubed_domain.asDiagonal());
         Qd += (3.0 / 4.0) * (_k_matrix * Td);
 
         add_conductive_diagonal_to_matrix();

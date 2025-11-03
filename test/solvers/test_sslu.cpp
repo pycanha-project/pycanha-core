@@ -5,97 +5,127 @@
 #include <type_traits>
 #include <vector>
 
+#include "pycanha-core/config.hpp"
 #include "pycanha-core/solvers/sslu.hpp"
 #include "pycanha-core/tmm/couplingmatrices.hpp"
 #include "pycanha-core/tmm/node.hpp"
 #include "pycanha-core/tmm/nodes.hpp"
 #include "pycanha-core/tmm/thermalmathematicalmodel.hpp"
 
-static_assert(!std::is_same_v<pycanha::CouplingMatrices, void>,
-              "CouplingMatrices must be a concrete type for solver tests");
+
 
 namespace {
 
-// NOLINTBEGIN(readability-identifier-naming)
-constexpr double kInitialTemp = 273.15;
-constexpr int kNodeCount = 5;
-// NOLINTEND(readability-identifier-naming)
 
-struct SSLUTestContext {
-    std::shared_ptr<pycanha::ThermalMathematicalModel> model;
-    std::vector<double> initial_diffusive_temps;
+constexpr double init_temp = 273.15;
+constexpr int num_nodes = 5;
+constexpr double tol_temp = 1e-2;
+
+// Steady state expected temperatures
+// 
+constexpr std::array<double, num_nodes> expected_temps = {
+    132.387, 306.565, 111.784, 200.324, 3.1500
 };
+constexpr std::array<int, num_nodes> node_ids = {10, 15, 20, 25, 99};
 
-SSLUTestContext make_test_context() {
-    SSLUTestContext context{
-        std::make_shared<pycanha::ThermalMathematicalModel>("sslu-test-model"),
-        {}};
-    context.initial_diffusive_temps.reserve(
-        static_cast<std::size_t>(kNodeCount));
+std::shared_ptr<pycanha::ThermalMathematicalModel> make_model() {
+    auto model =
+        std::make_shared<pycanha::ThermalMathematicalModel>("test_model");
 
-    for (int node_id = 1; node_id <= kNodeCount; ++node_id) {
-        pycanha::Node node(node_id);
-        node.set_T(kInitialTemp + static_cast<double>(node_id));
+    auto node_10 = pycanha::Node(10);
+    auto node_15 = pycanha::Node(15);
+    auto node_20 = pycanha::Node(20);
+    auto node_25 = pycanha::Node(25);
+    auto env_node = pycanha::Node(99);
 
-        if (node_id == 1 || node_id == kNodeCount) {
-            node.set_type(pycanha::BOUNDARY_NODE);
-            const double boundary_offset = node_id == 1 ? 10.0 : 100.0;
-            node.set_T(kInitialTemp + boundary_offset);
-        } else {
-            context.initial_diffusive_temps.push_back(node.get_T());
+    // Set initial temperatures
+    node_10.set_T(init_temp);
+    node_15.set_T(init_temp);
+    node_20.set_T(init_temp);
+    node_25.set_T(init_temp);
+    env_node.set_T(3.15);
+
+    // Set thermal capacities
+    node_10.set_C(2.0e5);
+    node_15.set_C(2.0e5);
+    node_20.set_C(2.0e5);
+    node_25.set_C(2.0e5);
+
+    // Set dissipation
+    node_15.set_qi(500.0);
+
+    // Set node types
+    env_node.set_type(pycanha::BOUNDARY_NODE);
+
+
+    // Add nodes to the model
+    model->add_node(node_10);
+    model->add_node(node_15);
+    model->add_node(node_20);
+    model->add_node(node_25);
+    model->add_node(env_node);
+
+    // Add conductive couplings
+    model->add_conductive_coupling(10, 15, 0.1);
+    model->add_conductive_coupling(20, 25, 0.1);
+
+    // Add radiative couplings
+    model->add_radiative_coupling(10, 99, 1.0);
+    model->add_radiative_coupling(20, 99, 1.0);
+    model->add_radiative_coupling(15, 25, 0.2);
+    model->add_radiative_coupling(15, 99, 0.8);
+    model->add_radiative_coupling(25, 99, 0.8);
+
+
+
+    return model;
+
+}
+
+
+bool compare_temps(pycanha::ThermalMathematicalModel& model, bool print_diffs = false) {
+
+    bool all_within_tol = true;
+    // Loop over node ids
+    for (int i = 0; i < num_nodes; ++i) {
+        const auto node_id = node_ids[i];
+        const auto node_temp = model.nodes().get_T(node_id);
+        const auto expected_temp = expected_temps[i];
+
+        if (std::fabs(node_temp - expected_temp) > tol_temp) {
+            all_within_tol = false;
         }
 
-        context.model->add_node(node);
+        if (print_diffs) {
+            std::cout << "Node " << node_id << ": "
+                      << "Computed Temp = " << node_temp << " K, "
+                      << "Expected Temp = " << expected_temp << " K, "
+                      << "Diff = " << std::fabs(node_temp - expected_temp)
+                      << " K\n";
+        }
     }
 
-    for (int node_id = 1; node_id < kNodeCount; ++node_id) {
-        context.model->add_conductive_coupling(node_id, node_id + 1, 1.0);
-        context.model->add_radiative_coupling(node_id, node_id + 1, 0.1);
-    }
-
-    return context;
+    return all_within_tol;
 }
 
-void expect_diffusive_temperatures(
-    pycanha::ThermalMathematicalModel& model,
-    const std::vector<double>& initial_diffusive_temps) {
-    auto& nodes = model.nodes();
-    const double lower_bound = nodes.get_node_from_node_num(1).get_T();
-    const double upper_bound = nodes.get_node_from_node_num(kNodeCount).get_T();
+} // namespace
 
-    std::size_t diffusive_index = 0;
-    for (int node_id = 2; node_id < kNodeCount; ++node_id) {
-        const double solved_temp =
-            nodes.get_node_from_node_num(node_id).get_T();
+TEST_CASE("SSLU solves a simple model", "[solver][sslu]") {
+    auto model = make_model();
 
-        // NOLINTNEXTLINE(bugprone-chained-comparison)
-        REQUIRE(solved_temp >= lower_bound);
-        // NOLINTNEXTLINE(bugprone-chained-comparison)
-        REQUIRE(solved_temp <= upper_bound);
-        // NOLINTNEXTLINE(bugprone-chained-comparison)
-        REQUIRE(std::abs(solved_temp -
-                         initial_diffusive_temps.at(diffusive_index)) > 1.0e-3);
-        ++diffusive_index;
-    }
-}
-
-}  // namespace
-
-TEST_CASE("SSLU solves a mixed coupling network", "[solver][sslu]") {
-    auto context = make_test_context();
-
-    pycanha::SSLU solver(context.model);
-    solver.MAX_ITERS = 50;
+    pycanha::SSLU solver(model);
+    solver.MAX_ITERS = 100;
+    solver.abstol_temp = 1e-6;
 
     solver.initialize();
+
     REQUIRE(solver.solver_initialized);
 
     solver.solve();
 
     REQUIRE(solver.solver_converged);
-    // NOLINTNEXTLINE(bugprone-chained-comparison)
+
     REQUIRE(solver.solver_iter < solver.MAX_ITERS);
 
-    expect_diffusive_temperatures(*context.model,
-                                  context.initial_diffusive_temps);
+    REQUIRE(compare_temps(*model, true));
 }

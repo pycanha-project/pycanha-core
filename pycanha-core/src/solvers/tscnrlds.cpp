@@ -247,10 +247,10 @@ void TSCNRLDS::build_capacities() {
 void TSCNRLDS::build_conductance_matrix() {
     SOLVER_PROFILE_SCOPE("Linearization");
 
-    _t3_domain = (4.0 * STPH_BOLTZ) * Td.array().cube();
-    _t3_boundary = (4.0 * STPH_BOLTZ) * Tb.array().cube();
-    _t4_domain = STPH_BOLTZ * Td.array().square().square();
-    _t4_boundary = STPH_BOLTZ * Tb.array().square().square();
+    _t3_domain = (4.0 * STF_BOLTZ) * Td.array().cube();
+    _t3_boundary = (4.0 * STF_BOLTZ) * Tb.array().cube();
+    _t4_domain = STF_BOLTZ * Td.array().square().square();
+    _t4_boundary = STF_BOLTZ * Tb.array().square().square();
 
     sparse_utils::set_to_zero(_k_matrix);
     sparse_utils::set_to_zero(_boundary_matrix);
