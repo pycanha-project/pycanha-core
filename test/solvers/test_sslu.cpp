@@ -5,7 +5,6 @@
 #include <type_traits>
 #include <vector>
 
-#include "pycanha-core/config.hpp"
 #include "pycanha-core/solvers/sslu.hpp"
 #include "pycanha-core/tmm/couplingmatrices.hpp"
 #include "pycanha-core/tmm/node.hpp"
@@ -24,8 +23,9 @@ constexpr double tol_temp = 1e-2;
 // Steady state expected temperatures
 // 
 constexpr std::array<double, num_nodes> expected_temps = {
-    132.387, 306.565, 111.784, 200.324, 3.1500
+    132.38706, 306.56526, 111.78443, 200.32387, 3.14999
 };
+
 constexpr std::array<int, num_nodes> node_ids = {10, 15, 20, 25, 99};
 
 std::shared_ptr<pycanha::ThermalMathematicalModel> make_model() {
@@ -127,5 +127,6 @@ TEST_CASE("SSLU solves a simple model", "[solver][sslu]") {
 
     REQUIRE(solver.solver_iter < solver.MAX_ITERS);
 
-    REQUIRE(compare_temps(*model, true));
+    // In case of error, set print_diffs to true to see detailed comparison 
+    REQUIRE(compare_temps(*model, false));
 }

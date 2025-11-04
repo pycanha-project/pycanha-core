@@ -50,7 +50,7 @@ class Recipe_pycanha_core(ConanFile):
 
     default_options = {
         "PYCANHA_OPTION_LIBRARY": True,
-        "PYCANHA_OPTION_USE_MKL": True,
+        "PYCANHA_OPTION_USE_MKL": False,
         "PYCANHA_OPTION_LTO": True,
         "PYCANHA_OPTION_DOCS": False,
         "PYCANHA_OPTION_WARNINGS": False,

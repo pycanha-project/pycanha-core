@@ -258,8 +258,8 @@ void TSCNRLDS::build_conductance_matrix() {
     sparse_utils::copy_2_values_with_idx(_k_matrix.valuePtr(), KRdd.valuePtr(),
                                          _lower_kr_indices, _upper_kr_indices);
 
-    _rhs = (-1.0 * KRdd) * _ones_domain;
-    _rhs.noalias() += (-1.0 * KRdb) * _ones_boundary;
+    _rhs = -(KRdd.selfadjointView<Eigen::Upper>() * _ones_domain);
+    _rhs.noalias() -= KRdb * _ones_boundary;
 
     sparse_utils::copy_values_with_idx(_k_matrix.valuePtr(), _rhs.data(),
                                        _diagonal_indices);
