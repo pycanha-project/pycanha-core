@@ -20,7 +20,7 @@ class TSCNRLDS : public TSCNRL {
 
   public:
     explicit TSCNRLDS(std::shared_ptr<ThermalMathematicalModel> tmm_shptr);
-    ~TSCNRLDS() override = default;
+    ~TSCNRLDS() override;
 
     void initialize() override;
     void solve() override;
@@ -39,6 +39,9 @@ class TSCNRLDS : public TSCNRL {
     MKL_INT _pardiso_nrhs = 1;
     MKL_INT _pardiso_msglvl = 0;
     MKL_INT _pardiso_error = 0;
+    // MKL_INT versions of sparse matrix indices (for Eigen compatibility)
+    std::vector<MKL_INT> _k_matrix_outer_index;
+    std::vector<MKL_INT> _k_matrix_inner_index;
 #else
   Eigen::SparseLU<SpMatRow> _eigen_solver;
 #endif

@@ -172,6 +172,14 @@ bool compare_temps(pycanha::ThermalMathematicalModel& model,
     return all_within_tol;
 }
 
+void reset_model_temps(
+    pycanha::ThermalMathematicalModel& model) {
+    model.nodes().set_T(10, init_temp);
+    model.nodes().set_T(15, init_temp);
+    model.nodes().set_T(20, init_temp);
+    model.nodes().set_T(25, init_temp);
+}
+
 }  // namespace
 
 TEST_CASE("TSCNRLDS solves a simple model", "[solver][tscnrlds]") {
@@ -190,4 +198,26 @@ TEST_CASE("TSCNRLDS solves a simple model", "[solver][tscnrlds]") {
 
     // In case of error, set print_diffs to true to see detailed comparison
     REQUIRE(compare_temps(*model, false));
+
+    // Re-run to verify no errors (like mem-leaks) on multiple initializations
+    solver.deinitialize();
+    reset_model_temps(*model);
+    solver.MAX_ITERS = 100;
+    solver.abstol_temp = 1e-6;
+    solver.set_simulation_time(0.0, 100000.0, 1000.0, 10000.0);
+    solver.initialize();
+    solver.solve();
+    REQUIRE(compare_temps(*model, false));
+
+    // Create another solver instance to verify multiple solvers work in the same model
+    auto solver2 = pycanha::TSCNRLDS(model);
+    reset_model_temps(*model);
+    solver2.MAX_ITERS = 100;
+    solver2.abstol_temp = 1e-6;
+    solver2.set_simulation_time(0.0, 100000.0, 1000.0, 10000.0);
+    solver2.initialize();
+    solver2.solve();
+    REQUIRE(compare_temps(*model, false));
+
+
 }

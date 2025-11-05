@@ -30,6 +30,11 @@ TSCNRLDS::TSCNRLDS(std::shared_ptr<ThermalMathematicalModel> tmm_shptr)
     output_table_name = "TSCNRLDS_OUTPUT";
 }
 
+TSCNRLDS::~TSCNRLDS() {
+    // Ensure MKL resources are freed even if deinitialize() wasn't called
+    deinitialize();
+}
+
 void TSCNRLDS::initialize() {
     TSCNRL::initialize_common();
 
@@ -102,7 +107,7 @@ void TSCNRLDS::initialize() {
     build_conductance_matrix();
 
 #if PYCANHA_USE_MKL
-    _pardiso_perm.assign(static_cast<std::size_t>(nd), MKL_INT(0));
+    _pardiso_perm.assign(static_cast<std::size_t>(nd), 0);
     _pardiso_size = static_cast<MKL_INT>(nd);
     _pardiso_maxfct = 1;
     _pardiso_mnum = 1;
@@ -110,6 +115,19 @@ void TSCNRLDS::initialize() {
     _pardiso_msglvl = 0;
     _pardiso_nrhs = 1;
     _pardiso_error = 0;
+
+    // Convert Eigen's int indices to MKL_INT (long long int)
+    const auto outer_size = _k_matrix.outerSize() + 1;
+    const auto inner_nnz = _k_matrix.nonZeros();
+    _k_matrix_outer_index.resize(outer_size);
+    _k_matrix_inner_index.resize(inner_nnz);
+
+    std::copy(_k_matrix.outerIndexPtr(),
+              _k_matrix.outerIndexPtr() + outer_size,
+              _k_matrix_outer_index.begin());
+    std::copy(_k_matrix.innerIndexPtr(),
+              _k_matrix.innerIndexPtr() + inner_nnz,
+              _k_matrix_inner_index.begin());
 
     // TODO(PYC-405): Wrap MKL control structure access to avoid reinterpret
     // casts once the solver interface is refactored.
@@ -128,8 +146,8 @@ void TSCNRLDS::initialize() {
     _pardiso_phase = 11;
     pardiso(reinterpret_cast<void*>(_pardiso_pt.data()), &_pardiso_maxfct,
         &_pardiso_mnum, &_pardiso_mtype, &_pardiso_phase,
-        &_pardiso_size, _k_matrix.valuePtr(), _k_matrix.outerIndexPtr(),
-        _k_matrix.innerIndexPtr(), _pardiso_perm.data(), &_pardiso_nrhs,
+        &_pardiso_size, _k_matrix.valuePtr(), _k_matrix_outer_index.data(),
+        _k_matrix_inner_index.data(), _pardiso_perm.data(), &_pardiso_nrhs,
         _pardiso_iparm.data(), &_pardiso_msglvl, _rhs.data(),
         Td_solver.data(), &_pardiso_error);
 
@@ -217,22 +235,26 @@ void TSCNRLDS::solve() {
 void TSCNRLDS::deinitialize() {
 #if PYCANHA_USE_MKL
     if (solver_initialized) {
-    _pardiso_phase = -1;
-    // TODO(PYC-405): Wrap MKL pointers with helper to drop reinterpret casts.
-    // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast)
-    pardiso(reinterpret_cast<void*>(_pardiso_pt.data()),
-        &_pardiso_maxfct, &_pardiso_mnum, &_pardiso_mtype,
-        &_pardiso_phase, &_pardiso_size, _k_matrix.valuePtr(),
-        _k_matrix.outerIndexPtr(), _k_matrix.innerIndexPtr(),
-        _pardiso_perm.data(), &_pardiso_nrhs, _pardiso_iparm.data(),
-        &_pardiso_msglvl, _rhs.data(), Td_solver.data(),
-        &_pardiso_error);
-    // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast)
-
-        mkl_thread_free_buffers();
-        mkl_free_buffers();
+        _pardiso_phase = -1;
+        // TODO(PYC-405): Wrap MKL pointers with helper to drop reinterpret casts.
+        // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast)
+        pardiso(reinterpret_cast<void*>(_pardiso_pt.data()),
+            &_pardiso_maxfct, &_pardiso_mnum, &_pardiso_mtype,
+            &_pardiso_phase, &_pardiso_size, _k_matrix.valuePtr(),
+            _k_matrix_outer_index.data(), _k_matrix_inner_index.data(),
+            _pardiso_perm.data(), &_pardiso_nrhs, _pardiso_iparm.data(),
+            &_pardiso_msglvl, _rhs.data(), Td_solver.data(),
+            &_pardiso_error);
+        // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast)
     }
+    
+    // Always free MKL buffers, even if solver wasn't initialized
+    mkl_thread_free_buffers();
+    mkl_free_buffers();
+    
     _pardiso_perm.clear();
+    _k_matrix_outer_index.clear();
+    _k_matrix_inner_index.clear();
 #endif
     solver_initialized = false;
 }
@@ -320,15 +342,23 @@ void TSCNRLDS::solve_step() {
     cblas_dscal(static_cast<int>(_k_matrix.nonZeros()), -1.0,
                 _k_matrix.valuePtr(), 1);
 
+    // Update MKL_INT index arrays if matrix structure changed
+    const auto inner_nnz = _k_matrix.nonZeros();
+    if (_k_matrix_inner_index.size() != static_cast<std::size_t>(inner_nnz)) {
+        _k_matrix_inner_index.resize(inner_nnz);
+        std::copy(_k_matrix.innerIndexPtr(),
+                  _k_matrix.innerIndexPtr() + inner_nnz,
+                  _k_matrix_inner_index.begin());
+    }
+
     _pardiso_phase = 23;
     // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast)
     pardiso(reinterpret_cast<void*>(_pardiso_pt.data()), &_pardiso_maxfct,
         &_pardiso_mnum, &_pardiso_mtype, &_pardiso_phase, &_pardiso_size,
-        _k_matrix.valuePtr(), _k_matrix.outerIndexPtr(),
-        _k_matrix.innerIndexPtr(), _pardiso_perm.data(), &_pardiso_nrhs,
+        _k_matrix.valuePtr(), _k_matrix_outer_index.data(),
+        _k_matrix_inner_index.data(), _pardiso_perm.data(), &_pardiso_nrhs,
         _pardiso_iparm.data(), &_pardiso_msglvl, _rhs.data(),
         Td_solver.data(), &_pardiso_error);
-    // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast)
     // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast)
 
     if (_pardiso_error != 0) {

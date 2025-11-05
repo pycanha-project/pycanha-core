@@ -50,7 +50,7 @@ cmake_minimum_required(VERSION 3.25)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON) # Create a compile_commands.json file for clang-tidy and cppcheck 
 
 option(PYCANHA_OPTION_LIBRARY              "Include the Library"                           ON  )
-option(PYCANHA_OPTION_USE_MKL              "Enable Intel MKL accelerated solvers."         OFF  )
+option(PYCANHA_OPTION_USE_MKL              "Enable Intel MKL accelerated solvers."         ON  )
 option(PYCANHA_OPTION_LTO                  "Enable Link Time Optimization."                OFF )
 option(PYCANHA_OPTION_DOCS                 "Add a 'doc' target to build documentation."    OFF )
 option(PYCANHA_OPTION_WARNINGS             "Add warnings to targets."                      ON  )
