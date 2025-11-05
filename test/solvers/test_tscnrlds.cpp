@@ -1,14 +1,11 @@
-
-#include <catch2/catch_test_macros.hpp>
 #include <array>
+#include <catch2/catch_test_macros.hpp>
 #include <cmath>
 #include <cstddef>
+#include <iostream>
 #include <memory>
-#include <type_traits>
-#include <vector>
 
 #include "pycanha-core/solvers/tscnrlds.hpp"
-#include "pycanha-core/tmm/couplingmatrices.hpp"
 #include "pycanha-core/tmm/node.hpp"
 #include "pycanha-core/tmm/nodes.hpp"
 #include "pycanha-core/tmm/thermalmathematicalmodel.hpp"
@@ -92,7 +89,7 @@ std::shared_ptr<pycanha::ThermalMathematicalModel> make_model() {
     // Add conductive couplings
     model->add_conductive_coupling(10, 15, 0.1);
     model->add_conductive_coupling(20, 25, 0.1);
-    
+
     // Add radiative couplings
     model->add_radiative_coupling(10, 99, 1.0);
     model->add_radiative_coupling(15, 25, 0.2);
@@ -100,20 +97,17 @@ std::shared_ptr<pycanha::ThermalMathematicalModel> make_model() {
     model->add_radiative_coupling(20, 99, 1.0);
     model->add_radiative_coupling(25, 99, 0.8);
 
-
-
     return model;
-
 }
 
 
 bool compare_temps(pycanha::ThermalMathematicalModel& model,
                    bool print_diffs = false) {
-
     const auto& thermal_data = model.thermal_data;
     if (!thermal_data.has_table("TSCNRLDS_OUTPUT")) {
         if (print_diffs) {
-            std::cout << "Thermal data table 'TSCNRLDS_OUTPUT' not found." << '\n';
+            std::cout
+                << "Thermal data table 'TSCNRLDS_OUTPUT' not found." << '\n';
         }
         return false;
     }
@@ -136,13 +130,14 @@ bool compare_temps(pycanha::ThermalMathematicalModel& model,
     std::array<Eigen::Index, num_nodes> node_column_indices{};
     const auto& nodes = model.nodes();
     for (std::size_t i = 0; i < node_ids.size(); ++i) {
-        node_column_indices[i] = nodes.get_idx_from_node_num(node_ids[i]) + 1;
+        node_column_indices.at(i) =
+            nodes.get_idx_from_node_num(node_ids.at(i)) + 1;
     }
 
     for (std::size_t time_idx = 0; time_idx < times.size(); ++time_idx) {
         const auto row = static_cast<Eigen::Index>(time_idx);
         const double computed_time = output_table(row, 0);
-        const double expected_time = times[time_idx];
+        const double expected_time = times.at(time_idx);
 
         if (std::fabs(computed_time - expected_time) > tol_time) {
             all_within_tol = false;
@@ -154,9 +149,10 @@ bool compare_temps(pycanha::ThermalMathematicalModel& model,
         }
 
         for (std::size_t node_idx = 0; node_idx < node_ids.size(); ++node_idx) {
-            const auto column = node_column_indices[node_idx];
+            const auto column = node_column_indices.at(node_idx);
             const double computed_temp = output_table(row, column);
-            const double expected_temp = expected_temps[time_idx][node_idx];
+            const double expected_temp =
+                expected_temps.at(time_idx).at(node_idx);
 
             if (std::fabs(computed_temp - expected_temp) > tol_temp) {
                 all_within_tol = false;
@@ -164,7 +160,7 @@ bool compare_temps(pycanha::ThermalMathematicalModel& model,
 
             if (print_diffs) {
                 std::cout << "t=" << expected_time << " s, Node "
-                          << node_ids[node_idx] << ": Computed = "
+                          << node_ids.at(node_idx) << ": Computed = "
                           << computed_temp << " K, Expected = "
                           << expected_temp << " K, Diff = "
                           << std::fabs(computed_temp - expected_temp)
@@ -192,7 +188,6 @@ TEST_CASE("TSCNRLDS solves a simple model", "[solver][tscnrlds]") {
 
     solver.solve();
 
-    // In case of error, set print_diffs to true to see detailed comparison 
+    // In case of error, set print_diffs to true to see detailed comparison
     REQUIRE(compare_temps(*model, false));
-    
 }

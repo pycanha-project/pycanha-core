@@ -1,12 +1,11 @@
+#include <array>
 #include <catch2/catch_test_macros.hpp>
 #include <cmath>
 #include <cstddef>
+#include <iostream>
 #include <memory>
-#include <type_traits>
-#include <vector>
 
 #include "pycanha-core/solvers/sslu.hpp"
-#include "pycanha-core/tmm/couplingmatrices.hpp"
 #include "pycanha-core/tmm/node.hpp"
 #include "pycanha-core/tmm/nodes.hpp"
 #include "pycanha-core/tmm/thermalmathematicalmodel.hpp"
@@ -21,7 +20,6 @@ constexpr int num_nodes = 5;
 constexpr double tol_temp = 1e-2;
 
 // Steady state expected temperatures
-// 
 constexpr std::array<double, num_nodes> expected_temps = {
     132.38706, 306.56526, 111.78443, 200.32387, 3.14999
 };
@@ -76,21 +74,18 @@ std::shared_ptr<pycanha::ThermalMathematicalModel> make_model() {
     model->add_radiative_coupling(15, 99, 0.8);
     model->add_radiative_coupling(25, 99, 0.8);
 
-
-
     return model;
-
 }
 
 
-bool compare_temps(pycanha::ThermalMathematicalModel& model, bool print_diffs = false) {
-
+bool compare_temps(pycanha::ThermalMathematicalModel& model,
+                   bool print_diffs = false) {
     bool all_within_tol = true;
     // Loop over node ids
-    for (int i = 0; i < num_nodes; ++i) {
-        const auto node_id = node_ids[i];
+    for (std::size_t i = 0; i < node_ids.size(); ++i) {
+        const auto node_id = node_ids.at(i);
         const auto node_temp = model.nodes().get_T(node_id);
-        const auto expected_temp = expected_temps[i];
+        const auto expected_temp = expected_temps.at(i);
 
         if (std::fabs(node_temp - expected_temp) > tol_temp) {
             all_within_tol = false;
@@ -108,7 +103,7 @@ bool compare_temps(pycanha::ThermalMathematicalModel& model, bool print_diffs = 
     return all_within_tol;
 }
 
-} // namespace
+}  // namespace
 
 TEST_CASE("SSLU solves a simple model", "[solver][sslu]") {
     auto model = make_model();
@@ -125,8 +120,9 @@ TEST_CASE("SSLU solves a simple model", "[solver][sslu]") {
 
     REQUIRE(solver.solver_converged);
 
-    REQUIRE(solver.solver_iter < solver.MAX_ITERS);
+    const bool iter_within_limit = solver.solver_iter < solver.MAX_ITERS;
+    REQUIRE(iter_within_limit);
 
-    // In case of error, set print_diffs to true to see detailed comparison 
+    // In case of error, set print_diffs to true to see detailed comparison
     REQUIRE(compare_temps(*model, false));
 }
