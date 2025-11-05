@@ -52,86 +52,62 @@ jobs:
         pip install conan
         pip install cmake
 
-    - name: Cache Intel oneMKL installer
-      if: matrix.config.mkl
-      id: cache-onemkl
+    - name: Cache Intel oneMKL installer (Linux)
+      if: matrix.config.mkl && matrix.config.os == 'ubuntu'
+      id: cache-onemkl-linux
       uses: actions/cache@v4
       with:
         path: ${{ runner.temp }}/intel/installers
         key: onemkl-${{ runner.os }}-${{ matrix.config.mkl_installer }}
 
     - name: Download Intel oneMKL installer (Linux)
-      if: matrix.config.mkl && matrix.config.os == 'ubuntu' && steps.cache-onemkl.outputs.cache-hit != 'true'
+      if: matrix.config.mkl && matrix.config.os == 'ubuntu' && steps.cache-onemkl-linux.outputs.cache-hit != 'true'
       run: |
         mkdir -p "${{ runner.temp }}/intel/installers"
         curl -L -o "${{ runner.temp }}/intel/installers/${{ matrix.config.mkl_installer }}" "${{ matrix.config.mkl_url }}"
-
-    - name: Download Intel oneMKL installer (Windows)
-      if: matrix.config.mkl && matrix.config.os == 'windows' && steps.cache-onemkl.outputs.cache-hit != 'true'
-      shell: pwsh
-      run: |
-        $dir = Join-Path $Env:RUNNER_TEMP 'intel/installers'
-        New-Item -ItemType Directory -Path $dir -Force | Out-Null
-        $outFile = Join-Path $dir '${{ matrix.config.mkl_installer }}'
-        # Use alternative method with proper headers and retry logic
-        $maxRetries = 3
-        $retryCount = 0
-        $success = $false
-        
-        while (-not $success -and $retryCount -lt $maxRetries) {
-          try {
-            Write-Host "Attempt $($retryCount + 1) of $maxRetries"
-            $ProgressPreference = 'SilentlyContinue'
-            Invoke-WebRequest -Uri '${{ matrix.config.mkl_url }}' -OutFile $outFile -UserAgent "GitHubActions" -UseBasicParsing -TimeoutSec 600
-            if (Test-Path $outFile) {
-              $fileSize = (Get-Item $outFile).Length
-              Write-Host "Downloaded file size: $fileSize bytes"
-              if ($fileSize -gt 1000000) {
-                $success = $true
-              } else {
-                Write-Host "File too small, retrying..."
-                Remove-Item $outFile -ErrorAction SilentlyContinue
-              }
-            }
-          } catch {
-            Write-Host "Download failed: $_"
-            $retryCount++
-            if ($retryCount -lt $maxRetries) {
-              Write-Host "Waiting 10 seconds before retry..."
-              Start-Sleep -Seconds 10
-            }
-          }
-        }
-        
-        if (-not $success) {
-          Write-Host "All download attempts failed. Using alternative source..."
-          # Try alternative download using curl
-          curl.exe -L -o $outFile --retry 3 --retry-delay 10 '${{ matrix.config.mkl_url }}'
-        }
 
     - name: Install Intel oneMKL (Linux)
       if: matrix.config.os == 'ubuntu' && matrix.config.mkl
       run: |
         sudo sh "${{ runner.temp }}/intel/installers/${{ matrix.config.mkl_installer }}" -a --silent --eula accept
 
-    - name: Install Intel oneMKL (Windows)
+    - name: Setup Intel oneAPI (Windows)
+      if: matrix.config.os == 'windows' && matrix.config.mkl
+      uses: rscohn2/setup-oneapi@v0
+      with:
+        components: |
+          mkl-devel
+
+    - name: Display Intel MKL version (Linux)
+      if: matrix.config.os == 'ubuntu' && matrix.config.mkl
+      run: |
+        if [ -f /opt/intel/oneapi/mkl/latest/include/mkl_version.h ]; then
+          echo "=== Intel MKL Version Information ==="
+          grep "INTEL_MKL_VERSION" /opt/intel/oneapi/mkl/latest/include/mkl_version.h
+          echo "MKLROOT: $MKLROOT"
+        else
+          echo "MKL version file not found"
+          ls -la /opt/intel/oneapi/mkl/ || echo "MKL directory not found"
+        fi
+      env:
+        MKLROOT: /opt/intel/oneapi/mkl/latest
+
+    - name: Display Intel MKL version (Windows)
       if: matrix.config.os == 'windows' && matrix.config.mkl
       shell: pwsh
       run: |
-        $installer = Join-Path $Env:RUNNER_TEMP 'intel/installers/${{ matrix.config.mkl_installer }}'
-        if (-not (Test-Path $installer)) {
-          Write-Error "Installer not found at $installer"
-          exit 1
-        }
-        Write-Host "Installing from: $installer"
-        & $installer -s -a --silent --eula accept --log-dir=${{ runner.temp }}\intel\logs
-        if ($LASTEXITCODE -ne 0) {
-          Write-Error "Installation failed with exit code $LASTEXITCODE"
-          if (Test-Path "${{ runner.temp }}\intel\logs") {
-            Write-Host "Installation logs:"
-            Get-ChildItem "${{ runner.temp }}\intel\logs" | ForEach-Object { Get-Content $_.FullName }
+        $mklInclude = "C:\Program Files (x86)\Intel\oneAPI\mkl\latest\include\mkl_version.h"
+        if (Test-Path $mklInclude) {
+          Write-Host "=== Intel MKL Version Information ==="
+          Select-String -Path $mklInclude -Pattern "INTEL_MKL_VERSION"
+          Write-Host "MKLROOT: $env:MKLROOT"
+        } else {
+          Write-Host "MKL version file not found"
+          if (Test-Path "C:\Program Files (x86)\Intel\oneAPI\mkl") {
+            Get-ChildItem "C:\Program Files (x86)\Intel\oneAPI\mkl"
+          } else {
+            Write-Host "MKL directory not found"
           }
-          exit 1
         }
 
     - name: Configure Apple Clang
