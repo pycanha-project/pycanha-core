@@ -99,6 +99,7 @@ if(PYCANHA_OPTION_USE_MKL)
         PATHS
             "/opt/intel/oneapi/mkl/latest/lib/cmake/mkl"
             "C:/Program Files (x86)/Intel/oneAPI/mkl/latest/lib/cmake/mkl"
+            "C:/Program Files/Intel/oneAPI/mkl/latest/lib/cmake/mkl"
         NO_DEFAULT_PATH QUIET)
     if(NOT TARGET MKL::MKL)
         message(FATAL_ERROR "Intel MKL requested (PYCANHA_OPTION_USE_MKL=ON) but MKL package targets were not found in the predefined lookup paths.")
