@@ -275,8 +275,7 @@ class Recipe_pycanha_core(ConanFile):
         Single source of truth for MKL locations.
 
         - Requires PYCANHA_OPTION_USE_MKL=True
-        - Requires VIRTUAL_ENV to be set (we are inside a Python venv)
-        - Assumes MKL has been installed in that venv via pip (mkl + mkl-devel)
+        - Installs MKL via pip (mkl + mkl-devel)
         - Returns (mklroot, include_dir, lib_dir, bin_dir)
         - Raises ConanInvalidConfiguration if anything is missing
         """
@@ -284,46 +283,47 @@ class Recipe_pycanha_core(ConanFile):
         if not bool(self.options.get_safe("PYCANHA_OPTION_USE_MKL", False)):
             return None  # MKL is not requested
 
-        venv = os.environ.get("VIRTUAL_ENV")
-        if not venv:
-            raise ConanInvalidConfiguration(
-                "PYCANHA_OPTION_USE_MKL=True but VIRTUAL_ENV is not set.\n"
-                "Run `conan create` from inside the Python virtualenv where MKL is/will be installed."
-            )
-
         # Install MKL
         self.run(
             f'"{sys.executable}" -m pip install -q '
             f'"mkl-devel=={self.MKL_PIP_VERSION}"'
         )
 
-        venv_path = Path(venv)
+        # Find where pip installed it
+        import site
 
-        if self.settings.os == "Windows":
-            mklroot = venv_path / "Library"
-            include = mklroot / "include"
-            libdir = mklroot / "lib"
-            bindir = mklroot / "bin"
-            lib_pattern = "mkl*.lib"
-        else:
-            # Typical pip layout on Linux
-            mklroot = venv_path
-            include = venv_path / "include"
-            libdir = venv_path / "lib"
-            bindir = venv_path / "lib"
-            lib_pattern = "libmkl*.so*"
+        # Check user site-packages first, then global
+        search_paths = []
+        user_site = site.getusersitepackages()
+        if user_site:
+            search_paths.append(Path(user_site))
 
-        # Hard fail if things are not where we expect them
-        if not include.joinpath("mkl.h").is_file():
-            raise ConanInvalidConfiguration(
-                f"MKL header not found at {include / 'mkl.h'}.\n"
-                "Make sure `pip install mkl-devel` has been run in this virtualenv."
-            )
+        for sp in site.getsitepackages():
+            search_paths.append(Path(sp))
 
-        if not any(libdir.glob(lib_pattern)):
-            raise ConanInvalidConfiguration(
-                f"MKL libraries matching '{lib_pattern}' not found in {libdir}.\n"
-                "Make sure `pip install mkl` (runtime) has been run in this virtualenv."
-            )
+        for site_path in search_paths:
+            if self.settings.os == "Windows":
+                # Windows: Python\Lib\site-packages -> Python\Library
+                mklroot = site_path.parent.parent / "Library"
+                include = mklroot / "include"
+                libdir = mklroot / "lib"
+                bindir = mklroot / "bin"
+                lib_pattern = "mkl*.lib"
+            else:
+                # Linux/Mac: site-packages/../{include,lib}
+                mklroot = site_path.parent
+                include = mklroot / "include"
+                libdir = mklroot / "lib"
+                bindir = libdir
+                lib_pattern = "libmkl*.so*"
 
-        return mklroot, include, libdir, bindir
+            # Check if MKL is found
+            if include.joinpath("mkl.h").is_file() and any(libdir.glob(lib_pattern)):
+                return mklroot, include, libdir, bindir
+
+        # Hard fail if not found
+        raise ConanInvalidConfiguration(
+            f"MKL header not found after pip install.\n"
+            f"Searched in: {[str(p) for p in search_paths]}\n"
+            "Make sure `pip install mkl-devel` works correctly."
+        )
