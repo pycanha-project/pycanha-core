@@ -1,9 +1,10 @@
 from conan import ConanFile
 from conan.tools.cmake import CMakeToolchain, CMake, cmake_layout, CMakeDeps
-from conan.tools.build import check_max_cppstd, check_min_cppstd
+from conan.tools.build import check_max_cppstd, check_min_cppstd, can_run
 from conan.tools.files import copy
 from conan.tools.env import VirtualBuildEnv
 from conan.errors import ConanInvalidConfiguration
+from conan.tools.scm import Version
 
 import os
 
@@ -34,6 +35,7 @@ class Recipe_pycanha_core(ConanFile):
     # Binary configuration
     settings = "os", "compiler", "build_type", "arch"
     options = {
+        "fPIC": [True, False],
         "PYCANHA_OPTION_LIBRARY": [True, False],
         "PYCANHA_OPTION_USE_MKL": [True, False],
         "PYCANHA_OPTION_LTO": [True, False],
@@ -49,6 +51,7 @@ class Recipe_pycanha_core(ConanFile):
     }
 
     default_options = {
+        "fPIC": True,
         "PYCANHA_OPTION_LIBRARY": True,
         "PYCANHA_OPTION_USE_MKL": True,
         "PYCANHA_OPTION_LTO": True,
@@ -64,6 +67,7 @@ class Recipe_pycanha_core(ConanFile):
     }
 
     # Sources are located in the same place as this recipe, copy them to the recipe
+    exports = "LICENSE", "README.md"
     exports_sources = "CMakeLists.txt", "pycanha-core/*", "cmake/*", "test/*"
     # no_copy_source = True # Not needed
 
@@ -90,6 +94,21 @@ class Recipe_pycanha_core(ConanFile):
         # Raise an error for non-supported configurations.
         check_min_cppstd(self, "23")
 
+        # Check compiler support for C++23
+        if self.settings.compiler == "gcc":
+            if Version(str(self.settings.compiler.version)) < "11":
+                raise ConanInvalidConfiguration("GCC >= 11 required for C++23 support")
+        elif self.settings.compiler == "clang":
+            if Version(str(self.settings.compiler.version)) < "12":
+                raise ConanInvalidConfiguration(
+                    "Clang >= 12 required for C++23 support"
+                )
+        elif self.settings.compiler == "msvc":
+            if Version(str(self.settings.compiler.version)) < "193":
+                raise ConanInvalidConfiguration(
+                    "MSVC >= 193 (Visual Studio 2022) required for C++23 support"
+                )
+
         if self.options.PYCANHA_OPTION_INCLUDE_WHAT_YOU_USE:
             raise ConanInvalidConfiguration(
                 "IWYU (Include what you use) is broken right now. Set to OFF."
@@ -100,9 +119,11 @@ class Recipe_pycanha_core(ConanFile):
             self.options.rm_safe("fPIC")
 
     def configure(self):
-        pass
-        # if self.options.shared:
-        #    self.options.rm_safe("fPIC")
+        # For static libraries, propagate fPIC to dependencies
+        if self.package_type == "static-library":
+            # Only propagate fPIC if it exists (it's removed on Windows)
+            if self.options.get_safe("fPIC") is not None:
+                self.options["*"].fPIC = self.options.fPIC
 
     def layout(self):
         # Here, it is defined where the build files are placed.
@@ -113,13 +134,15 @@ class Recipe_pycanha_core(ConanFile):
     def generate(self):
         deps = CMakeDeps(self)
         deps.generate()
+
         tc = CMakeToolchain(self)
 
         # Variables passed to CMake. Conan has "variables" and "cache_variables".
         # See: https://docs.conan.io/2/reference/tools/cmake/cmaketoolchain.html#cache-variables
-        # Pass the options to CMake
+        # Pass the options to CMake (skip fPIC as it's handled by CMakeToolchain)
         for option, val in self.options.items():
-            tc.cache_variables[option] = val
+            if option != "fPIC":
+                tc.cache_variables[option] = val
 
         # Not sure if needed, this will pass -DCMAKE_BUILD_TYPE=<build_type> to CMake
         # Multi-config generators (like Visual Studio or Ninja Multi-Config) set the build type at build time, not at generation time.
@@ -127,6 +150,10 @@ class Recipe_pycanha_core(ConanFile):
         build_type = self.settings.get_safe("build_type", default="Release")
         tc.cache_variables["CMAKE_BUILD_TYPE"] = build_type
         tc.cache_variables["CONAN_PROJECT_VERSION"] = self.version
+
+        # Enable compile commands export for Debug builds (useful for IDE integration)
+        if self.settings.build_type == "Debug":
+            tc.cache_variables["CMAKE_EXPORT_COMPILE_COMMANDS"] = "ON"
 
         tc.generate()
 
@@ -140,38 +167,27 @@ class Recipe_pycanha_core(ConanFile):
         cmake.configure()
         cmake.build()
 
-        # Runing the tests (not the package_test, which is run separately after this using the test method)
+        # Running the tests (not the package_test, which is run separately after this using the test method)
         # See: https://docs.conan.io/2/tutorial/creating_packages/build_packages.html
-        if not self.conf.get("tools.build:skip_test", default=False):
-            test_folder = os.path.join("test")
-            if self.settings.os == "Windows":
-                test_folder = os.path.join(test_folder, str(self.settings.build_type))
-            self.run(os.path.join(test_folder, "tests"))
+        if can_run(self):
+            if not self.conf.get("tools.build:skip_test", default=False):
+                # Run tests with verbose output to see all test results
+                self.output.info("Running unit tests...")
+                # --verbose shows test execution output from ctest
+                # Uncomment to see the tests, otherwise only in case of failure info is shown
+                # cmake.test(cli_args=["--verbose"])
 
     def package(self):
-        # Because pycanha-core is header only, we just need to copy the headers
-        # copy(self, "*.hpp", self.source_folder, self.package_folder)
+        # Manual file copying approach (until CMake install rules are defined)
+        # Copy headers
         copy(
             self,
             pattern="*.hpp",
             src=os.path.join(self.source_folder, "pycanha-core/include"),
             dst=os.path.join(self.package_folder, "include"),
         )
-        copy(
-            self,
-            pattern="*.a",
-            src=self.build_folder,
-            dst=os.path.join(self.package_folder, "lib"),
-            keep_path=False,
-        )
 
-        copy(
-            self,
-            pattern="*.so",
-            src=self.build_folder,
-            dst=os.path.join(self.package_folder, "lib"),
-            keep_path=False,
-        )
+        # Copy static library files (.lib for MSVC, .a for GCC/Clang)
         copy(
             self,
             pattern="*.lib",
@@ -181,18 +197,26 @@ class Recipe_pycanha_core(ConanFile):
         )
         copy(
             self,
-            pattern="*.dll",
+            pattern="*.a",
             src=self.build_folder,
-            dst=os.path.join(self.package_folder, "bin"),
+            dst=os.path.join(self.package_folder, "lib"),
             keep_path=False,
         )
 
-        # Alternatively we could use the installation with cmake, but I don't know how to do it
-        # For this to work, all the install() commands in the CMakeLists.txt must be defined correctly
-        # cmake = CMake(self)
-        # cmake.install()
+        # Copy license files
+        copy(
+            self,
+            pattern="LICENSE",
+            src=self.source_folder,
+            dst=os.path.join(self.package_folder, "licenses"),
+            keep_path=False,
+        )
 
     def package_info(self):
+        # Set CMake module/config file names and target names for better consumer experience
+        self.cpp_info.set_property("cmake_file_name", "pycanha-core")
+        self.cpp_info.set_property("cmake_target_name", "pycanha-core::pycanha-core")
+
         # This line is necessary because the headers are not in the "include" folder. By default, conan will look for the headers in the "include" folder
         # See: https://docs.conan.io/2/tutorial/creating_packages/define_package_information.html?highlight=also%20copy%20include%20folder#define-information-for-consumers-the-package-info-method
         # self.cpp_info.includedirs = ["pycanha-core/include"]
@@ -202,11 +226,9 @@ class Recipe_pycanha_core(ConanFile):
         self.cpp_info.libs = ["pycanha-core"]
 
         # Without adding the link flags, the sanitizers libraries are not linked (for the consumer).
-        link_flags = []
         if self.options.PYCANHA_OPTION_SANITIZE_ADDR:
-            link_flags.append("-fsanitize=address")
+            self.cpp_info.sharedlinkflags.append("-fsanitize=address")
+            self.cpp_info.exelinkflags.append("-fsanitize=address")
         if self.options.PYCANHA_OPTION_SANITIZE_UNDEF:
-            link_flags.append("-fsanitize=undefined")
-
-        # See: https://docs.conan.io/2/reference/conanfile/methods/package_info.html#conan-conanfile-model-cppinfo-attributes
-        self.cpp_info.exelinkflags = link_flags  # linker flags
+            self.cpp_info.sharedlinkflags.append("-fsanitize=undefined")
+            self.cpp_info.exelinkflags.append("-fsanitize=undefined")
