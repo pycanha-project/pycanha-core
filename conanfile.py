@@ -310,12 +310,21 @@ class Recipe_pycanha_core(ConanFile):
                 bindir = mklroot / "bin"
                 lib_pattern = "mkl*.lib"
             else:
-                # Linux/Mac: site-packages/../{include,lib}
-                mklroot = site_path.parent
-                include = mklroot / "include"
-                libdir = mklroot / "lib"
-                bindir = libdir
-                lib_pattern = "libmkl*.so*"
+                # Linux/Mac: MKL is inside site-packages/mkl/
+                mkl_package = site_path / "mkl"
+                if mkl_package.exists():
+                    mklroot = mkl_package
+                    include = mklroot / "include"
+                    libdir = mklroot / "lib"
+                    bindir = libdir
+                    lib_pattern = "libmkl*.so*"
+                else:
+                    # Fallback: try parent directory
+                    mklroot = site_path.parent
+                    include = mklroot / "include"
+                    libdir = mklroot / "lib"
+                    bindir = libdir
+                    lib_pattern = "libmkl*.so*"
 
             # Check if MKL is found
             if include.joinpath("mkl.h").is_file() and any(libdir.glob(lib_pattern)):
