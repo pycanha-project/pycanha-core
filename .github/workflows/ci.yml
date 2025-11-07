@@ -21,21 +21,14 @@ jobs:
           - os: ubuntu
             compiler: gcc12
             profile_base: ubuntu-gcc12-amd64
-            mkl: true
             mkl_option: "True"
-            mkl_installer: intel-onemkl-2025.3.0.462_offline.sh
-            mkl_url: https://registrationcenter-download.intel.com/akdlm/IRC_NAS/2ad98b49-1fb2-4294-ab3d-6889b434ebd3/intel-onemkl-2025.3.0.462_offline.sh
           - os: windows
             compiler: msvc2022
             profile_base: windows-msvc2022-amd64
-            mkl: true
             mkl_option: "True"
-            mkl_installer: w_onemkl_p_2025.3.0.462_offline.exe
-            mkl_url: https://registrationcenter-download.intel.com/akdlm/IRC_NAS/2ad98b49-1fb2-4294-ab3d-6889b434ebd3/w_onemkl_p_2025.3.0.462_offline.exe
           - os: macos
             compiler: clang
             profile_base: macos-clang-arm64
-            mkl: false
             mkl_option: "False"
         build_type: [release, debug]
 
@@ -51,92 +44,6 @@ jobs:
       run: |
         pip install conan
         pip install cmake
-
-    - name: Cache Intel oneMKL installer (Linux)
-      if: matrix.config.mkl && matrix.config.os == 'ubuntu'
-      id: cache-onemkl-linux
-      uses: actions/cache@v4
-      with:
-        path: ${{ runner.temp }}/intel/installers
-        key: onemkl-${{ runner.os }}-${{ matrix.config.mkl_installer }}
-
-    - name: Download Intel oneMKL installer (Linux)
-      if: matrix.config.mkl && matrix.config.os == 'ubuntu' && steps.cache-onemkl-linux.outputs.cache-hit != 'true'
-      run: |
-        mkdir -p "${{ runner.temp }}/intel/installers"
-        curl -L -o "${{ runner.temp }}/intel/installers/${{ matrix.config.mkl_installer }}" "${{ matrix.config.mkl_url }}"
-
-    - name: Install Intel oneMKL (Linux)
-      if: matrix.config.os == 'ubuntu' && matrix.config.mkl
-      run: |
-        sudo sh "${{ runner.temp }}/intel/installers/${{ matrix.config.mkl_installer }}" -a --silent --eula accept
-
-    # Install Intel oneMKL on Windows using winget. The rscohn2/setup-oneapi action
-    # currently targets Linux; Windows support is unreliable/missing. Winget installs
-    # the latest available oneAPI BaseKit (includes MKL) or MKL developer package.
-    - name: Install Intel oneMKL 2025.3.0 (Windows)
-      if: matrix.config.os == 'windows' && matrix.config.mkl
-      shell: pwsh
-      run: |
-        $ErrorActionPreference = "Stop"
-        Write-Host "Updating winget sources..."
-        winget source update --accept-source-agreements | Out-Host
-        Write-Host "Installing Intel.oneMKL version 2025.3.0 via winget..."
-        winget install --id Intel.oneMKL -e --version 2025.3.0 --silent --disable-interactivity --accept-package-agreements --accept-source-agreements | Out-Host
-
-        # Discover MKL installation for diagnostics (no env exports needed; CMake uses hard-coded paths).
-        $mklRoot = "C:\\Program Files (x86)\\Intel\\oneAPI\\mkl\\latest"
-        if (-not (Test-Path $mklRoot)) {
-          $base = "C:\\Program Files (x86)\\Intel\\oneAPI\\mkl"
-          if (Test-Path $base) {
-            $latest = Get-ChildItem $base -Directory | Sort-Object Name -Descending | Select-Object -First 1
-            if ($latest) { $mklRoot = $latest.FullName }
-          }
-          # Also check non-(x86) Program Files in case of different layout
-          if (-not (Test-Path $mklRoot)) {
-            $mklRootAlt = "C:\\Program Files\\Intel\\oneAPI\\mkl\\latest"
-            if (Test-Path $mklRootAlt) { $mklRoot = $mklRootAlt }
-          }
-        }
-        if (-not (Test-Path (Join-Path $mklRoot "include\\mkl_version.h"))) {
-          Write-Host "MKL include not found at $mklRoot"
-          if (Test-Path "C:\\Program Files (x86)\\Intel\\oneAPI\\mkl") {
-            Get-ChildItem "C:\\Program Files (x86)\\Intel\\oneAPI\\mkl" | Out-Host
-          }
-          throw "Intel oneMKL not found after installation"
-        }
-
-    - name: Display Intel MKL version (Linux)
-      if: matrix.config.os == 'ubuntu' && matrix.config.mkl
-      run: |
-        if [ -f /opt/intel/oneapi/mkl/latest/include/mkl_version.h ]; then
-          echo "=== Intel MKL Version Information ==="
-          grep "INTEL_MKL_VERSION" /opt/intel/oneapi/mkl/latest/include/mkl_version.h
-          echo "MKLROOT: $MKLROOT"
-        else
-          echo "MKL version file not found"
-          ls -la /opt/intel/oneapi/mkl/ || echo "MKL directory not found"
-        fi
-      env:
-        MKLROOT: /opt/intel/oneapi/mkl/latest
-
-    - name: Display Intel MKL version (Windows)
-      if: matrix.config.os == 'windows' && matrix.config.mkl
-      shell: pwsh
-      run: |
-        $mklInclude = "C:\Program Files (x86)\Intel\oneAPI\mkl\latest\include\mkl_version.h"
-        if (Test-Path $mklInclude) {
-          Write-Host "=== Intel MKL Version Information ==="
-          Select-String -Path $mklInclude -Pattern "INTEL_MKL_VERSION"
-          Write-Host "MKLROOT: $env:MKLROOT"
-        } else {
-          Write-Host "MKL version file not found"
-          if (Test-Path "C:\Program Files (x86)\Intel\oneAPI\mkl") {
-            Get-ChildItem "C:\Program Files (x86)\Intel\oneAPI\mkl"
-          } else {
-            Write-Host "MKL directory not found"
-          }
-        }
 
     - name: Configure Apple Clang
       if: matrix.config.os == 'macos'
