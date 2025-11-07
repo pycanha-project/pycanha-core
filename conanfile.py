@@ -2,11 +2,13 @@ from conan import ConanFile
 from conan.tools.cmake import CMakeToolchain, CMake, cmake_layout, CMakeDeps
 from conan.tools.build import check_max_cppstd, check_min_cppstd, can_run
 from conan.tools.files import copy
-from conan.tools.env import VirtualBuildEnv
+from conan.tools.env import VirtualBuildEnv, Environment
 from conan.errors import ConanInvalidConfiguration
 from conan.tools.scm import Version
 
 import os
+import sys
+from pathlib import Path
 
 
 class Recipe_pycanha_core(ConanFile):
@@ -86,6 +88,8 @@ class Recipe_pycanha_core(ConanFile):
         # Test dependencies
         self.test_requires("catch2/3.3.2")
 
+        self.MKL_PIP_VERSION = "2025.3"  # When MKL is used
+
         # Conditional dependencies. Depending on the option selected
         if self.options.PYCANHA_OPTION_DOCS:
             # This mean build doxygen!! It takes to long. Install it with other tool.
@@ -157,7 +161,38 @@ class Recipe_pycanha_core(ConanFile):
         if self.settings.build_type == "Debug":
             tc.cache_variables["CMAKE_EXPORT_COMPILE_COMMANDS"] = "ON"
 
+        # Configure MKL from pip-based venv (strict, single approach)
+        mkl_data = None
+        try:
+            mkl_data = self._mkl_paths_from_pip_venv()
+        except ConanInvalidConfiguration as e:
+            # If MKL is enabled, we want to fail early (before CMake configure)
+            raise
+
+        if mkl_data:
+            mklroot, include, libdir, bindir = mkl_data
+
+            # Help CMake find MKL if your CMakeLists uses MKLROOT
+            tc.cache_variables["MKLROOT"] = str(mklroot)
+            tc.cache_variables["MKL_ROOT"] = str(mklroot)
+
         tc.generate()
+
+        # Export env for MKL runtime (so tests can find dll/so)
+        if mkl_data:
+            mklroot, include, libdir, bindir = mkl_data
+            env = Environment()
+            env.define("MKLROOT", str(mklroot))
+            if self.settings.os == "Windows":
+                env.prepend_path("PATH", str(bindir))
+            else:
+                env.prepend_path("LD_LIBRARY_PATH", str(bindir))
+
+            build_env = env.vars(self, scope="build")
+            build_env.save_script("mkl_build_env")
+
+            run_env = env.vars(self, scope="run")
+            run_env.save_script("mkl_run_env")
 
         # With this, we tell conan to export the environment variables set in the profiles (eg: linux-gcc12-....)
         # In those variables we force CMake to use the specific version of the compiler, otherwise it chooses whatever he likes.
@@ -234,3 +269,61 @@ class Recipe_pycanha_core(ConanFile):
         if self.options.PYCANHA_OPTION_SANITIZE_UNDEF:
             self.cpp_info.sharedlinkflags.append("-fsanitize=undefined")
             self.cpp_info.exelinkflags.append("-fsanitize=undefined")
+
+    def _mkl_paths_from_pip_venv(self):
+        """
+        Single source of truth for MKL locations.
+
+        - Requires PYCANHA_OPTION_USE_MKL=True
+        - Requires VIRTUAL_ENV to be set (we are inside a Python venv)
+        - Assumes MKL has been installed in that venv via pip (mkl + mkl-devel)
+        - Returns (mklroot, include_dir, lib_dir, bin_dir)
+        - Raises ConanInvalidConfiguration if anything is missing
+        """
+
+        if not bool(self.options.get_safe("PYCANHA_OPTION_USE_MKL", False)):
+            return None  # MKL is not requested
+
+        venv = os.environ.get("VIRTUAL_ENV")
+        if not venv:
+            raise ConanInvalidConfiguration(
+                "PYCANHA_OPTION_USE_MKL=True but VIRTUAL_ENV is not set.\n"
+                "Run `conan create` from inside the Python virtualenv where MKL is/will be installed."
+            )
+
+        # Install MKL
+        self.run(
+            f'"{sys.executable}" -m pip install -q '
+            f'"mkl-devel=={self.MKL_PIP_VERSION}"'
+        )
+
+        venv_path = Path(venv)
+
+        if self.settings.os == "Windows":
+            mklroot = venv_path / "Library"
+            include = mklroot / "include"
+            libdir = mklroot / "lib"
+            bindir = mklroot / "bin"
+            lib_pattern = "mkl*.lib"
+        else:
+            # Typical pip layout on Linux
+            mklroot = venv_path
+            include = venv_path / "include"
+            libdir = venv_path / "lib"
+            bindir = venv_path / "lib"
+            lib_pattern = "libmkl*.so*"
+
+        # Hard fail if things are not where we expect them
+        if not include.joinpath("mkl.h").is_file():
+            raise ConanInvalidConfiguration(
+                f"MKL header not found at {include / 'mkl.h'}.\n"
+                "Make sure `pip install mkl-devel` has been run in this virtualenv."
+            )
+
+        if not any(libdir.glob(lib_pattern)):
+            raise ConanInvalidConfiguration(
+                f"MKL libraries matching '{lib_pattern}' not found in {libdir}.\n"
+                "Make sure `pip install mkl` (runtime) has been run in this virtualenv."
+            )
+
+        return mklroot, include, libdir, bindir
