@@ -94,24 +94,41 @@ target_link_libraries( ${LIB_NAME}
     CDT::CDT
 )
 
+# ============================================================================
+# Intel MKL Configuration
+# ============================================================================
 if(PYCANHA_OPTION_USE_MKL)
-    find_package(MKL CONFIG
-        PATHS
-            "/opt/intel/oneapi/mkl/latest/lib/cmake/mkl"
-            "C:/Program Files (x86)/Intel/oneAPI/mkl/latest/lib/cmake/mkl"
-            "C:/Program Files/Intel/oneAPI/mkl/latest/lib/cmake/mkl"
-        NO_DEFAULT_PATH QUIET)
-    if(NOT TARGET MKL::MKL)
-        message(FATAL_ERROR "Intel MKL requested (PYCANHA_OPTION_USE_MKL=ON) but MKL package targets were not found in the predefined lookup paths.")
-    endif()
+    # Set MKL configuration before find_package
+    # See MKLConfig.cmake for all available options
+    set(MKL_INTERFACE "lp64")                          # LP64 = 32-bit integers
+    set(MKL_THREADING "intel_thread")                  # Intel OpenMP
+    set(MKL_LINK "${PYCANHA_OPTION_MKL_LINK}")        # "static" or "dynamic"
 
+    # Find Intel MKL using the official CMake config
+    find_package(MKL CONFIG REQUIRED PATHS $ENV{MKLROOT})
+
+    message(STATUS "Intel MKL found: ${MKL_VERSION}")
+    message(STATUS "  Interface: ${MKL_INTERFACE}, Threading: ${MKL_THREADING}, Link: ${MKL_LINK}")
+    message(STATUS "  MKL imported targets: ${MKL_IMPORTED_TARGETS}")
+
+    # Link MKL using the official target (includes headers, compile options, and libraries)
     target_link_libraries(${LIB_NAME} PUBLIC MKL::MKL)
-    set(PYCANHA_USE_MKL_INT 1)
+
+    # Configure Eigen to use MKL BLAS/LAPACK
+    target_compile_definitions(${LIB_NAME} PUBLIC 
+        EIGEN_USE_MKL_ALL      # Enable MKL for all Eigen operations
+    )
+
+    # Configure pycanha to use MKL
     target_compile_definitions(${LIB_NAME} PUBLIC PYCANHA_USE_MKL=1)
+    set(PYCANHA_USE_MKL_INT 1)
 else()
+    # MKL disabled - use Eigen native solvers
     set(PYCANHA_USE_MKL_INT 0)
     target_compile_definitions(${LIB_NAME} PUBLIC PYCANHA_USE_MKL=0)
+    message(STATUS "Intel MKL disabled - using Eigen native solvers")
 endif()
+# ============================================================================
 
 configure_file(
     "${CMAKE_CURRENT_SOURCE_DIR}/include/${LIB_NAME}/config.hpp.in" 

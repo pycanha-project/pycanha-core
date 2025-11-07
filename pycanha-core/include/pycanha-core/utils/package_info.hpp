@@ -14,6 +14,9 @@ inline void print_package_info() {
     std::cout << "Compiler: " << LIB_COMPILER_INFO << " v"
               << LIB_COMPILER_VERSION << "\n";
     std::cout << "C++ Standard: " << LIB_CPP_STANDARD << "\n";
+    #ifdef PYCANHA_USE_MKL
+    std::cout << "MKL Enabled\n";
+    #endif
     std::cout << "---------------------\n";
 }
 }  // namespace pycanha
