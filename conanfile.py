@@ -9,6 +9,8 @@ from conan.tools.scm import Version
 import os
 import sys
 from pathlib import Path
+import site
+import sysconfig
 
 
 class Recipe_pycanha_core(ConanFile):
@@ -275,7 +277,7 @@ class Recipe_pycanha_core(ConanFile):
         Single source of truth for MKL locations.
 
         - Requires PYCANHA_OPTION_USE_MKL=True
-        - Installs MKL via pip (mkl + mkl-devel)
+        - Installs MKL via pip (mkl-devel)
         - Returns (mklroot, include_dir, lib_dir, bin_dir)
         - Raises ConanInvalidConfiguration if anything is missing
         """
@@ -283,56 +285,99 @@ class Recipe_pycanha_core(ConanFile):
         if not bool(self.options.get_safe("PYCANHA_OPTION_USE_MKL", False)):
             return None  # MKL is not requested
 
-        # Install MKL
+        # 1. Install MKL
         self.run(
             f'"{sys.executable}" -m pip install -q '
             f'"mkl-devel=={self.MKL_PIP_VERSION}"'
         )
 
-        # Find where pip installed it
-        import site
+        # 2. Build list of candidate roots where mkl-devel might have installed
+        search_roots = set()
 
-        # Check user site-packages first, then global
-        search_paths = []
+        # a) Python prefixes
+        for p in {sys.prefix, getattr(sys, "base_prefix", sys.prefix)}:
+            if p:
+                search_roots.add(Path(p))
+
+        # b) sysconfig paths (often point somewhere under the prefix)
+        try:
+            cfg_paths = sysconfig.get_paths()
+        except Exception:
+            cfg_paths = {}
+        for key in ("data", "platlib", "purelib"):
+            p = cfg_paths.get(key)
+            if p:
+                p = Path(p)
+                # p itself + 1–2 parents (to catch ~/.local, /usr/local, venv root, etc.)
+                search_roots.add(p)
+                if p.parent:
+                    search_roots.add(p.parent)
+                if p.parent and p.parent.parent:
+                    search_roots.add(p.parent.parent)
+
+        # c) site-packages (user + global) and their parents
         user_site = site.getusersitepackages()
         if user_site:
-            search_paths.append(Path(user_site))
+            sp = Path(user_site)
+            search_roots.add(sp)
+            if sp.parent:
+                search_roots.add(sp.parent)
+            if sp.parent and sp.parent.parent:
+                search_roots.add(sp.parent.parent)
 
         for sp in site.getsitepackages():
-            search_paths.append(Path(sp))
+            sp = Path(sp)
+            search_roots.add(sp)
+            if sp.parent:
+                search_roots.add(sp.parent)
+            if sp.parent and sp.parent.parent:
+                search_roots.add(sp.parent.parent)
 
-        for site_path in search_paths:
-            if self.settings.os == "Windows":
+        # d) Explicit MKLROOT env var (if user already has MKL configured)
+        mklroot_env = os.environ.get("MKLROOT")
+        if mklroot_env:
+            search_roots.add(Path(mklroot_env))
+
+        # 3. Platform-specific checks
+        if self.settings.os == "Windows":
+            # Keep your previous logic for Windows
+            for site_path in list(search_roots):
                 # Windows: Python\Lib\site-packages -> Python\Library
-                mklroot = site_path.parent.parent / "Library"
-                include = mklroot / "include"
-                libdir = mklroot / "lib"
-                bindir = mklroot / "bin"
-                lib_pattern = "mkl*.lib"
-            else:
-                # Linux/Mac: MKL is inside site-packages/mkl/
-                mkl_package = site_path / "mkl"
-                if mkl_package.exists():
-                    mklroot = mkl_package
-                    include = mklroot / "include"
-                    libdir = mklroot / "lib"
-                    bindir = libdir
-                    lib_pattern = "libmkl*.so*"
-                else:
-                    # Fallback: try parent directory
-                    mklroot = site_path.parent
-                    include = mklroot / "include"
-                    libdir = mklroot / "lib"
-                    bindir = libdir
-                    lib_pattern = "libmkl*.so*"
+                # (this assumes a conda-style layout, which you said works)
+                try:
+                    if site_path.name.lower() == "site-packages":
+                        mklroot = site_path.parent.parent / "Library"
+                        include = mklroot / "include"
+                        libdir = mklroot / "lib"
+                        bindir = mklroot / "bin"
+                        lib_pattern = "mkl*.lib"
 
-            # Check if MKL is found
-            if include.joinpath("mkl.h").is_file() and any(libdir.glob(lib_pattern)):
-                return mklroot, include, libdir, bindir
+                        if include.joinpath("mkl.h").is_file() and any(
+                            libdir.glob(lib_pattern)
+                        ):
+                            return mklroot, include, libdir, bindir
+                except Exception:
+                    continue
+        else:
+            # Linux / macOS: mkl-devel installs headers/libs under <root>/include and <root>/lib
+            lib_pattern = (
+                "libmkl*.so*" if self.settings.os == "Linux" else "libmkl*.dylib"
+            )
 
-        # Hard fail if not found
+            for root in search_roots:
+                include = root / "include"
+                libdir = root / "lib"
+                bindir = libdir  # for pip mkl-devel this is fine
+
+                if include.joinpath("mkl.h").is_file() and any(
+                    libdir.glob(lib_pattern)
+                ):
+                    return root, include, libdir, bindir
+
+        # 4. Hard fail if not found
         raise ConanInvalidConfiguration(
-            f"MKL header not found after pip install.\n"
-            f"Searched in: {[str(p) for p in search_paths]}\n"
-            "Make sure `pip install mkl-devel` works correctly."
+            "MKL header not found after pip install.\n"
+            f"Tried roots: {[str(p) for p in sorted(search_roots)]}\n"
+            "mkl-devel (pip) on Linux typically installs headers in <prefix>/include "
+            "and libs in <prefix>/lib. Check where `mkl.h` is on your system."
         )
