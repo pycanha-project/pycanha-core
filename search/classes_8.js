@@ -1,5 +1,8 @@
 var searchData=
 [
-  ['primitive_0',['Primitive',['../classpycanha_1_1gmm_1_1Primitive.html',1,'pycanha::gmm']]],
-  ['profileresult_1',['ProfileResult',['../structpycanha_1_1ProfileResult.html',1,'pycanha']]]
+  ['instrumentationsession_0',['InstrumentationSession',['../structpycanha_1_1InstrumentationSession.html',1,'pycanha']]],
+  ['instrumentationtimer_1',['InstrumentationTimer',['../classpycanha_1_1InstrumentationTimer.html',1,'pycanha']]],
+  ['instrumentor_2',['Instrumentor',['../classpycanha_1_1Instrumentor.html',1,'pycanha']]],
+  ['intgenerator_3',['IntGenerator',['../classpycanha_1_1random__generators_1_1IntGenerator.html',1,'pycanha::random_generators']]],
+  ['intpairhash_4',['IntPairHash',['../structpycanha_1_1IntPairHash.html',1,'pycanha']]]
 ];

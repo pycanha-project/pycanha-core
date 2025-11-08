@@ -1,5 +1,5 @@
 var searchData=
 [
-  ['literalstring_0',['LiteralString',['../classpycanha_1_1LiteralString.html',1,'pycanha']]],
-  ['localstorage_1',['LocalStorage',['../structpycanha_1_1Node_1_1LocalStorage.html',1,'pycanha::Node']]]
+  ['formula_0',['Formula',['../classpycanha_1_1Formula.html',1,'pycanha']]],
+  ['formulas_1',['Formulas',['../classpycanha_1_1Formulas.html',1,'pycanha']]]
 ];

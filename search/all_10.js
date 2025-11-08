@@ -1,9 +1,7 @@
 var searchData=
 [
-  ['namedmaterial_0',['NamedMaterial',['../classpycanha_1_1gmm_1_1NamedMaterial.html',1,'pycanha::gmm']]],
-  ['node_1',['node',['../classpycanha_1_1Node.html',1,'pycanha::Node'],['../classpycanha_1_1Node.html#abbd6e2986a578eda277d020f11f70e47',1,'pycanha::Node::Node(int node_num)'],['../classpycanha_1_1Node.html#a1bbcc530cee5ea6191bb194919b1addf',1,'pycanha::Node::Node(int node_num, const std::weak_ptr&lt; Nodes &gt; &amp;parent_pointer)']]],
-  ['nodes_2',['nodes',['../classpycanha_1_1Nodes.html',1,'pycanha::Nodes'],['../classpycanha_1_1Nodes.html#a2997cd286bfea8e687eab639ce2ec0c5',1,'pycanha::Nodes::Nodes()']]],
-  ['not_20found_3',['CMake not found',['../md_docs_2faq.html#autotoc_md48',1,'']]],
-  ['note_20on_20vcpkg_20vs_20conan_4',['Note on vcpkg vs conan',['../md_docs_2tools.html#autotoc_md18',1,'']]],
-  ['num_5fnodes_5',['num_nodes',['../classpycanha_1_1Nodes.html#a4d5f3cb2114c487192405599f813d7dd',1,'pycanha::Nodes']]]
+  ['main_0',['Workflows for every commit/pull request to main',['../md_docs_2cicd.html#autotoc_md39',1,'']]],
+  ['managers_3a_20conan_1',['Package managers: Conan',['../md_docs_2tools.html#autotoc_md15',1,'']]],
+  ['manual_20configuration_2',['2.b Manual configuration',['../md_docs_2configuring.html#autotoc_md30',1,'']]],
+  ['manually_3',['1.b. Manually',['../md_docs_2configuring.html#autotoc_md26',1,'']]]
 ];

@@ -27,7 +27,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.3</span>
+   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.4</span>
    </div>
    <div id="projectbrief">The C++ core of pycanha</div>
   </td>
@@ -103,7 +103,7 @@ $(document).ready(function(){initNavTree('package__info_8hpp_source.html',''); i
 <div class="fragment"><div class="line"><a id="l00001" name="l00001"></a><span class="lineno">    1</span><span class="preprocessor">#pragma once</span></div>
 <div class="line"><a id="l00002" name="l00002"></a><span class="lineno">    2</span><span class="preprocessor">#include &lt;iostream&gt;</span></div>
 <div class="line"><a id="l00003" name="l00003"></a><span class="lineno">    3</span> </div>
-<div class="line"><a id="l00004" name="l00004"></a><span class="lineno">    4</span><span class="preprocessor">#include &quot;../config.hpp&quot;</span></div>
+<div class="line"><a id="l00004" name="l00004"></a><span class="lineno">    4</span><span class="preprocessor">#include &quot;pycanha-core/config.hpp&quot;</span></div>
 <div class="line"><a id="l00005" name="l00005"></a><span class="lineno">    5</span> </div>
 <div class="line"><a id="l00006" name="l00006"></a><span class="lineno">    6</span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespacepycanha.html">pycanha</a> {</div>
 <div class="line"><a id="l00007" name="l00007"></a><span class="lineno">    7</span> </div>
@@ -116,10 +116,13 @@ $(document).ready(function(){initNavTree('package__info_8hpp_source.html',''); i
 <div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span>    std::cout &lt;&lt; <span class="stringliteral">&quot;Compiler: &quot;</span> &lt;&lt; LIB_COMPILER_INFO &lt;&lt; <span class="stringliteral">&quot; v&quot;</span></div>
 <div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span>              &lt;&lt; LIB_COMPILER_VERSION &lt;&lt; <span class="stringliteral">&quot;\n&quot;</span>;</div>
 <div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span>    std::cout &lt;&lt; <span class="stringliteral">&quot;C++ Standard: &quot;</span> &lt;&lt; LIB_CPP_STANDARD &lt;&lt; <span class="stringliteral">&quot;\n&quot;</span>;</div>
-<div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span>    std::cout &lt;&lt; <span class="stringliteral">&quot;---------------------\n&quot;</span>;</div>
-<div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span>}</div>
-<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span>}  <span class="comment">// namespace pycanha</span></div>
-<div class="ttc" id="anamespacepycanha_html"><div class="ttname"><a href="namespacepycanha.html">pycanha</a></div><div class="ttdoc">C++ Implementation of ThermalConductos (TCs)</div><div class="ttdef"><b>Definition</b> callbacks.hpp:9</div></div>
+<div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span><span class="preprocessor">#ifdef PYCANHA_USE_MKL</span></div>
+<div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span>    std::cout &lt;&lt; <span class="stringliteral">&quot;MKL Enabled\n&quot;</span>;</div>
+<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span><span class="preprocessor">#endif</span></div>
+<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span>    std::cout &lt;&lt; <span class="stringliteral">&quot;---------------------\n&quot;</span>;</div>
+<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span>}</div>
+<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span>}  <span class="comment">// namespace pycanha</span></div>
+<div class="ttc" id="anamespacepycanha_html"><div class="ttname"><a href="namespacepycanha.html">pycanha</a></div><div class="ttdoc">C++ Implementation of ThermalConductos (TCs)</div><div class="ttdef"><b>Definition</b> globals.hpp:6</div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->

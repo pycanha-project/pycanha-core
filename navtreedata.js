@@ -87,7 +87,8 @@ var NAVTREE =
       ] ]
     ] ],
     [ "FAQ", "md_docs_2faq.html", [
-      [ "CMake not found", "md_docs_2faq.html#autotoc_md48", null ]
+      [ "CMake not found", "md_docs_2faq.html#autotoc_md48", null ],
+      [ "Eigen3 not found after conan install", "md_docs_2faq.html#autotoc_md49", null ]
     ] ],
     [ "Namespaces", "namespaces.html", [
       [ "Namespace List", "namespaces.html", "namespaces_dup" ]
@@ -112,9 +113,9 @@ var NAVTREE =
 var NAVTREEINDEX =
 [
 "Instrumentor_8hpp_source.html",
-"classpycanha_1_1Nodes.html#ab156a694ae774f9dd74c782f038d9be5",
-"classpycanha_1_1gmm_1_1GeometryUpdateCallback.html#a8ec7b4a0b69653a9093e6f67422d84f1",
-"functions.html"
+"classpycanha_1_1Nodes.html#aa7404b1e68f2aaadb0c85ba2a3b1956a",
+"classpycanha_1_1gmm_1_1GeometryGroup.html#af310e7c7fa1034f186f9983724fd3771",
+"classpycanha_1_1gmm_1_1Triangle.html#a0c56b7dfb65893dda749bba83f6f01c7"
 ];
 
 var SYNCONMSG = 'click to disable panel synchronisation';

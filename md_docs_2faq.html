@@ -27,7 +27,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.3</span>
+   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.4</span>
    </div>
    <div id="projectbrief">The C++ core of pycanha</div>
   </td>
@@ -103,8 +103,17 @@ CMake not found</h1>
 </div><!-- fragment --><p>This is because <code>cmake</code> was not added to the <b>path</b>. You have three options:</p><ol type="1">
 <li>Reinstall <code>cmake</code> and add it to the path when the installer ask for it</li>
 <li>Add cmake to the <code>path</code> environment variable manually</li>
-<li>Install a new cmake with pip (<code>pip install cmake</code>) that is detected in that python environment. </li>
+<li>Install a new cmake with pip (<code>pip install cmake</code>) that is detected in that python environment.</li>
 </ol>
+<h1><a class="anchor" id="autotoc_md49"></a>
+Eigen3 not found after conan install</h1>
+<p>An error you might find after running <code>conan install</code> during the initial configuration and the build kits not being updated.</p>
+<p>This happens because cmake tried to configure your project before conan was installed. to solve it:</p><ol type="1">
+<li>Go to your project folder.</li>
+<li>Manually delete the build folder (or the contents if the folder is locked).</li>
+<li>Run <code>conan install</code> again.</li>
+</ol>
+<p>This should fix the issue and you can now build the project correctly. </p>
 </div></div><!-- contents -->
 </div><!-- PageDoc -->
 </div><!-- doc-content -->

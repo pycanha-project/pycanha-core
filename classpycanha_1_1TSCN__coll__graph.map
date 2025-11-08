@@ -1,0 +1,19 @@
+<map id="pycanha::TSCN" name="pycanha::TSCN">
+<area shape="rect" id="Node000001" title=" " alt="" coords="1040,112,1160,137"/>
+<area shape="rect" id="Node000002" href="$classpycanha_1_1TransientSolver.html" title=" " alt="" coords="805,112,991,137"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="1004,122,1040,122,1040,127,1004,127"/>
+<area shape="rect" id="Node000003" href="$classpycanha_1_1Solver.html" title=" " alt="" coords="629,112,756,137"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="770,122,805,122,805,127,770,127"/>
+<area shape="rect" id="Node000004" href="$classpycanha_1_1ThermalMathematicalModel.html" title=" " alt="" coords="316,47,545,87"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="540,88,606,102,638,109,637,115,605,107,539,93"/>
+<area shape="rect" id="Node000005" href="$classpycanha_1_1Parameters.html" title=" " alt="" coords="11,5,170,31"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="184,29,316,48,315,53,183,34"/>
+<area shape="rect" id="Node000006" href="$classpycanha_1_1Formulas.html" title=" " alt="" coords="18,55,163,80"/>
+<area shape="poly" id="edge5_Node000004_Node000006" title=" " alt="" coords="177,65,315,65,315,70,177,70"/>
+<area shape="rect" id="Node000007" href="$classpycanha_1_1ThermalData.html" title=" " alt="" coords="5,104,176,129"/>
+<area shape="poly" id="edge6_Node000004_Node000007" title=" " alt="" coords="190,100,315,81,316,87,190,105"/>
+<area shape="rect" id="Node000008" href="$classpycanha_1_1ThermalNetwork.html" title=" " alt="" coords="333,112,528,137"/>
+<area shape="poly" id="edge7_Node000003_Node000008" title=" " alt="" coords="542,122,629,122,629,127,542,127"/>
+<area shape="rect" id="Node000009" href="$classpycanha_1_1CouplingMatrices.html" title=" " alt="" coords="331,172,530,197"/>
+<area shape="poly" id="edge8_Node000003_Node000009" title=" " alt="" coords="543,170,605,157,663,135,665,140,606,162,544,175"/>
+</map>

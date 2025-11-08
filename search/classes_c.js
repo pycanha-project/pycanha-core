@@ -1,8 +1,8 @@
 var searchData=
 [
-  ['thermalmesh_0',['ThermalMesh',['../classpycanha_1_1gmm_1_1ThermalMesh.html',1,'pycanha::gmm']]],
-  ['thermalnetwork_1',['ThermalNetwork',['../classpycanha_1_1ThermalNetwork.html',1,'pycanha']]],
-  ['triangle_2',['Triangle',['../classpycanha_1_1gmm_1_1Triangle.html',1,'pycanha::gmm']]],
-  ['trimesh_3',['TriMesh',['../classpycanha_1_1gmm_1_1TriMesh.html',1,'pycanha::gmm']]],
-  ['trimeshmodel_4',['TriMeshModel',['../classpycanha_1_1gmm_1_1TriMeshModel.html',1,'pycanha::gmm']]]
+  ['parameterformula_0',['ParameterFormula',['../classpycanha_1_1ParameterFormula.html',1,'pycanha']]],
+  ['parameters_1',['Parameters',['../classpycanha_1_1Parameters.html',1,'pycanha']]],
+  ['parametersize_2',['ParameterSize',['../structpycanha_1_1Parameters_1_1ParameterSize.html',1,'pycanha::Parameters']]],
+  ['primitive_3',['Primitive',['../classpycanha_1_1gmm_1_1Primitive.html',1,'pycanha::gmm']]],
+  ['profileresult_4',['ProfileResult',['../structpycanha_1_1ProfileResult.html',1,'pycanha']]]
 ];

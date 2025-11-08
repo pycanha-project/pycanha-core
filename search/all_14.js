@@ -1,16 +1,9 @@
 var searchData=
 [
-  ['radiativecouplings_0',['RadiativeCouplings',['../classpycanha_1_1RadiativeCouplings.html',1,'pycanha']]],
-  ['realgenerator_1',['RealGenerator',['../classpycanha_1_1random__generators_1_1RealGenerator.html',1,'pycanha::random_generators']]],
-  ['reconstruct_5fface_5fedges_5f2d_2',['reconstruct_face_edges_2d',['../classpycanha_1_1gmm_1_1Primitive.html#ae78c59b54280297c34e3ce74a0eedd63',1,'pycanha::gmm::Primitive']]],
-  ['rectangle_3',['rectangle',['../classpycanha_1_1gmm_1_1Rectangle.html',1,'pycanha::gmm::Rectangle'],['../classpycanha_1_1gmm_1_1Rectangle.html#a98a2e1fe649a48fe26d6ad903bdfa64e',1,'pycanha::gmm::Rectangle::Rectangle()']]],
-  ['release_4',['Workflows for a Release',['../md_docs_2cicd.html#autotoc_md45',1,'']]],
-  ['releases_20and_20versioning_5',['Releases and versioning',['../md_docs_2workflow.html#autotoc_md20',1,'']]],
-  ['remove_5fcutting_5fgeometry_5fitem_6',['remove_cutting_geometry_item',['../classpycanha_1_1gmm_1_1GeometryGroupCutted.html#a1de97397672441df68f9c8f06db984bd',1,'pycanha::gmm::GeometryGroupCutted']]],
-  ['remove_5fgeometry_5fgroup_7',['remove_geometry_group',['../classpycanha_1_1gmm_1_1GeometryGroup.html#ab7517117ce583f1f4eb19fa3f57647df',1,'pycanha::gmm::GeometryGroup']]],
-  ['remove_5fgeometry_5fgroup_5fcutted_8',['remove_geometry_group_cutted',['../classpycanha_1_1gmm_1_1GeometryGroup.html#ab08976887dcff7f3235e821b196e9e8d',1,'pycanha::gmm::GeometryGroup']]],
-  ['remove_5fgeometry_5fitem_9',['remove_geometry_item',['../classpycanha_1_1gmm_1_1GeometryGroup.html#a98e9b312fff6d63ce606ab663d7d04d0',1,'pycanha::gmm::GeometryGroup']]],
-  ['remove_5fnode_10',['remove_node',['../classpycanha_1_1Nodes.html#ad4cd7a81268615ce88b014afd82ccb63',1,'pycanha::Nodes']]],
-  ['repository_11',['3.1. Clone the repository',['../md_docs_2configuring.html#autotoc_md32',1,'']]],
-  ['request_20to_20main_12',['Workflows for every commit/pull request to main',['../md_docs_2cicd.html#autotoc_md39',1,'']]]
+  ['qa_5fvector_0',['qa_vector',['../classpycanha_1_1Nodes.html#a466e776b262f4bb1e8f7bc6f34df27a0',1,'pycanha::Nodes']]],
+  ['qe_5fvector_1',['qe_vector',['../classpycanha_1_1Nodes.html#ab57d8aab00c45369f356d6c5807385a4',1,'pycanha::Nodes']]],
+  ['qi_5fvector_2',['qi_vector',['../classpycanha_1_1Nodes.html#a9bb7d595e8083804ea2f27f24c19d80e',1,'pycanha::Nodes']]],
+  ['qr_5fvector_3',['qr_vector',['../classpycanha_1_1Nodes.html#a8ac3e23668604c12945a21eb6b081b02',1,'pycanha::Nodes']]],
+  ['qs_5fvector_4',['qs_vector',['../classpycanha_1_1Nodes.html#af28cf045462f0f1c4e9c176701392bd9',1,'pycanha::Nodes']]],
+  ['quadrilateral_5',['quadrilateral',['../classpycanha_1_1gmm_1_1Quadrilateral.html',1,'pycanha::gmm::Quadrilateral'],['../classpycanha_1_1gmm_1_1Quadrilateral.html#a7fffabde9d7ce27eafd258e24547d956',1,'pycanha::gmm::Quadrilateral::Quadrilateral()']]]
 ];

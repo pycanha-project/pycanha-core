@@ -1,9 +1,17 @@
 var searchData=
 [
-  ['qa_5fvector_0',['qa_vector',['../classpycanha_1_1Nodes.html#a466e776b262f4bb1e8f7bc6f34df27a0',1,'pycanha::Nodes']]],
-  ['qe_5fvector_1',['qe_vector',['../classpycanha_1_1Nodes.html#ab57d8aab00c45369f356d6c5807385a4',1,'pycanha::Nodes']]],
-  ['qi_5fvector_2',['qi_vector',['../classpycanha_1_1Nodes.html#a9bb7d595e8083804ea2f27f24c19d80e',1,'pycanha::Nodes']]],
-  ['qr_5fvector_3',['qr_vector',['../classpycanha_1_1Nodes.html#a8ac3e23668604c12945a21eb6b081b02',1,'pycanha::Nodes']]],
-  ['qs_5fvector_4',['qs_vector',['../classpycanha_1_1Nodes.html#af28cf045462f0f1c4e9c176701392bd9',1,'pycanha::Nodes']]],
-  ['quadrilateral_5',['quadrilateral',['../classpycanha_1_1gmm_1_1Quadrilateral.html',1,'pycanha::gmm::Quadrilateral'],['../classpycanha_1_1gmm_1_1Quadrilateral.html#a7fffabde9d7ce27eafd258e24547d956',1,'pycanha::gmm::Quadrilateral::Quadrilateral()']]]
+  ['package_20managers_3a_20conan_0',['Package managers: Conan',['../md_docs_2tools.html#autotoc_md15',1,'']]],
+  ['parameterformula_1',['ParameterFormula',['../classpycanha_1_1ParameterFormula.html',1,'pycanha']]],
+  ['parameters_2',['Parameters',['../classpycanha_1_1Parameters.html',1,'pycanha']]],
+  ['parametersize_3',['ParameterSize',['../structpycanha_1_1Parameters_1_1ParameterSize.html',1,'pycanha::Parameters']]],
+  ['primitive_4',['Primitive',['../classpycanha_1_1gmm_1_1Primitive.html',1,'pycanha::gmm']]],
+  ['profile_5',['2.a. Automatic configuration by importing a VS Code profile',['../md_docs_2configuring.html#autotoc_md29',1,'']]],
+  ['profileresult_6',['ProfileResult',['../structpycanha_1_1ProfileResult.html',1,'pycanha']]],
+  ['profiles_7',['Conan profiles',['../md_docs_2tools.html#autotoc_md17',1,'']]],
+  ['pull_20request_20to_20main_8',['Workflows for every commit/pull request to main',['../md_docs_2cicd.html#autotoc_md39',1,'']]],
+  ['py_9',['conanfile.py',['../md_docs_2tools.html#autotoc_md16',1,'']]],
+  ['pycanha_10',['pycanha',['../namespacepycanha.html',1,'']]],
+  ['pycanha_20core_11',['pycanha-core',['../index.html',1,'']]],
+  ['pycanha_3a_3agmm_3a_3aeigenvector2dor3d_12',['EigenVector2dOr3d',['../conceptpycanha_1_1gmm_1_1EigenVector2dOr3d.html',1,'pycanha::gmm']]],
+  ['python_20virtual_20environment_20and_20activate_20it_20in_20vs_20code_13',['3.2. Create a Python virtual environment and activate it in VS Code',['../md_docs_2configuring.html#autotoc_md33',1,'']]]
 ];

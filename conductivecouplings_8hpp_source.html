@@ -27,7 +27,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.3</span>
+   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.4</span>
    </div>
    <div id="projectbrief">The C++ core of pycanha</div>
   </td>
@@ -104,7 +104,7 @@ $(document).ready(function(){initNavTree('conductivecouplings_8hpp_source.html',
 <div class="line"><a id="l00002" name="l00002"></a><span class="lineno">    2</span> </div>
 <div class="line"><a id="l00003" name="l00003"></a><span class="lineno">    3</span><span class="preprocessor">#include &lt;memory&gt;</span></div>
 <div class="line"><a id="l00004" name="l00004"></a><span class="lineno">    4</span> </div>
-<div class="line"><a id="l00005" name="l00005"></a><span class="lineno">    5</span><span class="preprocessor">#include &quot;pycanha-core/parameters.hpp&quot;</span></div>
+<div class="line"><a id="l00005" name="l00005"></a><span class="lineno">    5</span><span class="preprocessor">#include &quot;pycanha-core/globals.hpp&quot;</span></div>
 <div class="line"><a id="l00006" name="l00006"></a><span class="lineno">    6</span><span class="preprocessor">#include &quot;pycanha-core/tmm/coupling.hpp&quot;</span></div>
 <div class="line"><a id="l00007" name="l00007"></a><span class="lineno">    7</span><span class="preprocessor">#include &quot;pycanha-core/tmm/couplings.hpp&quot;</span></div>
 <div class="line"><a id="l00008" name="l00008"></a><span class="lineno">    8</span><span class="preprocessor">#include &quot;pycanha-core/tmm/nodes.hpp&quot;</span></div>
@@ -128,23 +128,33 @@ $(document).ready(function(){initNavTree('conductivecouplings_8hpp_source.html',
 <div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span> </div>
 <div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span>    <span class="keywordtype">void</span> set_coupling_value(Index node_num_1, Index node_num_2, <span class="keywordtype">double</span> value);</div>
 <div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span>    [[nodiscard]] <span class="keywordtype">double</span> get_coupling_value(Index node_num_1, Index node_num_2);</div>
-<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span> </div>
-<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span>  <span class="keyword">private</span>:</div>
-<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span>    [[nodiscard]] <a class="code hl_class" href="classpycanha_1_1Couplings.html">Couplings</a>&amp; couplings() <span class="keyword">noexcept</span> { <span class="keywordflow">return</span> _couplings; }</div>
-<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span>    [[nodiscard]] <span class="keyword">const</span> <a class="code hl_class" href="classpycanha_1_1Couplings.html">Couplings</a>&amp; couplings() <span class="keyword">const</span> <span class="keyword">noexcept</span> {</div>
-<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>        <span class="keywordflow">return</span> _couplings;</div>
+<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span>    [[nodiscard]] <span class="keywordtype">double</span>* get_coupling_value_ref(Index node_num_1,</div>
+<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span>                                                 Index node_num_2);</div>
+<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span> </div>
+<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span>    [[nodiscard]] <a class="code hl_class" href="classpycanha_1_1CouplingMatrices.html">CouplingMatrices</a>&amp; matrices() <span class="keyword">noexcept</span> {</div>
+<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>        <span class="keywordflow">return</span> _couplings.get_coupling_matrices();</div>
 <div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>    }</div>
-<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span> </div>
-<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>    <a class="code hl_class" href="classpycanha_1_1Couplings.html">Couplings</a> _couplings;</div>
-<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>};</div>
-</div>
+<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>    [[nodiscard]] <span class="keyword">const</span> <a class="code hl_class" href="classpycanha_1_1CouplingMatrices.html">CouplingMatrices</a>&amp; matrices() <span class="keyword">const</span> <span class="keyword">noexcept</span> {</div>
+<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>        <span class="keywordflow">return</span> _couplings.get_coupling_matrices();</div>
+<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>    }</div>
 <div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span> </div>
-<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>}  <span class="comment">// namespace pycanha</span></div>
+<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>  <span class="keyword">private</span>:</div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>    [[nodiscard]] <a class="code hl_class" href="classpycanha_1_1Couplings.html">Couplings</a>&amp; couplings() <span class="keyword">noexcept</span> { <span class="keywordflow">return</span> _couplings; }</div>
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>    [[nodiscard]] <span class="keyword">const</span> <a class="code hl_class" href="classpycanha_1_1Couplings.html">Couplings</a>&amp; couplings() <span class="keyword">const</span> <span class="keyword">noexcept</span> {</div>
+<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>        <span class="keywordflow">return</span> _couplings;</div>
+<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>    }</div>
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span> </div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>    <a class="code hl_class" href="classpycanha_1_1Couplings.html">Couplings</a> _couplings;</div>
+<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>};</div>
+</div>
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span> </div>
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>}  <span class="comment">// namespace pycanha</span></div>
 <div class="ttc" id="aclasspycanha_1_1ConductiveCouplings_html"><div class="ttname"><a href="classpycanha_1_1ConductiveCouplings.html">pycanha::ConductiveCouplings</a></div><div class="ttdef"><b>Definition</b> conductivecouplings.hpp:12</div></div>
+<div class="ttc" id="aclasspycanha_1_1CouplingMatrices_html"><div class="ttname"><a href="classpycanha_1_1CouplingMatrices.html">pycanha::CouplingMatrices</a></div><div class="ttdef"><b>Definition</b> couplingmatrices.hpp:20</div></div>
 <div class="ttc" id="aclasspycanha_1_1Coupling_html"><div class="ttname"><a href="classpycanha_1_1Coupling.html">pycanha::Coupling</a></div><div class="ttdoc">Representation of a thermal coupling between two nodes.</div><div class="ttdef"><b>Definition</b> coupling.hpp:11</div></div>
-<div class="ttc" id="aclasspycanha_1_1Couplings_html"><div class="ttname"><a href="classpycanha_1_1Couplings.html">pycanha::Couplings</a></div><div class="ttdef"><b>Definition</b> couplings.hpp:21</div></div>
+<div class="ttc" id="aclasspycanha_1_1Couplings_html"><div class="ttname"><a href="classpycanha_1_1Couplings.html">pycanha::Couplings</a></div><div class="ttdef"><b>Definition</b> couplings.hpp:22</div></div>
 <div class="ttc" id="aclasspycanha_1_1ThermalNetwork_html"><div class="ttname"><a href="classpycanha_1_1ThermalNetwork.html">pycanha::ThermalNetwork</a></div><div class="ttdef"><b>Definition</b> thermalnetwork.hpp:16</div></div>
-<div class="ttc" id="anamespacepycanha_html"><div class="ttname"><a href="namespacepycanha.html">pycanha</a></div><div class="ttdoc">C++ Implementation of ThermalConductos (TCs)</div><div class="ttdef"><b>Definition</b> callbacks.hpp:9</div></div>
+<div class="ttc" id="anamespacepycanha_html"><div class="ttname"><a href="namespacepycanha.html">pycanha</a></div><div class="ttdoc">C++ Implementation of ThermalConductos (TCs)</div><div class="ttdef"><b>Definition</b> globals.hpp:6</div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->

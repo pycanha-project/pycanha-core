@@ -1,0 +1,9 @@
+<map id="pycanha::CouplingEntity" name="pycanha::CouplingEntity">
+<area shape="rect" id="Node000001" title=" " alt="" coords="139,79,319,104"/>
+<area shape="rect" id="Node000003" href="$classpycanha_1_1ConductiveCouplingEntity.html" title=" " alt="" coords="5,152,220,192"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="201,114,142,154,139,150,198,110"/>
+<area shape="rect" id="Node000004" href="$classpycanha_1_1RadiativeCouplingEntity.html" title=" " alt="" coords="244,152,448,192"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="259,109,319,150,316,154,256,114"/>
+<area shape="rect" id="Node000002" href="$classpycanha_1_1ThermalEntity.html" title=" " alt="" coords="140,5,317,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="231,44,231,79,226,79,226,44"/>
+</map>

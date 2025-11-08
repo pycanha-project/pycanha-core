@@ -8,5 +8,6 @@ var dir_f6b94fe11cd60cfd454090eabbf79651 =
     [ "node.hpp", "node_8hpp_source.html", null ],
     [ "nodes.hpp", "nodes_8hpp_source.html", null ],
     [ "radiativecouplings.hpp", "radiativecouplings_8hpp_source.html", null ],
+    [ "thermalmathematicalmodel.hpp", "thermalmathematicalmodel_8hpp_source.html", null ],
     [ "thermalnetwork.hpp", "thermalnetwork_8hpp_source.html", null ]
 ];

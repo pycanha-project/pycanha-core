@@ -27,7 +27,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.3</span>
+   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.4</span>
    </div>
    <div id="projectbrief">The C++ core of pycanha</div>
   </td>
@@ -275,7 +275,7 @@ Linux</h2>
 <div class="line">PYCANHA_OPTION_CPPCHECK = False</div>
 <div class="line">PYCANHA_OPTION_SANITIZE_ADDR = False</div>
 <div class="line">PYCANHA_OPTION_SANITIZE_UNDEF = False</div>
-</div><!-- fragment --><p> You can check what each option is intended for here in the root <code>CMakeList.txt</code> file.</p>
+</div><!-- fragment --><p>If you disable <code>PYCANHA_OPTION_USE_MKL</code>, the build now falls back to Eigen's <code>SparseLU</code> solver automatically. This allows running the transient <code>TSCNRLDS</code> solver without the Intel oneMKL runtime, which is useful on machines where MKL isn't available. You can check what each option is intended for here in the root <code>CMakeList.txt</code> file.</p>
 <h2><a class="anchor" id="autotoc_md36"></a>
 3.5. Build the library with conan and start the development</h2>
 <p>Finally we are ready to build the package. In the terminal, type:</p>

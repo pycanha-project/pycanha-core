@@ -1,0 +1,5 @@
+<map id="pycanha::ThermalEntity" name="pycanha::ThermalEntity">
+<area shape="rect" id="Node000001" title=" " alt="" coords="14,93,191,119"/>
+<area shape="rect" id="Node000002" href="$classpycanha_1_1ThermalNetwork.html" title=" " alt="" coords="5,5,200,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="105,45,105,93,100,93,100,45"/>
+</map>

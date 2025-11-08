@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['opticalmaterial_0',['OpticalMaterial',['../classpycanha_1_1gmm_1_1OpticalMaterial.html',1,'pycanha::gmm']]]
+  ['hash_0',['Hash',['../structpycanha_1_1Formula_1_1Hash.html',1,'pycanha::Formula']]]
 ];

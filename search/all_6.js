@@ -19,12 +19,14 @@ var searchData=
   ['add_5fovw_5fcoupling_5ffrom_5fnode_5fidxs_5fverbose_16',['add_ovw_coupling_from_node_idxs_verbose',['../classpycanha_1_1CouplingMatrices.html#ae969e5c4a6ec2b4c1ee1cc55e973a46d',1,'pycanha::CouplingMatrices']]],
   ['add_5fsum_5fcoupling_5ffrom_5fnode_5fidxs_17',['add_sum_coupling_from_node_idxs',['../classpycanha_1_1CouplingMatrices.html#a3e82c3b07c76240c4df9fa7a43ca44e1',1,'pycanha::CouplingMatrices']]],
   ['add_5fsum_5fcoupling_5ffrom_5fnode_5fidxs_5fverbose_18',['add_sum_coupling_from_node_idxs_verbose',['../classpycanha_1_1CouplingMatrices.html#af34b080ded161758f3233564ddd1e04a',1,'pycanha::CouplingMatrices']]],
-  ['analysis_20tools_19',['Static analysis tools',['../md_docs_2tools.html#autotoc_md5',1,'']]],
-  ['and_20activate_20it_20in_20vs_20code_20',['3.2. Create a Python virtual environment and activate it in VS Code',['../md_docs_2configuring.html#autotoc_md33',1,'']]],
-  ['and_20start_20the_20development_21',['3.5. Build the library with conan and start the development',['../md_docs_2configuring.html#autotoc_md36',1,'']]],
-  ['and_20versioning_22',['Releases and versioning',['../md_docs_2workflow.html#autotoc_md20',1,'']]],
-  ['aph_5fvector_23',['aph_vector',['../classpycanha_1_1Nodes.html#a3634a1005bab0c128b3bba5507225870',1,'pycanha::Nodes']]],
-  ['automatic_20configuration_20by_20importing_20a_20vs_20code_20profile_24',['2.a. Automatic configuration by importing a VS Code profile',['../md_docs_2configuring.html#autotoc_md29',1,'']]],
-  ['automatically_20using_20choco_25',['1.a. Automatically using choco',['../md_docs_2configuring.html#autotoc_md25',1,'']]],
-  ['awesome_20css_26',['Doxygen + graphviz + Doxygen Awesome CSS',['../md_docs_2tools.html#autotoc_md14',1,'']]]
+  ['after_20conan_20install_19',['Eigen3 not found after conan install',['../md_docs_2faq.html#autotoc_md49',1,'']]],
+  ['analysis_20tools_20',['Static analysis tools',['../md_docs_2tools.html#autotoc_md5',1,'']]],
+  ['and_20activate_20it_20in_20vs_20code_21',['3.2. Create a Python virtual environment and activate it in VS Code',['../md_docs_2configuring.html#autotoc_md33',1,'']]],
+  ['and_20start_20the_20development_22',['3.5. Build the library with conan and start the development',['../md_docs_2configuring.html#autotoc_md36',1,'']]],
+  ['and_20versioning_23',['Releases and versioning',['../md_docs_2workflow.html#autotoc_md20',1,'']]],
+  ['aph_5fvector_24',['aph_vector',['../classpycanha_1_1Nodes.html#a3634a1005bab0c128b3bba5507225870',1,'pycanha::Nodes']]],
+  ['attributeentity_25',['AttributeEntity',['../classpycanha_1_1AttributeEntity.html',1,'pycanha']]],
+  ['automatic_20configuration_20by_20importing_20a_20vs_20code_20profile_26',['2.a. Automatic configuration by importing a VS Code profile',['../md_docs_2configuring.html#autotoc_md29',1,'']]],
+  ['automatically_20using_20choco_27',['1.a. Automatically using choco',['../md_docs_2configuring.html#autotoc_md25',1,'']]],
+  ['awesome_20css_28',['Doxygen + graphviz + Doxygen Awesome CSS',['../md_docs_2tools.html#autotoc_md14',1,'']]]
 ];

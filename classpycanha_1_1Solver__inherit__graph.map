@@ -1,0 +1,15 @@
+<map id="pycanha::Solver" name="pycanha::Solver">
+<area shape="rect" id="Node000001" title=" " alt="" coords="154,5,281,31"/>
+<area shape="rect" id="Node000002" href="$classpycanha_1_1SteadyStateSolver.html" title=" " alt="" coords="5,79,211,104"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="190,40,127,81,124,76,187,36"/>
+<area shape="rect" id="Node000004" href="$classpycanha_1_1TransientSolver.html" title=" " alt="" coords="235,79,421,104"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="248,36,311,76,308,81,245,40"/>
+<area shape="rect" id="Node000003" href="$classpycanha_1_1SSLU.html" title=" " alt="" coords="49,152,167,177"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="111,118,111,152,105,152,105,118"/>
+<area shape="rect" id="Node000005" href="$classpycanha_1_1TSCN.html" title=" " alt="" coords="268,152,388,177"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="331,118,331,152,325,152,325,118"/>
+<area shape="rect" id="Node000006" href="$classpycanha_1_1TSCNRL.html" title=" " alt="" coords="260,225,396,251"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="331,191,331,225,325,225,325,191"/>
+<area shape="rect" id="Node000007" href="$classpycanha_1_1TSCNRLDS.html" title=" " alt="" coords="251,299,405,324"/>
+<area shape="poly" id="edge6_Node000006_Node000007" title=" " alt="" coords="331,264,331,299,325,299,325,264"/>
+</map>
