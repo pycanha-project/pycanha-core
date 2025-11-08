@@ -12,10 +12,7 @@
 
 # Configure the header "config.hpp" to pass the library name and version
 set(LIB_VERSION ${PROJECT_VERSION})
-configure_file(
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/${LIB_NAME}/config.hpp.in" 
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/${LIB_NAME}/config.hpp" 
-)
+set(PYCANHA_USE_MKL_INT 0)
 
 #set(LIBRARY_INCLUDES "./" "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_BINARY_DIR}/configured_files/include")
 #set(LIBRARY_INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/include")
@@ -73,6 +70,14 @@ add_library(${LIB_NAME} STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/tmm/thermalmathematicalmodel.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/utils/SparseUtils.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/solver.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/ss.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/sslu.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/ts.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/tscn.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/tscnrl.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/tscnrlds.cpp
+
 )
 target_include_directories(${LIB_NAME} 
     PUBLIC 
@@ -87,6 +92,47 @@ target_link_libraries( ${LIB_NAME}
     Eigen3::Eigen  
     PRIVATE
     CDT::CDT
+)
+
+# ============================================================================
+# Intel MKL Configuration
+# ============================================================================
+if(PYCANHA_OPTION_USE_MKL)
+    # Set MKL configuration before find_package
+    # See MKLConfig.cmake for all available options
+    set(MKL_INTERFACE "lp64")                          # LP64 = 32-bit integers
+    set(MKL_THREADING "intel_thread")                  # Intel OpenMP
+    set(MKL_LINK "${PYCANHA_OPTION_MKL_LINK}")        # "static" or "dynamic"
+
+    # Find Intel MKL using the official CMake config
+    find_package(MKL CONFIG REQUIRED PATHS $ENV{MKLROOT})
+
+    message(STATUS "Intel MKL found: ${MKL_VERSION}")
+    message(STATUS "  Interface: ${MKL_INTERFACE}, Threading: ${MKL_THREADING}, Link: ${MKL_LINK}")
+    message(STATUS "  MKL imported targets: ${MKL_IMPORTED_TARGETS}")
+
+    # Link MKL using the official target (includes headers, compile options, and libraries)
+    target_link_libraries(${LIB_NAME} PUBLIC MKL::MKL)
+
+    # Configure Eigen to use MKL BLAS/LAPACK
+    target_compile_definitions(${LIB_NAME} PUBLIC 
+        EIGEN_USE_MKL_ALL      # Enable MKL for all Eigen operations
+    )
+
+    # Configure pycanha to use MKL
+    target_compile_definitions(${LIB_NAME} PUBLIC PYCANHA_USE_MKL=1)
+    set(PYCANHA_USE_MKL_INT 1)
+else()
+    # MKL disabled - use Eigen native solvers
+    set(PYCANHA_USE_MKL_INT 0)
+    target_compile_definitions(${LIB_NAME} PUBLIC PYCANHA_USE_MKL=0)
+    message(STATUS "Intel MKL disabled - using Eigen native solvers")
+endif()
+# ============================================================================
+
+configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/${LIB_NAME}/config.hpp.in" 
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/${LIB_NAME}/config.hpp" 
 )
 
 # For a header-only library:

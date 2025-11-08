@@ -78,9 +78,9 @@ void ThermalNetwork::add_node(Node& node) {
     Index insert_idx = 0;
     Index total_insert_idx = 0;
 
-    auto& conductive_matrices =
+    auto& conductive_storage =
         _conductive_couplings->_couplings.get_coupling_matrices();
-    auto& radiative_matrices =
+    auto& radiative_storage =
         _radiative_couplings->_couplings.get_coupling_matrices();
 
     if (type == 'D') {
@@ -89,8 +89,8 @@ void ThermalNetwork::add_node(Node& node) {
                                          user_node_num);
         insert_idx = static_cast<Index>(std::distance(diff_nodes.begin(), it));
 
-        conductive_matrices._add_node_diff(insert_idx);
-        radiative_matrices._add_node_diff(insert_idx);
+        conductive_storage._add_node_diff(insert_idx);
+        radiative_storage._add_node_diff(insert_idx);
 
         total_insert_idx = insert_idx;
     } else if (type == 'B') {
@@ -101,8 +101,8 @@ void ThermalNetwork::add_node(Node& node) {
                                          user_node_num);
         insert_idx = static_cast<Index>(std::distance(bound_nodes.begin(), it));
 
-        conductive_matrices._add_node_bound(insert_idx);
-        radiative_matrices._add_node_bound(insert_idx);
+        conductive_storage._add_node_bound(insert_idx);
+        radiative_storage._add_node_bound(insert_idx);
 
         total_insert_idx = diff_count + insert_idx;
     } else {
@@ -140,18 +140,18 @@ void ThermalNetwork::remove_node(Index node_num) {
     const auto diff_count =
         static_cast<Index>(_nodes->_diff_node_num_vector.size());
 
-    auto& conductive_matrices =
+    auto& conductive_storage =
         _conductive_couplings->_couplings.get_coupling_matrices();
-    auto& radiative_matrices =
+    auto& radiative_storage =
         _radiative_couplings->_couplings.get_coupling_matrices();
 
     if (idx < diff_count) {
-        conductive_matrices._remove_node_diff(idx);
-        radiative_matrices._remove_node_diff(idx);
+        conductive_storage._remove_node_diff(idx);
+        radiative_storage._remove_node_diff(idx);
     } else {
         const Index boundary_idx = idx - diff_count;
-        conductive_matrices._remove_node_bound(boundary_idx);
-        radiative_matrices._remove_node_bound(boundary_idx);
+        conductive_storage._remove_node_bound(boundary_idx);
+        radiative_storage._remove_node_bound(boundary_idx);
     }
 
     _nodes->remove_node(user_node_num);
@@ -160,6 +160,22 @@ void ThermalNetwork::remove_node(Index node_num) {
 Nodes& ThermalNetwork::nodes() noexcept { return *_nodes; }
 
 const Nodes& ThermalNetwork::nodes() const noexcept { return *_nodes; }
+
+CouplingMatrices& ThermalNetwork::conductive_matrices() noexcept {
+    return _conductive_couplings->matrices();
+}
+
+const CouplingMatrices& ThermalNetwork::conductive_matrices() const noexcept {
+    return _conductive_couplings->matrices();
+}
+
+CouplingMatrices& ThermalNetwork::radiative_matrices() noexcept {
+    return _radiative_couplings->matrices();
+}
+
+const CouplingMatrices& ThermalNetwork::radiative_matrices() const noexcept {
+    return _radiative_couplings->matrices();
+}
 
 ConductiveCouplings& ThermalNetwork::conductive_couplings() noexcept {
     return *_conductive_couplings;

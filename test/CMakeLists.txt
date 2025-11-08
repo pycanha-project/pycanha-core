@@ -14,10 +14,12 @@ set(TEST_SOURCES
       "${CMAKE_CURRENT_SOURCE_DIR}/tmm/test_sparse_utils.cpp"
       "${CMAKE_CURRENT_SOURCE_DIR}/tmm/test_nodes.cpp"
       "${CMAKE_CURRENT_SOURCE_DIR}/tmm/test_thermal_network.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/tmm/test_thermal_mathematical_model.cpp"
-  "${CMAKE_CURRENT_SOURCE_DIR}/tmm/parameters/test_parameters.cpp"
+      "${CMAKE_CURRENT_SOURCE_DIR}/tmm/test_thermal_mathematical_model.cpp"
+      "${CMAKE_CURRENT_SOURCE_DIR}/tmm/parameters/test_parameters.cpp"
       "${CMAKE_CURRENT_SOURCE_DIR}/tmm/parameters/test_formulas.cpp"
-  "${CMAKE_CURRENT_SOURCE_DIR}/tmm/thermaldata/test_thermaldata.cpp"
+      "${CMAKE_CURRENT_SOURCE_DIR}/tmm/thermaldata/test_thermaldata.cpp"
+      "${CMAKE_CURRENT_SOURCE_DIR}/solvers/test_sslu.cpp"
+      "${CMAKE_CURRENT_SOURCE_DIR}/solvers/test_tscnrlds.cpp"
 )
 
 set(TEST_HEADERS "")
@@ -32,6 +34,11 @@ target_link_libraries(${TEST_TARGET_NAME}_lib PRIVATE ${LIB_NAME})
 
 #Create the target "tests" 
 add_executable(${TEST_TARGET_NAME} ${TEST_SOURCES} ${TEST_HEADERS})
+
+target_sources(
+  ${TEST_TARGET_NAME}
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/lsan_suppressions.cpp)
 
 #Link with the lib and catch2
 target_link_libraries(${TEST_TARGET_NAME} PRIVATE ${LIB_NAME})

@@ -28,6 +28,13 @@ class ConductiveCouplings {
     [[nodiscard]] double* get_coupling_value_ref(Index node_num_1,
                                                  Index node_num_2);
 
+    [[nodiscard]] CouplingMatrices& matrices() noexcept {
+        return _couplings.get_coupling_matrices();
+    }
+    [[nodiscard]] const CouplingMatrices& matrices() const noexcept {
+        return _couplings.get_coupling_matrices();
+    }
+
   private:
     [[nodiscard]] Couplings& couplings() noexcept { return _couplings; }
     [[nodiscard]] const Couplings& couplings() const noexcept {

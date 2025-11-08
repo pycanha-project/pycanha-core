@@ -21,12 +21,15 @@ jobs:
           - os: ubuntu
             compiler: gcc12
             profile_base: ubuntu-gcc12-amd64
+            mkl_option: "True"
           - os: windows
             compiler: msvc2022
             profile_base: windows-msvc2022-amd64
+            mkl_option: "True"
           - os: macos
             compiler: clang
             profile_base: macos-clang-arm64
+            mkl_option: "False"
         build_type: [release, debug]
 
     name: ${{matrix.config.os}} ${{matrix.config.compiler}} ${{matrix.build_type}} built and tests
@@ -34,22 +37,32 @@ jobs:
     timeout-minutes: 20
 
     steps:
-    - name: Check out repo's default branch
-      uses: actions/checkout@v3
+    - name: Check out repository
+      uses: actions/checkout@v4
+
     - name: Install conan and cmake
       run: |
         pip install conan
         pip install cmake
+
     - name: Configure Apple Clang
       if: matrix.config.os == 'macos'
       run: |
         echo "CC=clang" >> $GITHUB_ENV
         echo "CXX=clang++" >> $GITHUB_ENV
+
+    - name: Install MKL
+      if: matrix.config.mkl_option == 'True'
+      run: |
+        pip install mkl-devel
+
     - name: Install conan profiles
       run: |
         conan config install .conan
+
     - name: Build and test application in ${{matrix.build_type}} mode
-      run: >        
-        conan create . --build=missing 
-        -pr:h=${{matrix.config.profile_base}} -pr:h=build-${{matrix.build_type}} -pr:h=options-ci 
+      run: >
+        conan create . --build=missing
+        -pr:h=${{matrix.config.profile_base}} -pr:h=build-${{matrix.build_type}} -pr:h=options-ci
         -pr:b=${{matrix.config.profile_base}} -pr:b=build-${{matrix.build_type}} -pr:b=options-ci
+        -o PYCANHA_OPTION_USE_MKL=${{ matrix.config.mkl_option }}

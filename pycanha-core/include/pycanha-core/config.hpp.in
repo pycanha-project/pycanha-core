@@ -59,17 +59,18 @@ constexpr bool DEBUG = false;
 constexpr bool DEBUG = true;
 #endif
 
-// TODO: Temporary. Set these flags in Conan.
-#define CYCANHA_USE_ONLY_EIGEN
-
 namespace pycanha {
 
+// Intel MKL acceleration toggle (configured via CMake option)
+#ifdef PYCANHA_USE_MKL
+constexpr bool MKL_ENABLED = PYCANHA_USE_MKL != 0;
+#else
+constexpr bool MKL_ENABLED = false;
+#endif
 constexpr bool VERBOSE = true;
 
 // Enable/Disable Profiling
 constexpr bool PROFILING = true;
-
-}  // namespace pycanha
 
 // Assert expr when in DEBUG
 // msg -> Error message
@@ -87,5 +88,7 @@ void PYCANHA_ASSERT([[maybe_unused]] const T& expr,
 }
 // Use (void) to silence unused warnings (from ccpref)
 // We use the standar assert, which is based also in NDEBUG
+
+}  // namespace pycanha
 
 // NOLINTEND(readability-identifier-naming)

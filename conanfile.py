@@ -1,11 +1,14 @@
 from conan import ConanFile
 from conan.tools.cmake import CMakeToolchain, CMake, cmake_layout, CMakeDeps
-from conan.tools.build import check_max_cppstd, check_min_cppstd
+from conan.tools.build import check_max_cppstd, check_min_cppstd, can_run
 from conan.tools.files import copy
-from conan.tools.env import VirtualBuildEnv
+from conan.tools.env import VirtualBuildEnv, Environment
 from conan.errors import ConanInvalidConfiguration
+from conan.tools.scm import Version
 
 import os
+import sys
+from pathlib import Path
 
 
 class Recipe_pycanha_core(ConanFile):
@@ -34,7 +37,10 @@ class Recipe_pycanha_core(ConanFile):
     # Binary configuration
     settings = "os", "compiler", "build_type", "arch"
     options = {
+        "fPIC": [True, False],
         "PYCANHA_OPTION_LIBRARY": [True, False],
+        "PYCANHA_OPTION_USE_MKL": [True, False],
+        "PYCANHA_OPTION_MKL_LINK": ["static", "dynamic"],
         "PYCANHA_OPTION_LTO": [True, False],
         "PYCANHA_OPTION_DOCS": [True, False],
         "PYCANHA_OPTION_WARNINGS": [True, False],
@@ -48,7 +54,10 @@ class Recipe_pycanha_core(ConanFile):
     }
 
     default_options = {
+        "fPIC": True,
         "PYCANHA_OPTION_LIBRARY": True,
+        "PYCANHA_OPTION_USE_MKL": True,
+        "PYCANHA_OPTION_MKL_LINK": "dynamic",
         "PYCANHA_OPTION_LTO": True,
         "PYCANHA_OPTION_DOCS": False,
         "PYCANHA_OPTION_WARNINGS": False,
@@ -62,6 +71,7 @@ class Recipe_pycanha_core(ConanFile):
     }
 
     # Sources are located in the same place as this recipe, copy them to the recipe
+    exports = "LICENSE", "README.md"
     exports_sources = "CMakeLists.txt", "pycanha-core/*", "cmake/*", "test/*"
     # no_copy_source = True # Not needed
 
@@ -78,6 +88,8 @@ class Recipe_pycanha_core(ConanFile):
         # Test dependencies
         self.test_requires("catch2/3.3.2")
 
+        self.MKL_PIP_VERSION = "2025.3"  # When MKL is used
+
         # Conditional dependencies. Depending on the option selected
         if self.options.PYCANHA_OPTION_DOCS:
             # This mean build doxygen!! It takes to long. Install it with other tool.
@@ -87,6 +99,21 @@ class Recipe_pycanha_core(ConanFile):
     def validate(self):
         # Raise an error for non-supported configurations.
         check_min_cppstd(self, "23")
+
+        # Check compiler support for C++23
+        if self.settings.compiler == "gcc":
+            if Version(str(self.settings.compiler.version)) < "11":
+                raise ConanInvalidConfiguration("GCC >= 11 required for C++23 support")
+        elif self.settings.compiler == "clang":
+            if Version(str(self.settings.compiler.version)) < "12":
+                raise ConanInvalidConfiguration(
+                    "Clang >= 12 required for C++23 support"
+                )
+        elif self.settings.compiler == "msvc":
+            if Version(str(self.settings.compiler.version)) < "193":
+                raise ConanInvalidConfiguration(
+                    "MSVC >= 193 (Visual Studio 2022) required for C++23 support"
+                )
 
         if self.options.PYCANHA_OPTION_INCLUDE_WHAT_YOU_USE:
             raise ConanInvalidConfiguration(
@@ -98,9 +125,11 @@ class Recipe_pycanha_core(ConanFile):
             self.options.rm_safe("fPIC")
 
     def configure(self):
-        pass
-        # if self.options.shared:
-        #    self.options.rm_safe("fPIC")
+        # For static libraries, propagate fPIC to dependencies
+        if self.package_type == "static-library":
+            # Only propagate fPIC if it exists (it's removed on Windows)
+            if self.options.get_safe("fPIC") is not None:
+                self.options["*"].fPIC = self.options.fPIC
 
     def layout(self):
         # Here, it is defined where the build files are placed.
@@ -111,13 +140,15 @@ class Recipe_pycanha_core(ConanFile):
     def generate(self):
         deps = CMakeDeps(self)
         deps.generate()
+
         tc = CMakeToolchain(self)
 
         # Variables passed to CMake. Conan has "variables" and "cache_variables".
         # See: https://docs.conan.io/2/reference/tools/cmake/cmaketoolchain.html#cache-variables
-        # Pass the options to CMake
+        # Pass the options to CMake (skip fPIC as it's handled by CMakeToolchain)
         for option, val in self.options.items():
-            tc.cache_variables[option] = val
+            if option != "fPIC":
+                tc.cache_variables[option] = val
 
         # Not sure if needed, this will pass -DCMAKE_BUILD_TYPE=<build_type> to CMake
         # Multi-config generators (like Visual Studio or Ninja Multi-Config) set the build type at build time, not at generation time.
@@ -126,7 +157,42 @@ class Recipe_pycanha_core(ConanFile):
         tc.cache_variables["CMAKE_BUILD_TYPE"] = build_type
         tc.cache_variables["CONAN_PROJECT_VERSION"] = self.version
 
+        # Enable compile commands export for Debug builds (useful for IDE integration)
+        if self.settings.build_type == "Debug":
+            tc.cache_variables["CMAKE_EXPORT_COMPILE_COMMANDS"] = "ON"
+
+        # Configure MKL from pip-based venv (strict, single approach)
+        mkl_data = None
+        try:
+            mkl_data = self._mkl_paths_from_pip_venv()
+        except ConanInvalidConfiguration as e:
+            # If MKL is enabled, we want to fail early (before CMake configure)
+            raise
+
+        if mkl_data:
+            mklroot, include, libdir, bindir = mkl_data
+
+            # Help CMake find MKL if your CMakeLists uses MKLROOT
+            tc.cache_variables["MKLROOT"] = str(mklroot)
+            tc.cache_variables["MKL_ROOT"] = str(mklroot)
+
         tc.generate()
+
+        # Export env for MKL runtime (so tests can find dll/so)
+        if mkl_data:
+            mklroot, include, libdir, bindir = mkl_data
+            env = Environment()
+            env.define("MKLROOT", str(mklroot))
+            if self.settings.os == "Windows":
+                env.prepend_path("PATH", str(bindir))
+            else:
+                env.prepend_path("LD_LIBRARY_PATH", str(bindir))
+
+            build_env = env.vars(self, scope="build")
+            build_env.save_script("mkl_build_env")
+
+            run_env = env.vars(self, scope="run")
+            run_env.save_script("mkl_run_env")
 
         # With this, we tell conan to export the environment variables set in the profiles (eg: linux-gcc12-....)
         # In those variables we force CMake to use the specific version of the compiler, otherwise it chooses whatever he likes.
@@ -138,38 +204,27 @@ class Recipe_pycanha_core(ConanFile):
         cmake.configure()
         cmake.build()
 
-        # Runing the tests (not the package_test, which is run separately after this using the test method)
+        # Running the tests (not the package_test, which is run separately after this using the test method)
         # See: https://docs.conan.io/2/tutorial/creating_packages/build_packages.html
-        if not self.conf.get("tools.build:skip_test", default=False):
-            test_folder = os.path.join("test")
-            if self.settings.os == "Windows":
-                test_folder = os.path.join(test_folder, str(self.settings.build_type))
-            self.run(os.path.join(test_folder, "tests"))
+        if can_run(self):
+            if not self.conf.get("tools.build:skip_test", default=False):
+                # Run tests with verbose output to see all test results
+                self.output.info("Running unit tests...")
+                # --verbose shows test execution output from ctest
+                # Uncomment to see the tests, otherwise only in case of failure info is shown
+                # cmake.test(cli_args=["--verbose"])
 
     def package(self):
-        # Because pycanha-core is header only, we just need to copy the headers
-        # copy(self, "*.hpp", self.source_folder, self.package_folder)
+        # Manual file copying approach (until CMake install rules are defined)
+        # Copy headers
         copy(
             self,
             pattern="*.hpp",
             src=os.path.join(self.source_folder, "pycanha-core/include"),
             dst=os.path.join(self.package_folder, "include"),
         )
-        copy(
-            self,
-            pattern="*.a",
-            src=self.build_folder,
-            dst=os.path.join(self.package_folder, "lib"),
-            keep_path=False,
-        )
 
-        copy(
-            self,
-            pattern="*.so",
-            src=self.build_folder,
-            dst=os.path.join(self.package_folder, "lib"),
-            keep_path=False,
-        )
+        # Copy static library files (.lib for MSVC, .a for GCC/Clang)
         copy(
             self,
             pattern="*.lib",
@@ -179,18 +234,26 @@ class Recipe_pycanha_core(ConanFile):
         )
         copy(
             self,
-            pattern="*.dll",
+            pattern="*.a",
             src=self.build_folder,
-            dst=os.path.join(self.package_folder, "bin"),
+            dst=os.path.join(self.package_folder, "lib"),
             keep_path=False,
         )
 
-        # Alternatively we could use the installation with cmake, but I don't know how to do it
-        # For this to work, all the install() commands in the CMakeLists.txt must be defined correctly
-        # cmake = CMake(self)
-        # cmake.install()
+        # Copy license files
+        copy(
+            self,
+            pattern="LICENSE",
+            src=self.source_folder,
+            dst=os.path.join(self.package_folder, "licenses"),
+            keep_path=False,
+        )
 
     def package_info(self):
+        # Set CMake module/config file names and target names for better consumer experience
+        self.cpp_info.set_property("cmake_file_name", "pycanha-core")
+        self.cpp_info.set_property("cmake_target_name", "pycanha-core::pycanha-core")
+
         # This line is necessary because the headers are not in the "include" folder. By default, conan will look for the headers in the "include" folder
         # See: https://docs.conan.io/2/tutorial/creating_packages/define_package_information.html?highlight=also%20copy%20include%20folder#define-information-for-consumers-the-package-info-method
         # self.cpp_info.includedirs = ["pycanha-core/include"]
@@ -200,11 +263,192 @@ class Recipe_pycanha_core(ConanFile):
         self.cpp_info.libs = ["pycanha-core"]
 
         # Without adding the link flags, the sanitizers libraries are not linked (for the consumer).
-        link_flags = []
         if self.options.PYCANHA_OPTION_SANITIZE_ADDR:
-            link_flags.append("-fsanitize=address")
+            self.cpp_info.sharedlinkflags.append("-fsanitize=address")
+            self.cpp_info.exelinkflags.append("-fsanitize=address")
         if self.options.PYCANHA_OPTION_SANITIZE_UNDEF:
-            link_flags.append("-fsanitize=undefined")
+            self.cpp_info.sharedlinkflags.append("-fsanitize=undefined")
+            self.cpp_info.exelinkflags.append("-fsanitize=undefined")
 
-        # See: https://docs.conan.io/2/reference/conanfile/methods/package_info.html#conan-conanfile-model-cppinfo-attributes
-        self.cpp_info.exelinkflags = link_flags  # linker flags
+    def _mkl_paths_from_pip_venv(self):
+        """
+        Single source of truth for MKL locations.
+
+        Logic:
+        - If PYCANHA_OPTION_USE_MKL is False -> return None.
+        - If MKLROOT env var is defined:
+            * Search under MKLROOT for mkl.h and MKL libs.
+            * If found -> use them.
+            * If not -> raise ConanInvalidConfiguration.
+        - Else:
+            * Search under the current Python prefix (sys.prefix) for mkl.h and MKL libs.
+            * If found -> use them.
+            * If not found:
+                - ALSO search under the Python user base (sysconfig 'userbase'),
+                  to support `pip install --user` on system Python.
+                - If still not found:
+                    - If running in a virtualenv -> pip install mkl-devel==<version> and re-scan.
+                    - If NOT in a virtualenv -> raise ConanInvalidConfiguration.
+        - Returns (mklroot, include_dir, lib_dir, bin_dir)
+        """
+
+        if not bool(self.options.get_safe("PYCANHA_OPTION_USE_MKL", False)):
+            return None  # MKL not requested
+
+        from pathlib import Path
+        import os
+        import sys
+        import sysconfig
+
+        def _in_venv() -> bool:
+            # VIRTUAL_ENV is standard; the sys.prefix/base_prefix trick is the fallback
+            if os.environ.get("VIRTUAL_ENV"):
+                return True
+            base_prefix = getattr(sys, "base_prefix", sys.prefix)
+            return sys.prefix != base_prefix
+
+        def _find_mkl_under(root: Path):
+            """
+            Look for mkl.h and MKL libraries under the given root directory.
+
+            Returns:
+                (mklroot, include_dir, lib_dir, bin_dir) or None if not found.
+            """
+            if not root.is_dir():
+                return None
+
+            # --- find header (mkl.h) ---
+            header_path = None
+            # Prefer paths that have an 'include' dir in their parents
+            for p in root.rglob("mkl.h"):
+                header_path = p
+                parent_names = {parent.name.lower() for parent in p.parents}
+                if "include" in parent_names:
+                    header_path = p
+                    break
+
+            if header_path is None:
+                return None
+
+            include_dir = header_path.parent
+
+            # --- find libraries ---
+            if self.settings.os == "Windows":
+                lib_patterns = ["mkl_rt*.lib", "mkl_rt*.dll", "mkl*.lib"]
+            else:
+                # Linux / macOS
+                lib_patterns = ["libmkl_rt*.so*", "libmkl*.so*", "libmkl*.dylib"]
+
+            lib_path = None
+            for pat in lib_patterns:
+                match = next(root.rglob(pat), None)
+                if match is not None:
+                    lib_path = match
+                    break
+
+            if lib_path is None:
+                return None
+
+            lib_dir = lib_path.parent
+
+            # --- derive MKLROOT as common parent of include+lib ---
+            mklroot = Path(os.path.commonpath([str(include_dir), str(lib_dir)]))
+
+            # --- runtime dir (bin) ---
+            if self.settings.os == "Windows":
+                # Prefer a directory that actually contains mkl_rt*.dll
+                dll_match = next(mklroot.rglob("mkl_rt*.dll"), None)
+                if dll_match is not None:
+                    bin_dir = dll_match.parent
+                else:
+                    # Fall back to lib_dir if we can't find a dedicated bin
+                    bin_dir = lib_dir
+            else:
+                # On Unix, using lib_dir for runtime is usually enough
+                bin_dir = lib_dir
+
+            return mklroot, include_dir, lib_dir, bin_dir
+
+        # ------------------------------------------------------------
+        # 1) Try MKLROOT from environment
+        # ------------------------------------------------------------
+        mklroot_env = os.environ.get("MKLROOT")
+        if mklroot_env:
+            env_root = Path(mklroot_env)
+            result = _find_mkl_under(env_root)
+            if result is None:
+                raise ConanInvalidConfiguration(
+                    "MKLROOT is set to '{}', but I could not find both 'mkl.h' and MKL "
+                    "libraries (libmkl*/mkl_rt*) under that tree.\n"
+                    "Please verify your MKL installation or unset MKLROOT if it is wrong.".format(
+                        mklroot_env
+                    )
+                )
+            self.output.info(f"Using MKL from MKLROOT={mklroot_env}")
+            return result
+
+        # ------------------------------------------------------------
+        # 2) Try to find MKL under the current Python prefix
+        #    (this is your 'current python' – system or venv)
+        # ------------------------------------------------------------
+        prefix_root = Path(sys.prefix)
+        result = _find_mkl_under(prefix_root)
+        if result is not None:
+            self.output.info(
+                f"Using MKL found under current Python prefix: {prefix_root}"
+            )
+            return result
+
+        # ------------------------------------------------------------
+        # 2b) Try the Python *user base* (supports `pip install --user`)
+        #     This is the missing bit on the Ubuntu runner.
+        # ------------------------------------------------------------
+        user_base = sysconfig.get_config_var("userbase")
+        if user_base:
+            user_root = Path(user_base)
+            # Avoid scanning the same tree twice
+            if user_root != prefix_root:
+                result = _find_mkl_under(user_root)
+                if result is not None:
+                    self.output.info(
+                        f"Using MKL found under Python user base: {user_root}"
+                    )
+                    return result
+
+        # ------------------------------------------------------------
+        # 3) If MKL not found and we are in a venv, install mkl-devel and retry
+        # ------------------------------------------------------------
+        if _in_venv():
+            self.output.info(
+                "MKL not found under current Python prefix/user base. "
+                f"Installing 'mkl-devel=={self.MKL_PIP_VERSION}' via pip..."
+            )
+            self.run(
+                f'"{sys.executable}" -m pip install -q "mkl-devel=={self.MKL_PIP_VERSION}"'
+            )
+
+            # Re-scan after installation (venv install goes under sys.prefix)
+            result = _find_mkl_under(prefix_root)
+            if result is None:
+                raise ConanInvalidConfiguration(
+                    "After installing 'mkl-devel' with pip, MKL (mkl.h and libraries) "
+                    f"could still not be located under {prefix_root}.\n"
+                    "Inspect your environment manually (look for 'mkl.h' and 'libmkl*' / 'mkl_rt*'), "
+                    "or set MKLROOT explicitly."
+                )
+
+            self.output.info(
+                f"Using MKL from current virtualenv prefix after pip install: {prefix_root}"
+            )
+            return result
+
+        # ------------------------------------------------------------
+        # 4) Not in a venv and nothing found -> hard error
+        # ------------------------------------------------------------
+        raise ConanInvalidConfiguration(
+            "PYCANHA_OPTION_USE_MKL=True but MKL (mkl.h + libraries) was not found under the\n"
+            f"current Python prefix ({sys.prefix}) or the user base ({user_base}), and you are NOT in a virtualenv.\n\n"
+            "Please either:\n"
+            "  * Install MKL separately and set MKLROOT to its installation directory, or\n"
+            "  * Create/activate a Python virtualenv, install 'mkl-devel' there, and run Conan from it."
+        )
