@@ -10,10 +10,7 @@
 #include "pycanha-core/tmm/nodes.hpp"
 #include "pycanha-core/tmm/thermalmathematicalmodel.hpp"
 
-
-
 namespace {
-
 
 constexpr double init_temp = 273.15;
 constexpr int num_nodes = 5;
@@ -21,8 +18,7 @@ constexpr double tol_temp = 1e-2;
 
 // Steady state expected temperatures
 constexpr std::array<double, num_nodes> expected_temps = {
-    132.38706, 306.56526, 111.78443, 200.32387, 3.14999
-};
+    132.38706, 306.56526, 111.78443, 200.32387, 3.14999};
 
 constexpr std::array<int, num_nodes> node_ids = {10, 15, 20, 25, 99};
 
@@ -55,7 +51,6 @@ std::shared_ptr<pycanha::ThermalMathematicalModel> make_model() {
     // Set node types
     env_node.set_type(pycanha::BOUNDARY_NODE);
 
-
     // Add nodes to the model
     model->add_node(node_10);
     model->add_node(node_15);
@@ -76,7 +71,6 @@ std::shared_ptr<pycanha::ThermalMathematicalModel> make_model() {
 
     return model;
 }
-
 
 bool compare_temps(pycanha::ThermalMathematicalModel& model,
                    bool print_diffs = false) {
