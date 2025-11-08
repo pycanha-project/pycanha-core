@@ -6,15 +6,12 @@
 #include <memory>
 
 #include "pycanha-core/solvers/tscnrlds.hpp"
+#include "pycanha-core/thermaldata/thermaldata.hpp"
 #include "pycanha-core/tmm/node.hpp"
 #include "pycanha-core/tmm/nodes.hpp"
 #include "pycanha-core/tmm/thermalmathematicalmodel.hpp"
-#include "pycanha-core/thermaldata/thermaldata.hpp"
-
-
 
 namespace {
-
 
 constexpr double init_temp = 273.15;
 constexpr int num_nodes = 5;
@@ -24,9 +21,8 @@ constexpr double tol_time = 1e-6;
 
 // Expected times recorded in the solver output table.
 constexpr std::array<double, num_time_steps + 1> times = {
-    0.0000000, 10000.0000, 20000.0000, 30000.0000, 40000.0000, 50000.0000,
+    0.0000000,  10000.0000, 20000.0000, 30000.0000, 40000.0000, 50000.0000,
     60000.0000, 70000.0000, 80000.0000, 90000.0000, 100000.0};
-
 
 // Transient expected temperatures (time steps x nodes)
 constexpr std::array<std::array<double, num_nodes>, num_time_steps + 1>
@@ -43,9 +39,6 @@ constexpr std::array<std::array<double, num_nodes>, num_time_steps + 1>
         {201.86811, 308.10888, 200.09819, 224.49601, 3.14999},
         {197.88691, 308.38019, 195.87117, 222.42185, 3.14999},
     }};
-
-
-
 
 constexpr std::array<int, num_nodes> node_ids = {10, 15, 20, 25, 99};
 
@@ -78,7 +71,6 @@ std::shared_ptr<pycanha::ThermalMathematicalModel> make_model() {
     // Set node types
     env_node.set_type(pycanha::BOUNDARY_NODE);
 
-
     // Add nodes to the model
     model->add_node(node_10);
     model->add_node(node_15);
@@ -100,14 +92,13 @@ std::shared_ptr<pycanha::ThermalMathematicalModel> make_model() {
     return model;
 }
 
-
 bool compare_temps(pycanha::ThermalMathematicalModel& model,
                    bool print_diffs = false) {
     const auto& thermal_data = model.thermal_data;
     if (!thermal_data.has_table("TSCNRLDS_OUTPUT")) {
         if (print_diffs) {
-            std::cout
-                << "Thermal data table 'TSCNRLDS_OUTPUT' not found." << '\n';
+            std::cout << "Thermal data table 'TSCNRLDS_OUTPUT' not found."
+                      << '\n';
         }
         return false;
     }
@@ -120,9 +111,9 @@ bool compare_temps(pycanha::ThermalMathematicalModel& model,
 
     if (output_rows != times.size() || output_cols != num_nodes + 1) {
         if (print_diffs) {
-            std::cout << "Unexpected output table shape: "
-                      << output_rows << "x" << output_cols << " (expected "
-                      << times.size() << "x" << (num_nodes + 1) << ")\n";
+            std::cout << "Unexpected output table shape: " << output_rows << "x"
+                      << output_cols << " (expected " << times.size() << "x"
+                      << (num_nodes + 1) << ")\n";
         }
         return false;
     }
@@ -142,9 +133,9 @@ bool compare_temps(pycanha::ThermalMathematicalModel& model,
         if (std::fabs(computed_time - expected_time) > tol_time) {
             all_within_tol = false;
             if (print_diffs) {
-                std::cout << "Time index " << time_idx << ": Computed time = "
-                          << computed_time << " s, Expected time = "
-                          << expected_time << " s\n";
+                std::cout << "Time index " << time_idx
+                          << ": Computed time = " << computed_time
+                          << " s, Expected time = " << expected_time << " s\n";
             }
         }
 
@@ -160,11 +151,10 @@ bool compare_temps(pycanha::ThermalMathematicalModel& model,
 
             if (print_diffs) {
                 std::cout << "t=" << expected_time << " s, Node "
-                          << node_ids.at(node_idx) << ": Computed = "
-                          << computed_temp << " K, Expected = "
-                          << expected_temp << " K, Diff = "
-                          << std::fabs(computed_temp - expected_temp)
-                          << " K\n";
+                          << node_ids.at(node_idx)
+                          << ": Computed = " << computed_temp
+                          << " K, Expected = " << expected_temp << " K, Diff = "
+                          << std::fabs(computed_temp - expected_temp) << " K\n";
             }
         }
     }
@@ -172,8 +162,7 @@ bool compare_temps(pycanha::ThermalMathematicalModel& model,
     return all_within_tol;
 }
 
-void reset_model_temps(
-    pycanha::ThermalMathematicalModel& model) {
+void reset_model_temps(pycanha::ThermalMathematicalModel& model) {
     model.nodes().set_T(10, init_temp);
     model.nodes().set_T(15, init_temp);
     model.nodes().set_T(20, init_temp);
@@ -209,7 +198,8 @@ TEST_CASE("TSCNRLDS solves a simple model", "[solver][tscnrlds]") {
     solver.solve();
     REQUIRE(compare_temps(*model, false));
 
-    // Create another solver instance to verify multiple solvers work in the same model
+    // Create another solver instance to verify multiple solvers work in the
+    // same model
     auto solver2 = pycanha::TSCNRLDS(model);
     reset_model_temps(*model);
     solver2.MAX_ITERS = 100;
@@ -218,6 +208,4 @@ TEST_CASE("TSCNRLDS solves a simple model", "[solver][tscnrlds]") {
     solver2.initialize();
     solver2.solve();
     REQUIRE(compare_temps(*model, false));
-
-
 }

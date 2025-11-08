@@ -1,7 +1,8 @@
 #include "pycanha-core/solvers/tscnrlds.hpp"
 
-#include <cstddef>
+#include <algorithm>
 #include <cmath>
+#include <cstddef>
 #include <iostream>
 #include <memory>
 #include <stdexcept>
@@ -12,9 +13,9 @@
 
 #if PYCANHA_USE_MKL
 #include <mkl_cblas.h>
-#include <mkl_types.h>
 #include <mkl_pardiso.h>
 #include <mkl_service.h>
+#include <mkl_types.h>
 #endif
 
 #include "pycanha-core/config.hpp"
@@ -33,9 +34,7 @@ TSCNRLDS::TSCNRLDS(std::shared_ptr<ThermalMathematicalModel> tmm_shptr)
 TSCNRLDS::~TSCNRLDS() {
     // Ensure MKL resources are freed even if deinitialize() wasn't called
     // Only call if we were initialized to avoid double-deinitialize
-    if (solver_initialized) {
-        deinitialize();
-    }
+    release_solver_resources();
 }
 
 void TSCNRLDS::initialize() {
@@ -125,12 +124,10 @@ void TSCNRLDS::initialize() {
     _k_matrix_outer_index.resize(outer_size);
     _k_matrix_inner_index.resize(inner_nnz);
 
-    std::copy(_k_matrix.outerIndexPtr(),
-              _k_matrix.outerIndexPtr() + outer_size,
-              _k_matrix_outer_index.begin());
-    std::copy(_k_matrix.innerIndexPtr(),
-              _k_matrix.innerIndexPtr() + inner_nnz,
-              _k_matrix_inner_index.begin());
+    std::copy_n(_k_matrix.outerIndexPtr(), static_cast<std::size_t>(outer_size),
+                _k_matrix_outer_index.begin());
+    std::copy_n(_k_matrix.innerIndexPtr(), static_cast<std::size_t>(inner_nnz),
+                _k_matrix_inner_index.begin());
 
     // TODO(PYC-405): Wrap MKL control structure access to avoid reinterpret
     // casts once the solver interface is refactored.
@@ -148,40 +145,43 @@ void TSCNRLDS::initialize() {
 
     _pardiso_phase = 11;
     pardiso(reinterpret_cast<void*>(_pardiso_pt.data()), &_pardiso_maxfct,
-        &_pardiso_mnum, &_pardiso_mtype, &_pardiso_phase,
-        &_pardiso_size, _k_matrix.valuePtr(), _k_matrix_outer_index.data(),
-        _k_matrix_inner_index.data(), _pardiso_perm.data(), &_pardiso_nrhs,
-        _pardiso_iparm.data(), &_pardiso_msglvl, _rhs.data(),
-        Td_solver.data(), &_pardiso_error);
+            &_pardiso_mnum, &_pardiso_mtype, &_pardiso_phase, &_pardiso_size,
+            _k_matrix.valuePtr(), _k_matrix_outer_index.data(),
+            _k_matrix_inner_index.data(), _pardiso_perm.data(), &_pardiso_nrhs,
+            _pardiso_iparm.data(), &_pardiso_msglvl, _rhs.data(),
+            Td_solver.data(), &_pardiso_error);
+    // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast)
 
     if (_pardiso_error != 0) {
-        throw std::runtime_error(
-            "MKL PARDISO initialization failed with error " +
-            std::to_string(_pardiso_error));
+        const auto error_msg = "MKL PARDISO initialization failed with error " +
+                               std::to_string(_pardiso_error);
+        throw std::runtime_error(error_msg);
     }
 
     solver_initialized = true;
 #else
     // Ensure matrix is in compressed format and properly structured
     _k_matrix.makeCompressed();
-    
+
     // Validate matrix dimensions before analysis
     if (_k_matrix.rows() == 0 || _k_matrix.cols() == 0) {
         throw std::runtime_error(
-            "Cannot analyze empty matrix in Eigen SparseLU initialization");
+            "Cannot analyze empty matrix in Eigen SparseLU "
+            "initialization");
     }
-    
+
     if (_k_matrix.rows() != _k_matrix.cols()) {
         throw std::runtime_error(
             "Matrix must be square for SparseLU factorization");
     }
-    
+
     // Note: analyzePattern only analyzes the sparsity pattern, not values
     // It should not fail for a properly structured matrix
     _eigen_solver.analyzePattern(_k_matrix);
-    
+
     // Check if pattern analysis succeeded
-    // Note: info() might not be properly set after analyzePattern in some Eigen versions
+    // Note: info() might not be properly set after analyzePattern in some
+    // Eigen versions
     // The actual factorization happens in solve_step()
     solver_initialized = true;
 #endif
@@ -250,26 +250,29 @@ void TSCNRLDS::solve() {
     }
 }
 
-void TSCNRLDS::deinitialize() {
+void TSCNRLDS::deinitialize() { release_solver_resources(); }
+
+void TSCNRLDS::release_solver_resources() {
 #if PYCANHA_USE_MKL
     if (solver_initialized) {
         _pardiso_phase = -1;
-        // TODO(PYC-405): Wrap MKL pointers with helper to drop reinterpret casts.
+        // TODO(PYC-405): Wrap MKL pointers with helper to drop reinterpret
+        // casts.
         // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast)
-        pardiso(reinterpret_cast<void*>(_pardiso_pt.data()),
-            &_pardiso_maxfct, &_pardiso_mnum, &_pardiso_mtype,
-            &_pardiso_phase, &_pardiso_size, _k_matrix.valuePtr(),
-            _k_matrix_outer_index.data(), _k_matrix_inner_index.data(),
-            _pardiso_perm.data(), &_pardiso_nrhs, _pardiso_iparm.data(),
-            &_pardiso_msglvl, _rhs.data(), Td_solver.data(),
-            &_pardiso_error);
+        pardiso(reinterpret_cast<void*>(_pardiso_pt.data()), &_pardiso_maxfct,
+                &_pardiso_mnum, &_pardiso_mtype, &_pardiso_phase,
+                &_pardiso_size, _k_matrix.valuePtr(),
+                _k_matrix_outer_index.data(), _k_matrix_inner_index.data(),
+                _pardiso_perm.data(), &_pardiso_nrhs, _pardiso_iparm.data(),
+                &_pardiso_msglvl, _rhs.data(), Td_solver.data(),
+                &_pardiso_error);
         // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast)
     }
-    
+
     // Always free MKL buffers, even if solver wasn't initialized
     mkl_thread_free_buffers();
     mkl_free_buffers();
-    
+
     _pardiso_perm.clear();
     _k_matrix_outer_index.clear();
     _k_matrix_inner_index.clear();
@@ -364,24 +367,26 @@ void TSCNRLDS::solve_step() {
     const auto inner_nnz = _k_matrix.nonZeros();
     if (_k_matrix_inner_index.size() != static_cast<std::size_t>(inner_nnz)) {
         _k_matrix_inner_index.resize(inner_nnz);
-        std::copy(_k_matrix.innerIndexPtr(),
-                  _k_matrix.innerIndexPtr() + inner_nnz,
-                  _k_matrix_inner_index.begin());
+        std::copy_n(_k_matrix.innerIndexPtr(),
+                    static_cast<std::size_t>(inner_nnz),
+                    _k_matrix_inner_index.begin());
     }
 
     _pardiso_phase = 23;
+    // TODO(PYC-405): Wrap MKL pointers with helper to drop reinterpret casts.
     // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast)
     pardiso(reinterpret_cast<void*>(_pardiso_pt.data()), &_pardiso_maxfct,
-        &_pardiso_mnum, &_pardiso_mtype, &_pardiso_phase, &_pardiso_size,
-        _k_matrix.valuePtr(), _k_matrix_outer_index.data(),
-        _k_matrix_inner_index.data(), _pardiso_perm.data(), &_pardiso_nrhs,
-        _pardiso_iparm.data(), &_pardiso_msglvl, _rhs.data(),
-        Td_solver.data(), &_pardiso_error);
+            &_pardiso_mnum, &_pardiso_mtype, &_pardiso_phase, &_pardiso_size,
+            _k_matrix.valuePtr(), _k_matrix_outer_index.data(),
+            _k_matrix_inner_index.data(), _pardiso_perm.data(), &_pardiso_nrhs,
+            _pardiso_iparm.data(), &_pardiso_msglvl, _rhs.data(),
+            Td_solver.data(), &_pardiso_error);
     // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast)
 
     if (_pardiso_error != 0) {
-        throw std::runtime_error("MKL PARDISO solve failed with error " +
-                                 std::to_string(_pardiso_error));
+        const auto error_msg = "MKL PARDISO solve failed with error " +
+                               std::to_string(_pardiso_error);
+        throw std::runtime_error(error_msg);
     }
 #else
     _k_matrix *= -1.0;

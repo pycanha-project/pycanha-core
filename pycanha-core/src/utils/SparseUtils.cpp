@@ -19,9 +19,10 @@
 
 // USE MKL FUNCTION IF AVAILABLE
 #if PYCANHA_USE_MKL
-#include <limits>
 #include <mkl_cblas.h>
 #include <mkl_types.h>
+
+#include <limits>
 #endif
 
 // This file use a lot of pointer arithmetic for performance, the warning from
@@ -797,6 +798,7 @@ void copy_values_same_nnz(
     PYCANHA_ASSERT(nnz <= std::numeric_limits<MKL_INT>::max(),
                    "MKL integer range exceeded");
     const MKL_INT nnz_mkl = static_cast<MKL_INT>(nnz);
+    // NOLINTNEXTLINE(misc-include-cleaner)
     cblas_dcopy(nnz_mkl, sp_from.valuePtr(), 1, sp_dest.valuePtr(), 1);
 #endif
 }
@@ -824,6 +826,7 @@ void copy_sum_values_same_nnz(
     PYCANHA_ASSERT(nnz <= std::numeric_limits<MKL_INT>::max(),
                    "MKL integer range exceeded");
     const MKL_INT nnz_mkl = static_cast<MKL_INT>(nnz);
+    // NOLINTNEXTLINE(misc-include-cleaner)
     cblas_daxpy(nnz_mkl, 1.0, sp_from.valuePtr(), 1, sp_dest.valuePtr(), 1);
 #endif
 }

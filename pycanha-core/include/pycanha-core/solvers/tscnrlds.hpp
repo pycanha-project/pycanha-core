@@ -7,8 +7,6 @@
 #include <vector>
 
 #include "pycanha-core/solvers/tscnrl.hpp"
-#include "pycanha-core/utils/SparseUtils.hpp"
-
 #if PYCANHA_USE_MKL
 #include <mkl.h>
 #endif
@@ -21,6 +19,10 @@ class TSCNRLDS : public TSCNRL {
   public:
     explicit TSCNRLDS(std::shared_ptr<ThermalMathematicalModel> tmm_shptr);
     ~TSCNRLDS() override;
+    TSCNRLDS(const TSCNRLDS&) = delete;
+    TSCNRLDS& operator=(const TSCNRLDS&) = delete;
+    TSCNRLDS(TSCNRLDS&&) = delete;
+    TSCNRLDS& operator=(TSCNRLDS&&) = delete;
 
     void initialize() override;
     void solve() override;
@@ -43,7 +45,7 @@ class TSCNRLDS : public TSCNRL {
     std::vector<MKL_INT> _k_matrix_outer_index;
     std::vector<MKL_INT> _k_matrix_inner_index;
 #else
-  Eigen::SparseLU<SpMatRow> _eigen_solver;
+    Eigen::SparseLU<SpMatRow> _eigen_solver;
 #endif
 
     VectorXd _t3_domain;
@@ -69,6 +71,7 @@ class TSCNRLDS : public TSCNRL {
     void euler_step();
     void add_capacities_to_matrix();
     void solve_step();
+    void release_solver_resources();
 };
 
 }  // namespace pycanha
