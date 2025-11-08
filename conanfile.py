@@ -284,8 +284,11 @@ class Recipe_pycanha_core(ConanFile):
             * Search under the current Python prefix (sys.prefix) for mkl.h and MKL libs.
             * If found -> use them.
             * If not found:
-                - If running in a virtualenv -> pip install mkl-devel==<version> and re-scan.
-                - If NOT in a virtualenv -> raise ConanInvalidConfiguration.
+                - ALSO search under the Python user base (sysconfig 'userbase'),
+                  to support `pip install --user` on system Python.
+                - If still not found:
+                    - If running in a virtualenv -> pip install mkl-devel==<version> and re-scan.
+                    - If NOT in a virtualenv -> raise ConanInvalidConfiguration.
         - Returns (mklroot, include_dir, lib_dir, bin_dir)
         """
 
@@ -295,6 +298,7 @@ class Recipe_pycanha_core(ConanFile):
         from pathlib import Path
         import os
         import sys
+        import sysconfig
 
         def _in_venv() -> bool:
             # VIRTUAL_ENV is standard; the sys.prefix/base_prefix trick is the fallback
@@ -396,18 +400,34 @@ class Recipe_pycanha_core(ConanFile):
             return result
 
         # ------------------------------------------------------------
+        # 2b) Try the Python *user base* (supports `pip install --user`)
+        #     This is the missing bit on the Ubuntu runner.
+        # ------------------------------------------------------------
+        user_base = sysconfig.get_config_var("userbase")
+        if user_base:
+            user_root = Path(user_base)
+            # Avoid scanning the same tree twice
+            if user_root != prefix_root:
+                result = _find_mkl_under(user_root)
+                if result is not None:
+                    self.output.info(
+                        f"Using MKL found under Python user base: {user_root}"
+                    )
+                    return result
+
+        # ------------------------------------------------------------
         # 3) If MKL not found and we are in a venv, install mkl-devel and retry
         # ------------------------------------------------------------
         if _in_venv():
             self.output.info(
-                "MKL not found under current Python prefix. "
+                "MKL not found under current Python prefix/user base. "
                 f"Installing 'mkl-devel=={self.MKL_PIP_VERSION}' via pip..."
             )
             self.run(
                 f'"{sys.executable}" -m pip install -q "mkl-devel=={self.MKL_PIP_VERSION}"'
             )
 
-            # Re-scan after installation
+            # Re-scan after installation (venv install goes under sys.prefix)
             result = _find_mkl_under(prefix_root)
             if result is None:
                 raise ConanInvalidConfiguration(
@@ -427,7 +447,7 @@ class Recipe_pycanha_core(ConanFile):
         # ------------------------------------------------------------
         raise ConanInvalidConfiguration(
             "PYCANHA_OPTION_USE_MKL=True but MKL (mkl.h + libraries) was not found under the\n"
-            f"current Python prefix ({sys.prefix}), and you are NOT in a virtualenv.\n\n"
+            f"current Python prefix ({sys.prefix}) or the user base ({user_base}), and you are NOT in a virtualenv.\n\n"
             "Please either:\n"
             "  * Install MKL separately and set MKLROOT to its installation directory, or\n"
             "  * Create/activate a Python virtualenv, install 'mkl-devel' there, and run Conan from it."
