@@ -9,8 +9,6 @@ from conan.tools.scm import Version
 import os
 import sys
 from pathlib import Path
-import site
-import sysconfig
 
 
 class Recipe_pycanha_core(ConanFile):
@@ -276,108 +274,161 @@ class Recipe_pycanha_core(ConanFile):
         """
         Single source of truth for MKL locations.
 
-        - Requires PYCANHA_OPTION_USE_MKL=True
-        - Installs MKL via pip (mkl-devel)
+        Logic:
+        - If PYCANHA_OPTION_USE_MKL is False -> return None.
+        - If MKLROOT env var is defined:
+            * Search under MKLROOT for mkl.h and MKL libs.
+            * If found -> use them.
+            * If not -> raise ConanInvalidConfiguration.
+        - Else:
+            * Search under the current Python prefix (sys.prefix) for mkl.h and MKL libs.
+            * If found -> use them.
+            * If not found:
+                - If running in a virtualenv -> pip install mkl-devel==<version> and re-scan.
+                - If NOT in a virtualenv -> raise ConanInvalidConfiguration.
         - Returns (mklroot, include_dir, lib_dir, bin_dir)
-        - Raises ConanInvalidConfiguration if anything is missing
         """
 
         if not bool(self.options.get_safe("PYCANHA_OPTION_USE_MKL", False)):
-            return None  # MKL is not requested
+            return None  # MKL not requested
 
-        # 1. Install MKL
-        self.run(
-            f'"{sys.executable}" -m pip install -q '
-            f'"mkl-devel=={self.MKL_PIP_VERSION}"'
-        )
+        from pathlib import Path
+        import os
+        import sys
 
-        # 2. Build list of candidate roots where mkl-devel might have installed
-        search_roots = set()
+        def _in_venv() -> bool:
+            # VIRTUAL_ENV is standard; the sys.prefix/base_prefix trick is the fallback
+            if os.environ.get("VIRTUAL_ENV"):
+                return True
+            base_prefix = getattr(sys, "base_prefix", sys.prefix)
+            return sys.prefix != base_prefix
 
-        # a) Python prefixes
-        for p in {sys.prefix, getattr(sys, "base_prefix", sys.prefix)}:
-            if p:
-                search_roots.add(Path(p))
+        def _find_mkl_under(root: Path):
+            """
+            Look for mkl.h and MKL libraries under the given root directory.
 
-        # b) sysconfig paths (often point somewhere under the prefix)
-        try:
-            cfg_paths = sysconfig.get_paths()
-        except Exception:
-            cfg_paths = {}
-        for key in ("data", "platlib", "purelib"):
-            p = cfg_paths.get(key)
-            if p:
-                p = Path(p)
-                # p itself + 1–2 parents (to catch ~/.local, /usr/local, venv root, etc.)
-                search_roots.add(p)
-                if p.parent:
-                    search_roots.add(p.parent)
-                if p.parent and p.parent.parent:
-                    search_roots.add(p.parent.parent)
+            Returns:
+                (mklroot, include_dir, lib_dir, bin_dir) or None if not found.
+            """
+            if not root.is_dir():
+                return None
 
-        # c) site-packages (user + global) and their parents
-        user_site = site.getusersitepackages()
-        if user_site:
-            sp = Path(user_site)
-            search_roots.add(sp)
-            if sp.parent:
-                search_roots.add(sp.parent)
-            if sp.parent and sp.parent.parent:
-                search_roots.add(sp.parent.parent)
+            # --- find header (mkl.h) ---
+            header_path = None
+            # Prefer paths that have an 'include' dir in their parents
+            for p in root.rglob("mkl.h"):
+                header_path = p
+                parent_names = {parent.name.lower() for parent in p.parents}
+                if "include" in parent_names:
+                    header_path = p
+                    break
 
-        for sp in site.getsitepackages():
-            sp = Path(sp)
-            search_roots.add(sp)
-            if sp.parent:
-                search_roots.add(sp.parent)
-            if sp.parent and sp.parent.parent:
-                search_roots.add(sp.parent.parent)
+            if header_path is None:
+                return None
 
-        # d) Explicit MKLROOT env var (if user already has MKL configured)
+            include_dir = header_path.parent
+
+            # --- find libraries ---
+            if self.settings.os == "Windows":
+                lib_patterns = ["mkl_rt*.lib", "mkl_rt*.dll", "mkl*.lib"]
+            else:
+                # Linux / macOS
+                lib_patterns = ["libmkl_rt*.so*", "libmkl*.so*", "libmkl*.dylib"]
+
+            lib_path = None
+            for pat in lib_patterns:
+                match = next(root.rglob(pat), None)
+                if match is not None:
+                    lib_path = match
+                    break
+
+            if lib_path is None:
+                return None
+
+            lib_dir = lib_path.parent
+
+            # --- derive MKLROOT as common parent of include+lib ---
+            mklroot = Path(os.path.commonpath([str(include_dir), str(lib_dir)]))
+
+            # --- runtime dir (bin) ---
+            if self.settings.os == "Windows":
+                # Prefer a directory that actually contains mkl_rt*.dll
+                dll_match = next(mklroot.rglob("mkl_rt*.dll"), None)
+                if dll_match is not None:
+                    bin_dir = dll_match.parent
+                else:
+                    # Fall back to lib_dir if we can't find a dedicated bin
+                    bin_dir = lib_dir
+            else:
+                # On Unix, using lib_dir for runtime is usually enough
+                bin_dir = lib_dir
+
+            return mklroot, include_dir, lib_dir, bin_dir
+
+        # ------------------------------------------------------------
+        # 1) Try MKLROOT from environment
+        # ------------------------------------------------------------
         mklroot_env = os.environ.get("MKLROOT")
         if mklroot_env:
-            search_roots.add(Path(mklroot_env))
+            env_root = Path(mklroot_env)
+            result = _find_mkl_under(env_root)
+            if result is None:
+                raise ConanInvalidConfiguration(
+                    "MKLROOT is set to '{}', but I could not find both 'mkl.h' and MKL "
+                    "libraries (libmkl*/mkl_rt*) under that tree.\n"
+                    "Please verify your MKL installation or unset MKLROOT if it is wrong.".format(
+                        mklroot_env
+                    )
+                )
+            self.output.info(f"Using MKL from MKLROOT={mklroot_env}")
+            return result
 
-        # 3. Platform-specific checks
-        if self.settings.os == "Windows":
-            # Keep your previous logic for Windows
-            for site_path in list(search_roots):
-                # Windows: Python\Lib\site-packages -> Python\Library
-                # (this assumes a conda-style layout, which you said works)
-                try:
-                    if site_path.name.lower() == "site-packages":
-                        mklroot = site_path.parent.parent / "Library"
-                        include = mklroot / "include"
-                        libdir = mklroot / "lib"
-                        bindir = mklroot / "bin"
-                        lib_pattern = "mkl*.lib"
+        # ------------------------------------------------------------
+        # 2) Try to find MKL under the current Python prefix
+        #    (this is your 'current python' – system or venv)
+        # ------------------------------------------------------------
+        prefix_root = Path(sys.prefix)
+        result = _find_mkl_under(prefix_root)
+        if result is not None:
+            self.output.info(
+                f"Using MKL found under current Python prefix: {prefix_root}"
+            )
+            return result
 
-                        if include.joinpath("mkl.h").is_file() and any(
-                            libdir.glob(lib_pattern)
-                        ):
-                            return mklroot, include, libdir, bindir
-                except Exception:
-                    continue
-        else:
-            # Linux / macOS: mkl-devel installs headers/libs under <root>/include and <root>/lib
-            lib_pattern = (
-                "libmkl*.so*" if self.settings.os == "Linux" else "libmkl*.dylib"
+        # ------------------------------------------------------------
+        # 3) If MKL not found and we are in a venv, install mkl-devel and retry
+        # ------------------------------------------------------------
+        if _in_venv():
+            self.output.info(
+                "MKL not found under current Python prefix. "
+                f"Installing 'mkl-devel=={self.MKL_PIP_VERSION}' via pip..."
+            )
+            self.run(
+                f'"{sys.executable}" -m pip install -q "mkl-devel=={self.MKL_PIP_VERSION}"'
             )
 
-            for root in search_roots:
-                include = root / "include"
-                libdir = root / "lib"
-                bindir = libdir  # for pip mkl-devel this is fine
+            # Re-scan after installation
+            result = _find_mkl_under(prefix_root)
+            if result is None:
+                raise ConanInvalidConfiguration(
+                    "After installing 'mkl-devel' with pip, MKL (mkl.h and libraries) "
+                    f"could still not be located under {prefix_root}.\n"
+                    "Inspect your environment manually (look for 'mkl.h' and 'libmkl*' / 'mkl_rt*'), "
+                    "or set MKLROOT explicitly."
+                )
 
-                if include.joinpath("mkl.h").is_file() and any(
-                    libdir.glob(lib_pattern)
-                ):
-                    return root, include, libdir, bindir
+            self.output.info(
+                f"Using MKL from current virtualenv prefix after pip install: {prefix_root}"
+            )
+            return result
 
-        # 4. Hard fail if not found
+        # ------------------------------------------------------------
+        # 4) Not in a venv and nothing found -> hard error
+        # ------------------------------------------------------------
         raise ConanInvalidConfiguration(
-            "MKL header not found after pip install.\n"
-            f"Tried roots: {[str(p) for p in sorted(search_roots)]}\n"
-            "mkl-devel (pip) on Linux typically installs headers in <prefix>/include "
-            "and libs in <prefix>/lib. Check where `mkl.h` is on your system."
+            "PYCANHA_OPTION_USE_MKL=True but MKL (mkl.h + libraries) was not found under the\n"
+            f"current Python prefix ({sys.prefix}), and you are NOT in a virtualenv.\n\n"
+            "Please either:\n"
+            "  * Install MKL separately and set MKLROOT to its installation directory, or\n"
+            "  * Create/activate a Python virtualenv, install 'mkl-devel' there, and run Conan from it."
         )
