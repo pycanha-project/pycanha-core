@@ -46,6 +46,7 @@ jobs:
       run: |
         pip install conan
         pip install cmake
+        pip install mkl-devel
         sudo apt-get install cppcheck
     - name: Install with conan
       run: |
