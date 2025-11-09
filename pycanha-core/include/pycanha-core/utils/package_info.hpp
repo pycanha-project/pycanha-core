@@ -15,7 +15,9 @@ inline void print_package_info() {
               << LIB_COMPILER_VERSION << "\n";
     std::cout << "C++ Standard: " << LIB_CPP_STANDARD << "\n";
 #ifdef PYCANHA_USE_MKL
-    std::cout << "MKL Enabled\n";
+    std::cout << "MKL Enabled: " << MKL_VERSION << "\n";
+#else
+    std::cout << "MKL Disabled\n";
 #endif
     std::cout << "---------------------\n";
 }

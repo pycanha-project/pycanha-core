@@ -64,8 +64,10 @@ namespace pycanha {
 // Intel MKL acceleration toggle (configured via CMake option)
 #ifdef PYCANHA_USE_MKL
 constexpr bool MKL_ENABLED = PYCANHA_USE_MKL != 0;
+constexpr std::string_view MKL_VERSION = "@MKL_VERSION@";
 #else
 constexpr bool MKL_ENABLED = false;
+constexpr std::string_view MKL_VERSION = "N/A";
 #endif
 constexpr bool VERBOSE = true;
 

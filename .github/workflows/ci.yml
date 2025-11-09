@@ -40,6 +40,11 @@ jobs:
     - name: Check out repository
       uses: actions/checkout@v4
 
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.13'
+
     - name: Install conan and cmake
       run: |
         pip install conan
@@ -50,11 +55,6 @@ jobs:
       run: |
         echo "CC=clang" >> $GITHUB_ENV
         echo "CXX=clang++" >> $GITHUB_ENV
-
-    - name: Install MKL
-      if: matrix.config.mkl_option == 'True'
-      run: |
-        pip install mkl-devel
 
     - name: Install conan profiles
       run: |
