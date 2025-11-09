@@ -304,6 +304,37 @@ class Recipe_pycanha_core(ConanFile):
             self.cpp_info.sharedlinkflags.append("-fsanitize=undefined")
             self.cpp_info.exelinkflags.append("-fsanitize=undefined")
 
+    # ============================================================================
+    # MKL Installation and Discovery
+    # ============================================================================
+    # This section handles installing MKL from pip and discovering its paths.
+    #
+    # The challenge: After pip installs packages, Python's importlib.metadata
+    # cache prevents the current process from seeing newly installed packages.
+    #
+    # The solution: Run a minimal subprocess that lists MKL package files in a
+    # fresh Python context (with proper environment setup). Then process those
+    # file paths in the main process to find include and lib directories.
+    #
+    # Environment setup: We unset PYTHONPATH and PYTHONHOME to ensure pip and
+    # metadata discovery work with the correct virtual environment, not any
+    # parent or system Python installation.
+    #
+    # Path discovery: We walk up from actual .h and library files to find their
+    # parent 'include' or 'lib'/'bin' directories. This works cross-platform
+    # without hardcoding paths (Windows uses Library/include and Library/bin,
+    # Linux/Mac use include and lib).
+    # ============================================================================
+
+    def _walk_to_marker(self, start: Path, markers: set[str]) -> Path | None:
+        """Walk up from `start` until a parent dir name is in `markers`."""
+        d = start
+        while d.parent != d:
+            if d.name.lower() in markers:
+                return d
+            d = d.parent
+        return None
+
     def _mkl_paths_from_pip_venv(self):
         """Install mkl-devel and find MKL paths."""
         if not bool(self.options.get_safe("PYCANHA_OPTION_USE_MKL", False)):
@@ -322,55 +353,58 @@ class Recipe_pycanha_core(ConanFile):
                 f'"{sys.executable}" -m pip install "mkl-devel=={expected_version}"'
             )
 
-        # Find MKL directories - run in subprocess to avoid cache issues
-        find_script = """
+        # Get file list from subprocess (only thing that needs fresh context)
+        get_files_script = """
 from importlib import metadata
-from pathlib import Path
-
-def walk_up(start, markers):
-    d = start
-    while d.parent != d:
-        if d.name.lower() in markers:
-            return d
-        d = d.parent
-    return None
-
-include_dir = lib_dir = None
-for pkg in ("mkl-devel", "mkl", "mkl-include"):
+for pkg in ("mkl-static", "mkl-devel", "mkl", "mkl-include"):
     try:
         dist = metadata.distribution(pkg)
         for f in dist.files or []:
-            p = dist.locate_file(f).resolve()
-            if not include_dir and p.suffix.lower() == ".h":
-                include_dir = walk_up(p.parent, {"include"})
-            if not lib_dir and (p.suffix.lower() in (".so", ".dylib", ".dll") or 
-                               "libmkl" in p.name.lower() or p.name.lower().startswith("mkl_")):
-                lib_dir = walk_up(p.parent, {"lib", "bin"})
-            if include_dir and lib_dir:
-                break
+            print(dist.locate_file(f).resolve())
     except: pass
-    if include_dir and lib_dir:
-        break
-
-if include_dir and lib_dir:
-    print(f"{include_dir}|{lib_dir}")
 """
 
         with env_reset.vars(self).apply():
             result = subprocess.run(
-                [sys.executable, "-c", find_script],
+                [sys.executable, "-c", get_files_script],
                 capture_output=True,
                 text=True,
                 check=False,
             )
 
-        if result.returncode != 0 or not result.stdout.strip():
+        if result.returncode != 0:
             raise ConanInvalidConfiguration(
-                f"MKL not found after installing mkl-devel=={expected_version}"
+                f"Failed to discover MKL files after installing mkl-devel=={expected_version}"
             )
 
-        paths = result.stdout.strip().split("|")
-        include_dir, lib_dir = Path(paths[0]), Path(paths[1])
+        # Now process the files in normal Python
+        include_dir = lib_dir = None
+        for line in result.stdout.splitlines():
+            if not line.strip():
+                continue
+            p = Path(line.strip())
+            suffix = p.suffix.lower()
+            name_lower = p.name.lower()
+
+            if not include_dir and suffix == ".h":
+                include_dir = self._walk_to_marker(p.parent, {"include"})
+
+            if not lib_dir and (
+                suffix in (".so", ".dylib", ".dll")
+                or (
+                    ("libmkl" in name_lower or name_lower.startswith("mkl_"))
+                    and any(ext in name_lower for ext in (".so", ".dylib", ".dll"))
+                )
+            ):
+                lib_dir = self._walk_to_marker(p.parent, {"lib", "bin"})
+
+            if include_dir and lib_dir:
+                break
+
+        if not include_dir or not lib_dir:
+            raise ConanInvalidConfiguration(
+                f"MKL directories not found after installing mkl-devel=={expected_version}"
+            )
 
         mklroot = include_dir.parent
         bin_dir = lib_dir
