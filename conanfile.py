@@ -282,23 +282,28 @@ class Recipe_pycanha_core(ConanFile):
             self.cpp_info.defines.append("PYCANHA_USE_MKL=0")
 
         # Surface MKL include/lib/bin locations so consumers can find headers and shared libs
-        if (
-            self.options.PYCANHA_OPTION_USE_MKL
-            and hasattr(self, "_mkl_package_data")
-            and self._mkl_package_data
-        ):
-            _, include_dir, lib_dir, bin_dir = self._mkl_package_data
+        if self.options.PYCANHA_OPTION_USE_MKL:
+            # Try to get from cached data first (when building), otherwise discover (when consuming)
+            mkl_data = None
+            if hasattr(self, "_mkl_package_data") and self._mkl_package_data:
+                mkl_data = self._mkl_package_data
+            else:
+                # When consuming, discover MKL paths
+                mkl_data = self._discover_mkl_paths()
 
-            include_path = str(include_dir)
-            lib_path = str(lib_dir)
-            bin_path = str(bin_dir)
+            if mkl_data:
+                _, include_dir, lib_dir, bin_dir = mkl_data
 
-            if include_path not in self.cpp_info.includedirs:
-                self.cpp_info.includedirs.append(include_path)
-            if lib_path not in self.cpp_info.libdirs:
-                self.cpp_info.libdirs.append(lib_path)
-            if bin_path not in self.cpp_info.bindirs:
-                self.cpp_info.bindirs.append(bin_path)
+                include_path = str(include_dir)
+                lib_path = str(lib_dir)
+                bin_path = str(bin_dir)
+
+                if include_path not in self.cpp_info.includedirs:
+                    self.cpp_info.includedirs.append(include_path)
+                if lib_path not in self.cpp_info.libdirs:
+                    self.cpp_info.libdirs.append(lib_path)
+                if bin_path not in self.cpp_info.bindirs:
+                    self.cpp_info.bindirs.append(bin_path)
 
         # Without adding the link flags, the sanitizers libraries are not linked (for the consumer).
         if self.options.PYCANHA_OPTION_SANITIZE_ADDR:
@@ -339,25 +344,14 @@ class Recipe_pycanha_core(ConanFile):
             d = d.parent
         return None
 
-    def _mkl_paths_from_pip_venv(self):
-        """Install mkl-devel and find MKL paths."""
-        if not bool(self.options.get_safe("PYCANHA_OPTION_USE_MKL", False)):
-            return None
-
+    def _discover_mkl_paths(self):
+        """Discover MKL paths from installed packages (without installing)."""
         # Setup environment to avoid conflicts
         env_reset = Environment()
         env_reset.unset("PYTHONPATH")
         env_reset.unset("PYTHONHOME")
 
-        # Install mkl-devel
-        expected_version = str(self.MKL_PIP_VERSION)
-        with env_reset.vars(self).apply():
-            self.output.info(f"Installing mkl-devel=={expected_version}")
-            self.run(
-                f'"{sys.executable}" -m pip install "mkl-devel=={expected_version}"'
-            )
-
-        # Get file list from subprocess (only thing that needs fresh context)
+        # Get file list from subprocess
         get_files_script = """
 from importlib import metadata
 for pkg in ("mkl-static", "mkl-devel", "mkl", "mkl-include"):
@@ -377,11 +371,9 @@ for pkg in ("mkl-static", "mkl-devel", "mkl", "mkl-include"):
             )
 
         if result.returncode != 0:
-            raise ConanInvalidConfiguration(
-                f"Failed to discover MKL files after installing mkl-devel=={expected_version}"
-            )
+            return None
 
-        # Now process the files in normal Python
+        # Process the files
         include_dir = lib_dir = None
         for line in result.stdout.splitlines():
             if not line.strip():
@@ -406,9 +398,7 @@ for pkg in ("mkl-static", "mkl-devel", "mkl", "mkl-include"):
                 break
 
         if not include_dir or not lib_dir:
-            raise ConanInvalidConfiguration(
-                f"MKL directories not found after installing mkl-devel=={expected_version}"
-            )
+            return None
 
         mklroot = include_dir.parent
         bin_dir = lib_dir
@@ -418,3 +408,30 @@ for pkg in ("mkl-static", "mkl-devel", "mkl", "mkl-include"):
                 bin_dir = candidate
 
         return mklroot, include_dir, lib_dir, bin_dir
+
+    def _mkl_paths_from_pip_venv(self):
+        """Install mkl-devel and find MKL paths."""
+        if not bool(self.options.get_safe("PYCANHA_OPTION_USE_MKL", False)):
+            return None
+
+        # Setup environment to avoid conflicts
+        env_reset = Environment()
+        env_reset.unset("PYTHONPATH")
+        env_reset.unset("PYTHONHOME")
+
+        # Install mkl-devel
+        expected_version = str(self.MKL_PIP_VERSION)
+        with env_reset.vars(self).apply():
+            self.output.info(f"Installing mkl-devel=={expected_version}")
+            self.run(
+                f'"{sys.executable}" -m pip install "mkl-devel=={expected_version}"'
+            )
+
+        # Discover MKL paths
+        mkl_data = self._discover_mkl_paths()
+        if not mkl_data:
+            raise ConanInvalidConfiguration(
+                f"MKL directories not found after installing mkl-devel=={expected_version}"
+            )
+
+        return mkl_data
