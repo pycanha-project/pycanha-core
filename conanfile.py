@@ -8,6 +8,7 @@ from conan.tools.scm import Version
 
 import os
 import sys
+import subprocess
 from pathlib import Path
 
 
@@ -36,10 +37,12 @@ class Recipe_pycanha_core(ConanFile):
 
     # Binary configuration
     settings = "os", "compiler", "build_type", "arch"
+    DEFAULT_MKL_PIP_VERSION = "2025.3.0"
     options = {
         "fPIC": [True, False],
         "PYCANHA_OPTION_LIBRARY": [True, False],
         "PYCANHA_OPTION_USE_MKL": [True, False],
+        "PYCANHA_OPTION_MKL_VERSION": ["ANY"],
         "PYCANHA_OPTION_MKL_LINK": ["static", "dynamic"],
         "PYCANHA_OPTION_LTO": [True, False],
         "PYCANHA_OPTION_DOCS": [True, False],
@@ -57,6 +60,7 @@ class Recipe_pycanha_core(ConanFile):
         "fPIC": True,
         "PYCANHA_OPTION_LIBRARY": True,
         "PYCANHA_OPTION_USE_MKL": True,
+        "PYCANHA_OPTION_MKL_VERSION": DEFAULT_MKL_PIP_VERSION,
         "PYCANHA_OPTION_MKL_LINK": "dynamic",
         "PYCANHA_OPTION_LTO": True,
         "PYCANHA_OPTION_DOCS": False,
@@ -88,7 +92,9 @@ class Recipe_pycanha_core(ConanFile):
         # Test dependencies
         self.test_requires("catch2/3.3.2")
 
-        self.MKL_PIP_VERSION = "2025.3"  # When MKL is used
+        default_version = self.DEFAULT_MKL_PIP_VERSION
+        opt_version = self.options.get_safe("PYCANHA_OPTION_MKL_VERSION")
+        self.MKL_PIP_VERSION = str(opt_version) if opt_version else default_version
 
         # Conditional dependencies. Depending on the option selected
         if self.options.PYCANHA_OPTION_DOCS:
@@ -163,7 +169,9 @@ class Recipe_pycanha_core(ConanFile):
 
         # Configure MKL from pip-based venv (strict, single approach)
         mkl_data = None
-        self._mkl_package_data = None  # Cache MKL discovery so package_info can reuse locations
+        self._mkl_package_data = (
+            None  # Cache MKL discovery so package_info can reuse locations
+        )
         try:
             mkl_data = self._mkl_paths_from_pip_venv()
         except ConanInvalidConfiguration as e:
@@ -176,7 +184,9 @@ class Recipe_pycanha_core(ConanFile):
             # Help CMake find MKL if your CMakeLists uses MKLROOT
             tc.cache_variables["MKLROOT"] = str(mklroot)
             tc.cache_variables["MKL_ROOT"] = str(mklroot)
-            self._mkl_package_data = mkl_data  # Store full MKL paths for installation metadata
+            self._mkl_package_data = (
+                mkl_data  # Store full MKL paths for installation metadata
+            )
 
         tc.generate()
 
@@ -294,184 +304,150 @@ class Recipe_pycanha_core(ConanFile):
             self.cpp_info.exelinkflags.append("-fsanitize=undefined")
 
     def _mkl_paths_from_pip_venv(self):
-        """
-        Single source of truth for MKL locations.
-
-        Logic:
-        - If PYCANHA_OPTION_USE_MKL is False -> return None.
-        - If MKLROOT env var is defined:
-            * Search under MKLROOT for mkl.h and MKL libs.
-            * If found -> use them.
-            * If not -> raise ConanInvalidConfiguration.
-        - Else:
-            * Search under the current Python prefix (sys.prefix) for mkl.h and MKL libs.
-            * If found -> use them.
-            * If not found:
-                - ALSO search under the Python user base (sysconfig 'userbase'),
-                  to support `pip install --user` on system Python.
-                - If still not found:
-                    - If running in a virtualenv -> pip install mkl-devel==<version> and re-scan.
-                    - If NOT in a virtualenv -> raise ConanInvalidConfiguration.
-        - Returns (mklroot, include_dir, lib_dir, bin_dir)
-        """
-
         if not bool(self.options.get_safe("PYCANHA_OPTION_USE_MKL", False)):
-            return None  # MKL not requested
+            return None
 
-        from pathlib import Path
-        import os
         import sys
-        import sysconfig
 
-        def _in_venv() -> bool:
-            # VIRTUAL_ENV is standard; the sys.prefix/base_prefix trick is the fallback
-            if os.environ.get("VIRTUAL_ENV"):
-                return True
-            base_prefix = getattr(sys, "base_prefix", sys.prefix)
-            return sys.prefix != base_prefix
+        def _walk_to_marker(start: Path, markers):
+            d = start
+            while True:
+                if d.name.lower() in markers:
+                    return d
+                if d.parent == d:
+                    return None
+                d = d.parent
 
-        def _find_mkl_under(root: Path):
-            """
-            Look for mkl.h and MKL libraries under the given root directory.
+        def _scan_for_mkl_dirs(candidate_roots):
+            include_dir = None
+            lib_dir = None
 
-            Returns:
-                (mklroot, include_dir, lib_dir, bin_dir) or None if not found.
-            """
-            if not root.is_dir():
-                return None
+            def _match_lib(path: Path) -> bool:
+                name_lower = path.name.lower()
+                if "libmkl" in name_lower or name_lower.startswith("mkl_"):
+                    return True
+                return any(ext in name_lower for ext in (".so", ".dylib", ".dll"))
 
-            # --- find header (mkl.h) ---
-            header_path = None
-            # Prefer paths that have an 'include' dir in their parents
-            for p in root.rglob("mkl.h"):
-                header_path = p
-                parent_names = {parent.name.lower() for parent in p.parents}
-                if "include" in parent_names:
-                    header_path = p
+            for root in candidate_roots:
+                if not root.is_dir():
+                    continue
+
+                if include_dir is None:
+                    header_path = next(root.rglob("mkl.h"), None)
+                    if header_path is not None:
+                        cand = _walk_to_marker(header_path.parent, {"include"})
+                        include_dir = cand or header_path.parent
+
+                if lib_dir is None:
+                    patterns = ["libmkl*", "mkl_rt*"]
+                    for pattern in patterns:
+                        match = next(root.rglob(pattern), None)
+                        if match is not None and match.is_file() and _match_lib(match):
+                            cand = _walk_to_marker(
+                                match.parent, {"lib", "lib64", "intel64", "bin"}
+                            )
+                            lib_dir = cand or match.parent
+                            break
+
+                if include_dir is not None and lib_dir is not None:
                     break
 
-            if header_path is None:
-                return None
+            return include_dir, lib_dir
 
-            include_dir = header_path.parent
+        expected_version = str(self.MKL_PIP_VERSION)
 
-            # --- find libraries ---
-            if self.settings.os == "Windows":
-                lib_patterns = ["mkl_rt*.lib", "mkl_rt*.dll", "mkl*.lib"]
-            else:
-                # Linux / macOS
-                lib_patterns = ["libmkl_rt*.so*", "libmkl*.so*", "libmkl*.dylib"]
+        env_reset = Environment()
+        env_reset.unset("PYTHONPATH")
+        env_reset.unset("PYTHONHOME")
 
-            lib_path = None
-            for pat in lib_patterns:
-                match = next(root.rglob(pat), None)
-                if match is not None:
-                    lib_path = match
-                    break
-
-            if lib_path is None:
-                return None
-
-            lib_dir = lib_path.parent
-
-            # --- derive MKLROOT as common parent of include+lib ---
-            mklroot = Path(os.path.commonpath([str(include_dir), str(lib_dir)]))
-
-            # --- runtime dir (bin) ---
-            if self.settings.os == "Windows":
-                # Prefer a directory that actually contains mkl_rt*.dll
-                dll_match = next(mklroot.rglob("mkl_rt*.dll"), None)
-                if dll_match is not None:
-                    bin_dir = dll_match.parent
-                else:
-                    # Fall back to lib_dir if we can't find a dedicated bin
-                    bin_dir = lib_dir
-            else:
-                # On Unix, using lib_dir for runtime is usually enough
-                bin_dir = lib_dir
-
-            return mklroot, include_dir, lib_dir, bin_dir
-
-        # ------------------------------------------------------------
-        # 1) Try MKLROOT from environment
-        # ------------------------------------------------------------
-        mklroot_env = os.environ.get("MKLROOT")
-        if mklroot_env:
-            env_root = Path(mklroot_env)
-            result = _find_mkl_under(env_root)
-            if result is None:
-                raise ConanInvalidConfiguration(
-                    "MKLROOT is set to '{}', but I could not find both 'mkl.h' and MKL "
-                    "libraries (libmkl*/mkl_rt*) under that tree.\n"
-                    "Please verify your MKL installation or unset MKLROOT if it is wrong.".format(
-                        mklroot_env
+        def _pip_show(package):
+            cmd = [sys.executable, "-m", "pip", "show", package]
+            try:
+                with env_reset.vars(self).apply():
+                    result = subprocess.run(
+                        cmd, capture_output=True, text=True, check=False
                     )
+            except FileNotFoundError as exc:
+                raise ConanInvalidConfiguration(
+                    "pip is required to install mkl-devel but was not found."
+                ) from exc
+
+            if result.returncode != 0:
+                return None, None
+
+            info = {}
+            for line in result.stdout.splitlines():
+                if ":" in line:
+                    key, value = line.split(":", 1)
+                    info[key.strip().lower()] = value.strip()
+
+            version = info.get("version")
+            location = info.get("location")
+            location_path = Path(location) if location else None
+
+            return version, location_path
+
+        installed_version, mkl_devel_location = _pip_show("mkl-devel")
+
+        if installed_version != expected_version:
+            with env_reset.vars(self).apply():
+                self.output.info(
+                    f"Installing mkl-devel=={expected_version} through pip"
                 )
-            self.output.info(f"Using MKL from MKLROOT={mklroot_env}")
-            return result
-
-        # ------------------------------------------------------------
-        # 2) Try to find MKL under the current Python prefix
-        #    (this is your 'current python' – system or venv)
-        # ------------------------------------------------------------
-        prefix_root = Path(sys.prefix)
-        result = _find_mkl_under(prefix_root)
-        if result is not None:
-            self.output.info(
-                f"Using MKL found under current Python prefix: {prefix_root}"
-            )
-            return result
-
-        # ------------------------------------------------------------
-        # 2b) Try the Python *user base* (supports `pip install --user`)
-        #     This is the missing bit on the Ubuntu runner.
-        # ------------------------------------------------------------
-        user_base = sysconfig.get_config_var("userbase")
-        if user_base:
-            user_root = Path(user_base)
-            # Avoid scanning the same tree twice
-            if user_root != prefix_root:
-                result = _find_mkl_under(user_root)
-                if result is not None:
-                    self.output.info(
-                        f"Using MKL found under Python user base: {user_root}"
-                    )
-                    return result
-
-        # ------------------------------------------------------------
-        # 3) If MKL not found and we are in a venv, install mkl-devel and retry
-        # ------------------------------------------------------------
-        if _in_venv():
-            self.output.info(
-                "MKL not found under current Python prefix/user base. "
-                f"Installing 'mkl-devel=={self.MKL_PIP_VERSION}' via pip..."
-            )
-            self.run(
-                f'"{sys.executable}" -m pip install -q "mkl-devel=={self.MKL_PIP_VERSION}"'
-            )
-
-            # Re-scan after installation (venv install goes under sys.prefix)
-            result = _find_mkl_under(prefix_root)
-            if result is None:
-                raise ConanInvalidConfiguration(
-                    "After installing 'mkl-devel' with pip, MKL (mkl.h and libraries) "
-                    f"could still not be located under {prefix_root}.\n"
-                    "Inspect your environment manually (look for 'mkl.h' and 'libmkl*' / 'mkl_rt*'), "
-                    "or set MKLROOT explicitly."
+                self.run(
+                    f'"{sys.executable}" -m pip install "mkl-devel=={expected_version}"'
                 )
 
-            self.output.info(
-                f"Using MKL from current virtualenv prefix after pip install: {prefix_root}"
-            )
-            return result
+            installed_version, mkl_devel_location = _pip_show("mkl-devel")
+            if installed_version is None:
+                raise ConanInvalidConfiguration(
+                    "mkl-devel was not found after pip installation."
+                )
 
-        # ------------------------------------------------------------
-        # 4) Not in a venv and nothing found -> hard error
-        # ------------------------------------------------------------
-        raise ConanInvalidConfiguration(
-            "PYCANHA_OPTION_USE_MKL=True but MKL (mkl.h + libraries) was not found under the\n"
-            f"current Python prefix ({sys.prefix}) or the user base ({user_base}), and you are NOT in a virtualenv.\n\n"
-            "Please either:\n"
-            "  * Install MKL separately and set MKLROOT to its installation directory, or\n"
-            "  * Create/activate a Python virtualenv, install 'mkl-devel' there, and run Conan from it."
-        )
+            if installed_version != expected_version:
+                raise ConanInvalidConfiguration(
+                    f"mkl-devel version mismatch: expected {expected_version}, found {installed_version}."
+                )
+
+        candidate_roots = {
+            Path(sys.prefix),
+            Path(getattr(sys, "base_prefix", sys.prefix)),
+        }
+
+        if mkl_devel_location is not None:
+            candidate_roots.add(mkl_devel_location)
+            candidate_roots.add(mkl_devel_location / "mkl")
+            candidate_roots.add(mkl_devel_location / "include")
+            candidate_roots.add(mkl_devel_location / "lib")
+            candidate_roots.add(mkl_devel_location / "lib64")
+
+        _, mkl_location = _pip_show("mkl")
+        if mkl_location is not None:
+            candidate_roots.add(mkl_location)
+            candidate_roots.add(mkl_location / "mkl")
+            candidate_roots.add(mkl_location / "include")
+            candidate_roots.add(mkl_location / "lib")
+            candidate_roots.add(mkl_location / "lib64")
+
+        _, mkl_include_location = _pip_show("mkl-include")
+        if mkl_include_location is not None:
+            candidate_roots.add(mkl_include_location)
+            candidate_roots.add(mkl_include_location / "mkl")
+            candidate_roots.add(mkl_include_location / "include")
+
+        candidate_roots = {path for path in candidate_roots if path is not None}
+
+        include_dir, lib_dir = _scan_for_mkl_dirs(candidate_roots)
+        if include_dir is None or lib_dir is None:
+            raise ConanInvalidConfiguration(
+                "Unable to locate MKL headers and libraries after pip installation."
+            )
+
+        mklroot = include_dir.parent
+        bin_dir = lib_dir
+        if self.settings.os == "Windows":
+            candidate = lib_dir.parent / "bin"
+            if candidate.is_dir():
+                bin_dir = candidate
+
+        return mklroot, include_dir, lib_dir, bin_dir
