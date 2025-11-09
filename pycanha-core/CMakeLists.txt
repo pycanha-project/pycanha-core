@@ -122,9 +122,11 @@ if(PYCANHA_OPTION_USE_MKL)
     # Configure pycanha to use MKL
     target_compile_definitions(${LIB_NAME} PUBLIC PYCANHA_USE_MKL=1)
     set(PYCANHA_USE_MKL_INT 1)
+    # MKL_VERSION is set by find_package(MKL) above
 else()
     # MKL disabled - use Eigen native solvers
     set(PYCANHA_USE_MKL_INT 0)
+    set(MKL_VERSION "N/A")
     target_compile_definitions(${LIB_NAME} PUBLIC PYCANHA_USE_MKL=0)
     message(STATUS "Intel MKL disabled - using Eigen native solvers")
 endif()
