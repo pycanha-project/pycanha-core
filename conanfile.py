@@ -163,6 +163,7 @@ class Recipe_pycanha_core(ConanFile):
 
         # Configure MKL from pip-based venv (strict, single approach)
         mkl_data = None
+        self._mkl_package_data = None  # Cache MKL discovery so package_info can reuse locations
         try:
             mkl_data = self._mkl_paths_from_pip_venv()
         except ConanInvalidConfiguration as e:
@@ -175,6 +176,7 @@ class Recipe_pycanha_core(ConanFile):
             # Help CMake find MKL if your CMakeLists uses MKLROOT
             tc.cache_variables["MKLROOT"] = str(mklroot)
             tc.cache_variables["MKL_ROOT"] = str(mklroot)
+            self._mkl_package_data = mkl_data  # Store full MKL paths for installation metadata
 
         tc.generate()
 
@@ -261,6 +263,27 @@ class Recipe_pycanha_core(ConanFile):
         #    So now the headers are in the include folder, and conan will find them automatically.
 
         self.cpp_info.libs = ["pycanha-core"]
+
+        if self.options.PYCANHA_OPTION_USE_MKL:
+            self.cpp_info.defines.append("PYCANHA_USE_MKL=1")
+            self.cpp_info.defines.append("EIGEN_USE_MKL_ALL")
+        else:
+            self.cpp_info.defines.append("PYCANHA_USE_MKL=0")
+
+        # Surface MKL include/lib/bin locations so consumers can find headers and shared libs
+        if self.options.PYCANHA_OPTION_USE_MKL and self._mkl_package_data:
+            _, include_dir, lib_dir, bin_dir = self._mkl_package_data
+
+            include_path = str(include_dir)
+            lib_path = str(lib_dir)
+            bin_path = str(bin_dir)
+
+            if include_path not in self.cpp_info.includedirs:
+                self.cpp_info.includedirs.append(include_path)
+            if lib_path not in self.cpp_info.libdirs:
+                self.cpp_info.libdirs.append(lib_path)
+            if bin_path not in self.cpp_info.bindirs:
+                self.cpp_info.bindirs.append(bin_path)
 
         # Without adding the link flags, the sanitizers libraries are not linked (for the consumer).
         if self.options.PYCANHA_OPTION_SANITIZE_ADDR:
