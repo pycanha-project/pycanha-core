@@ -282,7 +282,11 @@ class Recipe_pycanha_core(ConanFile):
             self.cpp_info.defines.append("PYCANHA_USE_MKL=0")
 
         # Surface MKL include/lib/bin locations so consumers can find headers and shared libs
-        if self.options.PYCANHA_OPTION_USE_MKL and self._mkl_package_data:
+        if (
+            self.options.PYCANHA_OPTION_USE_MKL
+            and hasattr(self, "_mkl_package_data")
+            and self._mkl_package_data
+        ):
             _, include_dir, lib_dir, bin_dir = self._mkl_package_data
 
             include_path = str(include_dir)
