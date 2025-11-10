@@ -307,9 +307,19 @@ class Recipe_pycanha_core(ConanFile):
 
             # Provide MKL import/static libs so consumers resolve symbols at link time
             link_libs, system_libs = self._mkl_link_components()
+            # On Windows, the MKL import libraries follow the expected naming
+            # convention and CMakeDeps can resolve them via cpp_info.libs. On
+            # Unix-like platforms the pip packages often ship only versioned
+            # SONAMEs (libmkl_*.so.N), so we surface them as system libs instead
+            # to avoid configure-time validation errors while still linking.
+            link_target = (
+                self.cpp_info.libs
+                if self.settings.os == "Windows"
+                else self.cpp_info.system_libs
+            )
             for lib in link_libs:
-                if lib not in self.cpp_info.libs:
-                    self.cpp_info.libs.append(lib)
+                if lib not in link_target:
+                    link_target.append(lib)
             for syslib in system_libs:
                 if syslib not in self.cpp_info.system_libs:
                     self.cpp_info.system_libs.append(syslib)
