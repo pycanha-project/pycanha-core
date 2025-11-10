@@ -305,6 +305,25 @@ class Recipe_pycanha_core(ConanFile):
                 if bin_path not in self.cpp_info.bindirs:
                     self.cpp_info.bindirs.append(bin_path)
 
+            # Provide MKL import/static libs so consumers resolve symbols at link time
+            link_libs, system_libs = self._mkl_link_components()
+            # On Windows, the MKL import libraries follow the expected naming
+            # convention and CMakeDeps can resolve them via cpp_info.libs. On
+            # Unix-like platforms the pip packages often ship only versioned
+            # SONAMEs (libmkl_*.so.N), so we surface them as system libs instead
+            # to avoid configure-time validation errors while still linking.
+            link_target = (
+                self.cpp_info.libs
+                if self.settings.os == "Windows"
+                else self.cpp_info.system_libs
+            )
+            for lib in link_libs:
+                if lib not in link_target:
+                    link_target.append(lib)
+            for syslib in system_libs:
+                if syslib not in self.cpp_info.system_libs:
+                    self.cpp_info.system_libs.append(syslib)
+
         # Without adding the link flags, the sanitizers libraries are not linked (for the consumer).
         if self.options.PYCANHA_OPTION_SANITIZE_ADDR:
             self.cpp_info.sharedlinkflags.append("-fsanitize=address")
@@ -374,7 +393,7 @@ for pkg in ("mkl-static", "mkl-devel", "mkl", "mkl-include"):
             return None
 
         # Process the files
-        include_dir = lib_dir = None
+        include_dir = lib_dir = bin_dir = None
         for line in result.stdout.splitlines():
             if not line.strip():
                 continue
@@ -385,29 +404,81 @@ for pkg in ("mkl-static", "mkl-devel", "mkl", "mkl-include"):
             if not include_dir and suffix == ".h":
                 include_dir = self._walk_to_marker(p.parent, {"include"})
 
-            if not lib_dir and (
-                suffix in (".so", ".dylib", ".dll")
-                or (
-                    ("libmkl" in name_lower or name_lower.startswith("mkl_"))
-                    and any(ext in name_lower for ext in (".so", ".dylib", ".dll"))
-                )
-            ):
-                lib_dir = self._walk_to_marker(p.parent, {"lib", "bin"})
+            if self.settings.os == "Windows":
+                if not lib_dir and suffix == ".lib" and "mkl" in name_lower:
+                    lib_dir = self._walk_to_marker(p.parent, {"lib"})
+                if not bin_dir and suffix == ".dll" and "mkl" in name_lower:
+                    bin_dir = self._walk_to_marker(p.parent, {"bin"})
+            else:
+                if not lib_dir and suffix in (".so", ".dylib"):
+                    lib_dir = self._walk_to_marker(p.parent, {"lib"})
+                if not bin_dir and suffix == ".dll" and "mkl" in name_lower:
+                    bin_dir = self._walk_to_marker(p.parent, {"bin"})
 
-            if include_dir and lib_dir:
+            if include_dir and lib_dir and (bin_dir or self.settings.os != "Windows"):
                 break
+
+        candidate_root = None
+        if include_dir:
+            candidate_root = include_dir.parent
+        elif lib_dir:
+            candidate_root = lib_dir.parent
+        elif bin_dir:
+            candidate_root = bin_dir.parent
+
+        if not include_dir and candidate_root:
+            maybe_include = candidate_root / "include"
+            if maybe_include.is_dir():
+                include_dir = maybe_include
+
+        if not lib_dir and candidate_root:
+            maybe_lib = candidate_root / "lib"
+            if maybe_lib.is_dir():
+                lib_dir = maybe_lib
+
+        if not bin_dir:
+            if self.settings.os == "Windows" and candidate_root:
+                maybe_bin = candidate_root / "bin"
+                if maybe_bin.is_dir():
+                    bin_dir = maybe_bin
+            elif lib_dir:
+                bin_dir = lib_dir
 
         if not include_dir or not lib_dir:
             return None
 
         mklroot = include_dir.parent
-        bin_dir = lib_dir
-        if self.settings.os == "Windows":
-            candidate = lib_dir.parent / "bin"
-            if candidate.is_dir():
-                bin_dir = candidate
+        if bin_dir is None:
+            bin_dir = lib_dir
 
         return mklroot, include_dir, lib_dir, bin_dir
+
+    def _mkl_link_components(self) -> tuple[list[str], list[str]]:
+        """Return MKL libraries and system libs required for the current platform."""
+        link_preference = str(
+            self.options.get_safe("PYCANHA_OPTION_MKL_LINK", "dynamic")
+        ).lower()
+
+        link_libs: list[str] = []
+        system_libs: list[str] = []
+
+        if self.settings.os == "Windows":
+            if link_preference == "static":
+                link_libs.extend(["mkl_intel_lp64", "mkl_intel_thread", "mkl_core"])
+            else:
+                link_libs.extend(
+                    ["mkl_intel_lp64_dll", "mkl_intel_thread_dll", "mkl_core_dll"]
+                )
+            link_libs.append("libiomp5md")
+        else:
+            link_libs.extend(["mkl_intel_lp64", "mkl_intel_thread", "mkl_core"])
+            # Intel ships iomp5 regardless of static/dynamic preference in pip packages
+            link_libs.append("iomp5")
+
+            if str(self.settings.os).lower() in {"linux", "freebsd"}:
+                system_libs.extend(["pthread", "m", "dl"])
+
+        return link_libs, system_libs
 
     def _mkl_paths_from_pip_venv(self):
         """Install mkl-devel and find MKL paths."""
