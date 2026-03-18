@@ -7,5 +7,5 @@
 [![codecov](https://codecov.io/gh/pycanha-project/pycanha-core/graph/badge.svg?token=XZRHKH2G8I)](https://codecov.io/gh/pycanha-project/pycanha-core)
 [![docs](https://img.shields.io/badge/doc-GitHub%20Pages-blue)](https://pycanha-project.github.io/pycanha-core/)
 
-This is the repository of the C++ core of *pycanha*
+This is the repository of the C++ core of [*pycanha*](https://github.com/pycanha-project).
 
