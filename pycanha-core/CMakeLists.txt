@@ -105,7 +105,7 @@ if(PYCANHA_OPTION_USE_MKL)
     set(MKL_LINK "${PYCANHA_OPTION_MKL_LINK}")        # "static" or "dynamic"
 
     # Find Intel MKL using the official CMake config
-    find_package(MKL CONFIG REQUIRED PATHS $ENV{MKLROOT})
+    find_package(MKL CONFIG REQUIRED)
 
     message(STATUS "Intel MKL found: ${MKL_VERSION}")
     message(STATUS "  Interface: ${MKL_INTERFACE}, Threading: ${MKL_THREADING}, Link: ${MKL_LINK}")
