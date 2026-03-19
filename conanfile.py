@@ -285,7 +285,7 @@ class Recipe_pycanha_core(ConanFile):
                     self.cpp_info.bindirs.append(str(bin_dir))
 
                 # Add MKL library names so consumers can link
-                self.cpp_info.system_libs.extend(self._mkl_system_libs())
+                self._add_mkl_link_libs(lib_dir)
 
                 # Propagate runtime/build environment to consumers
                 self.runenv_info.define("MKLROOT", str(mklroot))
@@ -362,6 +362,20 @@ class Recipe_pycanha_core(ConanFile):
         bin_dir = (mklroot / "bin") if self.settings.os == "Windows" else lib_dir
 
         self.output.info(f"MKL found: root={mklroot}, lib={lib_dir}")
+
+        # Debug: log what MKL library files exist
+        for name in ["mkl_intel_lp64", "mkl_intel_thread", "mkl_core", "iomp5"]:
+            files = sorted(lib_dir.glob(f"lib{name}*"))
+            if files:
+                self.output.info(f"  {name}: {[f.name for f in files]}")
+            else:
+                self.output.warning(f"  {name}: NOT FOUND in {lib_dir}")
+
+        # On Linux, pip MKL may only ship versioned .so.2 files without
+        # the unversioned .so symlinks that the linker needs for -l flags.
+        # Create them if missing.
+        self._ensure_mkl_dev_symlinks(lib_dir)
+
         return mklroot, include_dir, lib_dir, bin_dir
 
     def _install_mkl(self):
@@ -386,6 +400,60 @@ class Recipe_pycanha_core(ConanFile):
                 f"MKL not found after installing mkl-devel=={version}"
             )
         return mkl_data
+
+    def _add_mkl_link_libs(self, lib_dir):
+        """Add MKL libraries to cpp_info for consumer linking.
+
+        On Windows, uses system_libs (always works with .lib files).
+        On Linux, tries system_libs (-l flags) if .so symlinks exist,
+        otherwise falls back to full file paths as linker flags.
+        """
+        if self.settings.os == "Windows":
+            self.cpp_info.system_libs.extend(self._mkl_system_libs())
+            return
+
+        # Linux/macOS: check each MKL lib individually
+        mkl_names = ["mkl_intel_lp64", "mkl_intel_thread", "mkl_core", "iomp5"]
+        for name in mkl_names:
+            so_file = lib_dir / f"lib{name}.so"
+            if so_file.exists() or so_file.is_symlink():
+                self.cpp_info.system_libs.append(name)
+            else:
+                # No unversioned .so: link by full path to versioned file
+                versioned = sorted(lib_dir.glob(f"lib{name}.so.*"))
+                if versioned:
+                    self.output.info(
+                        f"Using full path for {name}: {versioned[-1]}"
+                    )
+                    self.cpp_info.exelinkflags.append(str(versioned[-1]))
+                    self.cpp_info.sharedlinkflags.append(str(versioned[-1]))
+                else:
+                    self.output.warning(f"MKL lib not found: {name}")
+
+        if self.settings.os == "Linux":
+            self.cpp_info.system_libs.extend(["pthread", "m", "dl"])
+
+    def _ensure_mkl_dev_symlinks(self, lib_dir):
+        """Create unversioned .so symlinks if missing.
+
+        pip MKL packages may only ship versioned .so.2 files. The linker
+        needs unversioned .so symlinks to resolve -l flags.
+        """
+        if self.settings.os == "Windows":
+            return
+        for name in ["mkl_intel_lp64", "mkl_intel_thread", "mkl_core", "iomp5"]:
+            so_link = lib_dir / f"lib{name}.so"
+            if so_link.exists() or so_link.is_symlink():
+                continue
+            versioned = sorted(lib_dir.glob(f"lib{name}.so.*"))
+            if versioned:
+                try:
+                    so_link.symlink_to(versioned[-1].name)
+                    self.output.info(
+                        f"Created symlink: {so_link.name} -> {versioned[-1].name}"
+                    )
+                except OSError as e:
+                    self.output.warning(f"Cannot create {so_link.name} symlink: {e}")
 
     def _mkl_system_libs(self):
         """Return MKL library names for linking (platform/link-mode specific)."""
