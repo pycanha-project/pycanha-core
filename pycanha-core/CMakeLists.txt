@@ -104,8 +104,39 @@ if(PYCANHA_OPTION_USE_MKL)
     set(MKL_THREADING "intel_thread")                  # Intel OpenMP
     set(MKL_LINK "${PYCANHA_OPTION_MKL_LINK}")        # "static" or "dynamic"
 
-    # Find Intel MKL using the official CMake config
-    find_package(MKL CONFIG REQUIRED PATHS $ENV{MKLROOT})
+    # --- Always use pip-installed MKL, never system oneAPI ---
+    # Clear env vars that could leak to system MKL installations
+    set(ENV{MKLROOT} "")
+
+    # If MKL_DIR is not already set (e.g., by Conan), discover pip MKL
+    if(NOT DEFINED CACHE{MKL_DIR})
+        find_program(_PYCANHA_PYTHON python3 python)
+        if(_PYCANHA_PYTHON)
+            execute_process(
+                COMMAND "${_PYCANHA_PYTHON}" -c
+                    "import importlib.metadata as m; d=m.distribution('mkl-devel'); print(next(str(d.locate_file(f).resolve().parent) for f in d.files if f.name=='MKLConfig.cmake'))"
+                OUTPUT_VARIABLE _PIP_MKL_DIR
+                OUTPUT_STRIP_TRAILING_WHITESPACE
+                RESULT_VARIABLE _PIP_MKL_RESULT
+                ERROR_QUIET
+            )
+            if(_PIP_MKL_RESULT EQUAL 0 AND _PIP_MKL_DIR)
+                set(MKL_DIR "${_PIP_MKL_DIR}" CACHE PATH "MKL cmake config (discovered from pip)" FORCE)
+                message(STATUS "Discovered pip-installed MKL: MKL_DIR=${MKL_DIR}")
+            endif()
+        endif()
+        if(NOT DEFINED CACHE{MKL_DIR})
+            message(FATAL_ERROR
+                "MKL_DIR not set and pip MKL not found. "
+                "Install MKL via: pip install mkl-devel")
+        endif()
+    endif()
+
+    # NO_DEFAULT_PATH ensures CMake ONLY looks in MKL_DIR — cannot find system MKL
+    find_package(MKL CONFIG REQUIRED NO_DEFAULT_PATH PATHS "${MKL_DIR}")
+
+    # Promote MKL_ROOT to cache so sibling subdirectories (test/) can see it
+    set(MKL_ROOT "${MKL_ROOT}" CACHE PATH "MKL root directory (from pip)" FORCE)
 
     message(STATUS "Intel MKL found: ${MKL_VERSION}")
     message(STATUS "  Interface: ${MKL_INTERFACE}, Threading: ${MKL_THREADING}, Link: ${MKL_LINK}")

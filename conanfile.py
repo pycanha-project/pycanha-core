@@ -10,7 +10,6 @@ import os
 import sys
 import subprocess
 from pathlib import Path
-from importlib import metadata
 
 
 class Recipe_pycanha_core(ConanFile):
@@ -168,38 +167,27 @@ class Recipe_pycanha_core(ConanFile):
         if self.settings.build_type == "Debug":
             tc.cache_variables["CMAKE_EXPORT_COMPILE_COMMANDS"] = "ON"
 
-        # Configure MKL from pip-based venv (strict, single approach)
-        mkl_data = None
-        self._mkl_package_data = (
-            None  # Cache MKL discovery so package_info can reuse locations
-        )
-        try:
-            mkl_data = self._mkl_paths_from_pip_venv()
-        except ConanInvalidConfiguration as e:
-            # If MKL is enabled, we want to fail early (before CMake configure)
-            raise
+        # Configure MKL from pip
+        self._mkl_package_data = None
+        mkl_data = self._install_mkl()
 
         if mkl_data:
-            mklroot, include, libdir, bindir = mkl_data
-
-            # Help CMake find MKL if your CMakeLists uses MKLROOT
-            tc.cache_variables["MKLROOT"] = str(mklroot)
+            mklroot, include_dir, lib_dir, bin_dir = mkl_data
+            self._mkl_package_data = mkl_data
+            # Help CMake find MKL (never use MKLROOT — it leaks to system oneAPI)
             tc.cache_variables["MKL_ROOT"] = str(mklroot)
-            self._mkl_package_data = (
-                mkl_data  # Store full MKL paths for installation metadata
-            )
+            tc.cache_variables["MKL_DIR"] = str(lib_dir / "cmake" / "mkl")
 
         tc.generate()
 
         # Export env for MKL runtime (so tests can find dll/so)
         if mkl_data:
-            mklroot, include, libdir, bindir = mkl_data
+            mklroot, include_dir, lib_dir, bin_dir = mkl_data
             env = Environment()
-            env.define("MKLROOT", str(mklroot))
             if self.settings.os == "Windows":
-                env.prepend_path("PATH", str(bindir))
+                env.prepend_path("PATH", str(bin_dir))
             else:
-                env.prepend_path("LD_LIBRARY_PATH", str(bindir))
+                env.prepend_path("LD_LIBRARY_PATH", str(lib_dir))
 
             build_env = env.vars(self, scope="build")
             build_env.save_script("mkl_build_env")
@@ -225,7 +213,7 @@ class Recipe_pycanha_core(ConanFile):
                 self.output.info("Running unit tests...")
                 # --verbose shows test execution output from ctest
                 # Uncomment to see the tests, otherwise only in case of failure info is shown
-                # cmake.test(cli_args=["--verbose"])
+                cmake.test(cli_args=["--verbose"])
 
     def package(self):
         # Manual file copying approach (until CMake install rules are defined)
@@ -278,32 +266,35 @@ class Recipe_pycanha_core(ConanFile):
         if self.options.PYCANHA_OPTION_USE_MKL:
             self.cpp_info.defines.append("PYCANHA_USE_MKL=1")
             self.cpp_info.defines.append("EIGEN_USE_MKL_ALL")
-        else:
-            self.cpp_info.defines.append("PYCANHA_USE_MKL=0")
 
-        # Surface MKL include/lib/bin locations so consumers can find headers and shared libs
-        if self.options.PYCANHA_OPTION_USE_MKL:
-            # Try to get from cached data first (when building), otherwise discover (when consuming)
+            # Discover MKL paths (from cache during build, or rediscover for consumers)
             mkl_data = None
             if hasattr(self, "_mkl_package_data") and self._mkl_package_data:
                 mkl_data = self._mkl_package_data
             else:
-                # When consuming, discover MKL paths
-                mkl_data = self._discover_mkl_paths()
+                mkl_data = self._find_mkl_paths()
 
             if mkl_data:
-                _, include_dir, lib_dir, bin_dir = mkl_data
+                mklroot, include_dir, lib_dir, bin_dir = mkl_data
 
-                include_path = str(include_dir)
-                lib_path = str(lib_dir)
-                bin_path = str(bin_dir)
+                self.cpp_info.includedirs.append(str(include_dir))
+                self.cpp_info.libdirs.append(str(lib_dir))
+                if str(bin_dir) != str(lib_dir):
+                    self.cpp_info.bindirs.append(str(bin_dir))
 
-                if include_path not in self.cpp_info.includedirs:
-                    self.cpp_info.includedirs.append(include_path)
-                if lib_path not in self.cpp_info.libdirs:
-                    self.cpp_info.libdirs.append(lib_path)
-                if bin_path not in self.cpp_info.bindirs:
-                    self.cpp_info.bindirs.append(bin_path)
+                # Add MKL library names so consumers can link
+                self._add_mkl_link_libs(lib_dir)
+
+                # Propagate runtime/build environment to consumers
+                self.buildenv_info.define("MKL_DIR", str(lib_dir / "cmake" / "mkl"))
+                if self.settings.os == "Windows":
+                    self.runenv_info.prepend_path("PATH", str(bin_dir))
+                    self.buildenv_info.prepend_path("PATH", str(bin_dir))
+                else:
+                    self.runenv_info.prepend_path("LD_LIBRARY_PATH", str(lib_dir))
+                    self.buildenv_info.prepend_path("LD_LIBRARY_PATH", str(lib_dir))
+        else:
+            self.cpp_info.defines.append("PYCANHA_USE_MKL=0")
 
         # Without adding the link flags, the sanitizers libraries are not linked (for the consumer).
         if self.options.PYCANHA_OPTION_SANITIZE_ADDR:
@@ -316,122 +307,166 @@ class Recipe_pycanha_core(ConanFile):
     # ============================================================================
     # MKL Installation and Discovery
     # ============================================================================
-    # This section handles installing MKL from pip and discovering its paths.
-    #
-    # The challenge: After pip installs packages, Python's importlib.metadata
-    # cache prevents the current process from seeing newly installed packages.
-    #
-    # The solution: Run a minimal subprocess that lists MKL package files in a
-    # fresh Python context (with proper environment setup). Then process those
-    # file paths in the main process to find include and lib directories.
-    #
-    # Environment setup: We unset PYTHONPATH and PYTHONHOME to ensure pip and
-    # metadata discovery work with the correct virtual environment, not any
-    # parent or system Python installation.
-    #
-    # Path discovery: We walk up from actual .h and library files to find their
-    # parent 'include' or 'lib'/'bin' directories. This works cross-platform
-    # without hardcoding paths (Windows uses Library/include and Library/bin,
-    # Linux/Mac use include and lib).
+    # Strategy: pip install mkl-devel, then find MKLConfig.cmake via
+    # importlib.metadata in a subprocess (avoids metadata cache issues).
+    # From MKLConfig.cmake location, derive all paths:
+    #   <mklroot>/lib/cmake/mkl/MKLConfig.cmake
     # ============================================================================
 
-    def _walk_to_marker(self, start: Path, markers: set[str]) -> Path | None:
-        """Walk up from `start` until a parent dir name is in `markers`."""
-        d = start
-        while d.parent != d:
-            if d.name.lower() in markers:
-                return d
-            d = d.parent
-        return None
+    def _find_mkl_paths(self):
+        """Find MKL paths by locating MKLConfig.cmake via pip package metadata.
 
-    def _discover_mkl_paths(self):
-        """Discover MKL paths from installed packages (without installing)."""
-        # Setup environment to avoid conflicts
+        Returns (mklroot, include_dir, lib_dir, bin_dir) or None.
+        """
         env_reset = Environment()
         env_reset.unset("PYTHONPATH")
         env_reset.unset("PYTHONHOME")
 
-        # Get file list from subprocess
-        get_files_script = """
-from importlib import metadata
-for pkg in ("mkl-static", "mkl-devel", "mkl", "mkl-include"):
-    try:
-        dist = metadata.distribution(pkg)
-        for f in dist.files or []:
-            print(dist.locate_file(f).resolve())
-    except: pass
-"""
+        script = (
+            "import importlib.metadata, sys\n"
+            "for pkg in ('mkl-devel', 'mkl'):\n"
+            "    try:\n"
+            "        dist = importlib.metadata.distribution(pkg)\n"
+            "        for f in dist.files or []:\n"
+            "            r = dist.locate_file(f).resolve()\n"
+            "            if r.name == 'MKLConfig.cmake':\n"
+            "                print(r); sys.exit(0)\n"
+            "    except importlib.metadata.PackageNotFoundError: pass\n"
+            "sys.exit(1)\n"
+        )
 
         with env_reset.vars(self).apply():
             result = subprocess.run(
-                [sys.executable, "-c", get_files_script],
+                [sys.executable, "-c", script],
                 capture_output=True,
                 text=True,
                 check=False,
             )
 
         if result.returncode != 0:
+            self.output.warning("Could not find MKLConfig.cmake via pip metadata")
             return None
 
-        # Process the files
-        include_dir = lib_dir = None
-        for line in result.stdout.splitlines():
-            if not line.strip():
-                continue
-            p = Path(line.strip())
-            suffix = p.suffix.lower()
-            name_lower = p.name.lower()
+        config_path = Path(result.stdout.strip())
+        # Layout: <mklroot>/lib/cmake/mkl/MKLConfig.cmake
+        lib_dir = config_path.parent.parent.parent  # mkl/ -> cmake/ -> lib/
+        mklroot = lib_dir.parent
+        include_dir = mklroot / "include"
+        # On Windows, DLLs are in <mklroot>/bin; on Linux, .so are in lib/
+        bin_dir = (mklroot / "bin") if self.settings.os == "Windows" else lib_dir
 
-            if not include_dir and suffix == ".h":
-                include_dir = self._walk_to_marker(p.parent, {"include"})
+        self.output.info(f"MKL found: root={mklroot}, lib={lib_dir}")
 
-            if not lib_dir and (
-                suffix in (".so", ".dylib", ".dll")
-                or (
-                    ("libmkl" in name_lower or name_lower.startswith("mkl_"))
-                    and any(ext in name_lower for ext in (".so", ".dylib", ".dll"))
-                )
-            ):
-                lib_dir = self._walk_to_marker(p.parent, {"lib", "bin"})
+        # Debug: log what MKL library files exist
+        for name in ["mkl_intel_lp64", "mkl_intel_thread", "mkl_core", "iomp5"]:
+            files = sorted(lib_dir.glob(f"lib{name}*"))
+            files += sorted(lib_dir.glob(f"{name}*"))  # Windows: no lib prefix
+            if files:
+                self.output.info(f"  {name}: {sorted(set(f.name for f in files))}")
+            else:
+                self.output.warning(f"  {name}: NOT FOUND in {lib_dir}")
 
-            if include_dir and lib_dir:
-                break
-
-        if not include_dir or not lib_dir:
-            return None
-
-        mklroot = include_dir.parent
-        bin_dir = lib_dir
-        if self.settings.os == "Windows":
-            candidate = lib_dir.parent / "bin"
-            if candidate.is_dir():
-                bin_dir = candidate
+        # On Linux, pip MKL may only ship versioned .so.2 files without
+        # the unversioned .so symlinks that the linker needs for -l flags.
+        # Create them if missing.
+        self._ensure_mkl_dev_symlinks(lib_dir)
 
         return mklroot, include_dir, lib_dir, bin_dir
 
-    def _mkl_paths_from_pip_venv(self):
-        """Install mkl-devel and find MKL paths."""
+    def _install_mkl(self):
+        """Install mkl-devel via pip and return MKL paths."""
         if not bool(self.options.get_safe("PYCANHA_OPTION_USE_MKL", False)):
             return None
 
-        # Setup environment to avoid conflicts
         env_reset = Environment()
         env_reset.unset("PYTHONPATH")
         env_reset.unset("PYTHONHOME")
 
-        # Install mkl-devel
-        expected_version = str(self.MKL_PIP_VERSION)
+        version = str(self.MKL_PIP_VERSION)
         with env_reset.vars(self).apply():
-            self.output.info(f"Installing mkl-devel=={expected_version}")
-            self.run(
-                f'"{sys.executable}" -m pip install "mkl-devel=={expected_version}"'
-            )
+            self.output.info(f"Installing mkl-devel=={version}")
+            self.run(f'"{sys.executable}" -m pip install "mkl-devel=={version}"')
 
-        # Discover MKL paths
-        mkl_data = self._discover_mkl_paths()
+        mkl_data = self._find_mkl_paths()
         if not mkl_data:
             raise ConanInvalidConfiguration(
-                f"MKL directories not found after installing mkl-devel=={expected_version}"
+                f"MKL not found after installing mkl-devel=={version}"
             )
-
         return mkl_data
+
+    def _add_mkl_link_libs(self, lib_dir):
+        """Add MKL libraries to cpp_info for consumer linking.
+
+        On Windows, uses system_libs (always works with .lib files).
+        On Linux, tries system_libs (-l flags) if .so symlinks exist,
+        otherwise falls back to full file paths as linker flags.
+        """
+        if self.settings.os == "Windows":
+            self.cpp_info.system_libs.extend(self._mkl_system_libs())
+            return
+
+        # Linux/macOS: check each MKL lib individually
+        mkl_names = ["mkl_intel_lp64", "mkl_intel_thread", "mkl_core", "iomp5"]
+        for name in mkl_names:
+            so_file = lib_dir / f"lib{name}.so"
+            if so_file.exists() or so_file.is_symlink():
+                self.cpp_info.system_libs.append(name)
+            else:
+                # No unversioned .so: link by full path to versioned file
+                versioned = sorted(lib_dir.glob(f"lib{name}.so.*"))
+                if versioned:
+                    self.output.info(f"Using full path for {name}: {versioned[-1]}")
+                    self.cpp_info.exelinkflags.append(str(versioned[-1]))
+                    self.cpp_info.sharedlinkflags.append(str(versioned[-1]))
+                else:
+                    self.output.warning(f"MKL lib not found: {name}")
+
+        if self.settings.os == "Linux":
+            self.cpp_info.system_libs.extend(["pthread", "m", "dl"])
+
+    def _ensure_mkl_dev_symlinks(self, lib_dir):
+        """Create unversioned .so symlinks if missing.
+
+        pip MKL packages may only ship versioned .so.2 files. The linker
+        needs unversioned .so symlinks to resolve -l flags.
+        """
+        if self.settings.os == "Windows":
+            return
+        for name in ["mkl_intel_lp64", "mkl_intel_thread", "mkl_core", "iomp5"]:
+            so_link = lib_dir / f"lib{name}.so"
+            if so_link.exists() or so_link.is_symlink():
+                continue
+            versioned = sorted(lib_dir.glob(f"lib{name}.so.*"))
+            if versioned:
+                try:
+                    so_link.symlink_to(versioned[-1].name)
+                    self.output.info(
+                        f"Created symlink: {so_link.name} -> {versioned[-1].name}"
+                    )
+                except OSError as e:
+                    self.output.warning(f"Cannot create {so_link.name} symlink: {e}")
+
+    def _mkl_system_libs(self):
+        """Return MKL library names for linking (platform/link-mode specific)."""
+        link = str(self.options.PYCANHA_OPTION_MKL_LINK)
+        if self.settings.os == "Windows":
+            if link == "dynamic":
+                return [
+                    "mkl_intel_lp64_dll",
+                    "mkl_intel_thread_dll",
+                    "mkl_core_dll",
+                    "libiomp5md",
+                ]
+            else:
+                return [
+                    "mkl_intel_lp64",
+                    "mkl_intel_thread",
+                    "mkl_core",
+                    "libiomp5md",
+                ]
+        else:
+            # Linux/macOS
+            libs = ["mkl_intel_lp64", "mkl_intel_thread", "mkl_core", "iomp5"]
+            if self.settings.os == "Linux":
+                libs.extend(["pthread", "m", "dl"])
+            return libs
