@@ -174,8 +174,7 @@ class Recipe_pycanha_core(ConanFile):
         if mkl_data:
             mklroot, include_dir, lib_dir, bin_dir = mkl_data
             self._mkl_package_data = mkl_data
-            # Help CMake find MKL
-            tc.cache_variables["MKLROOT"] = str(mklroot)
+            # Help CMake find MKL (never use MKLROOT — it leaks to system oneAPI)
             tc.cache_variables["MKL_ROOT"] = str(mklroot)
             tc.cache_variables["MKL_DIR"] = str(lib_dir / "cmake" / "mkl")
 
@@ -185,7 +184,6 @@ class Recipe_pycanha_core(ConanFile):
         if mkl_data:
             mklroot, include_dir, lib_dir, bin_dir = mkl_data
             env = Environment()
-            env.define("MKLROOT", str(mklroot))
             if self.settings.os == "Windows":
                 env.prepend_path("PATH", str(bin_dir))
             else:
@@ -215,7 +213,7 @@ class Recipe_pycanha_core(ConanFile):
                 self.output.info("Running unit tests...")
                 # --verbose shows test execution output from ctest
                 # Uncomment to see the tests, otherwise only in case of failure info is shown
-                # cmake.test(cli_args=["--verbose"])
+                cmake.test(cli_args=["--verbose"])
 
     def package(self):
         # Manual file copying approach (until CMake install rules are defined)
@@ -288,11 +286,7 @@ class Recipe_pycanha_core(ConanFile):
                 self._add_mkl_link_libs(lib_dir)
 
                 # Propagate runtime/build environment to consumers
-                self.runenv_info.define("MKLROOT", str(mklroot))
-                self.buildenv_info.define("MKLROOT", str(mklroot))
-                self.buildenv_info.define(
-                    "MKL_DIR", str(lib_dir / "cmake" / "mkl")
-                )
+                self.buildenv_info.define("MKL_DIR", str(lib_dir / "cmake" / "mkl"))
                 if self.settings.os == "Windows":
                     self.runenv_info.prepend_path("PATH", str(bin_dir))
                     self.buildenv_info.prepend_path("PATH", str(bin_dir))
@@ -366,8 +360,9 @@ class Recipe_pycanha_core(ConanFile):
         # Debug: log what MKL library files exist
         for name in ["mkl_intel_lp64", "mkl_intel_thread", "mkl_core", "iomp5"]:
             files = sorted(lib_dir.glob(f"lib{name}*"))
+            files += sorted(lib_dir.glob(f"{name}*"))  # Windows: no lib prefix
             if files:
-                self.output.info(f"  {name}: {[f.name for f in files]}")
+                self.output.info(f"  {name}: {sorted(set(f.name for f in files))}")
             else:
                 self.output.warning(f"  {name}: NOT FOUND in {lib_dir}")
 
@@ -390,9 +385,7 @@ class Recipe_pycanha_core(ConanFile):
         version = str(self.MKL_PIP_VERSION)
         with env_reset.vars(self).apply():
             self.output.info(f"Installing mkl-devel=={version}")
-            self.run(
-                f'"{sys.executable}" -m pip install "mkl-devel=={version}"'
-            )
+            self.run(f'"{sys.executable}" -m pip install "mkl-devel=={version}"')
 
         mkl_data = self._find_mkl_paths()
         if not mkl_data:
@@ -422,9 +415,7 @@ class Recipe_pycanha_core(ConanFile):
                 # No unversioned .so: link by full path to versioned file
                 versioned = sorted(lib_dir.glob(f"lib{name}.so.*"))
                 if versioned:
-                    self.output.info(
-                        f"Using full path for {name}: {versioned[-1]}"
-                    )
+                    self.output.info(f"Using full path for {name}: {versioned[-1]}")
                     self.cpp_info.exelinkflags.append(str(versioned[-1]))
                     self.cpp_info.sharedlinkflags.append(str(versioned[-1]))
                 else:

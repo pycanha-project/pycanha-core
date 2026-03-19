@@ -77,6 +77,30 @@ set_property(GLOBAL PROPERTY CTEST_TARGETS_ADDED 1)
 
 include(CTest) #TODO: Is it really necessary to use CTest?
 include(Catch)
+
+# On Windows, copy MKL DLLs next to test exe so they can be found at runtime.
+# This must happen BEFORE catch_discover_tests, which runs the exe at build time.
+if(WIN32 AND PYCANHA_OPTION_USE_MKL AND MKL_ROOT)
+    # Copy all DLLs from MKL bin dir (MKL loads additional DLLs at runtime
+    # beyond what's in the link chain, e.g. mkl_vml_def.2.dll)
+    file(GLOB _PYCANHA_MKL_DLLS "${MKL_ROOT}/bin/*.dll")
+    list(LENGTH _PYCANHA_MKL_DLLS _num_mkl_dlls)
+    message(STATUS "MKL DLL copy: MKL_ROOT=${MKL_ROOT}, found ${_num_mkl_dlls} DLLs")
+    foreach(_dll IN LISTS _PYCANHA_MKL_DLLS)
+        add_custom_command(TARGET ${TEST_TARGET_NAME} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${_dll}" $<TARGET_FILE_DIR:${TEST_TARGET_NAME}>
+        )
+    endforeach()
+    # Also copy DLLs from TARGET_RUNTIME_DLLS (e.g. libiomp5md.dll from OpenMP)
+    add_custom_command(TARGET ${TEST_TARGET_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            $<TARGET_RUNTIME_DLLS:${TEST_TARGET_NAME}>
+            $<TARGET_FILE_DIR:${TEST_TARGET_NAME}>
+        COMMAND_EXPAND_LISTS
+    )
+endif()
+
 catch_discover_tests(${TEST_TARGET_NAME})
 
 if(PYCANHA_OPTION_COVERAGE)
