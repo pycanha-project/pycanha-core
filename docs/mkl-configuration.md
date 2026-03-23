@@ -2,121 +2,95 @@
 
 ## Overview
 
-pycanha-core uses Intel Math Kernel Library (MKL) for accelerated linear algebra operations. MKL is installed via pip in a Python virtual environment.
+`pycanha-core` supports Intel MKL acceleration through `PYCANHA_OPTION_USE_MKL`.
 
-## Configuration Options
+## Build Options
 
-### PYCANHA_OPTION_USE_MKL
+- `PYCANHA_OPTION_USE_MKL` (`ON`/`OFF`, default `ON`)
+- `PYCANHA_OPTION_MKL_LINK` (`dynamic`/`static`, default `dynamic`)
+- `PYCANHA_OPTION_MKL_VERSION` (string, default `2025.3.0`)
 
-- **Type**: Boolean
-- **Default**: ON
-- **Description**: Enables MKL for accelerated computations through Eigen
+## Current Dependency Flow
 
-### PYCANHA_OPTION_MKL_LINK
+### 1. Conan installs MKL from pip
 
-- **Type**: String ("static" or "dynamic")
-- **Default**: "dynamic"
-- **Description**: Controls MKL linkage type
+When `PYCANHA_OPTION_USE_MKL=True`, `conanfile.py`:
+- runs `pip install mkl-devel==<PYCANHA_OPTION_MKL_VERSION>` using the current Python interpreter,
+- locates `MKLConfig.cmake` from pip package metadata,
+- derives:
+  - `MKL_ROOT`
+  - `include` directory
+  - `lib` directory
+  - runtime `bin` directory (Windows) or `lib` (Linux/macOS).
 
-## Installation
+Conan then exports CMake cache entries:
+- `MKL_ROOT`
+- `MKL_DIR` (`<mklroot>/lib/cmake/mkl`)
 
-### Prerequisites
+and runtime environment for tests/consumers:
+- Windows: prepends MKL `bin` to `PATH`
+- Linux/macOS: prepends MKL `lib` to `LD_LIBRARY_PATH`
 
-MKL is installed via pip (version 2025.3) inside a Python virtual environment:
+### 2. CMake only consumes `MKL_DIR`
 
-```bash
-python -m venv .venv
-.venv\Scripts\activate  # Windows
-# source .venv/bin/activate  # Linux/macOS
-
-pip install mkl-devel==2025.3
-```
-
-### Build with Conan
-
-Conan automatically installs MKL when building:
-
-```bash
-# Activate virtual environment first
-.venv\Scripts\activate
-
-# Build with dynamic MKL (default)
-conan create . --build=missing
-
-# Build with static MKL
-conan create . --build=missing -o PYCANHA_OPTION_MKL_LINK=static
-
-# Build without MKL
-conan create . --build=missing -o PYCANHA_OPTION_USE_MKL=False
-```
-
-**Note**: Conan will fail if `VIRTUAL_ENV` is not set.
-
-## How It Works
-
-### Conan Recipe (`conanfile.py`)
-
-The `_mkl_paths_from_pip_venv()` method:
-1. Checks if `PYCANHA_OPTION_USE_MKL=True`
-2. Verifies `VIRTUAL_ENV` is set
-3. Installs `mkl-devel==2025.3` via pip
-4. Sets `MKLROOT` environment variable
-5. Configures runtime PATH/LD_LIBRARY_PATH
-
-### CMake (`pycanha-core/CMakeLists.txt`)
+In `pycanha-core/CMakeLists.txt`, MKL handling is intentionally small:
 
 ```cmake
 if(PYCANHA_OPTION_USE_MKL)
-    set(MKL_INTERFACE "lp64")
-    set(MKL_THREADING "intel_thread")
-    set(MKL_LINK "${PYCANHA_OPTION_MKL_LINK}")
-    
-    find_package(MKL CONFIG REQUIRED PATHS $ENV{MKLROOT})
-    target_link_libraries(${LIB_NAME} PUBLIC MKL::MKL)
-    target_compile_definitions(${LIB_NAME} PUBLIC 
-        EIGEN_USE_MKL_ALL
-        PYCANHA_USE_MKL=1
-    )
+  set(MKL_INTERFACE "lp64")
+  set(MKL_THREADING "intel_thread")
+  set(MKL_LINK "${PYCANHA_OPTION_MKL_LINK}")
+
+  if(NOT DEFINED CACHE{MKL_DIR})
+    message(FATAL_ERROR "MKL_DIR is not defined. Configure with Conan.")
+  endif()
+
+  find_package(MKL CONFIG REQUIRED NO_DEFAULT_PATH PATHS "${MKL_DIR}")
+  target_link_libraries(${LIB_NAME} PUBLIC MKL::MKL)
+  target_compile_definitions(${LIB_NAME} PUBLIC EIGEN_USE_MKL_ALL PYCANHA_USE_MKL=1)
+else()
+  target_compile_definitions(${LIB_NAME} PUBLIC PYCANHA_USE_MKL=0)
 endif()
 ```
 
-- **MKL_INTERFACE**: `lp64` (32-bit integers)
-- **MKL_THREADING**: `intel_thread` (Intel OpenMP)
-- **MKL_LINK**: `static` or `dynamic`
+This is now aligned with other dependencies such as Eigen from the CMake perspective:
+- CMake only does `find_package(...)` + `target_link_libraries(...)`.
+- Dependency acquisition/discovery happens in Conan.
+
+## Typical Commands
+
+```bash
+# Default: MKL enabled, dynamic link mode
+conan create . --build=missing
+
+# Disable MKL
+conan create . --build=missing -o PYCANHA_OPTION_USE_MKL=False
+
+# Keep MKL enabled but choose static link mode
+conan create . --build=missing -o PYCANHA_OPTION_MKL_LINK=static
+
+# Pin a specific pip MKL version
+conan create . --build=missing -o PYCANHA_OPTION_MKL_VERSION=2025.3.0
+```
+
+## Runtime Notes
+
+- Unit tests on Windows copy MKL DLLs next to the test executable (`test/CMakeLists.txt`) to avoid runtime loader issues during `catch_discover_tests`.
+- Conan also exports runtime paths (`PATH`/`LD_LIBRARY_PATH`) so downstream executions can resolve MKL shared libraries.
 
 ## Troubleshooting
 
-### Error: VIRTUAL_ENV not set
+### `MKL_DIR is not defined`
 
-```bash
-python -m venv .venv
-.venv\Scripts\activate  # Windows
-# source .venv/bin/activate  # Linux/macOS
-```
+Configure/build through Conan. Direct CMake configure without Conan will not install/discover pip MKL.
 
-### Error: MKL not found by CMake
+### Linker cannot find MKL libraries (Linux)
 
-```bash
-# Install MKL
-pip install mkl-devel==2025.3
+`conanfile.py` attempts to create unversioned `.so` symlinks when pip ships only versioned files (for example `.so.2`). Re-run the Conan build in an environment where symlink creation is allowed.
 
-# Set MKLROOT
-# Windows:
-$env:MKLROOT = "$env:VIRTUAL_ENV\Library"
-# Linux/macOS:
-export MKLROOT="$VIRTUAL_ENV"
-```
+### Runtime error loading MKL shared libraries
 
-### Error: DLL/shared library not found at runtime
+- Windows: ensure MKL `bin` directory is available in `PATH`.
+- Linux/macOS: ensure MKL `lib` is available in `LD_LIBRARY_PATH`.
 
-**Windows:**
-```powershell
-$env:PATH = "$env:VIRTUAL_ENV\Library\bin;$env:PATH"
-```
-
-**Linux:**
-```bash
-export LD_LIBRARY_PATH="$VIRTUAL_ENV/lib:$LD_LIBRARY_PATH"
-```
-
-(This is automatic when using Conan)
+When using Conan-generated environments, this is set automatically.
