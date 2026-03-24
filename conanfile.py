@@ -18,7 +18,7 @@ class Recipe_pycanha_core(ConanFile):
 
     # This is the version used everywhere. Right now is set manually,
     # but it could be set automatically from the git tag for example.
-    version = "0.6"
+    version = "0.7"
 
     # I've followed the instructions from https://docs.conan.io/2/tutorial/creating_packages/other_types_of_packages/header_only_packages.html
     # but without adding the "header-only" keyword to the recipe, it doesn't work. The use of the "header-only" is from here:
@@ -37,7 +37,6 @@ class Recipe_pycanha_core(ConanFile):
 
     # Binary configuration
     settings = "os", "compiler", "build_type", "arch"
-    DEFAULT_MKL_PIP_VERSION = "2025.3.0"
     options = {
         "fPIC": [True, False],
         "PYCANHA_OPTION_LIBRARY": [True, False],
@@ -60,7 +59,7 @@ class Recipe_pycanha_core(ConanFile):
         "fPIC": True,
         "PYCANHA_OPTION_LIBRARY": True,
         "PYCANHA_OPTION_USE_MKL": True,
-        "PYCANHA_OPTION_MKL_VERSION": DEFAULT_MKL_PIP_VERSION,
+        "PYCANHA_OPTION_MKL_VERSION": "default",
         "PYCANHA_OPTION_MKL_LINK": "dynamic",
         "PYCANHA_OPTION_LTO": True,
         "PYCANHA_OPTION_DOCS": False,
@@ -83,18 +82,34 @@ class Recipe_pycanha_core(ConanFile):
         # Dependencies can be defined also with a version range.
         # For now, hard-coding an specific version, so we know exactly what version is used in the build.
 
+        # Centralized C++ dependency versions (single source of truth).
+        self._cpp_dependency_versions = {
+            "eigen": "3.4.0",
+            "cdt": "1.4.4",
+            "mkl": "2025.3.0",
+            "catch2": "3.3.2",
+        }
+
         # Library dependencies
-        self.requires("eigen/3.4.0", transitive_headers=True)
+        self.requires(
+            f"eigen/{self._cpp_dependency_versions['eigen']}",
+            transitive_headers=True,
+        )
         # transitive_headers=True is used when the dependencies of the library are headers needed by the consumer.
 
-        # self.requires("cdt/1.3.0") # This is a header-only library. No need for complicated build. Can be fetched by CMake directly.
+        # self.requires(f"cdt/{self._cpp_dependency_versions['cdt']}")
+        # CDT is currently fetched in CMake with FetchContent. We still keep
+        # its version centralized here and pass it to CMake in generate().
 
         # Test dependencies
-        self.test_requires("catch2/3.3.2")
+        self.test_requires(f"catch2/{self._cpp_dependency_versions['catch2']}")
 
-        default_version = self.DEFAULT_MKL_PIP_VERSION
+        default_version = self._cpp_dependency_versions["mkl"]
         opt_version = self.options.get_safe("PYCANHA_OPTION_MKL_VERSION")
-        self.MKL_PIP_VERSION = str(opt_version) if opt_version else default_version
+        if opt_version and str(opt_version).lower() not in {"", "default", "auto"}:
+            self.MKL_PIP_VERSION = str(opt_version)
+        else:
+            self.MKL_PIP_VERSION = default_version
 
         # Conditional dependencies. Depending on the option selected
         if self.options.PYCANHA_OPTION_DOCS:
@@ -162,6 +177,18 @@ class Recipe_pycanha_core(ConanFile):
         build_type = self.settings.get_safe("build_type", default="Release")
         tc.cache_variables["CMAKE_BUILD_TYPE"] = build_type
         tc.cache_variables["CONAN_PROJECT_VERSION"] = self.version
+
+        # Pass CDT version to CMake FetchContent from the same central source
+        # used in requirements().
+        dep_versions = getattr(self, "_cpp_dependency_versions", None)
+        if dep_versions is None:
+            dep_versions = {
+                "eigen": "3.4.0",
+                "cdt": "1.4.4",
+                "mkl": "2025.3.0",
+                "catch2": "3.3.2",
+            }
+        tc.cache_variables["PYCANHA_OPTION_CDT_VERSION"] = dep_versions["cdt"]
 
         # Enable compile commands export for Debug builds (useful for IDE integration)
         if self.settings.build_type == "Debug":

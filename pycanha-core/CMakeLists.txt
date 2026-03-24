@@ -27,12 +27,17 @@ find_package(Eigen3 REQUIRED) # Managed by conan
 # CDT: https://github.com/artem-ogre/CDT
 # CDT is a header-only library, so we can use FetchContent
 include(FetchContent)
+if(NOT DEFINED CACHE{PYCANHA_OPTION_CDT_VERSION})
+    message(FATAL_ERROR
+        "PYCANHA_OPTION_CDT_VERSION is not defined. Configure with Conan so "
+        "all dependency versions are provided from conanfile.py.")
+endif()
 FetchContent_Declare(
     cdt
     GIT_REPOSITORY
     https://github.com/artem-ogre/CDT.git
     GIT_TAG
-    1.4.4
+    ${PYCANHA_OPTION_CDT_VERSION}
 ) 
 FetchContent_GetProperties(cdt)
 if(NOT cdt_POPULATED)
