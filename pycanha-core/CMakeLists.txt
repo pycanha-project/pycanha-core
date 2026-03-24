@@ -107,7 +107,11 @@ if(PYCANHA_OPTION_USE_MKL)
     # See MKLConfig.cmake for all available options
     set(MKL_INTERFACE "lp64")                          # LP64 = 32-bit integers
     set(MKL_THREADING "intel_thread")                  # Intel OpenMP
-    set(MKL_LINK "${PYCANHA_OPTION_MKL_LINK}")        # "static" or "dynamic"
+    set(MKL_LINK "dynamic")                            # Simplified: only dynamic mode
+    # If static mode is needed again:
+    #  1) restore PYCANHA_OPTION_MKL_LINK in conan/cmake options,
+    #  2) pass it here as MKL_LINK,
+    #  3) restore static Windows library names in conanfile.py:_mkl_system_libs().
 
     # MKL paths are resolved in Conan (pip install + discovery) and exposed via
     # MKL_DIR/MKL_ROOT to CMake. Keep CMake side minimal, similar to Eigen.

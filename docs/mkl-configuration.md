@@ -7,8 +7,9 @@
 ## Build Options
 
 - `PYCANHA_OPTION_USE_MKL` (`ON`/`OFF`, default `ON`)
-- `PYCANHA_OPTION_MKL_LINK` (`dynamic`/`static`, default `dynamic`)
 - `PYCANHA_OPTION_MKL_VERSION` (string, default `2025.3.0`)
+
+`pycanha-core` now supports **dynamic MKL linking only**.
 
 ## Current Dependency Flow
 
@@ -39,7 +40,7 @@ In `pycanha-core/CMakeLists.txt`, MKL handling is intentionally small:
 if(PYCANHA_OPTION_USE_MKL)
   set(MKL_INTERFACE "lp64")
   set(MKL_THREADING "intel_thread")
-  set(MKL_LINK "${PYCANHA_OPTION_MKL_LINK}")
+  set(MKL_LINK "dynamic")
 
   if(NOT DEFINED CACHE{MKL_DIR})
     message(FATAL_ERROR "MKL_DIR is not defined. Configure with Conan.")
@@ -66,12 +67,13 @@ conan create . --build=missing
 # Disable MKL
 conan create . --build=missing -o PYCANHA_OPTION_USE_MKL=False
 
-# Keep MKL enabled but choose static link mode
-conan create . --build=missing -o PYCANHA_OPTION_MKL_LINK=static
-
 # Pin a specific pip MKL version
 conan create . --build=missing -o PYCANHA_OPTION_MKL_VERSION=2025.3.0
 ```
+
+To re-enable static MKL in the future, you must restore the removed
+`PYCANHA_OPTION_MKL_LINK` option in Conan/CMake and the static Windows MKL
+library list in `conanfile.py`.
 
 ## Runtime Notes
 

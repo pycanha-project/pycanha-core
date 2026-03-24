@@ -52,7 +52,6 @@ class Recipe_pycanha_core(ConanFile):
         "PYCANHA_OPTION_LIBRARY": [True, False],
         "PYCANHA_OPTION_USE_MKL": [True, False],
         "PYCANHA_OPTION_MKL_VERSION": ["ANY"],
-        "PYCANHA_OPTION_MKL_LINK": ["static", "dynamic"],
         "PYCANHA_OPTION_LTO": [True, False],
         "PYCANHA_OPTION_DOCS": [True, False],
         "PYCANHA_OPTION_WARNINGS": [True, False],
@@ -70,7 +69,6 @@ class Recipe_pycanha_core(ConanFile):
         "PYCANHA_OPTION_LIBRARY": True,
         "PYCANHA_OPTION_USE_MKL": True,
         "PYCANHA_OPTION_MKL_VERSION": "default",
-        "PYCANHA_OPTION_MKL_LINK": "dynamic",
         "PYCANHA_OPTION_LTO": True,
         "PYCANHA_OPTION_DOCS": False,
         "PYCANHA_OPTION_WARNINGS": False,
@@ -473,23 +471,16 @@ class Recipe_pycanha_core(ConanFile):
                     self.output.warning(f"Cannot create {so_link.name} symlink: {e}")
 
     def _mkl_system_libs(self):
-        """Return MKL library names for linking (platform/link-mode specific)."""
-        link = str(self.options.PYCANHA_OPTION_MKL_LINK)
+        """Return MKL library names for linking (dynamic-link only)."""
+        # If static MKL support is needed again, restore the removed
+        # PYCANHA_OPTION_MKL_LINK option and add the static library names here.
         if self.settings.os == "Windows":
-            if link == "dynamic":
-                return [
-                    "mkl_intel_lp64_dll",
-                    "mkl_intel_thread_dll",
-                    "mkl_core_dll",
-                    "libiomp5md",
-                ]
-            else:
-                return [
-                    "mkl_intel_lp64",
-                    "mkl_intel_thread",
-                    "mkl_core",
-                    "libiomp5md",
-                ]
+            return [
+                "mkl_intel_lp64_dll",
+                "mkl_intel_thread_dll",
+                "mkl_core_dll",
+                "libiomp5md",
+            ]
         else:
             # Linux/macOS
             libs = ["mkl_intel_lp64", "mkl_intel_thread", "mkl_core", "iomp5"]
