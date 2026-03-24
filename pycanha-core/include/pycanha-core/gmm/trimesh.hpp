@@ -2431,10 +2431,10 @@ inline TriMesh create_2d_triangular_mesh(
 
     // Merge vertices
     VerticesList points(tri_vertices.rows() + reduced_quad_vertices.rows(), 3);
-        points(Eigen::indexing::seq(0, tri_vertices.rows() - 1),
-            Eigen::indexing::all) = tri_vertices;
-        points(Eigen::indexing::seq(tri_vertices.rows(), points.rows() - 1),
-            Eigen::indexing::all) =
+    points(Eigen::indexing::seq(0, tri_vertices.rows() - 1),
+           Eigen::indexing::all) = tri_vertices;
+    points(Eigen::indexing::seq(tri_vertices.rows(), points.rows() - 1),
+           Eigen::indexing::all) =
         reduced_quad_vertices;
 
     // Merge edges

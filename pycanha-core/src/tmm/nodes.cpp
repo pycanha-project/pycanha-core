@@ -127,29 +127,29 @@ Nodes::Nodes(Nodes&& other) noexcept
       _bound_node_num_vector(std::move(other._bound_node_num_vector)),
       T_vector(std::move(other.T_vector)),
       C_vector(std::move(other.C_vector)),
-      qs_vector(other.qs_vector),
-      qa_vector(other.qa_vector),
-      qe_vector(other.qe_vector),
-      qi_vector(other.qi_vector),
-      qr_vector(other.qr_vector),
-      a_vector(other.a_vector),
-      fx_vector(other.fx_vector),
-      fy_vector(other.fy_vector),
-      fz_vector(other.fz_vector),
-      eps_vector(other.eps_vector),
-      aph_vector(other.aph_vector),
-      literals_C(other.literals_C),
-      literals_qs(other.literals_qs),
-      literals_qa(other.literals_qa),
-      literals_qe(other.literals_qe),
-      literals_qi(other.literals_qi),
-      literals_qr(other.literals_qr),
-      literals_a(other.literals_a),
-      literals_fx(other.literals_fx),
-      literals_fy(other.literals_fy),
-      literals_fz(other.literals_fz),
-      literals_eps(other.literals_eps),
-      literals_aph(other.literals_aph),
+      qs_vector(std::move(other.qs_vector)),
+      qa_vector(std::move(other.qa_vector)),
+      qe_vector(std::move(other.qe_vector)),
+      qi_vector(std::move(other.qi_vector)),
+      qr_vector(std::move(other.qr_vector)),
+      a_vector(std::move(other.a_vector)),
+      fx_vector(std::move(other.fx_vector)),
+      fy_vector(std::move(other.fy_vector)),
+      fz_vector(std::move(other.fz_vector)),
+      eps_vector(std::move(other.eps_vector)),
+      aph_vector(std::move(other.aph_vector)),
+      literals_C(std::move(other.literals_C)),
+      literals_qs(std::move(other.literals_qs)),
+      literals_qa(std::move(other.literals_qa)),
+      literals_qe(std::move(other.literals_qe)),
+      literals_qi(std::move(other.literals_qi)),
+      literals_qr(std::move(other.literals_qr)),
+      literals_a(std::move(other.literals_a)),
+      literals_fx(std::move(other.literals_fx)),
+      literals_fy(std::move(other.literals_fy)),
+      literals_fz(std::move(other.literals_fz)),
+      literals_eps(std::move(other.literals_eps)),
+      literals_aph(std::move(other.literals_aph)),
       _usr_to_int_node_num(std::move(other._usr_to_int_node_num)),
       _node_num_mapped(other._node_num_mapped) {
     if (DEBUG) {
@@ -178,29 +178,29 @@ Nodes& Nodes::operator=(Nodes&& other) noexcept {
         _bound_node_num_vector = std::move(other._bound_node_num_vector);
         T_vector = std::move(other.T_vector);
         C_vector = std::move(other.C_vector);
-        qs_vector = other.qs_vector;
-        qa_vector = other.qa_vector;
-        qe_vector = other.qe_vector;
-        qi_vector = other.qi_vector;
-        qr_vector = other.qr_vector;
-        a_vector = other.a_vector;
-        fx_vector = other.fx_vector;
-        fy_vector = other.fy_vector;
-        fz_vector = other.fz_vector;
-        eps_vector = other.eps_vector;
-        aph_vector = other.aph_vector;
-        literals_C = other.literals_C;
-        literals_qs = other.literals_qs;
-        literals_qa = other.literals_qa;
-        literals_qe = other.literals_qe;
-        literals_qi = other.literals_qi;
-        literals_qr = other.literals_qr;
-        literals_a = other.literals_a;
-        literals_fx = other.literals_fx;
-        literals_fy = other.literals_fy;
-        literals_fz = other.literals_fz;
-        literals_eps = other.literals_eps;
-        literals_aph = other.literals_aph;
+        qs_vector = std::move(other.qs_vector);
+        qa_vector = std::move(other.qa_vector);
+        qe_vector = std::move(other.qe_vector);
+        qi_vector = std::move(other.qi_vector);
+        qr_vector = std::move(other.qr_vector);
+        a_vector = std::move(other.a_vector);
+        fx_vector = std::move(other.fx_vector);
+        fy_vector = std::move(other.fy_vector);
+        fz_vector = std::move(other.fz_vector);
+        eps_vector = std::move(other.eps_vector);
+        aph_vector = std::move(other.aph_vector);
+        literals_C = std::move(other.literals_C);
+        literals_qs = std::move(other.literals_qs);
+        literals_qa = std::move(other.literals_qa);
+        literals_qe = std::move(other.literals_qe);
+        literals_qi = std::move(other.literals_qi);
+        literals_qr = std::move(other.literals_qr);
+        literals_a = std::move(other.literals_a);
+        literals_fx = std::move(other.literals_fx);
+        literals_fy = std::move(other.literals_fy);
+        literals_fz = std::move(other.literals_fz);
+        literals_eps = std::move(other.literals_eps);
+        literals_aph = std::move(other.literals_aph);
         _usr_to_int_node_num = std::move(other._usr_to_int_node_num);
         _node_num_mapped = other._node_num_mapped;
 
