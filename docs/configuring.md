@@ -159,7 +159,14 @@ Finally, you need to activate the environment within VS Code. To do so, in the c
 pip install conan
 ```
 
-That's all.
+Tested working Conan version for this pycanha-core release:
+
+```
+Conan version 2.22.1
+```
+
+Update this value over time when validating newer Conan versions.
+
 
 ### 3.4. Configure conan build
 Because conan is installed in a virtual environment, the most convenience way to use it is to set the `default` profile to the one we want to use to build the library.

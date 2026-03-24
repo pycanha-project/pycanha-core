@@ -37,6 +37,16 @@ class Recipe_pycanha_core(ConanFile):
 
     # Binary configuration
     settings = "os", "compiler", "build_type", "arch"
+    # Single source of truth for pinned versions used by this release.
+    # Includes both Conan dependencies and tooling hints used by CMake/docs.
+    DEPENDENCY_VERSIONS = {
+        "eigen": "3.4.0",
+        "cdt": "1.4.4",
+        "mkl": "2025.3.0",
+        "catch2": "3.3.2",
+        "doxygen": "1.9.4",  # Tested version, but this is just a hint for CMake
+        "doxygen_awesome_css": "v2.2.0",
+    }
     options = {
         "fPIC": [True, False],
         "PYCANHA_OPTION_LIBRARY": [True, False],
@@ -81,30 +91,20 @@ class Recipe_pycanha_core(ConanFile):
     def requirements(self):
         # Dependencies can be defined also with a version range.
         # For now, hard-coding an specific version, so we know exactly what version is used in the build.
-
-        # Centralized C++ dependency versions (single source of truth).
-        self._cpp_dependency_versions = {
-            "eigen": "3.4.0",
-            "cdt": "1.4.4",
-            "mkl": "2025.3.0",
-            "catch2": "3.3.2",
-        }
+        versions = self.DEPENDENCY_VERSIONS
 
         # Library dependencies
-        self.requires(
-            f"eigen/{self._cpp_dependency_versions['eigen']}",
-            transitive_headers=True,
-        )
+        self.requires(f"eigen/{versions['eigen']}", transitive_headers=True)
         # transitive_headers=True is used when the dependencies of the library are headers needed by the consumer.
 
-        # self.requires(f"cdt/{self._cpp_dependency_versions['cdt']}")
+        # self.requires(f"cdt/{versions['cdt']}")
         # CDT is currently fetched in CMake with FetchContent. We still keep
         # its version centralized here and pass it to CMake in generate().
 
         # Test dependencies
-        self.test_requires(f"catch2/{self._cpp_dependency_versions['catch2']}")
+        self.test_requires(f"catch2/{versions['catch2']}")
 
-        default_version = self._cpp_dependency_versions["mkl"]
+        default_version = versions["mkl"]
         opt_version = self.options.get_safe("PYCANHA_OPTION_MKL_VERSION")
         if opt_version and str(opt_version).lower() not in {"", "default", "auto"}:
             self.MKL_PIP_VERSION = str(opt_version)
@@ -178,17 +178,16 @@ class Recipe_pycanha_core(ConanFile):
         tc.cache_variables["CMAKE_BUILD_TYPE"] = build_type
         tc.cache_variables["CONAN_PROJECT_VERSION"] = self.version
 
-        # Pass CDT version to CMake FetchContent from the same central source
-        # used in requirements().
-        dep_versions = getattr(self, "_cpp_dependency_versions", None)
-        if dep_versions is None:
-            dep_versions = {
-                "eigen": "3.4.0",
-                "cdt": "1.4.4",
-                "mkl": "2025.3.0",
-                "catch2": "3.3.2",
-            }
-        tc.cache_variables["PYCANHA_OPTION_CDT_VERSION"] = dep_versions["cdt"]
+        # Export centrally managed version hints for CMake and docs tooling.
+        tc.cache_variables["PYCANHA_OPTION_CDT_VERSION"] = self.DEPENDENCY_VERSIONS[
+            "cdt"
+        ]
+        tc.cache_variables["PYCANHA_OPTION_DOXYGEN_VERSION"] = self.DEPENDENCY_VERSIONS[
+            "doxygen"
+        ]
+        tc.cache_variables["PYCANHA_OPTION_DOXYGEN_AWESOME_CSS_VERSION"] = (
+            self.DEPENDENCY_VERSIONS["doxygen_awesome_css"]
+        )
 
         # Enable compile commands export for Debug builds (useful for IDE integration)
         if self.settings.build_type == "Debug":
