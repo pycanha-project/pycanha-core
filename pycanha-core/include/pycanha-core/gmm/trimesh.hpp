@@ -2,6 +2,7 @@
 
 #include <Eigen/Dense>
 #include <algorithm>
+#include <cassert>
 #include <iostream>
 #include <limits>  // IWYU pragma: keep
 #include <memory>
@@ -17,7 +18,6 @@
 #include "pycanha-core/gmm/triangulation.hpp"
 #include "pycanha-core/utils/eigenutils.hpp"
 
-using Eigen::seq;
 using pycanha::utils::is_sorted;
 namespace pycanha::gmm {
 
@@ -2226,7 +2226,8 @@ inline TriMesh create_2d_triangular_mesh(
     const Eigen::VectorXd triangle_dir2_mesh =
         dir2_mesh_normalized * (triangle_p3 - triangle_p2).norm();
 
-    Eigen::VectorXd quad_dir1_mesh = dir1_mesh(seq(1, dir1_mesh.size() - 1));
+    Eigen::VectorXd quad_dir1_mesh =
+        dir1_mesh(Eigen::indexing::seq(1, dir1_mesh.size() - 1));
     // auto quad_dir1_mesh_0 = quad_dir1_mesh[0];
     // for (auto& quad_dir1 : quad_dir1_mesh) {
     //     quad_dir1 = quad_dir1 - quad_dir1_mesh_0;
@@ -2430,8 +2431,10 @@ inline TriMesh create_2d_triangular_mesh(
 
     // Merge vertices
     VerticesList points(tri_vertices.rows() + reduced_quad_vertices.rows(), 3);
-    points(Eigen::seq(0, tri_vertices.rows() - 1), Eigen::all) = tri_vertices;
-    points(Eigen::seq(tri_vertices.rows(), points.rows() - 1), Eigen::all) =
+        points(Eigen::indexing::seq(0, tri_vertices.rows() - 1),
+            Eigen::indexing::all) = tri_vertices;
+        points(Eigen::indexing::seq(tri_vertices.rows(), points.rows() - 1),
+            Eigen::indexing::all) =
         reduced_quad_vertices;
 
     // Merge edges

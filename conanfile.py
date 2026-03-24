@@ -40,7 +40,7 @@ class Recipe_pycanha_core(ConanFile):
     # Single source of truth for pinned versions used by this release.
     # Includes both Conan dependencies and tooling hints used by CMake/docs.
     DEPENDENCY_VERSIONS = {
-        "eigen": "3.4.0",
+        "eigen": "5.0.0",
         "cdt": "1.4.4",
         "mkl": "2025.3.0",
         "catch2": "3.3.2",

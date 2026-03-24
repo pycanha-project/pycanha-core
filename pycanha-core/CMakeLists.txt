@@ -20,8 +20,8 @@ set(PYCANHA_USE_MKL_INT 0)
 # External dependencies
 #-----------------------------
 
-# Eigen3
-find_package(Eigen3 REQUIRED) # Managed by conan
+# Eigen 5 from Conan currently exports Eigen3 CMake config/target names.
+find_package(Eigen3 REQUIRED CONFIG)
 
 
 # CDT: https://github.com/artem-ogre/CDT
@@ -94,7 +94,7 @@ target_include_directories(${LIB_NAME}
 
 target_link_libraries( ${LIB_NAME} 
     PUBLIC 
-    Eigen3::Eigen  
+    Eigen3::Eigen
     PRIVATE
     CDT::CDT
 )
@@ -163,7 +163,7 @@ configure_file(
 #)
 
 #target_link_libraries( ${LIB_NAME} INTERFACE 
-#    Eigen3::Eigen  
+#    Eigen3::Eigen
 #    CDT::CDT
 #)
 
