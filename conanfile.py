@@ -1,15 +1,15 @@
-from conan import ConanFile
-from conan.tools.cmake import CMakeToolchain, CMake, cmake_layout, CMakeDeps
-from conan.tools.build import check_max_cppstd, check_min_cppstd, can_run
-from conan.tools.files import copy
-from conan.tools.env import VirtualBuildEnv, Environment
-from conan.errors import ConanInvalidConfiguration
-from conan.tools.scm import Version
-
 import os
-import sys
 import subprocess
+import sys
 from pathlib import Path
+
+from conan import ConanFile
+from conan.errors import ConanInvalidConfiguration
+from conan.tools.build import can_run, check_min_cppstd
+from conan.tools.cmake import CMake, CMakeDeps, CMakeToolchain, cmake_layout
+from conan.tools.env import Environment, VirtualBuildEnv
+from conan.tools.files import copy
+from conan.tools.scm import Version
 
 
 class Recipe_pycanha_core(ConanFile):
@@ -43,7 +43,7 @@ class Recipe_pycanha_core(ConanFile):
         "eigen": "5.0.0",
         "cdt": "1.4.4",
         "mkl": "2025.3.0",
-        "catch2": "3.3.2",
+        "catch2": "3.13.0",
         "doxygen": "1.9.4",  # Tested version, but this is just a hint for CMake
         "doxygen_awesome_css": "v2.2.0",
     }
