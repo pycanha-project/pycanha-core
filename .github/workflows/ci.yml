@@ -19,8 +19,8 @@ jobs:
       matrix:
         config:
           - os: ubuntu
-            compiler: gcc12
-            profile_base: ubuntu-gcc12-amd64
+            compiler: gcc14
+            profile_base: ubuntu-gcc14-amd64
             mkl_option: "True"
           - os: windows
             compiler: msvc2022
