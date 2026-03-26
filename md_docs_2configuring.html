@@ -27,7 +27,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.6</span>
+   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.7</span>
    </div>
    <div id="projectbrief">The C++ core of pycanha</div>
   </td>
@@ -245,7 +245,9 @@ Linux</h2>
 <li>Open a terminal in VS Code (<code>Terminal: Create New Terminal</code> or the configure shorcut), check that the python environment has been activated and type:</li>
 </ol>
 <div class="fragment"><div class="line">pip install conan</div>
-</div><!-- fragment --><p>That's all.</p>
+</div><!-- fragment --><p>Tested working Conan version for this pycanha-core release:</p>
+<div class="fragment"><div class="line">Conan version 2.22.1</div>
+</div><!-- fragment --><p>Update this value over time when validating newer Conan versions.</p>
 <h2><a class="anchor" id="autotoc_md35"></a>
 3.4. Configure conan build</h2>
 <p>Because conan is installed in a virtual environment, the most convenience way to use it is to set the <code>default</code> profile to the one we want to use to build the library. You can also use directly the profiles saved in the repository that are used for the <code>ci</code> workflows (check the <a class="el" href="md_docs_2tools.html">Using the tools section</a>, the <a class="el" href="md_docs_2cicd.html">CI/CD section</a> or <a href="https://docs.conan.io/2/reference/config_files/profiles.html">the Conan documentation</a> ).</p>
