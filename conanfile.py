@@ -121,12 +121,12 @@ class Recipe_pycanha_core(ConanFile):
 
         # Check compiler support for C++23
         if self.settings.compiler == "gcc":
-            if Version(str(self.settings.compiler.version)) < "11":
-                raise ConanInvalidConfiguration("GCC >= 11 required for C++23 support")
+            if Version(str(self.settings.compiler.version)) < "14":
+                raise ConanInvalidConfiguration("GCC >= 14 required for C++23 support")
         elif self.settings.compiler == "clang":
-            if Version(str(self.settings.compiler.version)) < "12":
+            if Version(str(self.settings.compiler.version)) < "18":
                 raise ConanInvalidConfiguration(
-                    "Clang >= 12 required for C++23 support"
+                    "Clang >= 18 required for C++23 support"
                 )
         elif self.settings.compiler == "msvc":
             if Version(str(self.settings.compiler.version)) < "193":
