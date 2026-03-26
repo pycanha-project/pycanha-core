@@ -42,7 +42,7 @@ class Recipe_pycanha_core(ConanFile):
     DEPENDENCY_VERSIONS = {
         "eigen": "5.0.0",
         "cdt": "1.4.4",
-        "mkl": "2025.3.0",
+        "mkl": "2025.3.1",
         "catch2": "3.13.0",
         "doxygen": "1.9.4",  # Tested version, but this is just a hint for CMake
         "doxygen_awesome_css": "v2.2.0",
