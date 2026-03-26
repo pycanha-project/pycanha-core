@@ -26,7 +26,7 @@ jobs:
     - name: Install with conan
       run: |
         conan config install .conan
-        conan install . --build=missing  -pr:h=ubuntu-gcc12-amd64 -pr:h=build-release -pr:h=options-doc  -pr:b=ubuntu-gcc12-amd64 -pr:b=build-release -pr:b=options-doc
+        conan install . --build=missing  -pr:h=ubuntu-gcc14-amd64 -pr:h=build-release -pr:h=options-doc  -pr:b=ubuntu-gcc14-amd64 -pr:b=build-release -pr:b=options-doc
         cmake --preset=conan-release
 
     - name: Build docs

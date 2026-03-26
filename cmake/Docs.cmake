@@ -2,6 +2,23 @@
 # Find Doxygen
 find_package(Doxygen)
 
+# Version hints are exported by Conan to keep tool versions traceable.
+set(PYCANHA_OPTION_DOXYGEN_VERSION "1.9.4" CACHE STRING "Pinned Doxygen version hint")
+set(
+    PYCANHA_OPTION_DOXYGEN_AWESOME_CSS_VERSION
+    "v2.2.0"
+    CACHE STRING
+    "Pinned doxygen-awesome-css version"
+)
+
+if(DOXYGEN_FOUND)
+    if(NOT "${DOXYGEN_VERSION}" STREQUAL "${PYCANHA_OPTION_DOXYGEN_VERSION}")
+        message(WARNING
+            "Doxygen version mismatch: found ${DOXYGEN_VERSION}, "
+            "pinned hint is ${PYCANHA_OPTION_DOXYGEN_VERSION}.")
+    endif()
+endif()
+
 # The call to doxygen_add_docs generates the Doxyfile configuration file
 # and configuration variables listed in Doxygen documentation such "CALL_GRAPH"
 # are set-up to the value of the corresponding DOXYGEN_* variables.
@@ -17,7 +34,7 @@ FetchContent_Declare(
     GIT_REPOSITORY
     https://github.com/jothepro/doxygen-awesome-css.git
     GIT_TAG
-    v2.2.0
+    ${PYCANHA_OPTION_DOXYGEN_AWESOME_CSS_VERSION}
 )    
 FetchContent_MakeAvailable(doxygen-awesome-css)
 

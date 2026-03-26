@@ -1,15 +1,15 @@
-from conan import ConanFile
-from conan.tools.cmake import CMakeToolchain, CMake, cmake_layout, CMakeDeps
-from conan.tools.build import check_max_cppstd, check_min_cppstd, can_run
-from conan.tools.files import copy
-from conan.tools.env import VirtualBuildEnv, Environment
-from conan.errors import ConanInvalidConfiguration
-from conan.tools.scm import Version
-
 import os
-import sys
 import subprocess
+import sys
 from pathlib import Path
+
+from conan import ConanFile
+from conan.errors import ConanInvalidConfiguration
+from conan.tools.build import can_run, check_min_cppstd
+from conan.tools.cmake import CMake, CMakeDeps, CMakeToolchain, cmake_layout
+from conan.tools.env import Environment, VirtualBuildEnv
+from conan.tools.files import copy
+from conan.tools.scm import Version
 
 
 class Recipe_pycanha_core(ConanFile):
@@ -18,7 +18,7 @@ class Recipe_pycanha_core(ConanFile):
 
     # This is the version used everywhere. Right now is set manually,
     # but it could be set automatically from the git tag for example.
-    version = "0.6"
+    version = "0.7"
 
     # I've followed the instructions from https://docs.conan.io/2/tutorial/creating_packages/other_types_of_packages/header_only_packages.html
     # but without adding the "header-only" keyword to the recipe, it doesn't work. The use of the "header-only" is from here:
@@ -37,13 +37,21 @@ class Recipe_pycanha_core(ConanFile):
 
     # Binary configuration
     settings = "os", "compiler", "build_type", "arch"
-    DEFAULT_MKL_PIP_VERSION = "2025.3.0"
+    # Single source of truth for pinned versions used by this release.
+    # Includes both Conan dependencies and tooling hints used by CMake/docs.
+    DEPENDENCY_VERSIONS = {
+        "eigen": "5.0.0",
+        "cdt": "1.4.4",
+        "mkl": "2025.3.1",
+        "catch2": "3.13.0",
+        "doxygen": "1.9.4",  # Tested version, but this is just a hint for CMake
+        "doxygen_awesome_css": "v2.2.0",
+    }
     options = {
         "fPIC": [True, False],
         "PYCANHA_OPTION_LIBRARY": [True, False],
         "PYCANHA_OPTION_USE_MKL": [True, False],
         "PYCANHA_OPTION_MKL_VERSION": ["ANY"],
-        "PYCANHA_OPTION_MKL_LINK": ["static", "dynamic"],
         "PYCANHA_OPTION_LTO": [True, False],
         "PYCANHA_OPTION_DOCS": [True, False],
         "PYCANHA_OPTION_WARNINGS": [True, False],
@@ -60,8 +68,7 @@ class Recipe_pycanha_core(ConanFile):
         "fPIC": True,
         "PYCANHA_OPTION_LIBRARY": True,
         "PYCANHA_OPTION_USE_MKL": True,
-        "PYCANHA_OPTION_MKL_VERSION": DEFAULT_MKL_PIP_VERSION,
-        "PYCANHA_OPTION_MKL_LINK": "dynamic",
+        "PYCANHA_OPTION_MKL_VERSION": "default",
         "PYCANHA_OPTION_LTO": True,
         "PYCANHA_OPTION_DOCS": False,
         "PYCANHA_OPTION_WARNINGS": False,
@@ -82,19 +89,25 @@ class Recipe_pycanha_core(ConanFile):
     def requirements(self):
         # Dependencies can be defined also with a version range.
         # For now, hard-coding an specific version, so we know exactly what version is used in the build.
+        versions = self.DEPENDENCY_VERSIONS
 
         # Library dependencies
-        self.requires("eigen/3.4.0", transitive_headers=True)
+        self.requires(f"eigen/{versions['eigen']}", transitive_headers=True)
         # transitive_headers=True is used when the dependencies of the library are headers needed by the consumer.
 
-        # self.requires("cdt/1.3.0") # This is a header-only library. No need for complicated build. Can be fetched by CMake directly.
+        # self.requires(f"cdt/{versions['cdt']}")
+        # CDT is currently fetched in CMake with FetchContent. We still keep
+        # its version centralized here and pass it to CMake in generate().
 
         # Test dependencies
-        self.test_requires("catch2/3.3.2")
+        self.test_requires(f"catch2/{versions['catch2']}")
 
-        default_version = self.DEFAULT_MKL_PIP_VERSION
+        default_version = versions["mkl"]
         opt_version = self.options.get_safe("PYCANHA_OPTION_MKL_VERSION")
-        self.MKL_PIP_VERSION = str(opt_version) if opt_version else default_version
+        if opt_version and str(opt_version).lower() not in {"", "default", "auto"}:
+            self.MKL_PIP_VERSION = str(opt_version)
+        else:
+            self.MKL_PIP_VERSION = default_version
 
         # Conditional dependencies. Depending on the option selected
         if self.options.PYCANHA_OPTION_DOCS:
@@ -108,12 +121,12 @@ class Recipe_pycanha_core(ConanFile):
 
         # Check compiler support for C++23
         if self.settings.compiler == "gcc":
-            if Version(str(self.settings.compiler.version)) < "11":
-                raise ConanInvalidConfiguration("GCC >= 11 required for C++23 support")
+            if Version(str(self.settings.compiler.version)) < "14":
+                raise ConanInvalidConfiguration("GCC >= 14 required for C++23 support")
         elif self.settings.compiler == "clang":
-            if Version(str(self.settings.compiler.version)) < "12":
+            if Version(str(self.settings.compiler.version)) < "18":
                 raise ConanInvalidConfiguration(
-                    "Clang >= 12 required for C++23 support"
+                    "Clang >= 18 required for C++23 support"
                 )
         elif self.settings.compiler == "msvc":
             if Version(str(self.settings.compiler.version)) < "193":
@@ -162,6 +175,17 @@ class Recipe_pycanha_core(ConanFile):
         build_type = self.settings.get_safe("build_type", default="Release")
         tc.cache_variables["CMAKE_BUILD_TYPE"] = build_type
         tc.cache_variables["CONAN_PROJECT_VERSION"] = self.version
+
+        # Export centrally managed version hints for CMake and docs tooling.
+        tc.cache_variables["PYCANHA_OPTION_CDT_VERSION"] = self.DEPENDENCY_VERSIONS[
+            "cdt"
+        ]
+        tc.cache_variables["PYCANHA_OPTION_DOXYGEN_VERSION"] = self.DEPENDENCY_VERSIONS[
+            "doxygen"
+        ]
+        tc.cache_variables["PYCANHA_OPTION_DOXYGEN_AWESOME_CSS_VERSION"] = (
+            self.DEPENDENCY_VERSIONS["doxygen_awesome_css"]
+        )
 
         # Enable compile commands export for Debug builds (useful for IDE integration)
         if self.settings.build_type == "Debug":
@@ -447,23 +471,16 @@ class Recipe_pycanha_core(ConanFile):
                     self.output.warning(f"Cannot create {so_link.name} symlink: {e}")
 
     def _mkl_system_libs(self):
-        """Return MKL library names for linking (platform/link-mode specific)."""
-        link = str(self.options.PYCANHA_OPTION_MKL_LINK)
+        """Return MKL library names for linking (dynamic-link only)."""
+        # If static MKL support is needed again, restore the removed
+        # PYCANHA_OPTION_MKL_LINK option and add the static library names here.
         if self.settings.os == "Windows":
-            if link == "dynamic":
-                return [
-                    "mkl_intel_lp64_dll",
-                    "mkl_intel_thread_dll",
-                    "mkl_core_dll",
-                    "libiomp5md",
-                ]
-            else:
-                return [
-                    "mkl_intel_lp64",
-                    "mkl_intel_thread",
-                    "mkl_core",
-                    "libiomp5md",
-                ]
+            return [
+                "mkl_intel_lp64_dll",
+                "mkl_intel_thread_dll",
+                "mkl_core_dll",
+                "libiomp5md",
+            ]
         else:
             # Linux/macOS
             libs = ["mkl_intel_lp64", "mkl_intel_thread", "mkl_core", "iomp5"]

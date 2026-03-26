@@ -51,8 +51,6 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON) # Create a compile_commands.json file for 
 
 option(PYCANHA_OPTION_LIBRARY              "Include the Library"                           ON  )
 option(PYCANHA_OPTION_USE_MKL              "Enable Intel MKL accelerated solvers."         ON  )
-set(PYCANHA_OPTION_MKL_LINK "dynamic" CACHE STRING "MKL linkage type: static or dynamic")
-set_property(CACHE PYCANHA_OPTION_MKL_LINK PROPERTY STRINGS "static" "dynamic")
 option(PYCANHA_OPTION_LTO                  "Enable Link Time Optimization."                OFF )
 option(PYCANHA_OPTION_DOCS                 "Add a 'doc' target to build documentation."    OFF )
 option(PYCANHA_OPTION_WARNINGS             "Add warnings to targets."                      ON  )
@@ -76,7 +74,7 @@ project(
 
 
 # Set the C++ stanadard globally
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 

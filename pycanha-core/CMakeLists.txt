@@ -20,19 +20,24 @@ set(PYCANHA_USE_MKL_INT 0)
 # External dependencies
 #-----------------------------
 
-# Eigen3
-find_package(Eigen3 REQUIRED) # Managed by conan
+# Eigen 5 from Conan currently exports Eigen3 CMake config/target names.
+find_package(Eigen3 REQUIRED CONFIG)
 
 
 # CDT: https://github.com/artem-ogre/CDT
 # CDT is a header-only library, so we can use FetchContent
 include(FetchContent)
+if(NOT DEFINED CACHE{PYCANHA_OPTION_CDT_VERSION})
+    message(FATAL_ERROR
+        "PYCANHA_OPTION_CDT_VERSION is not defined. Configure with Conan so "
+        "all dependency versions are provided from conanfile.py.")
+endif()
 FetchContent_Declare(
     cdt
     GIT_REPOSITORY
     https://github.com/artem-ogre/CDT.git
     GIT_TAG
-    1.4.4
+    ${PYCANHA_OPTION_CDT_VERSION}
 ) 
 FetchContent_GetProperties(cdt)
 if(NOT cdt_POPULATED)
@@ -89,7 +94,7 @@ target_include_directories(${LIB_NAME}
 
 target_link_libraries( ${LIB_NAME} 
     PUBLIC 
-    Eigen3::Eigen  
+    Eigen3::Eigen
     PRIVATE
     CDT::CDT
 )
@@ -102,41 +107,22 @@ if(PYCANHA_OPTION_USE_MKL)
     # See MKLConfig.cmake for all available options
     set(MKL_INTERFACE "lp64")                          # LP64 = 32-bit integers
     set(MKL_THREADING "intel_thread")                  # Intel OpenMP
-    set(MKL_LINK "${PYCANHA_OPTION_MKL_LINK}")        # "static" or "dynamic"
+    set(MKL_LINK "dynamic")                            # Simplified: only dynamic mode
+    # If static mode is needed again:
+    #  1) restore PYCANHA_OPTION_MKL_LINK in conan/cmake options,
+    #  2) pass it here as MKL_LINK,
+    #  3) restore static Windows library names in conanfile.py:_mkl_system_libs().
 
-    # --- Always use pip-installed MKL, never system oneAPI ---
-    # Clear env vars that could leak to system MKL installations
-    set(ENV{MKLROOT} "")
-
-    # If MKL_DIR is not already set (e.g., by Conan), discover pip MKL
+    # MKL paths are resolved in Conan (pip install + discovery) and exposed via
+    # MKL_DIR/MKL_ROOT to CMake. Keep CMake side minimal, similar to Eigen.
     if(NOT DEFINED CACHE{MKL_DIR})
-        find_program(_PYCANHA_PYTHON python3 python)
-        if(_PYCANHA_PYTHON)
-            execute_process(
-                COMMAND "${_PYCANHA_PYTHON}" -c
-                    "import importlib.metadata as m; d=m.distribution('mkl-devel'); print(next(str(d.locate_file(f).resolve().parent) for f in d.files if f.name=='MKLConfig.cmake'))"
-                OUTPUT_VARIABLE _PIP_MKL_DIR
-                OUTPUT_STRIP_TRAILING_WHITESPACE
-                RESULT_VARIABLE _PIP_MKL_RESULT
-                ERROR_QUIET
-            )
-            if(_PIP_MKL_RESULT EQUAL 0 AND _PIP_MKL_DIR)
-                set(MKL_DIR "${_PIP_MKL_DIR}" CACHE PATH "MKL cmake config (discovered from pip)" FORCE)
-                message(STATUS "Discovered pip-installed MKL: MKL_DIR=${MKL_DIR}")
-            endif()
-        endif()
-        if(NOT DEFINED CACHE{MKL_DIR})
-            message(FATAL_ERROR
-                "MKL_DIR not set and pip MKL not found. "
-                "Install MKL via: pip install mkl-devel")
-        endif()
+        message(FATAL_ERROR
+            "MKL_DIR is not defined. Configure with Conan so pip-installed MKL "
+            "is discovered and exported to CMake.")
     endif()
 
     # NO_DEFAULT_PATH ensures CMake ONLY looks in MKL_DIR — cannot find system MKL
     find_package(MKL CONFIG REQUIRED NO_DEFAULT_PATH PATHS "${MKL_DIR}")
-
-    # Promote MKL_ROOT to cache so sibling subdirectories (test/) can see it
-    set(MKL_ROOT "${MKL_ROOT}" CACHE PATH "MKL root directory (from pip)" FORCE)
 
     message(STATUS "Intel MKL found: ${MKL_VERSION}")
     message(STATUS "  Interface: ${MKL_INTERFACE}, Threading: ${MKL_THREADING}, Link: ${MKL_LINK}")
@@ -177,7 +163,7 @@ configure_file(
 #)
 
 #target_link_libraries( ${LIB_NAME} INTERFACE 
-#    Eigen3::Eigen  
+#    Eigen3::Eigen
 #    CDT::CDT
 #)
 
