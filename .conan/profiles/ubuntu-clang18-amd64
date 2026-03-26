@@ -3,10 +3,10 @@ arch=x86_64
 compiler=clang
 compiler.cppstd=23
 compiler.libcxx=libstdc++11
-compiler.version=16
+compiler.version=18
 os=Linux
 
 [buildenv]
-CC=/usr/bin/clang-16
-CXX=/usr/bin/clang++-16
+CC=/usr/bin/clang-18
+CXX=/usr/bin/clang++-18
 

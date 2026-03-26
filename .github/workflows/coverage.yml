@@ -18,11 +18,11 @@ jobs:
       with:
         python-version: '3.12'
 
-    - name: Set GCC 12, G++ 12, and gcov-12 as default
+    - name: Set GCC 14, G++ 14, and gcov-14 as default
       run: |
-        sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-12 100
-        sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-12 100
-        sudo update-alternatives --install /usr/bin/gcov gcov /usr/bin/gcov-12 100
+        sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-14 100
+        sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-14 100
+        sudo update-alternatives --install /usr/bin/gcov gcov /usr/bin/gcov-14 100
         gcc --version
         g++ --version
         gcov --version
@@ -36,8 +36,8 @@ jobs:
       run: |
         conan config install .conan
         conan install . --build=missing \
-          -pr:h=ubuntu-gcc12-amd64 -pr:h=build-debug -pr:h=options-coverage \
-          -pr:b=ubuntu-gcc12-amd64 -pr:b=build-debug -pr:b=options-coverage
+          -pr:h=ubuntu-gcc14-amd64 -pr:h=build-debug -pr:h=options-coverage \
+          -pr:b=ubuntu-gcc14-amd64 -pr:b=build-debug -pr:b=options-coverage
         cmake --preset=conan-debug
 
     - name: Build with coverage target
