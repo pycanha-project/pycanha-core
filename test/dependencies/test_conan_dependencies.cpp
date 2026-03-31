@@ -1,11 +1,10 @@
-#include <catch2/catch_test_macros.hpp>
-
-#include <hdf5/hdf5.h>
-
+#include <hdf5/H5public.h>
 #include <symengine/add.h>
 #include <symengine/basic.h>
 #include <symengine/integer.h>
 #include <symengine/symbol.h>
+
+#include <catch2/catch_test_macros.hpp>
 
 TEST_CASE("HDF5 basic lifecycle works", "[deps][hdf5]") {
     REQUIRE(H5open() >= 0);

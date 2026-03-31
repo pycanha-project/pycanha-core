@@ -297,7 +297,12 @@ class Recipe_pycanha_core(ConanFile):
         #    So now the headers are in the include folder, and conan will find them automatically.
 
         self.cpp_info.libs = ["pycanha-core"]
-        self.cpp_info.requires = ["eigen::eigen3", "spdlog::libspdlog"]
+        self.cpp_info.requires = [
+            "eigen::eigen3",
+            "hdf5::hdf5",
+            "spdlog::libspdlog",
+            "symengine::symengine",
+        ]
 
         if self.options.PYCANHA_OPTION_USE_MKL:
             self.cpp_info.defines.append("PYCANHA_USE_MKL=1")
