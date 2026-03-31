@@ -245,22 +245,22 @@ TEST_CASE("Nodes Testing", "[nodes]") {
     node_map_check_b1.set_type('B');
     node_map_check_b2.set_type('B');
     tns.add_node(node_map_check_d1);  // Map flagged outdated
-    REQUIRE_FALSE(tns.is_mapped());
+    REQUIRE(!tns.is_mapped());
     tns.set_T(1001, 1001.0);  // Map updated
     REQUIRE(tns.is_mapped());
 
     tns.add_node(node_map_check_b1);  // Map flagged outdated
-    REQUIRE_FALSE(tns.is_mapped());
+    REQUIRE(!tns.is_mapped());
     tns.set_T(1003, 1003.0);  // Map updated
     REQUIRE(tns.is_mapped());
 
     tns.add_node(node_map_check_d2);  // Map flagged outdated
-    REQUIRE_FALSE(tns.is_mapped());
+    REQUIRE(!tns.is_mapped());
     tns.set_T(1002, 1002.0);  // Map updated
     REQUIRE(tns.is_mapped());
 
     tns.add_node(node_map_check_b2);  // Map flagged outdated
-    REQUIRE_FALSE(tns.is_mapped());
+    REQUIRE(!tns.is_mapped());
     tns.set_T(1004, 1004.0);  // Map updated
     REQUIRE(tns.is_mapped());
 

@@ -6,6 +6,7 @@
 #include "pycanha-core/config.hpp"  // IWYU pragma: export
 
 // Utilities
+#include "pycanha-core/utils/logger.hpp"        // IWYU pragma: export
 #include "pycanha-core/utils/package_info.hpp"  // IWYU pragma: export
 
 // Modules:

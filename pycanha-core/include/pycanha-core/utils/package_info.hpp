@@ -1,5 +1,5 @@
 #pragma once
-#include <iostream>
+#include <print>
 
 #include "pycanha-core/config.hpp"
 
@@ -7,18 +7,17 @@ namespace pycanha {
 
 inline void print_package_info() {
     // PACKAGE INFO
-    std::cout << "Printing package info:\n";
-    std::cout << "---------------------\n";
-    std::cout << LIB_NAME << " v" << LIB_VERSION << "\n";
-    std::cout << "Build type: " << LIB_BUILD_TYPE << "\n";
-    std::cout << "Compiler: " << LIB_COMPILER_INFO << " v"
-              << LIB_COMPILER_VERSION << "\n";
-    std::cout << "C++ Standard: " << LIB_CPP_STANDARD << "\n";
+    std::println("Printing package info:");
+    std::println("---------------------");
+    std::println("{} v{}", LIB_NAME, LIB_VERSION);
+    std::println("Build type: {}", LIB_BUILD_TYPE);
+    std::println("Compiler: {} v{}", LIB_COMPILER_INFO, LIB_COMPILER_VERSION);
+    std::println("C++ Standard: {}", LIB_CPP_STANDARD);
 #ifdef PYCANHA_USE_MKL
-    std::cout << "MKL Enabled: " << MKL_VERSION << "\n";
+    std::println("MKL Enabled: {}", MKL_VERSION);
 #else
-    std::cout << "MKL Disabled\n";
+    std::println("MKL Disabled");
 #endif
-    std::cout << "---------------------\n";
+    std::println("---------------------");
 }
 }  // namespace pycanha

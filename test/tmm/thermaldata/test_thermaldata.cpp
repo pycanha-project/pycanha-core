@@ -72,7 +72,7 @@ TEST_CASE("ThermalData removes tables and throws on missing ones",
     REQUIRE(data.size() == 2);
 
     data.remove_table("tmp");
-    REQUIRE_FALSE(data.has_table("tmp"));
+    REQUIRE(!data.has_table("tmp"));
     REQUIRE(data.size() == 1);
 
     REQUIRE_THROWS_AS(data.get_table("unknown"), std::out_of_range);

@@ -22,6 +22,7 @@ set(PYCANHA_USE_MKL_INT 0)
 
 # Eigen 5 from Conan currently exports Eigen3 CMake config/target names.
 find_package(Eigen3 REQUIRED CONFIG)
+find_package(spdlog REQUIRED CONFIG)
 
 
 # CDT: https://github.com/artem-ogre/CDT
@@ -74,6 +75,7 @@ add_library(${LIB_NAME} STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/tmm/nodes.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/tmm/thermalmathematicalmodel.cpp
 
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/utils/logger.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/utils/SparseUtils.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/solver.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/ss.cpp
@@ -95,6 +97,7 @@ target_include_directories(${LIB_NAME}
 target_link_libraries( ${LIB_NAME} 
     PUBLIC 
     Eigen3::Eigen
+    spdlog::spdlog
     PRIVATE
     CDT::CDT
 )

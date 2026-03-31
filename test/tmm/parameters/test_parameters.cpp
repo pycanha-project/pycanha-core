@@ -43,7 +43,7 @@ TEST_CASE("Parameters add and retrieve scalars", "[parameters]") {
     REQUIRE(std::get<std::int64_t>(updated_count) == 128);
 
     params.remove_parameter("enabled");
-    REQUIRE_FALSE(params.contains("enabled"));
+    REQUIRE(!params.contains("enabled"));
     REQUIRE(params.size() == 2);
 }
 

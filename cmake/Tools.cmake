@@ -72,6 +72,7 @@ function(add_clang_tidy_to_target target)
                 -p ${CMAKE_BINARY_DIR}
                 ${TARGET_SOURCES}
             WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+            VERBATIM
             USES_TERMINAL)
     else()
         message("==> CLANGTIDY NOT FOUND")
