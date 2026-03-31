@@ -3,5 +3,5 @@ arch = x86_64
 compiler = msvc
 compiler.cppstd = 23
 compiler.runtime = dynamic
-compiler.version = 193
+compiler.version = 194
 os = Windows

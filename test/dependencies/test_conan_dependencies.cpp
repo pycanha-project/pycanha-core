@@ -1,6 +1,12 @@
 #include <catch2/catch_test_macros.hpp>
 
+#if __has_include(<hdf5.h>)
 #include <hdf5.h>
+#elif __has_include(<hdf5/hdf5.h>)
+#include <hdf5/hdf5.h>
+#else
+#error "HDF5 header not found"
+#endif
 
 #include <symengine/add.h>
 #include <symengine/basic.h>
