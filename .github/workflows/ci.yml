@@ -34,7 +34,7 @@ jobs:
 
     name: ${{matrix.config.os}} ${{matrix.config.compiler}} ${{matrix.build_type}} built and tests
     runs-on: ${{matrix.config.os}}-latest
-    timeout-minutes: 20
+    timeout-minutes: 45
 
     steps:
     - name: Check out repository
@@ -65,4 +65,6 @@ jobs:
         conan create . --build=missing
         -pr:h=${{matrix.config.profile_base}} -pr:h=build-${{matrix.build_type}} -pr:h=options-ci
         -pr:b=${{matrix.config.profile_base}} -pr:b=build-${{matrix.build_type}} -pr:b=options-ci
+        -s:h "&:build_type=${{ matrix.build_type == 'debug' && 'Debug' || 'Release' }}"
+        -s:h "*:build_type=Release"
         -o PYCANHA_OPTION_USE_MKL=${{ matrix.config.mkl_option }}
