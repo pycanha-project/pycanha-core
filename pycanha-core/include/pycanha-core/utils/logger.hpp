@@ -1,11 +1,11 @@
 #pragma once
 
+#include <spdlog/common.h>
+#include <spdlog/logger.h>
+
 #include <memory>
 #include <ostream>
 #include <string_view>
-
-#include <spdlog/common.h>
-#include <spdlog/logger.h>
 
 namespace pycanha {
 
