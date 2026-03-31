@@ -100,7 +100,7 @@ TEST_CASE("Couplings stores and retrieves conductances", "[couplings]") {
     }
 
     SECTION("Invalid nodes return safe defaults") {
-        REQUIRE_FALSE(couplings.coupling_exists(99, 100));
+        REQUIRE(!couplings.coupling_exists(99, 100));
         REQUIRE(std::isnan(couplings.get_coupling_value(99, 100)));
         REQUIRE((couplings.get_coupling_value_ref(99, 100) == nullptr));
         REQUIRE((couplings.get_coupling_value_address(99, 100) == 0U));
