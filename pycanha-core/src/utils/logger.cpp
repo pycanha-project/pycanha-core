@@ -1,11 +1,15 @@
 #include "pycanha-core/utils/logger.hpp"
 
+#include <spdlog/common.h>
+#include <spdlog/logger.h>
 #include <spdlog/sinks/ostream_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
 
 #include <memory>
+#include <ostream>
 #include <string>
+#include <string_view>
 #include <utility>
 
 namespace pycanha {
