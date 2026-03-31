@@ -46,6 +46,7 @@ class Recipe_pycanha_core(ConanFile):
         "catch2": "3.13.0",
         "hdf5": "1.14.6",
         "symengine": "0.14.0",
+        "spdlog": "1.17.0",
         "doxygen": "1.9.4",  # Tested version, but this is just a hint for CMake
         "doxygen_awesome_css": "v2.2.0",
     }
@@ -81,6 +82,7 @@ class Recipe_pycanha_core(ConanFile):
         "PYCANHA_OPTION_CPPCHECK": False,
         "PYCANHA_OPTION_SANITIZE_ADDR": False,
         "PYCANHA_OPTION_SANITIZE_UNDEF": False,
+        "spdlog/*:use_std_fmt": True,
     }
 
     # Sources are located in the same place as this recipe, copy them to the recipe
@@ -97,6 +99,11 @@ class Recipe_pycanha_core(ConanFile):
         self.requires(f"eigen/{versions['eigen']}", transitive_headers=True)
         self.requires(f"hdf5/{versions['hdf5']}")
         self.requires(f"symengine/{versions['symengine']}")
+        self.requires(
+            f"spdlog/{versions['spdlog']}",
+            transitive_headers=True,
+            transitive_libs=True,
+        )
         # transitive_headers=True is used when the dependencies of the library are headers needed by the consumer.
 
         # self.requires(f"cdt/{versions['cdt']}")
@@ -290,6 +297,7 @@ class Recipe_pycanha_core(ConanFile):
         #    So now the headers are in the include folder, and conan will find them automatically.
 
         self.cpp_info.libs = ["pycanha-core"]
+        self.cpp_info.requires = ["eigen::eigen3", "spdlog::libspdlog"]
 
         if self.options.PYCANHA_OPTION_USE_MKL:
             self.cpp_info.defines.append("PYCANHA_USE_MKL=1")

@@ -437,7 +437,7 @@ void has_same_structure_test() {
             const Eigen::VectorXi cap_b = Eigen::VectorXi::Constant(rows, 6);
             a.reserve(cap_a);
             b.reserve(cap_b);
-            REQUIRE_FALSE(has_same_structure(a, b));
+            REQUIRE(!has_same_structure(a, b));
         }
     }
 
@@ -453,7 +453,7 @@ void has_same_structure_test() {
         Index zc = 0;
         if (pick_zero(u1, zr, zc)) {
             u1.coeffRef(zr, zc) = 3.14;
-            REQUIRE_FALSE(has_same_structure(u1, u2));
+            REQUIRE(!has_same_structure(u1, u2));
         }
     }
 
@@ -465,7 +465,7 @@ void has_same_structure_test() {
         random_fill_sparse(c2, 0.40, -9.0, 9.0, 9898);
         c1.makeCompressed();
         c2.uncompress();
-        REQUIRE_FALSE(has_same_structure(c1, c2));
+        REQUIRE(!has_same_structure(c1, c2));
     }
 
     // --- Compressed: identical -> true; remove an entry -> false
@@ -492,7 +492,7 @@ void has_same_structure_test() {
         if (pick_nonzero(k1, rr, cc)) {
             k1.coeffRef(rr, cc) = 0.0;
             k1.prune(0.0);
-            REQUIRE_FALSE(has_same_structure(k1, k2));
+            REQUIRE(!has_same_structure(k1, k2));
         }
     }
 
@@ -504,7 +504,7 @@ void has_same_structure_test() {
         random_fill_sparse(ref, 0.30, -2.0, 2.0, 1);
         bigger.makeCompressed();
         ref.makeCompressed();
-        REQUIRE_FALSE(has_same_structure(bigger, ref));
+        REQUIRE(!has_same_structure(bigger, ref));
     }
 }
 
