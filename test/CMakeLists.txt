@@ -18,6 +18,7 @@ set(TEST_SOURCES
       "${CMAKE_CURRENT_SOURCE_DIR}/tmm/test_nodes.cpp"
       "${CMAKE_CURRENT_SOURCE_DIR}/tmm/test_thermal_network.cpp"
       "${CMAKE_CURRENT_SOURCE_DIR}/tmm/test_thermal_mathematical_model.cpp"
+      "${CMAKE_CURRENT_SOURCE_DIR}/tmm/test_esatan_reader.cpp"
       "${CMAKE_CURRENT_SOURCE_DIR}/tmm/parameters/test_parameters.cpp"
       "${CMAKE_CURRENT_SOURCE_DIR}/tmm/parameters/test_formulas.cpp"
       "${CMAKE_CURRENT_SOURCE_DIR}/tmm/thermaldata/test_thermaldata.cpp"
@@ -29,7 +30,7 @@ set(TEST_HEADERS "")
 
 #Tests need Catch2
 find_package(Catch2 REQUIRED)
-find_package(HDF5 REQUIRED)
+find_package(HDF5 REQUIRED COMPONENTS CXX)
 find_package(symengine REQUIRED CONFIG)
 
 # Create the target "tests_lib". This target only includes the library and prints info
