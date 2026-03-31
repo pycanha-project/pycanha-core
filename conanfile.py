@@ -44,6 +44,8 @@ class Recipe_pycanha_core(ConanFile):
         "cdt": "1.4.4",
         "mkl": "2025.3.1",
         "catch2": "3.13.0",
+        "hdf5": "1.14.6",
+        "symengine": "0.14.0",
         "doxygen": "1.9.4",  # Tested version, but this is just a hint for CMake
         "doxygen_awesome_css": "v2.2.0",
     }
@@ -93,6 +95,8 @@ class Recipe_pycanha_core(ConanFile):
 
         # Library dependencies
         self.requires(f"eigen/{versions['eigen']}", transitive_headers=True)
+        self.requires(f"hdf5/{versions['hdf5']}")
+        self.requires(f"symengine/{versions['symengine']}")
         # transitive_headers=True is used when the dependencies of the library are headers needed by the consumer.
 
         # self.requires(f"cdt/{versions['cdt']}")

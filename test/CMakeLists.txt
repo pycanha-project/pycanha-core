@@ -7,6 +7,7 @@ set(TEST_SOURCES
       "${CMAKE_CURRENT_SOURCE_DIR}/gmm/test_transformations.cpp"
       "${CMAKE_CURRENT_SOURCE_DIR}/gmm/test_geometry.cpp"
       "${CMAKE_CURRENT_SOURCE_DIR}/gmm/test_geometrymodel.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/dependencies/test_conan_dependencies.cpp"
 
   "${CMAKE_CURRENT_SOURCE_DIR}/tmm/test_coupling.cpp"
       "${CMAKE_CURRENT_SOURCE_DIR}/tmm/test_couplings.cpp"
@@ -26,6 +27,8 @@ set(TEST_HEADERS "")
 
 #Tests need Catch2
 find_package(Catch2 REQUIRED)
+find_package(hdf5 REQUIRED CONFIG)
+find_package(symengine REQUIRED CONFIG)
 
 # Create the target "tests_lib". This target only includes the library and prints info
 # It is useful for cppcheck to avoid warnings with Catch2
@@ -43,6 +46,8 @@ target_sources(
 #Link with the lib and catch2
 target_link_libraries(${TEST_TARGET_NAME} PRIVATE ${LIB_NAME})
 target_link_libraries(${TEST_TARGET_NAME} PRIVATE Catch2::Catch2WithMain)
+target_link_libraries(${TEST_TARGET_NAME} PRIVATE hdf5::hdf5)
+target_link_libraries(${TEST_TARGET_NAME} PRIVATE symengine::symengine)
 
 target_set_warnings(
   TARGET
