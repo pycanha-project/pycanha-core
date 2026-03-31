@@ -67,12 +67,13 @@ function(add_clang_tidy_to_target target)
             COMMAND
                 ${CLANG_TIDY_EXE}
                 --config-file ${CMAKE_SOURCE_DIR}/.clang-tidy
-                --exclude-header-filter=.*/(\\.conan2|_deps)/.*
+                "--exclude-header-filter=.*/(\\.conan2|_deps)/.*"
                 --extra-arg-before=-std=${CMAKE_CXX_STANDARD}
                 ${CLANG_TIDY_WARNING_AS_ERRORS}
                 -p ${CMAKE_BINARY_DIR}
                 ${TARGET_SOURCES}
             WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+            VERBATIM
             USES_TERMINAL)
     else()
         message("==> CLANGTIDY NOT FOUND")

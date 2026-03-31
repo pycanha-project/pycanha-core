@@ -6,8 +6,8 @@
 
 TEST_CASE("ostream logger emits formatted messages", "[utils][logger]") {
     std::ostringstream output;
-    auto logger = pycanha::create_ostream_logger("logger-test", output,
-                                                 spdlog::level::trace);
+    auto logger =
+        pycanha::create_ostream_logger("logger-test", output, spdlog::level::trace);
 
     logger->info("logger smoke test {}", 23);
     logger->flush();
