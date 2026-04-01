@@ -3,31 +3,31 @@
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
-#include <iostream>
 #include <iterator>
 #include <memory>
 #include <string>
 #include <utility>
 #include <vector>
 
+#include <spdlog/spdlog.h>
+
 #include "pycanha-core/config.hpp"
 #include "pycanha-core/globals.hpp"
 #include "pycanha-core/tmm/literalstring.hpp"
 #include "pycanha-core/tmm/node.hpp"
+#include "pycanha-core/utils/logger.hpp"
 
 using namespace pycanha;  // NOLINT(build/namespaces)
 
 // Default constructor
 Nodes::Nodes() {
-    if (DEBUG) {
-        std::cout << "Default constructor of TNs called " << _self_pointer
-                  << "\n";
-    }
+    SPDLOG_LOGGER_TRACE(pycanha::get_logger(),
+                         "Default constructor of TNs called");
 
     // Create the shared pointer with a dummy destructor, otherwise TNs
     // destructor would be called twice
     _self_pointer = std::shared_ptr<Nodes>(
-        this, [](Nodes* /*p*/) { std::cout << "Self deleting \n"; });
+        this, [](Nodes* /*p*/) {});
 }
 
 // Copy Constructor
@@ -62,24 +62,20 @@ Nodes::Nodes(const Nodes& other)
       literals_aph(other.literals_aph),
       _usr_to_int_node_num(other._usr_to_int_node_num),
       _node_num_mapped(other._node_num_mapped) {
-    if (DEBUG) {
-        std::cout << "Copy constructor of TNs called " << &other << " -> "
-                  << this << "\n";
-    }
+    SPDLOG_LOGGER_TRACE(pycanha::get_logger(),
+                         "Copy constructor of TNs called");
 
     // Create the shared pointer with a dummy destructor, otherwise TNs
     // destructor would be called twice
     _self_pointer = std::shared_ptr<Nodes>(
-        this, [](Nodes* /*p*/) { std::cout << "Self deleting \n"; });
+        this, [](Nodes* /*p*/) {});
 }
 
 // Copy Assignment Operator
 Nodes& Nodes::operator=(const Nodes& other) {
     if (this != &other) {
-        if (DEBUG) {
-            std::cout << "Copy assignment operator of TNs called " << &other
-                      << " -> " << this << "\n";
-        }
+        SPDLOG_LOGGER_TRACE(pycanha::get_logger(),
+                             "Copy assignment operator of TNs called");
 
         // Copy data members
         estimated_number_of_nodes = other.estimated_number_of_nodes;
@@ -115,7 +111,7 @@ Nodes& Nodes::operator=(const Nodes& other) {
 
         // Recreate self_pointer
         _self_pointer = std::shared_ptr<Nodes>(
-            this, [](Nodes* /*p*/) { std::cout << "Self deleting \n"; });
+            this, [](Nodes* /*p*/) {});
     }
     return *this;
 }
@@ -152,10 +148,8 @@ Nodes::Nodes(Nodes&& other) noexcept
       literals_aph(std::move(other.literals_aph)),
       _usr_to_int_node_num(std::move(other._usr_to_int_node_num)),
       _node_num_mapped(other._node_num_mapped) {
-    if (DEBUG) {
-        std::cout << "Move constructor of TNs called " << &other << " -> "
-                  << this << "\n";
-    }
+    SPDLOG_LOGGER_TRACE(pycanha::get_logger(),
+                         "Move constructor of TNs called");
 
     // Transfer the self_pointer
     _self_pointer = std::move(other._self_pointer);
@@ -167,10 +161,8 @@ Nodes::Nodes(Nodes&& other) noexcept
 // Move Assignment Operator
 Nodes& Nodes::operator=(Nodes&& other) noexcept {
     if (this != &other) {
-        if (DEBUG) {
-            std::cout << "Move assignment operator of TNs called " << &other
-                      << " -> " << this << "\n";
-        }
+        SPDLOG_LOGGER_TRACE(pycanha::get_logger(),
+                             "Move assignment operator of TNs called");
 
         // Move data members
         estimated_number_of_nodes = other.estimated_number_of_nodes;
@@ -215,9 +207,7 @@ Nodes& Nodes::operator=(Nodes&& other) noexcept {
 
 // Destructor
 Nodes::~Nodes() {
-    if (DEBUG) {
-        std::cout << "Destructor of TNs called " << this << "\n";
-    }
+    SPDLOG_LOGGER_TRACE(pycanha::get_logger(), "Destructor of TNs called");
 }
 
 void Nodes::ensure_node_map() const {
@@ -232,7 +222,8 @@ bool Nodes::find_node_index(int node_num, Index& index,
     auto it = _usr_to_int_node_num.find(node_num);
     if (it == _usr_to_int_node_num.end()) {
         if (error_prefix != nullptr) {
-            std::cout << error_prefix << " Error: Node does not exist.\n";
+            SPDLOG_LOGGER_WARN(pycanha::get_logger(),
+                                "{} Error: Node does not exist.", error_prefix);
         }
         return false;
     }
@@ -326,8 +317,8 @@ void Nodes::add_node(Node& node) {
     Index insert_idx = 0;
 
     if (_usr_to_int_node_num.find(node_num) != _usr_to_int_node_num.end()) {
-        // TODO: ERROR. Duplicated node
-        std::cout << "ERROR. Node " << node_num << " already inserted.\n";
+        SPDLOG_LOGGER_ERROR(pycanha::get_logger(),
+                             "Node {} already inserted.", node_num);
         return;
     }
 
@@ -343,8 +334,7 @@ void Nodes::add_node(Node& node) {
             std::distance(_bound_node_num_vector.begin(), it));
         insert_idx += static_cast<Index>(_diff_node_num_vector.size());
     } else {
-        // TODO: ERROR. WRONG NODE TYPE
-        std::cout << "ERROR. Wrong node type?\n";
+        SPDLOG_LOGGER_ERROR(pycanha::get_logger(), "Wrong node type.");
         return;
     }
 
@@ -530,9 +520,8 @@ double* Nodes::get_aph_value_ref(int node_num) {
 bool Nodes::set_type(int node_num, char type) {
     ensure_node_map();
     if (type != 'D' && type != 'B') {
-        if (VERBOSE) {
-            std::cout << "Error: Invalid node type. It should be 'D' or 'B'.\n";
-        }
+        SPDLOG_LOGGER_WARN(pycanha::get_logger(),
+                            "Invalid node type. It should be 'D' or 'B'.");
         return false;
     }
 
@@ -587,7 +576,8 @@ void Nodes::create_node_num_map() const {
 }
 
 void Nodes::diffusive_to_boundary(int usr_node_num) {
-    std::cout << "TODO: Not implemented yet\n";
+    SPDLOG_LOGGER_WARN(pycanha::get_logger(),
+                        "diffusive_to_boundary: Not implemented yet");
     static_cast<void>(_node_num_mapped);
     static_cast<void>(usr_node_num);
     // 1. Copy all the info of usr_node_num to a new node not associated with
@@ -598,7 +588,8 @@ void Nodes::diffusive_to_boundary(int usr_node_num) {
 }
 
 void Nodes::boundary_to_diffusive(int usr_node_num) {
-    std::cout << "TODO: Not implemented yet\n";
+    SPDLOG_LOGGER_WARN(pycanha::get_logger(),
+                        "boundary_to_diffusive: Not implemented yet");
     static_cast<void>(_node_num_mapped);
     static_cast<void>(usr_node_num);
     // 1. Copy all the info of usr_node_num to a new node not associated with
@@ -611,7 +602,7 @@ void Nodes::boundary_to_diffusive(int usr_node_num) {
 Index Nodes::get_idx_from_node_num(int node_num) const {
     Index index = 0;
     if (!find_node_index(node_num, index, nullptr)) {
-        std::cout << "Error: Node does not exists" << '\n';
+        SPDLOG_LOGGER_WARN(pycanha::get_logger(), "Node does not exist");
         return -1;
     }
     return index;
@@ -623,7 +614,7 @@ int Nodes::get_node_num_from_idx(Index idx) const {
     const auto bound_size = static_cast<Index>(_bound_node_num_vector.size());
 
     if (idx < 0) {
-        std::cout << "Error: Node does not exists\n";
+        SPDLOG_LOGGER_WARN(pycanha::get_logger(), "Node does not exist");
         return -1;
     }
 
@@ -636,7 +627,7 @@ int Nodes::get_node_num_from_idx(Index idx) const {
         return _bound_node_num_vector[static_cast<std::size_t>(adjusted)];
     }
 
-    std::cout << "Error: Node does not exists\n";
+    SPDLOG_LOGGER_WARN(pycanha::get_logger(), "Node does not exist");
     return -1;
 }
 
@@ -736,10 +727,8 @@ void Nodes::remove_node(int node_num) {
     auto idx = get_idx_from_node_num(node_num);
 
     if (idx < 0) {
-        // Node does not exist
-        if (VERBOSE) {
-            std::cout << "Node " << node_num << " does not exists." << '\n';
-        }
+        SPDLOG_LOGGER_WARN(pycanha::get_logger(),
+                            "Node {} does not exist.", node_num);
         return;
     }
 
@@ -787,8 +776,7 @@ void Nodes::add_node_insert_idx(Node& node, Index insert_idx) {
                 (insert_idx - static_cast<Index>(_diff_node_num_vector.size())),
             node_num);
     } else {
-        // TODO: ERROR. WRONG NODE TYPE
-        std::cout << "ERROR. Wrong node type?\n";
+        SPDLOG_LOGGER_ERROR(pycanha::get_logger(), "Wrong node type.");
         return;
     }
 

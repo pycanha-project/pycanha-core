@@ -5,15 +5,17 @@
 #include <cmath>
 #include <cstddef>
 #include <cstring>
-#include <iostream>
 #include <iterator>
 #include <memory>
 #include <stdexcept>
 #include <utility>
 
+#include <spdlog/spdlog.h>
+
 #include "pycanha-core/solvers/solver.hpp"
 #include "pycanha-core/thermaldata/thermaldata.hpp"
 #include "pycanha-core/tmm/thermalmathematicalmodel.hpp"
+#include "pycanha-core/utils/logger.hpp"
 
 namespace pycanha {
 
@@ -125,7 +127,7 @@ void TransientSolver::restart_solve() {
     time_iter = -1;
     idata_out = 0;
 
-    std::cout << "(Re)starting solve..." << '\n';
+    SPDLOG_LOGGER_INFO(pycanha::get_logger(), "(Re)starting solve...");
 }
 
 }  // namespace pycanha

@@ -1,15 +1,16 @@
 #include "pycanha-core/solvers/solver.hpp"
 
-#include <iostream>
 #include <memory>
 #include <unordered_set>
 #include <utility>
 
-#include "pycanha-core/config.hpp"
+#include <spdlog/spdlog.h>
+
 #include "pycanha-core/globals.hpp"
 #include "pycanha-core/tmm/nodes.hpp"
 #include "pycanha-core/tmm/thermalmathematicalmodel.hpp"
 #include "pycanha-core/tmm/thermalnetwork.hpp"
+#include "pycanha-core/utils/logger.hpp"
 
 namespace pycanha {
 
@@ -40,9 +41,8 @@ Solver::Solver(std::shared_ptr<ThermalMathematicalModel> tmm_shptr)
       Cb(nullptr, Index{0}) {}
 
 void Solver::initialize_common() {
-    if constexpr (DEBUG) {
-        std::cout << solver_name << " initializing..." << '\n';
-    }
+    SPDLOG_LOGGER_DEBUG(pycanha::get_logger(), "{} initializing...",
+                        solver_name);
 
     KLdd.makeCompressed();
     KLdb.makeCompressed();

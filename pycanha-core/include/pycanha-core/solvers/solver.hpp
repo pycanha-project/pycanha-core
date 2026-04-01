@@ -11,6 +11,7 @@
 #include "pycanha-core/tmm/thermalmathematicalmodel.hpp"
 #include "pycanha-core/utils/Instrumentor.hpp"
 #include "pycanha-core/utils/SparseUtils.hpp"
+#include "pycanha-core/utils/profiling.hpp"
 
 namespace pycanha {
 

@@ -3,11 +3,12 @@
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
-#include <iostream>
 #include <memory>
 #include <stdexcept>
 #include <string>
 #include <utility>
+
+#include <spdlog/spdlog.h>
 
 #include "pycanha-core/solvers/solver.hpp"
 
@@ -22,6 +23,8 @@
 #include "pycanha-core/solvers/tscnrl.hpp"
 #include "pycanha-core/tmm/thermalmathematicalmodel.hpp"
 #include "pycanha-core/utils/SparseUtils.hpp"
+#include "pycanha-core/utils/logger.hpp"
+#include "pycanha-core/utils/profiling.hpp"
 
 namespace pycanha {
 
@@ -41,10 +44,11 @@ void TSCNRLDS::initialize() {
     TSCNRL::initialize_common();
 
 #if PYCANHA_USE_MKL
-    std::cout << "TSCNRLDS (MKL) initializing..." << '\n';
-    std::cout << "MKL threads: " << mkl_get_max_threads() << '\n';
+    SPDLOG_LOGGER_INFO(get_logger(), "TSCNRLDS (MKL) initializing...");
+    SPDLOG_LOGGER_INFO(get_logger(), "MKL threads: {}",
+                        mkl_get_max_threads());
 #else
-    std::cout << "TSCNRLDS (Eigen) initializing..." << '\n';
+    SPDLOG_LOGGER_INFO(get_logger(), "TSCNRLDS (Eigen) initializing...");
 #endif
 
     sparse_utils::add_zero_diag_square(_k_matrix);
@@ -188,10 +192,10 @@ void TSCNRLDS::initialize() {
 }
 
 void TSCNRLDS::solve() {
-    if constexpr (PROFILING) {
-        Instrumentor::get().begin_session("TSCNRLDS SOLVER");
-    }
-    std::cout << "TSCNRLDS solving..." << '\n';
+#ifdef PYCANHA_PROFILING
+    Instrumentor::get().begin_session("TSCNRLDS SOLVER");
+#endif
+    SPDLOG_LOGGER_INFO(get_logger(), "TSCNRLDS solving...");
 
     restart_solve();
     callback_transient_time_change();
@@ -232,12 +236,13 @@ void TSCNRLDS::solve() {
         if (!solver_converged) {
             Index max_index = -1;
             dTd.cwiseAbs().maxCoeff(&max_index);
-            std::cout << "ERROR: TSCNRLDS did not converge after " << MAX_ITERS
-                      << " iterations." << '\n';
-            std::cout << "Time iter: " << time_iter << " Time: " << time << " s"
-                      << '\n';
-            std::cout << "Max. dT: " << max_dT << " K at index: " << max_index
-                      << '\n';
+            SPDLOG_LOGGER_ERROR(
+                get_logger(),
+                "TSCNRLDS did not converge after {} iterations.", MAX_ITERS);
+            SPDLOG_LOGGER_ERROR(
+                get_logger(), "Time iter: {} Time: {} s", time_iter, time);
+            SPDLOG_LOGGER_ERROR(
+                get_logger(), "Max. dT: {} K at index: {}", max_dT, max_index);
         }
 
         callback_transient_after_timestep();
@@ -245,9 +250,9 @@ void TSCNRLDS::solve() {
     }
 
     outputs_first_last();
-    if constexpr (PROFILING) {
-        Instrumentor::get().end_session();
-    }
+#ifdef PYCANHA_PROFILING
+    Instrumentor::get().end_session();
+#endif
 }
 
 void TSCNRLDS::deinitialize() { release_solver_resources(); }
@@ -282,6 +287,7 @@ void TSCNRLDS::release_solver_resources() {
 
 void TSCNRLDS::build_capacities() {
     SOLVER_PROFILE_SCOPE("Build C");
+    PYCANHA_PROFILE_SCOPE("TSCNRLDS Build C");
     _capacities = Cd;
     _capacities.array() += eps_capacity;
     _capacities_inverse = _capacities.cwiseInverse();
@@ -289,6 +295,7 @@ void TSCNRLDS::build_capacities() {
 
 void TSCNRLDS::build_conductance_matrix() {
     SOLVER_PROFILE_SCOPE("Linearization");
+    PYCANHA_PROFILE_SCOPE("TSCNRLDS Linearization");
 
     _t3_domain = (4.0 * STF_BOLTZ) * Td.array().cube();
     _t3_boundary = (4.0 * STF_BOLTZ) * Tb.array().cube();
@@ -333,6 +340,7 @@ void TSCNRLDS::build_conductance_matrix() {
 
 void TSCNRLDS::build_heat_flux() {
     SOLVER_PROFILE_SCOPE("Build Q");
+    PYCANHA_PROFILE_SCOPE("TSCNRLDS Build Q");
     Q = QI_sp + QS_sp + QA_sp + QE_sp + QR_sp;
     new (&Qd) WrappVectorXd(Q.data(), nd);
     Qd += _radiation_linear_term + KLdb * Tb + KRdb * _t4_boundary;
@@ -352,11 +360,13 @@ void TSCNRLDS::euler_step() {
 
 void TSCNRLDS::add_capacities_to_matrix() {
     SOLVER_PROFILE_SCOPE("Add C to K");
+    PYCANHA_PROFILE_SCOPE("TSCNRLDS Add C to K");
     _k_matrix.diagonal() -= (2.0 / dtime) * _capacities;
 }
 
 void TSCNRLDS::solve_step() {
     SOLVER_PROFILE_SCOPE("Solver Step");
+    PYCANHA_PROFILE_SCOPE("TSCNRLDS Solver Step");
     _rhs = Qd + _heat_flux_n0;
 
 #if PYCANHA_USE_MKL

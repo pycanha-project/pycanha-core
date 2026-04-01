@@ -152,6 +152,26 @@ else()
 endif()
 # ============================================================================
 
+# ============================================================================
+# Logging and Profiling Configuration
+# ============================================================================
+# SPDLOG_ACTIVE_LEVEL controls compile-time log-level stripping.
+#   Debug   → TRACE (level 0): all log calls compiled in
+#   Release → INFO  (level 2): SPDLOG_LOGGER_TRACE/DEBUG become no-ops
+target_compile_definitions(${LIB_NAME} PUBLIC
+    $<IF:$<CONFIG:Debug>,SPDLOG_ACTIVE_LEVEL=0,SPDLOG_ACTIVE_LEVEL=2>
+)
+
+# PYCANHA_PROFILING gates the PYCANHA_PROFILE_SCOPE() macro and the
+# spdlog profiling logger.  Also enables Chrome-tracing Instrumentor.
+if(PYCANHA_OPTION_PROFILING)
+    target_compile_definitions(${LIB_NAME} PUBLIC PYCANHA_PROFILING)
+    message(STATUS "Profiling logging enabled (PYCANHA_PROFILING)")
+else()
+    message(STATUS "Profiling logging disabled")
+endif()
+# ============================================================================
+
 configure_file(
     "${CMAKE_CURRENT_SOURCE_DIR}/include/${LIB_NAME}/config.hpp.in" 
     "${CMAKE_CURRENT_SOURCE_DIR}/include/${LIB_NAME}/config.hpp" 

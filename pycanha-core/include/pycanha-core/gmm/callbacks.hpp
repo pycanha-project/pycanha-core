@@ -1,10 +1,12 @@
 #pragma once
 #include <algorithm>
 #include <functional>
-#include <iostream>
 #include <vector>
 
+#include <spdlog/spdlog.h>
+
 #include "pycanha-core/gmm/id.hpp"
+#include "pycanha-core/utils/logger.hpp"
 
 namespace pycanha::gmm {
 
@@ -17,10 +19,10 @@ class GeometryUpdateCallback {
 
   public:
     void callback_with_id(GeometryIdType id) {
-        std::cout << "Callback fun. Id: " << id << '\n';
+        SPDLOG_LOGGER_TRACE(pycanha::get_logger(), "Callback fun. Id: {}", id);
         // Do something
         for (const auto& callback : _callbacks) {
-            std::cout << "Calling callback\n";
+            SPDLOG_LOGGER_TRACE(pycanha::get_logger(), "Calling callback");
             if (callback) {
                 callback(id);
             }

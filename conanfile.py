@@ -63,6 +63,7 @@ class Recipe_pycanha_core(ConanFile):
         "PYCANHA_OPTION_INCLUDE_WHAT_YOU_USE": [True, False],
         "PYCANHA_OPTION_CLANG_TIDY": [True, False],
         "PYCANHA_OPTION_CPPCHECK": [True, False],
+        "PYCANHA_OPTION_PROFILING": [True, False],
         "PYCANHA_OPTION_SANITIZE_ADDR": [True, False],
         "PYCANHA_OPTION_SANITIZE_UNDEF": [True, False],
     }
@@ -80,6 +81,7 @@ class Recipe_pycanha_core(ConanFile):
         "PYCANHA_OPTION_INCLUDE_WHAT_YOU_USE": False,
         "PYCANHA_OPTION_CLANG_TIDY": False,
         "PYCANHA_OPTION_CPPCHECK": False,
+        "PYCANHA_OPTION_PROFILING": False,
         "PYCANHA_OPTION_SANITIZE_ADDR": False,
         "PYCANHA_OPTION_SANITIZE_UNDEF": False,
         "spdlog/*:use_std_fmt": True,
@@ -336,6 +338,9 @@ class Recipe_pycanha_core(ConanFile):
                     self.buildenv_info.prepend_path("LD_LIBRARY_PATH", str(lib_dir))
         else:
             self.cpp_info.defines.append("PYCANHA_USE_MKL=0")
+
+        if self.options.PYCANHA_OPTION_PROFILING:
+            self.cpp_info.defines.append("PYCANHA_PROFILING")
 
         # Without adding the link flags, the sanitizers libraries are not linked (for the consumer).
         if self.options.PYCANHA_OPTION_SANITIZE_ADDR:

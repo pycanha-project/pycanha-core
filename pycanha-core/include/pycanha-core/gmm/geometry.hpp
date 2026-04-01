@@ -1,16 +1,18 @@
 #pragma once
-#include <iostream>
 #include <memory>
 #include <string>
 #include <utility>
 #include <variant>
 #include <vector>
 
+#include <spdlog/spdlog.h>
+
 #include "pycanha-core/gmm/id.hpp"
 #include "pycanha-core/gmm/primitives.hpp"
 #include "pycanha-core/gmm/thermalmesh.hpp"
 #include "pycanha-core/gmm/transformations.hpp"
 #include "pycanha-core/gmm/trimesh.hpp"
+#include "pycanha-core/utils/logger.hpp"
 
 namespace pycanha::gmm {
 
@@ -623,7 +625,7 @@ class GeometryGroupCutted : public GeometryGroup {
      * @param tol - Tolerance used to create the mesh.
      */
     void create_cutted_mesh(double tol) {
-        std::cout << "Creating cutted mesh (experimental)" << tol << '\n';
+        SPDLOG_LOGGER_INFO(pycanha::get_logger(), "Creating cutted mesh (experimental), tol={}", tol);
 
         // TODO:
         // Reset all the cutting information vectors

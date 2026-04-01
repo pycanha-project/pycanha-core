@@ -56,6 +56,8 @@ option(PYCANHA_OPTION_DOCS                 "Add a 'doc' target to build document
 option(PYCANHA_OPTION_WARNINGS             "Add warnings to targets."                      ON  )
 option(PYCANHA_OPTION_WARNINGS_AS_ERRORS   "Treat warnings as errors."                     OFF )
 
+option(PYCANHA_OPTION_PROFILING            "Enable profiling logging."                     OFF )
+
 option(PYCANHA_OPTION_COVERAGE             "Enable a Code Coverage build."                 OFF )
 option(PYCANHA_OPTION_INCLUDE_WHAT_YOU_USE "Add iwyu to targets."                          OFF ) # Broken right now
 option(PYCANHA_OPTION_CLANG_TIDY           "Enable to add clang tidy."                     OFF )

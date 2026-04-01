@@ -2,7 +2,6 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
-#include <iostream>
 #include <iterator>
 #include <limits>
 #include <memory>
@@ -13,6 +12,8 @@
 #include <utility>
 #include <vector>
 
+#include <spdlog/spdlog.h>
+
 #include "pycanha-core/globals.hpp"
 #include "pycanha-core/gmm/callbacks.hpp"
 #include "pycanha-core/gmm/geometryutils.hpp"
@@ -20,6 +21,7 @@
 #include "pycanha-core/gmm/thermalmesh.hpp"
 #include "pycanha-core/gmm/transformations.hpp"
 #include "pycanha-core/gmm/trimesh.hpp"
+#include "pycanha-core/utils/logger.hpp"
 
 using std::numbers::pi;
 
@@ -1326,34 +1328,32 @@ class Sphere : public Primitive {
      */
     [[nodiscard]] bool is_valid() const override {
         if (_p1 == _p2 || _p1 == _p3 || _p2 == _p3) {
-            std::cout << "Same points in sphere definition" << "\n";
+            SPDLOG_LOGGER_ERROR(pycanha::get_logger(), "Same points in sphere definition");
             throw std::logic_error("Same points in sphere definition");
         }
         if ((_p2 - _p1).cross(_p3 - _p1).norm() < 1e-6) {
-            std::cout << "Points are collinear" << "\n";
+            SPDLOG_LOGGER_ERROR(pycanha::get_logger(), "Points are collinear");
             throw std::logic_error("Points are collinear");
         }
         if (_radius <= 0) {
-            std::cout << "Radius is not positive" << "\n";
+            SPDLOG_LOGGER_ERROR(pycanha::get_logger(), "Radius is not positive");
             throw std::logic_error("Radius is not positive");
         }
         if (_base_truncation < -_radius) {
-            std::cout << "Base truncation is smaller than -radius" << "\n";
+            SPDLOG_LOGGER_ERROR(pycanha::get_logger(), "Base truncation is smaller than -radius");
             throw std::logic_error("Base truncation is smaller than -radius");
         }
         if (_apex_truncation > _radius) {
-            std::cout << "Apex truncation is greater than radius" << "\n";
+            SPDLOG_LOGGER_ERROR(pycanha::get_logger(), "Apex truncation is greater than radius");
             throw std::logic_error("Apex truncation is greater than radius");
         }
         if (_base_truncation >= _apex_truncation) {
-            std::cout
-                << "Base truncation is greater or equal to apex truncation"
-                << "\n";
+            SPDLOG_LOGGER_ERROR(pycanha::get_logger(), "Base truncation is greater or equal to apex truncation");
             throw std::logic_error(
                 "Base truncation is greater or equal to apex truncation");
         }
         if (_start_angle < 0 || _start_angle >= 2.0 * pi) {
-            std::cout << "Start angle is not in [0, 2*pi)" << "\n";
+            SPDLOG_LOGGER_ERROR(pycanha::get_logger(), "Start angle is not in [0, 2*pi)");
             throw std::logic_error("Start angle is not in [0, 2*pi)");
         }
         if (_end_angle < 0 || _end_angle > 2 * pi) {
@@ -1361,7 +1361,7 @@ class Sphere : public Primitive {
             throw std::logic_error("End angle is not in [0, 2*pi]");
         }
         if (_start_angle >= _end_angle) {
-            std::cout << "Start angle is greater or equal to end angle" << "\n";
+            SPDLOG_LOGGER_ERROR(pycanha::get_logger(), "Start angle is greater or equal to end angle");
             throw std::logic_error(
                 "Start angle is greater or equal to end angle");
         }
