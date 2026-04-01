@@ -127,12 +127,6 @@ if(PYCANHA_OPTION_COVERAGE)
       "11/*"
       )
       
-  # Using this flag to avoid member function to be inlined and not reported in codecov
-  # It works in this example but seems to break things... 
-  # See: https://stackoverflow.com/questions/9666800/getting-useful-gcov-results-for-header-only-libraries
-  target_compile_options(${TEST_TARGET_NAME} PRIVATE -fkeep-inline-functions)
-
-
   setup_target_for_coverage_lcov(
       NAME ${COVERAGE_MAIN}
       EXECUTABLE ${TEST_TARGET_NAME}
