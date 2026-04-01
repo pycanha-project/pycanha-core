@@ -9,7 +9,6 @@
 
 #include "pycanha-core/tmm/couplingmatrices.hpp"
 #include "pycanha-core/tmm/thermalmathematicalmodel.hpp"
-#include "pycanha-core/utils/Instrumentor.hpp"
 #include "pycanha-core/utils/SparseUtils.hpp"
 #include "pycanha-core/utils/profiling.hpp"
 
@@ -30,11 +29,6 @@ struct IntPairHash {
                static_cast<std::size_t>(value.second);
     }
 };
-
-#ifndef SOLVER_PROFILE_SCOPE
-// NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
-#define SOLVER_PROFILE_SCOPE(name) PROFILE_SCOPE(name)
-#endif
 
 class Solver {
     friend class SteadyStateSolver;

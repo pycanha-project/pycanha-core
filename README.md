@@ -9,3 +9,8 @@
 
 This is the repository of the C++ core of *pycanha*
 
+## Logging and profiling
+
+The library now uses `spdlog` for structured logging and timing output.
+Usage and configuration details are documented in [docs/logging.md](docs/logging.md).
+

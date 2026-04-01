@@ -2,9 +2,9 @@
 
 // SPDLOG_ACTIVE_LEVEL must be defined before any spdlog include so that
 // compile-time level stripping macros (SPDLOG_LOGGER_TRACE, etc.) work
-// correctly.  The actual value is set via CMake compile definitions:
-//   Debug   → SPDLOG_ACTIVE_LEVEL=0  (TRACE — everything compiled in)
-//   Release → SPDLOG_ACTIVE_LEVEL=2  (INFO  — trace/debug become no-ops)
+// correctly. The actual value is set via CMake compile definitions.
+// Default behaviour is TRACE in Debug and INFO otherwise, and it can be
+// overridden with PYCANHA_OPTION_ACTIVATE_ALL_LOGS_OVERRIDE.
 //
 // Future Python sink integration:
 //   In pycanha-core-python, create a C++ class subclassing

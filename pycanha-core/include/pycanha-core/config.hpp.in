@@ -70,15 +70,17 @@ constexpr bool MKL_ENABLED = false;
 constexpr std::string_view MKL_VERSION = "N/A";
 #endif
 // Logging:
-//   - SPDLOG_ACTIVE_LEVEL is set by CMake (TRACE in Debug, INFO in Release).
+//   - SPDLOG_ACTIVE_LEVEL is set by CMake. The default is TRACE in Debug and
+//     INFO otherwise, but it can be overridden with
+//     PYCANHA_OPTION_ACTIVATE_ALL_LOGS_OVERRIDE.
 //     Use SPDLOG_LOGGER_TRACE / SPDLOG_LOGGER_DEBUG macros so that trace and
-//     debug calls compile to no-ops in Release builds.
+//     debug calls compile to no-ops when the active level is higher.
 //   - PYCANHA_PROFILING is defined when CMake option
 //     PYCANHA_OPTION_PROFILING is ON.  It gates the PYCANHA_PROFILE_SCOPE()
 //     macro and the spdlog-based profiling logger.
 //   - The Chrome-tracing Instrumentor (Instrumentor.hpp) is preserved for
-//     visualisation workflows; it uses the separate PROFILING preprocessor
-//     guard which is defined when PYCANHA_PROFILING is set.
+//     visualisation workflows, but solver profiling uses only the spdlog-based
+//     PYCANHA_PROFILE_SCOPE() path.
 
 // Assert expr when in DEBUG
 // msg -> Error message

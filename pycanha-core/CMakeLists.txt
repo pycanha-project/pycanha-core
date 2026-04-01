@@ -156,14 +156,19 @@ endif()
 # Logging and Profiling Configuration
 # ============================================================================
 # SPDLOG_ACTIVE_LEVEL controls compile-time log-level stripping.
-#   Debug   → TRACE (level 0): all log calls compiled in
-#   Release → INFO  (level 2): SPDLOG_LOGGER_TRACE/DEBUG become no-ops
+if(PYCANHA_OPTION_ACTIVATE_ALL_LOGS_OVERRIDE)
+    set(_pycanha_spdlog_active_level_define "SPDLOG_LEVEL_TRACE")
+else()
+    set(_pycanha_spdlog_active_level_define
+        "$<IF:$<CONFIG:Debug>,SPDLOG_LEVEL_TRACE,SPDLOG_LEVEL_INFO>")
+endif()
+
 target_compile_definitions(${LIB_NAME} PUBLIC
-    $<IF:$<CONFIG:Debug>,SPDLOG_ACTIVE_LEVEL=0,SPDLOG_ACTIVE_LEVEL=2>
-)
+    "SPDLOG_ACTIVE_LEVEL=${_pycanha_spdlog_active_level_define}")
+message(STATUS "PYCANHA SPDLOG_ACTIVE_LEVEL=${_pycanha_spdlog_active_level_define}")
 
 # PYCANHA_PROFILING gates the PYCANHA_PROFILE_SCOPE() macro and the
-# spdlog profiling logger.  Also enables Chrome-tracing Instrumentor.
+# spdlog profiling logger.
 if(PYCANHA_OPTION_PROFILING)
     target_compile_definitions(${LIB_NAME} PUBLIC PYCANHA_PROFILING)
     message(STATUS "Profiling logging enabled (PYCANHA_PROFILING)")

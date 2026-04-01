@@ -75,22 +75,22 @@ void Solver::initialize_common() {
 }
 
 void Solver::callback_transient_time_change() {
-    SOLVER_PROFILE_SCOPE("Callback Time Change");
+    PYCANHA_PROFILE_SCOPE("Callback Time Change");
     _tmm_shptr->callback_transient_time_change();
 }
 
 void Solver::callback_solver_loop() {
-    SOLVER_PROFILE_SCOPE("Callback Solver Loop");
+    PYCANHA_PROFILE_SCOPE("Callback Solver Loop");
     _tmm_shptr->callback_solver_loop();
 }
 
 void Solver::callback_transient_after_timestep() {
-    SOLVER_PROFILE_SCOPE("Callback Timestep");
+    PYCANHA_PROFILE_SCOPE("Callback Timestep");
     _tmm_shptr->callback_transient_after_timestep();
 }
 
 bool Solver::temperature_convergence_check() {
-    SOLVER_PROFILE_SCOPE("Convergence Check");
+    PYCANHA_PROFILE_SCOPE("Convergence Check");
     dTd = Td_solver - Td;
     max_dT = dTd.cwiseAbs().maxCoeff();
     return max_dT < abstol_temp;

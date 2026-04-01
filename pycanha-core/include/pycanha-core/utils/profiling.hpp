@@ -1,6 +1,7 @@
 #pragma once
 
 #include <chrono>
+#include <string>
 #include <string_view>
 
 // Forward-declare the profiling logger accessor to avoid pulling in spdlog
@@ -40,7 +41,7 @@ class ProfileScope {
     ProfileScope& operator=(ProfileScope&&) = delete;
 
   private:
-    std::string_view _name;
+    std::string _name;
     std::chrono::steady_clock::time_point _start;
 };
 

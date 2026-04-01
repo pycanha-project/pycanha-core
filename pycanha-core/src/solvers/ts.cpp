@@ -88,7 +88,7 @@ void TransientSolver::save_temp_data() {
 }
 
 void TransientSolver::outputs_first_last() {
-    SOLVER_PROFILE_SCOPE("Outputs");
+    PYCANHA_PROFILE_SCOPE("Outputs");
     if (output_data == nullptr) {
         return;
     }
@@ -102,7 +102,7 @@ void TransientSolver::outputs_first_last() {
 }
 
 void TransientSolver::outputs() {
-    SOLVER_PROFILE_SCOPE("Outputs");
+    PYCANHA_PROFILE_SCOPE("Outputs");
     if (output_data == nullptr) {
         return;
     }

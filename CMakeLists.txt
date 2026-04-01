@@ -57,6 +57,8 @@ option(PYCANHA_OPTION_WARNINGS             "Add warnings to targets."           
 option(PYCANHA_OPTION_WARNINGS_AS_ERRORS   "Treat warnings as errors."                     OFF )
 
 option(PYCANHA_OPTION_PROFILING            "Enable profiling logging."                     OFF )
+option(PYCANHA_OPTION_ACTIVATE_ALL_LOGS_OVERRIDE
+       "Compile all spdlog levels regardless of build type."                               OFF )
 
 option(PYCANHA_OPTION_COVERAGE             "Enable a Code Coverage build."                 OFF )
 option(PYCANHA_OPTION_INCLUDE_WHAT_YOU_USE "Add iwyu to targets."                          OFF ) # Broken right now

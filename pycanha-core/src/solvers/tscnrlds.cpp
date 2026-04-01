@@ -192,9 +192,6 @@ void TSCNRLDS::initialize() {
 }
 
 void TSCNRLDS::solve() {
-#ifdef PYCANHA_PROFILING
-    Instrumentor::get().begin_session("TSCNRLDS SOLVER");
-#endif
     SPDLOG_LOGGER_INFO(get_logger(), "TSCNRLDS solving...");
 
     restart_solve();
@@ -224,7 +221,7 @@ void TSCNRLDS::solve() {
             solver_converged = temperature_convergence_check();
 
             {
-                SOLVER_PROFILE_SCOPE("Write Td in TMM");
+                PYCANHA_PROFILE_SCOPE("Write Td in TMM");
                 Td = Td_solver;
             }
 
@@ -250,9 +247,6 @@ void TSCNRLDS::solve() {
     }
 
     outputs_first_last();
-#ifdef PYCANHA_PROFILING
-    Instrumentor::get().end_session();
-#endif
 }
 
 void TSCNRLDS::deinitialize() { release_solver_resources(); }
@@ -286,16 +280,14 @@ void TSCNRLDS::release_solver_resources() {
 }
 
 void TSCNRLDS::build_capacities() {
-    SOLVER_PROFILE_SCOPE("Build C");
-    PYCANHA_PROFILE_SCOPE("TSCNRLDS Build C");
+    PYCANHA_PROFILE_SCOPE("Build C");
     _capacities = Cd;
     _capacities.array() += eps_capacity;
     _capacities_inverse = _capacities.cwiseInverse();
 }
 
 void TSCNRLDS::build_conductance_matrix() {
-    SOLVER_PROFILE_SCOPE("Linearization");
-    PYCANHA_PROFILE_SCOPE("TSCNRLDS Linearization");
+    PYCANHA_PROFILE_SCOPE("Linearization");
 
     _t3_domain = (4.0 * STF_BOLTZ) * Td.array().cube();
     _t3_boundary = (4.0 * STF_BOLTZ) * Tb.array().cube();
@@ -339,34 +331,31 @@ void TSCNRLDS::build_conductance_matrix() {
 }
 
 void TSCNRLDS::build_heat_flux() {
-    SOLVER_PROFILE_SCOPE("Build Q");
-    PYCANHA_PROFILE_SCOPE("TSCNRLDS Build Q");
+    PYCANHA_PROFILE_SCOPE("Build Q");
     Q = QI_sp + QS_sp + QA_sp + QE_sp + QR_sp;
     new (&Qd) WrappVectorXd(Q.data(), nd);
     Qd += _radiation_linear_term + KLdb * Tb + KRdb * _t4_boundary;
 }
 
 void TSCNRLDS::store_heat_flux_at_n0() {
-    SOLVER_PROFILE_SCOPE("Store Q_n0");
+    PYCANHA_PROFILE_SCOPE("Store Q_n0");
     _kt_q_n0 = _k_matrix * Td + Qd;
     _heat_flux_n0 = _kt_q_n0 + (2.0 / dtime) * _capacities.cwiseProduct(Td);
 }
 
 void TSCNRLDS::euler_step() {
-    SOLVER_PROFILE_SCOPE("Euler Step");
+    PYCANHA_PROFILE_SCOPE("Euler Step");
     dTd = dtime * _kt_q_n0.cwiseProduct(_capacities_inverse);
     Td += dTd;
 }
 
 void TSCNRLDS::add_capacities_to_matrix() {
-    SOLVER_PROFILE_SCOPE("Add C to K");
-    PYCANHA_PROFILE_SCOPE("TSCNRLDS Add C to K");
+    PYCANHA_PROFILE_SCOPE("Add C to K");
     _k_matrix.diagonal() -= (2.0 / dtime) * _capacities;
 }
 
 void TSCNRLDS::solve_step() {
-    SOLVER_PROFILE_SCOPE("Solver Step");
-    PYCANHA_PROFILE_SCOPE("TSCNRLDS Solver Step");
+    PYCANHA_PROFILE_SCOPE("Solver Step");
     _rhs = Qd + _heat_flux_n0;
 
 #if PYCANHA_USE_MKL
