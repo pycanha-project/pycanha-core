@@ -4,30 +4,36 @@
 // https://www.youtube.com/watch?v=xlAH4dbMVnU
 // https://gist.github.com/TheCherno/31f135eea6ee729ab5f26a6908eb3a5e
 //
-
+// -------------------------------------------------------------------------
+// Chrome-tracing Instrumentor
+// -------------------------------------------------------------------------
+// This profiler writes JSON trace files compatible with chrome://tracing
+// (or Perfetto).  It is kept alongside the spdlog-based profiling logger
+// (see profiling.hpp / PYCANHA_PROFILE_SCOPE) for cases where visual
+// timeline inspection is more useful than text logs.
+//
 // Usage:
+//   1. Build with PYCANHA_OPTION_PROFILING=ON (sets PYCANHA_PROFILING define,
+//      which in turn defines PROFILING for backward compatibility).
+//   2. In code:
 //
-// Enable PROFILING macro and include this header file somewhere and use it like
-// this:
+//        Instrumentor::get().begin_session("SESSION_NAME", "results.json");
 //
-// Instrumentor::Get().BeginSession("SESSION_NAME", "PROFILE_FILE_PATH.json");
-// // Begin session
+//        { PROFILE_SCOPE("operation name"); /* code */ }
 //
-// //Scope timing
-// {
-//     PROFILE_SCOPE("NAME");   // Place code like this in scopes you'd like to
-//     include in profiling
-//     // Code
-// }
+//        void some_function() {
+//            PROFILE_FUNCTION();
+//            // code
+//        }
 //
-// //Function timing
+//        Instrumentor::get().end_session();
 //
-// void some_function(){
-//   PROFILE_FUNCTION();  //name is automatically inferred
-//   // code
-// }
+//   3. Open the output JSON in chrome://tracing to visualise the timeline.
 //
-// Instrumentor::Get().EndSession();                        // End Session
+// For lightweight text-based profiling that routes through spdlog (and
+// eventually to Python/Loguru), prefer PYCANHA_PROFILE_SCOPE(name) from
+// profiling.hpp instead.
+// -------------------------------------------------------------------------
 
 #pragma once
 
@@ -39,11 +45,15 @@
 #include <string>
 #include <thread>
 
-#include "pycanha-core/config.hpp"
+// Map the library-wide PYCANHA_PROFILING define to the legacy PROFILING guard
+// used by the macros at the bottom of this file.
+#ifdef PYCANHA_PROFILING
+#ifndef PROFILING
+#define PROFILING
+#endif
+#endif
 
 namespace pycanha {
-// Enable/Disable Profiling
-using pycanha::PROFILING;
 
 struct ProfileResult {
     std::string name;
@@ -167,7 +177,7 @@ class InstrumentationTimer {
 };
 
 #ifdef PROFILING
-#define PROFILE_SCOPE(name) InstrumentationTimer timer##__LINE__(name)
+#define PROFILE_SCOPE(name) const InstrumentationTimer timer##__LINE__(name)
 #define PROFILE_FUNCTION() PROFILE_SCOPE(__FUNCTION__)
 #else
 #define PROFILE_SCOPE(name)

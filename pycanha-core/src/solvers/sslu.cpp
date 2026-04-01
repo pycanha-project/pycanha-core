@@ -1,7 +1,7 @@
 #include "pycanha-core/solvers/sslu.hpp"
 
-#include <chrono>
-#include <iostream>
+#include <spdlog/spdlog.h>
+
 #include <memory>
 #include <utility>
 
@@ -9,6 +9,8 @@
 #include "pycanha-core/solvers/ss.hpp"
 #include "pycanha-core/tmm/thermalmathematicalmodel.hpp"
 #include "pycanha-core/utils/SparseUtils.hpp"
+#include "pycanha-core/utils/logger.hpp"
+#include "pycanha-core/utils/profiling.hpp"
 
 namespace pycanha {
 
@@ -44,15 +46,19 @@ void SSLU::initialize() {
 
 void SSLU::solve() {
     if (!solver_initialized) {
-        std::cout << "Solver has not been initialized. Please call initialize()"
-                  << " before solve()." << '\n';
+        SPDLOG_LOGGER_ERROR(
+            get_logger(),
+            "Solver has not been initialized. Please call initialize() before "
+            "solve().");
         return;
     }
-    std::cout << "SSLU solving..." << '\n';
+    SPDLOG_LOGGER_INFO(get_logger(), "SSLU solving...");
 
     solver_converged = false;
 
     for (solver_iter = 0; solver_iter < MAX_ITERS; ++solver_iter) {
+        PYCANHA_PROFILE_SCOPE("SSLU iteration");
+
         Q = -(QI_sp + QS_sp + QA_sp + QE_sp + QR_sp);
         new (&Qd) WrappVectorXd(Q.data(), nd);
 
@@ -78,18 +84,19 @@ void SSLU::solve() {
         add_conductive_diagonal_to_matrix();
         _k_matrix += KLdd.selfadjointView<Eigen::Upper>();
 
-        const auto start = std::chrono::high_resolution_clock::now();
         _linear_solver.factorize(_k_matrix);
         if (_linear_solver.info() != Eigen::ComputationInfo::Success) {
-            std::cout << "SSLU ERROR: Factorization failed. Error code: "
-                      << _linear_solver.info() << '\n';
+            SPDLOG_LOGGER_ERROR(get_logger(),
+                                "SSLU: Factorization failed. Error code: {}",
+                                static_cast<int>(_linear_solver.info()));
             return;
         }
 
         Td_solver = _linear_solver.solve(Qd);
         if (_linear_solver.info() != Eigen::ComputationInfo::Success) {
-            std::cout << "SSLU ERROR: Solver failed. Error code: "
-                      << _linear_solver.info() << '\n';
+            SPDLOG_LOGGER_ERROR(get_logger(),
+                                "SSLU: Solver failed. Error code: {}",
+                                static_cast<int>(_linear_solver.info()));
             return;
         }
 
@@ -100,21 +107,19 @@ void SSLU::solve() {
         this->callback_solver_loop();
 
         if (max_dT < abstol_temp) {
-            std::cout << "SSLU converged. Num. iters: " << solver_iter + 1
-                      << ". Max. dT = " << max_dT << " K." << '\n';
+            SPDLOG_LOGGER_INFO(
+                get_logger(), "SSLU converged. Num. iters: {}. Max. dT = {} K.",
+                solver_iter + 1, max_dT);
             solver_converged = true;
             break;
         }
-
-        const auto end = std::chrono::high_resolution_clock::now();
-        const auto duration =
-            std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-        std::cout << "ITER TIME " << duration.count() << " ms" << '\n';
     }
 
     if (!solver_converged) {
-        std::cout << "ERROR. SSLU did NOT converge after " << MAX_ITERS
-                  << " iterations. Max. dT = " << max_dT << " K." << '\n';
+        SPDLOG_LOGGER_ERROR(
+            get_logger(),
+            "SSLU did NOT converge after {} iterations. Max. dT = {} K.",
+            MAX_ITERS, max_dT);
     }
 }
 
@@ -131,8 +136,8 @@ void SSLU::add_conductive_diagonal_to_matrix() {
 }
 
 void SSLU::deinitialize() {
-    std::cout << "De-initializing SSLU..." << '\n';
-    std::cout << "ERROR: Not implemented yet." << '\n';
+    SPDLOG_LOGGER_INFO(get_logger(), "De-initializing SSLU...");
+    SPDLOG_LOGGER_ERROR(get_logger(), "Not implemented yet.");
 }
 
 }  // namespace pycanha

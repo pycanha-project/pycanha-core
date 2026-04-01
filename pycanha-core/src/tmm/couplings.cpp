@@ -1,19 +1,20 @@
 #include "pycanha-core/tmm/couplings.hpp"
 
+#include <spdlog/spdlog.h>
+
 #include <algorithm>
-#include <iostream>
 #include <limits>
 #include <memory>
 #include <optional>
 #include <tuple>
 #include <utility>
 
-#include "pycanha-core/config.hpp"
 #include "pycanha-core/globals.hpp"
 #include "pycanha-core/tmm/coupling.hpp"
 #include "pycanha-core/tmm/couplingmatrices.hpp"
 #include "pycanha-core/tmm/nodes.hpp"
 #include "pycanha-core/utils/SparseUtils.hpp"
+#include "pycanha-core/utils/logger.hpp"
 
 namespace pycanha {
 
@@ -22,10 +23,10 @@ namespace {
 [[nodiscard]] std::optional<int> to_int_node_number(Index node_num) {
     if (node_num > static_cast<Index>(std::numeric_limits<int>::max()) ||
         node_num < static_cast<Index>(std::numeric_limits<int>::min())) {
-        if (VERBOSE) {
-            std::cout << "Couplings: Node number " << node_num
-                      << " exceeds supported int range." << '\n';
-        }
+        SPDLOG_LOGGER_WARN(pycanha::get_logger(),
+                           "Couplings: Node number {} exceeds supported "
+                           "int range.",
+                           node_num);
         return std::nullopt;
     }
     return static_cast<int>(node_num);
@@ -241,11 +242,10 @@ void Couplings::synchronize_structure() {
 std::optional<std::pair<Index, Index>> Couplings::get_indices_from_node_numbers(
     Index node_num_1, Index node_num_2) {
     if (_nodes == nullptr) {
-        if (VERBOSE) {
-            std::cout << "Couplings::get_indices_from_node_numbers called with "
-                         "null Nodes pointer."
-                      << '\n';
-        }
+        SPDLOG_LOGGER_WARN(
+            pycanha::get_logger(),
+            "Couplings::get_indices_from_node_numbers called with "
+            "null Nodes pointer.");
         return std::nullopt;
     }
 
@@ -261,18 +261,16 @@ std::optional<std::pair<Index, Index>> Couplings::get_indices_from_node_numbers(
     auto idx2 = _nodes->get_idx_from_node_num(*node_num_2_int);
 
     if (idx1 < 0 || idx2 < 0) {
-        if (VERBOSE) {
-            std::cout << "Couplings: Invalid node numbers " << node_num_1
-                      << ", " << node_num_2 << "\n";
-        }
+        SPDLOG_LOGGER_WARN(pycanha::get_logger(),
+                           "Couplings: Invalid node numbers {}, {}", node_num_1,
+                           node_num_2);
         return std::nullopt;
     }
 
     if (idx1 == idx2) {
-        if (VERBOSE) {
-            std::cout << "Couplings: Node numbers correspond to the same node."
-                      << '\n';
-        }
+        SPDLOG_LOGGER_WARN(pycanha::get_logger(),
+                           "Couplings: Node numbers correspond to the same "
+                           "node.");
         return std::nullopt;
     }
 
@@ -317,10 +315,10 @@ bool Couplings::is_coupling_trivial_zero_from_node_numbers(Index node_num_1,
     auto [idx1, idx2, sparse_ptr] =
         get_indices_and_sparse_from_node_numbers(node_num_1, node_num_2);
     if (sparse_ptr == nullptr) {
-        if (VERBOSE) {
-            std::cout << "Couplings: Invalid sparse pointer for nodes "
-                      << node_num_1 << ", " << node_num_2 << '\n';
-        }
+        SPDLOG_LOGGER_WARN(pycanha::get_logger(),
+                           "Couplings: Invalid sparse pointer for nodes "
+                           "{}, {}",
+                           node_num_1, node_num_2);
         return false;
     }
 

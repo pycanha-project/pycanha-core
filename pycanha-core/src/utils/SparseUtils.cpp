@@ -1,12 +1,15 @@
 
 #include "pycanha-core/utils/SparseUtils.hpp"
 
+#include <spdlog/spdlog.h>
+
 #include <algorithm>
 #include <cmath>
 #include <cstring>
 #include <iomanip>
-#include <iostream>
+#include <ios>
 #include <iterator>
+#include <sstream>
 #include <stdexcept>
 #include <tuple>
 #include <type_traits>
@@ -16,6 +19,7 @@
 #include "pycanha-core/config.hpp"
 #include "pycanha-core/utils/Instrumentor.hpp"
 #include "pycanha-core/utils/RandomGenerators.hpp"
+#include "pycanha-core/utils/logger.hpp"
 
 // USE MKL FUNCTION IF AVAILABLE
 #if PYCANHA_USE_MKL
@@ -333,9 +337,8 @@ void move_rows(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
     }
 
     if ((from_idx < 0) || (to_idx >= sparse.rows())) {
-        if (VERBOSE) {
-            std::cout << "Error while moving rows. Invalid indexes.\n";
-        }
+        SPDLOG_LOGGER_ERROR(pycanha::get_logger(),
+                            "Error while moving rows. Invalid indexes.");
         return;
     }
 
@@ -461,9 +464,8 @@ void move_cols(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
     }
 
     if ((from_idx < 0) || (to_idx >= sparse.cols())) {
-        if (VERBOSE) {
-            std::cout << "Error while moving cols. Invalid indexes." << '\n';
-        }
+        SPDLOG_LOGGER_ERROR(pycanha::get_logger(),
+                            "Error while moving cols. Invalid indexes.");
         return;
     }
 
@@ -600,11 +602,9 @@ void remove_row(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
         move_delete_row_fun(sparse, del_row_idx);
         sparse.conservativeResize(sparse.rows() - 1, sparse.cols());
     } else {
-        if (VERBOSE) {
-            std::cout
-                << "Error: At removing row from sparse, invalid row index."
-                << '\n';
-        }
+        SPDLOG_LOGGER_ERROR(
+            pycanha::get_logger(),
+            "Error: At removing row from sparse, invalid row index.");
     }
 }
 
@@ -615,11 +615,9 @@ void remove_col(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
         move_delete_row_col_fun(sparse, del_col_idx);
         sparse.conservativeResize(sparse.rows(), sparse.cols() - 1);
     } else {
-        if (VERBOSE) {
-            std::cout
-                << "Error: At removing col from sparse, invalid col index."
-                << '\n';
-        }
+        SPDLOG_LOGGER_ERROR(
+            pycanha::get_logger(),
+            "Error: At removing col from sparse, invalid col index.");
     }
 }
 
@@ -632,11 +630,10 @@ void remove_row_col(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
         move_delete_row_col_fun(sparse, del_idx);
         sparse.conservativeResize(sparse.rows() - 1, sparse.cols() - 1);
     } else {
-        if (VERBOSE) {
-            std::cout << "Error: At removing row and col from sparse, invalid "
-                         "row or col index."
-                      << '\n';
-        }
+        SPDLOG_LOGGER_ERROR(
+            pycanha::get_logger(),
+            "Error: At removing row and col from sparse, invalid "
+            "row or col index.");
     }
 }
 
@@ -729,9 +726,8 @@ void random_fill_sparse(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
     const auto cols = static_cast<Index>(sparse.cols());
 
     if ((sparsity_ratio < 0.0) || (sparsity_ratio > 1.0)) {
-        if (VERBOSE) {
-            std::cout << "Error, sparsity ratio should be between 0 and 1\n";
-        }
+        SPDLOG_LOGGER_ERROR(pycanha::get_logger(),
+                            "Error, sparsity ratio should be between 0 and 1");
         return;
     }
 
@@ -891,113 +887,118 @@ std::tuple<Index, Index, double> get_row_col_value_from_value_idx(
 }
 
 void print_sparse(const Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse) {
-    std::cout << '\n';
-    std::cout << "   Sparse matrix   \n";
-    std::cout << "-------------------\n";
+    std::ostringstream oss;
+    oss << '\n';
+    oss << "   Sparse matrix   \n";
+    oss << "-------------------\n";
 
     for (Eigen::Index row = 0; row < sparse.rows(); row++) {
         for (Eigen::Index col = 0; col < sparse.cols(); col++) {
-            std::cout << std::fixed << std::setprecision(0)
-                      << sparse.coeff(row, col) << " ";
+            oss << std::fixed << std::setprecision(0) << sparse.coeff(row, col)
+                << " ";
         }
-        std::cout << '\n';
+        oss << '\n';
     }
-    std::cout << "-------------------\n";
-    std::cout << '\n';
+    oss << "-------------------\n";
+    SPDLOG_LOGGER_DEBUG(pycanha::get_logger(), "{}", oss.str());
 }
 
 void print_sparse_values(
     const Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse) {
-    std::cout << "Values: ";
+    std::ostringstream oss;
+    oss << "Values: ";
     if (!sparse.isCompressed()) {
         for (int i = 0; i < sparse.outerSize(); i++) {
             int nnz = 0;
             for (int j = sparse.outerIndexPtr()[i];
                  j < sparse.outerIndexPtr()[i + 1]; j++) {
                 if (nnz < sparse.innerNonZeroPtr()[i]) {
-                    std::cout << sparse.valuePtr()[j] << ", ";
+                    oss << sparse.valuePtr()[j] << ", ";
                 } else {
-                    std::cout << "_, ";
+                    oss << "_, ";
                 }
                 nnz++;
             }
         }
-        std::cout << "\n";
     } else {
         for (int i = 0; i < sparse.outerIndexPtr()[sparse.outerSize()]; i++) {
-            std::cout << sparse.valuePtr()[i] << ", ";
+            oss << sparse.valuePtr()[i] << ", ";
         }
-        std::cout << "\n";
     }
+    SPDLOG_LOGGER_DEBUG(pycanha::get_logger(), "{}", oss.str());
 }
 
 void print_sparse_inner(
     const Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse) {
-    std::cout << " Inner: ";
+    std::ostringstream oss;
+    oss << " Inner: ";
     if (!sparse.isCompressed()) {
         for (int i = 0; i < sparse.outerSize(); i++) {
             int nnz = 0;
             for (int j = sparse.outerIndexPtr()[i];
                  j < sparse.outerIndexPtr()[i + 1]; j++) {
                 if (nnz < sparse.innerNonZeroPtr()[i]) {
-                    std::cout << sparse.innerIndexPtr()[j] << ", ";
+                    oss << sparse.innerIndexPtr()[j] << ", ";
                 } else {
-                    std::cout << "_, ";
+                    oss << "_, ";
                 }
                 nnz++;
             }
         }
-        std::cout << "\n";
     } else {
         for (int i = 0; i < sparse.outerIndexPtr()[sparse.outerSize()]; i++) {
-            std::cout << sparse.innerIndexPtr()[i] << ", ";
+            oss << sparse.innerIndexPtr()[i] << ", ";
         }
-        std::cout << "\n";
     }
+    SPDLOG_LOGGER_DEBUG(pycanha::get_logger(), "{}", oss.str());
 }
 
 void print_sparse_outer(
     const Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse) {
-    std::cout << " Outer: ";
+    std::ostringstream oss;
+    oss << " Outer: ";
     for (int i = 0; i < sparse.outerSize() + 1; i++) {
-        std::cout << sparse.outerIndexPtr()[i] << ", ";
+        oss << sparse.outerIndexPtr()[i] << ", ";
     }
-    std::cout << "\n";
+    SPDLOG_LOGGER_DEBUG(pycanha::get_logger(), "{}", oss.str());
 }
 
 void print_sparse_nnz(
     const Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse) {
-    std::cout << "   NNZ: ";
+    std::ostringstream oss;
+    oss << "   NNZ: ";
     if (!sparse.isCompressed()) {
         for (int i = 0; i < sparse.outerSize(); i++) {
-            std::cout << sparse.innerNonZeroPtr()[i] << ", ";
+            oss << sparse.innerNonZeroPtr()[i] << ", ";
         }
-        std::cout << "\n";
     } else {
-        std::cout << " **empty** \n";
+        oss << " **empty** ";
     }
+    SPDLOG_LOGGER_DEBUG(pycanha::get_logger(), "{}", oss.str());
 }
 
 void print_sparse_format(
     const Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse) {
     if (sparse.isCompressed()) {
-        std::cout << "Sparse Row Major in COMPRESSED format\n";
-    } else {
-        std::cout << "Sparse Row Major in UNCOMPRESSED format\n";
+        SPDLOG_LOGGER_DEBUG(pycanha::get_logger(),
+                            "Sparse Row Major in COMPRESSED format");
+        return;
     }
+
+    SPDLOG_LOGGER_DEBUG(pycanha::get_logger(),
+                        "Sparse Row Major in UNCOMPRESSED format");
 }
 
 void print_sparse_structure(
     const Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse) {
-    std::cout << "*****************************\n";
+    SPDLOG_LOGGER_DEBUG(pycanha::get_logger(), "*****************************");
     print_sparse_format(sparse);
     print_sparse(sparse);
     print_sparse_values(sparse);
     print_sparse_inner(sparse);
     print_sparse_outer(sparse);
     print_sparse_nnz(sparse);
-    std::cout << "*****************************\n";
-    std::cout.flush();
+    SPDLOG_LOGGER_DEBUG(pycanha::get_logger(), "*****************************");
 }
 
 }  // namespace pycanha::sparse_utils

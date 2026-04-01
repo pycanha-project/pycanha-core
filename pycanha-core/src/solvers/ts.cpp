@@ -1,11 +1,12 @@
 #include "pycanha-core/solvers/ts.hpp"
 
+#include <spdlog/spdlog.h>
+
 #include <Eigen/Dense>
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
 #include <cstring>
-#include <iostream>
 #include <iterator>
 #include <memory>
 #include <stdexcept>
@@ -14,6 +15,8 @@
 #include "pycanha-core/solvers/solver.hpp"
 #include "pycanha-core/thermaldata/thermaldata.hpp"
 #include "pycanha-core/tmm/thermalmathematicalmodel.hpp"
+#include "pycanha-core/utils/logger.hpp"
+#include "pycanha-core/utils/profiling.hpp"
 
 namespace pycanha {
 
@@ -86,7 +89,7 @@ void TransientSolver::save_temp_data() {
 }
 
 void TransientSolver::outputs_first_last() {
-    SOLVER_PROFILE_SCOPE("Outputs");
+    PYCANHA_PROFILE_SCOPE("Outputs");
     if (output_data == nullptr) {
         return;
     }
@@ -100,7 +103,7 @@ void TransientSolver::outputs_first_last() {
 }
 
 void TransientSolver::outputs() {
-    SOLVER_PROFILE_SCOPE("Outputs");
+    PYCANHA_PROFILE_SCOPE("Outputs");
     if (output_data == nullptr) {
         return;
     }
@@ -125,7 +128,7 @@ void TransientSolver::restart_solve() {
     time_iter = -1;
     idata_out = 0;
 
-    std::cout << "(Re)starting solve..." << '\n';
+    SPDLOG_LOGGER_INFO(pycanha::get_logger(), "(Re)starting solve...");
 }
 
 }  // namespace pycanha

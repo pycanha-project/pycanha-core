@@ -63,6 +63,8 @@ class Recipe_pycanha_core(ConanFile):
         "PYCANHA_OPTION_INCLUDE_WHAT_YOU_USE": [True, False],
         "PYCANHA_OPTION_CLANG_TIDY": [True, False],
         "PYCANHA_OPTION_CPPCHECK": [True, False],
+        "PYCANHA_OPTION_PROFILING": [True, False],
+        "PYCANHA_OPTION_ACTIVATE_ALL_LOGS_OVERRIDE": [True, False],
         "PYCANHA_OPTION_SANITIZE_ADDR": [True, False],
         "PYCANHA_OPTION_SANITIZE_UNDEF": [True, False],
     }
@@ -80,6 +82,8 @@ class Recipe_pycanha_core(ConanFile):
         "PYCANHA_OPTION_INCLUDE_WHAT_YOU_USE": False,
         "PYCANHA_OPTION_CLANG_TIDY": False,
         "PYCANHA_OPTION_CPPCHECK": False,
+        "PYCANHA_OPTION_PROFILING": True,
+        "PYCANHA_OPTION_ACTIVATE_ALL_LOGS_OVERRIDE": True,
         "PYCANHA_OPTION_SANITIZE_ADDR": False,
         "PYCANHA_OPTION_SANITIZE_UNDEF": False,
         "spdlog/*:use_std_fmt": True,
@@ -337,6 +341,13 @@ class Recipe_pycanha_core(ConanFile):
         else:
             self.cpp_info.defines.append("PYCANHA_USE_MKL=0")
 
+        if self.options.PYCANHA_OPTION_PROFILING:
+            self.cpp_info.defines.append("PYCANHA_PROFILING")
+
+        self.cpp_info.defines.append(
+            f"SPDLOG_ACTIVE_LEVEL={self._spdlog_active_level_define()}"
+        )
+
         # Without adding the link flags, the sanitizers libraries are not linked (for the consumer).
         if self.options.PYCANHA_OPTION_SANITIZE_ADDR:
             self.cpp_info.sharedlinkflags.append("-fsanitize=address")
@@ -344,6 +355,19 @@ class Recipe_pycanha_core(ConanFile):
         if self.options.PYCANHA_OPTION_SANITIZE_UNDEF:
             self.cpp_info.sharedlinkflags.append("-fsanitize=undefined")
             self.cpp_info.exelinkflags.append("-fsanitize=undefined")
+
+    def _spdlog_active_level_define(self):
+        if bool(
+            self.options.get_safe("PYCANHA_OPTION_ACTIVATE_ALL_LOGS_OVERRIDE", False)
+        ):
+            return "SPDLOG_LEVEL_TRACE"
+
+        build_type = str(self.settings.get_safe("build_type", default="Release"))
+        return (
+            "SPDLOG_LEVEL_TRACE"
+            if build_type.lower() == "debug"
+            else "SPDLOG_LEVEL_INFO"
+        )
 
     # ============================================================================
     # MKL Installation and Discovery

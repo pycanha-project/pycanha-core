@@ -18,8 +18,23 @@ std::shared_ptr<spdlog::logger> get_logger() {
     auto logger = spdlog::get("pycanha-core");
     if (!logger) {
         logger = spdlog::stdout_color_mt("pycanha-core");
-        logger->set_pattern("[%^%l%$] %v");
+        logger->set_pattern("[%H:%M:%S.%e] [%^%l%$] %v");
         logger->set_level(spdlog::level::info);
+    }
+
+    return logger;
+}
+
+std::shared_ptr<spdlog::logger> get_profiling_logger() {
+    auto logger = spdlog::get("pycanha-core.profiling");
+    if (!logger) {
+        logger = spdlog::stdout_color_mt("pycanha-core.profiling");
+        logger->set_pattern("[%H:%M:%S.%e] [profiling] %v");
+#ifdef PYCANHA_PROFILING
+        logger->set_level(spdlog::level::info);
+#else
+        logger->set_level(spdlog::level::off);
+#endif
     }
 
     return logger;
@@ -39,6 +54,10 @@ std::shared_ptr<spdlog::logger> create_ostream_logger(
 
 void set_logger_level(const spdlog::level::level_enum level) {
     get_logger()->set_level(level);
+}
+
+void set_profiling_logger_level(const spdlog::level::level_enum level) {
+    get_profiling_logger()->set_level(level);
 }
 
 }  // namespace pycanha

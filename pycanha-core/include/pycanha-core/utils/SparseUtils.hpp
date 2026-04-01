@@ -9,9 +9,6 @@
 
 namespace pycanha::sparse_utils {
 
-// Print information to std output
-using pycanha::VERBOSE;
-
 using Index = pycanha::Index;
 
 void add_zero_row(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,

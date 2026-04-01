@@ -1,17 +1,18 @@
 
 #include "pycanha-core/tmm/node.hpp"
 
+#include <spdlog/spdlog.h>
+
 #include <bit>
 #include <cmath>
 #include <cstdint>
-#include <iostream>
 #include <memory>
 #include <string>
 #include <utility>
 
-#include "pycanha-core/config.hpp"
 #include "pycanha-core/globals.hpp"
 #include "pycanha-core/tmm/nodes.hpp"
+#include "pycanha-core/utils/logger.hpp"
 
 using namespace pycanha;  // NOLINT(build/namespaces)
 
@@ -29,11 +30,10 @@ double Node::resolve_get_double(double (Nodes::*nodes_getter)(int),
         const double temp = (nodes_ref.*nodes_getter)(_node_num);
         if (std::isnan(temp)) {
             _parent_pointer.reset();
-            if (VERBOSE) {
-                std::cout << "WARNING: Attribute unavailable. "
-                          << "Probably the node was deleted. "
-                          << "The node is now an unvalid container.\n";
-            }
+            SPDLOG_LOGGER_WARN(
+                pycanha::get_logger(),
+                "Attribute unavailable. Probably the node was deleted. "
+                "The node is now an invalid container.");
         }
         return temp;
     }
@@ -42,8 +42,9 @@ double Node::resolve_get_double(double (Nodes::*nodes_getter)(int),
         return (*_local_storage_ptr).*local_member;
     }
 
-    std::cout << "WARNING: The node is an unvalid container. "
-              << "Create a new one to have a valid node again.\n";
+    SPDLOG_LOGGER_WARN(pycanha::get_logger(),
+                       "The node is an invalid container. "
+                       "Create a new one to have a valid node again.");
     return std::nan("");
 }
 
@@ -54,11 +55,10 @@ void Node::resolve_set_double(bool (Nodes::*nodes_setter)(int, double),
         Nodes& nodes_ref = *parent_nodes;
         if (!(nodes_ref.*nodes_setter)(_node_num, value)) {
             _parent_pointer.reset();
-            if (VERBOSE) {
-                std::cout << "WARNING: Cannot set attribute. "
-                          << "Probably the node was deleted from TNs. "
-                          << "The node is now an unvalid container.\n";
-            }
+            SPDLOG_LOGGER_WARN(
+                pycanha::get_logger(),
+                "Cannot set attribute. Probably the node was deleted from TNs. "
+                "The node is now an invalid container.");
         }
         return;
     }
@@ -68,10 +68,9 @@ void Node::resolve_set_double(bool (Nodes::*nodes_setter)(int, double),
         return;
     }
 
-    if (VERBOSE) {
-        std::cout << "WARNING: The node is an unvalid container. "
-                  << "Create a new one to have a valid node again.\n";
-    }
+    SPDLOG_LOGGER_WARN(pycanha::get_logger(),
+                       "The node is an invalid container. "
+                       "Create a new one to have a valid node again.");
 }
 
 // Move constructor
@@ -79,9 +78,7 @@ Node::Node(Node&& other_node) noexcept
     : _node_num(other_node._node_num),
       _parent_pointer(std::move(other_node._parent_pointer)),
       _local_storage_ptr(std::move(other_node._local_storage_ptr)) {
-    if (DEBUG) {
-        std::cout << "Move constructor called \n";
-    }
+    SPDLOG_LOGGER_TRACE(pycanha::get_logger(), "Node: move constructor called");
 }
 
 // Copy constructor
@@ -93,9 +90,7 @@ Node::Node(const Node& other_node)
             std::make_unique<LocalStorage>(*other_node._local_storage_ptr);
     }
 
-    if (DEBUG) {
-        std::cout << "Copy constructor called \n";
-    }
+    SPDLOG_LOGGER_TRACE(pycanha::get_logger(), "Node: copy constructor called");
 }
 
 // Assignment operator
@@ -126,9 +121,8 @@ Node& Node::operator=(Node&& other_node) noexcept {
         _parent_pointer = std::move(other_node._parent_pointer);
         _local_storage_ptr = std::move(other_node._local_storage_ptr);
 
-        if (DEBUG) {
-            std::cout << "Move assignment operator called \n";
-        }
+        SPDLOG_LOGGER_TRACE(pycanha::get_logger(),
+                            "Node: move assignment operator called");
     }
     return *this;
 }
@@ -244,18 +238,18 @@ char Node::get_type() {
         const char temp = parent_nodes->get_type(_node_num);
         if (temp == static_cast<char>(0)) {
             _parent_pointer.reset();
-            if (VERBOSE) {
-                std::cout << "WARNING: Attribute unavailable. "
-                          << "Probably the node was deleted. "
-                          << "The node is now an unvalid container.\n";
-            }
+            SPDLOG_LOGGER_WARN(
+                pycanha::get_logger(),
+                "Attribute unavailable. Probably the node was deleted. "
+                "The node is now an invalid container.");
         }
         return temp;
     } else if (_local_storage_ptr != nullptr) {
         return _local_storage_ptr->type;
     } else {
-        std::cout << "WARNING: The node is an unvalid container. "
-                  << "Create a new one to have a valid node again.\n";
+        SPDLOG_LOGGER_WARN(pycanha::get_logger(),
+                           "The node is an invalid container. "
+                           "Create a new one to have a valid node again.");
         return static_cast<char>(0);
     }
 }
@@ -264,19 +258,17 @@ void Node::set_type(char type) {
     if (auto parent_nodes = _parent_pointer.lock()) {
         if (!(parent_nodes->set_type(_node_num, type))) {
             _parent_pointer.reset();
-            if (VERBOSE) {
-                std::cout << "WARNING: Cannot set attribute. "
-                          << "Probably the node was deleted from TNs. "
-                          << "The node is now an unvalid container.\n";
-            }
+            SPDLOG_LOGGER_WARN(
+                pycanha::get_logger(),
+                "Cannot set attribute. Probably the node was deleted from TNs. "
+                "The node is now an invalid container.");
         }
     } else if (_local_storage_ptr != nullptr) {
         _local_storage_ptr->type = type;
     } else {
-        if (VERBOSE) {
-            std::cout << "WARNING: The node is an unvalid container. "
-                      << "Create a new one to have a valid node again.\n";
-        }
+        SPDLOG_LOGGER_WARN(pycanha::get_logger(),
+                           "The node is an invalid container. "
+                           "Create a new one to have a valid node again.");
     }
 }
 
@@ -286,8 +278,9 @@ std::string Node::get_literal_C() const {
     } else if (_local_storage_ptr != nullptr) {
         return _local_storage_ptr->literal_C;
     } else {
-        std::cout << "WARNING: The node is an unvalid container. "
-                  << "Create a new one to have a valid node again.\n";
+        SPDLOG_LOGGER_WARN(pycanha::get_logger(),
+                           "The node is an invalid container. "
+                           "Create a new one to have a valid node again.");
         return {};
     }
 }
@@ -296,19 +289,17 @@ void Node::set_literal_C(const std::string& str) {
     if (auto parent_nodes = _parent_pointer.lock()) {
         if (!(parent_nodes->set_literal_C(_node_num, str))) {
             _parent_pointer.reset();
-            if (VERBOSE) {
-                std::cout << "WARNING: Cannot set attribute. "
-                          << "Probably the node was deleted from TNs. "
-                          << "The node is now an unvalid container.\n";
-            }
+            SPDLOG_LOGGER_WARN(
+                pycanha::get_logger(),
+                "Cannot set attribute. Probably the node was deleted from TNs. "
+                "The node is now an invalid container.");
         }
     } else if (_local_storage_ptr != nullptr) {
         _local_storage_ptr->literal_C = str;
     } else {
-        if (VERBOSE) {
-            std::cout << "WARNING: The node is an unvalid container. "
-                      << "Create a new one to have a valid node again.\n";
-        }
+        SPDLOG_LOGGER_WARN(pycanha::get_logger(),
+                           "The node is an invalid container. "
+                           "Create a new one to have a valid node again.");
     }
 }
 // TODO: Put in the macro?
@@ -321,19 +312,17 @@ int Node::get_int_node_num() {
     if (auto parent_nodes = _parent_pointer.lock()) {
         const Index temp = parent_nodes->get_idx_from_node_num(_node_num);
         if (temp < 0) {
-            if (DEBUG) {
-                std::cout << "WARNING: Attribute unavailable. "
-                          << "Probably the node was deleted. "
-                          << "The node is now unassociated from TNs.\n";
-            }
+            SPDLOG_LOGGER_DEBUG(
+                pycanha::get_logger(),
+                "Attribute unavailable. Probably the node was deleted. "
+                "The node is now unassociated from TNs.");
             _parent_pointer.reset();
         }
         return static_cast<int>(temp);
     } else {
-        if (DEBUG) {
-            std::cout << "WARNING: Node is not associated to any TNs. "
-                      << "IntNodeNum is undefined. Returning -1.\n";
-        }
+        SPDLOG_LOGGER_DEBUG(pycanha::get_logger(),
+                            "Node is not associated to any TNs. "
+                            "IntNodeNum is undefined. Returning -1.");
         return -1;
     }
 }

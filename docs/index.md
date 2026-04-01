@@ -12,5 +12,7 @@
 
 6. [FAQ](faq.md)
 
+7. [Logging and profiling](logging.md): Logger usage, runtime level control and profiling configuration.
+
 Check also the **Classes** and **Files** sections for code references.
 

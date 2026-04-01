@@ -1,9 +1,10 @@
 #pragma once
 
+#include <spdlog/spdlog.h>
+
 #include <Eigen/Dense>
 #include <algorithm>
 #include <cassert>
-#include <iostream>
 #include <limits>  // IWYU pragma: keep
 #include <memory>
 #include <numbers>
@@ -17,6 +18,7 @@
 #include "pycanha-core/gmm/materials.hpp"
 #include "pycanha-core/gmm/triangulation.hpp"
 #include "pycanha-core/utils/eigenutils.hpp"
+#include "pycanha-core/utils/logger.hpp"
 
 using pycanha::utils::is_sorted;
 namespace pycanha::gmm {
@@ -944,8 +946,10 @@ class TriMeshModel {
         // This check is not necessary by design.
         // TODO(PERFORMANCE): when sure it works, and use an assert instead.
         if (last_face_id % 2 != 0) {
-            std::cout << "Current face_ids" << current_n_triangles << "\n";
-            std::cout << "New face_ids" << new_trimesh_n_triangles << "\n";
+            SPDLOG_LOGGER_ERROR(pycanha::get_logger(), "Current face_ids: {}",
+                                current_n_triangles);
+            SPDLOG_LOGGER_ERROR(pycanha::get_logger(), "New face_ids: {}",
+                                new_trimesh_n_triangles);
             throw std::runtime_error(
                 "Faces IDs numbering error. Contact developers.");
         }
@@ -1180,16 +1184,17 @@ using TriMeshModelPtr = std::shared_ptr<TriMeshModel>;
 namespace trimesher {
 
 inline void print_point2d(const Point2D& p) {
-    std::cout << "[" << p[0] << ", " << p[1] << "]," << "\n";
+    SPDLOG_LOGGER_DEBUG(pycanha::get_logger(), "[{}, {}],", p[0], p[1]);
 }
 
 inline void print_point3d(const Point3D& p) {
-    std::cout << "[" << p[0] << ", " << p[1] << ", " << p[2] << "]," << "\n";
+    SPDLOG_LOGGER_DEBUG(pycanha::get_logger(), "[{}, {}, {}],", p[0], p[1],
+                        p[2]);
 }
 
 inline void print_points(const TriMesh& trimesh) {
     for (int i = 0; i < trimesh.get_vertices().rows(); ++i) {
-        std::cout << "Point:" << i << "\n";
+        SPDLOG_LOGGER_DEBUG(pycanha::get_logger(), "Point: {}", i);
         print_point3d(trimesh.get_vertices().row(i));
     }
 }
@@ -2546,17 +2551,19 @@ inline TriMesh create_2d_disc_mesh(const Eigen::VectorXd& dir1_mesh_normalized,
 
     // Check that the mesh is normalized in dir1
     if (dir1_mesh_normalized[dir1_mesh_normalized.size() - 1] > 1.0) {
-        std::cout << "dir1_mesh is not normalized, but last is value: "
-                  << dir1_mesh_normalized[dir1_mesh_normalized.size() - 1]
-                  << "\n";
+        SPDLOG_LOGGER_ERROR(
+            pycanha::get_logger(),
+            "dir1_mesh is not normalized, but last is value: {}",
+            dir1_mesh_normalized[dir1_mesh_normalized.size() - 1]);
         throw std::runtime_error("dir1_mesh is not normalized.");
     }
 
     // Check that the mesh is normalized in dir2
     if (dir2_mesh_normalized[dir2_mesh_normalized.size() - 1] > 1.0) {
-        std::cout << "dir2_mesh is not normalized, but last is value: "
-                  << dir2_mesh_normalized[dir2_mesh_normalized.size() - 1]
-                  << "\n";
+        SPDLOG_LOGGER_ERROR(
+            pycanha::get_logger(),
+            "dir2_mesh is not normalized, but last is value: {}",
+            dir2_mesh_normalized[dir2_mesh_normalized.size() - 1]);
         throw std::runtime_error("dir2_mesh is not normalized.");
     }
 

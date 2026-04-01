@@ -1,18 +1,19 @@
 #include "pycanha-core/tmm/thermalnetwork.hpp"
 
+#include <spdlog/spdlog.h>
+
 #include <algorithm>
-#include <iostream>
 #include <iterator>
 #include <limits>
 #include <memory>
 #include <utility>
 
-#include "pycanha-core/config.hpp"
 #include "pycanha-core/globals.hpp"
 #include "pycanha-core/tmm/conductivecouplings.hpp"
 #include "pycanha-core/tmm/node.hpp"
 #include "pycanha-core/tmm/nodes.hpp"
 #include "pycanha-core/tmm/radiativecouplings.hpp"
+#include "pycanha-core/utils/logger.hpp"
 
 namespace pycanha {
 
@@ -29,9 +30,8 @@ ThermalNetwork::ThermalNetwork()
     : _nodes(std::make_shared<Nodes>()),
       _conductive_couplings(std::make_shared<ConductiveCouplings>(_nodes)),
       _radiative_couplings(std::make_shared<RadiativeCouplings>(_nodes)) {
-    if (DEBUG) {
-        std::cout << "ThermalNetwork: default constructor" << '\n';
-    }
+    SPDLOG_LOGGER_TRACE(pycanha::get_logger(),
+                        "ThermalNetwork: default constructor");
 }
 
 ThermalNetwork::ThermalNetwork(std::shared_ptr<Nodes> nodes,
@@ -52,10 +52,8 @@ ThermalNetwork::ThermalNetwork(std::shared_ptr<Nodes> nodes,
         _radiative_couplings = std::make_shared<RadiativeCouplings>(_nodes);
     }
 
-    if (DEBUG) {
-        std::cout << "ThermalNetwork: constructor with shared resources"
-                  << '\n';
-    }
+    SPDLOG_LOGGER_TRACE(pycanha::get_logger(),
+                        "ThermalNetwork: constructor with shared resources");
 }
 
 void ThermalNetwork::add_node(Node& node) {
@@ -68,10 +66,9 @@ void ThermalNetwork::add_node(Node& node) {
     const int user_node_num = node.get_node_num();
 
     if (_nodes->is_node(user_node_num)) {
-        if (VERBOSE) {
-            std::cout << "ThermalNetwork: node " << user_node_num
-                      << " already exists." << '\n';
-        }
+        SPDLOG_LOGGER_WARN(pycanha::get_logger(),
+                           "ThermalNetwork: node {} already exists.",
+                           user_node_num);
         return;
     }
 
@@ -106,10 +103,9 @@ void ThermalNetwork::add_node(Node& node) {
 
         total_insert_idx = diff_count + insert_idx;
     } else {
-        if (VERBOSE) {
-            std::cout << "ThermalNetwork: wrong node type for " << user_node_num
-                      << '\n';
-        }
+        SPDLOG_LOGGER_WARN(pycanha::get_logger(),
+                           "ThermalNetwork: wrong node type for {}",
+                           user_node_num);
         return;
     }
 
@@ -123,10 +119,9 @@ void ThermalNetwork::remove_node(Index node_num) {
     }
 
     if (!is_node_number_in_range(node_num)) {
-        if (VERBOSE) {
-            std::cout << "ThermalNetwork: node number out of range " << node_num
-                      << '\n';
-        }
+        SPDLOG_LOGGER_WARN(pycanha::get_logger(),
+                           "ThermalNetwork: node number out of range {}",
+                           node_num);
         return;
     }
 
