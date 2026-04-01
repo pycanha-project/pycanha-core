@@ -1,8 +1,12 @@
 #include "pycanha-core/io/esatan.hpp"
 
+// HDF5 C++ API symbols are provided through umbrella headers/macros.
+// NOLINTBEGIN(misc-include-cleaner)
 #include <H5Cpp.h>
 
 #include <array>
+#include <cstddef>
+#include <cstdint>
 #include <iostream>
 #include <stdexcept>
 #include <string>
@@ -15,9 +19,9 @@
 namespace pycanha {
 namespace {
 
-constexpr std::size_t kNumRealNodeAttrs = 16;
+constexpr std::size_t k_num_real_node_attrs = 16;
 
-enum class RealNodeAttrIndex : std::size_t {
+enum class RealNodeAttrIndex : std::uint8_t {
     T = 0,
     C = 1,
     QA = 2,
@@ -46,9 +50,9 @@ std::vector<int> read_int_column_2d(H5::DataSet& dataset, hsize_t column_index,
                                     const std::string& dataset_name) {
     require_rank(dataset, 2, dataset_name);
 
-    H5::DataSpace file_space = dataset.getSpace();
-    hsize_t dims[2] = {0, 0};
-    file_space.getSimpleExtentDims(dims, nullptr);
+    const H5::DataSpace file_space = dataset.getSpace();
+    std::array<hsize_t, 2> dims{0, 0};
+    file_space.getSimpleExtentDims(dims.data(), nullptr);
 
     const hsize_t num_rows = dims[0];
     if (column_index >= dims[1]) {
@@ -61,11 +65,11 @@ std::vector<int> read_int_column_2d(H5::DataSet& dataset, hsize_t column_index,
         return out;
     }
 
-    const hsize_t count[2] = {num_rows, 1};
-    const hsize_t offset[2] = {0, column_index};
-    file_space.selectHyperslab(H5S_SELECT_SET, count, offset);
+    const std::array<hsize_t, 2> count{num_rows, 1};
+    const std::array<hsize_t, 2> offset{0, column_index};
+    file_space.selectHyperslab(H5S_SELECT_SET, count.data(), offset.data());
 
-    H5::DataSpace mem_space(1, &num_rows);
+    const H5::DataSpace mem_space(1, &num_rows);
     dataset.read(out.data(), H5::PredType::NATIVE_INT, mem_space, file_space);
     return out;
 }
@@ -75,9 +79,9 @@ std::vector<double> read_double_attr_3d(H5::DataSet& dataset,
                                         const std::string& dataset_name) {
     require_rank(dataset, 3, dataset_name);
 
-    H5::DataSpace file_space = dataset.getSpace();
-    hsize_t dims[3] = {0, 0, 0};
-    file_space.getSimpleExtentDims(dims, nullptr);
+    const H5::DataSpace file_space = dataset.getSpace();
+    std::array<hsize_t, 3> dims{0, 0, 0};
+    file_space.getSimpleExtentDims(dims.data(), nullptr);
 
     const hsize_t num_nodes = dims[1];
     if (attr_index >= dims[2]) {
@@ -90,11 +94,11 @@ std::vector<double> read_double_attr_3d(H5::DataSet& dataset,
         return out;
     }
 
-    const hsize_t count[3] = {1, num_nodes, 1};
-    const hsize_t offset[3] = {0, 0, attr_index};
-    file_space.selectHyperslab(H5S_SELECT_SET, count, offset);
+    const std::array<hsize_t, 3> count{1, num_nodes, 1};
+    const std::array<hsize_t, 3> offset{0, 0, attr_index};
+    file_space.selectHyperslab(H5S_SELECT_SET, count.data(), offset.data());
 
-    H5::DataSpace mem_space(1, &num_nodes);
+    const H5::DataSpace mem_space(1, &num_nodes);
     dataset.read(out.data(), H5::PredType::NATIVE_DOUBLE, mem_space,
                  file_space);
     return out;
@@ -104,9 +108,9 @@ std::vector<char> read_node_types(H5::DataSet& dataset,
                                   const std::string& dataset_name) {
     require_rank(dataset, 3, dataset_name);
 
-    H5::DataSpace file_space = dataset.getSpace();
-    hsize_t dims[3] = {0, 0, 0};
-    file_space.getSimpleExtentDims(dims, nullptr);
+    const H5::DataSpace file_space = dataset.getSpace();
+    std::array<hsize_t, 3> dims{0, 0, 0};
+    file_space.getSimpleExtentDims(dims.data(), nullptr);
 
     const hsize_t num_nodes = dims[1];
     if (dims[2] == 0) {
@@ -119,11 +123,11 @@ std::vector<char> read_node_types(H5::DataSet& dataset,
         return out;
     }
 
-    const hsize_t count[3] = {1, num_nodes, 1};
-    const hsize_t offset[3] = {0, 0, 0};
-    file_space.selectHyperslab(H5S_SELECT_SET, count, offset);
+    const std::array<hsize_t, 3> count{1, num_nodes, 1};
+    const std::array<hsize_t, 3> offset{0, 0, 0};
+    file_space.selectHyperslab(H5S_SELECT_SET, count.data(), offset.data());
 
-    H5::DataSpace mem_space(1, &num_nodes);
+    const H5::DataSpace mem_space(1, &num_nodes);
 
     const H5::StrType string_type = dataset.getStrType();
     const std::size_t string_size = string_type.getSize();
@@ -165,10 +169,10 @@ std::vector<int> map_index_links_to_node_numbers(
 ESATANReader::ESATANReader(ThermalMathematicalModel& model) : _model(model) {}
 
 void ESATANReader::read_tmd(const std::string& filepath) {
-    H5::H5File tmd_file(filepath, H5F_ACC_RDONLY);
+    const H5::H5File tmd_file(filepath, H5F_ACC_RDONLY);
 
-    H5::Group analysis_group = tmd_file.openGroup("AnalysisSet1");
-    H5::Group data_group = analysis_group.openGroup("DataGroup1");
+    const H5::Group analysis_group = tmd_file.openGroup("AnalysisSet1");
+    const H5::Group data_group = analysis_group.openGroup("DataGroup1");
 
     H5::DataSet nodes_dataset = analysis_group.openDataSet("thermalNodes");
     H5::DataSet gl_dataset = analysis_group.openDataSet("conductorsGL");
@@ -191,8 +195,9 @@ void ESATANReader::read_tmd(const std::string& filepath) {
             "Mismatch between thermalNodes and thermalNodesStringData sizes.");
     }
 
-    std::array<std::vector<double>, kNumRealNodeAttrs> node_attrs;
+    std::array<std::vector<double>, k_num_real_node_attrs> node_attrs;
     for (std::size_t i = 0; i < node_attrs.size(); ++i) {
+        // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-constant-array-index)
         node_attrs[i] =
             read_double_attr_3d(node_real_data_dataset, static_cast<hsize_t>(i),
                                 "thermalNodesRealData");
@@ -310,3 +315,4 @@ void ESATANReader::read_tmd(const std::string& filepath) {
 }
 
 }  // namespace pycanha
+// NOLINTEND(misc-include-cleaner)

@@ -1,6 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <filesystem>
 #include <memory>
+#include <string>  // NOLINT(misc-include-cleaner)
 
 #include "pycanha-core/io/esatan.hpp"
 #include "pycanha-core/solvers/sslu.hpp"

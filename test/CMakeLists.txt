@@ -51,6 +51,9 @@ target_link_libraries(${TEST_TARGET_NAME} PRIVATE ${LIB_NAME})
 target_link_libraries(${TEST_TARGET_NAME} PRIVATE Catch2::Catch2WithMain)
 target_link_libraries(${TEST_TARGET_NAME} PRIVATE HDF5::HDF5)
 target_link_libraries(${TEST_TARGET_NAME} PRIVATE symengine)
+if(UNIX AND NOT APPLE)
+  target_link_libraries(${TEST_TARGET_NAME} PRIVATE m)
+endif()
 
 target_set_warnings(
   TARGET
