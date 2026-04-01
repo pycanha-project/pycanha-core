@@ -15,6 +15,7 @@
 #include "pycanha-core/tmm/node.hpp"
 #include "pycanha-core/tmm/radiativecouplings.hpp"
 #include "pycanha-core/tmm/thermalnetwork.hpp"
+#include "pycanha-core/utils/logger.hpp"
 
 namespace pycanha {
 ThermalMathematicalModel::ThermalMathematicalModel(std::string model_name)

@@ -139,10 +139,13 @@ class GeometryModel : public UniqueID,
     //  Your methods here
 
     static void callback_primitive_changed(GeometryIdType primitive_id) {
-        // Print
+#if SPDLOG_ACTIVE_LEVEL <= SPDLOG_LEVEL_DEBUG
         SPDLOG_LOGGER_DEBUG(pycanha::get_logger(),
                             "Primitive with id: {} has been modified.",
                             primitive_id);
+#else
+        (void)primitive_id;
+#endif
     }
 
     /**
