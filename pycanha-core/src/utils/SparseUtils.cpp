@@ -7,6 +7,7 @@
 #include <cmath>
 #include <cstring>
 #include <iomanip>
+#include <ios>
 #include <iterator>
 #include <sstream>
 #include <stdexcept>
@@ -981,10 +982,11 @@ void print_sparse_format(
     if (sparse.isCompressed()) {
         SPDLOG_LOGGER_DEBUG(pycanha::get_logger(),
                             "Sparse Row Major in COMPRESSED format");
-    } else {
-        SPDLOG_LOGGER_DEBUG(pycanha::get_logger(),
-                            "Sparse Row Major in UNCOMPRESSED format");
+        return;
     }
+
+    SPDLOG_LOGGER_DEBUG(pycanha::get_logger(),
+                        "Sparse Row Major in UNCOMPRESSED format");
 }
 
 void print_sparse_structure(

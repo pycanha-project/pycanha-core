@@ -10,7 +10,7 @@
 #include "pycanha-core/tmm/nodes.hpp"
 #include "pycanha-core/tmm/thermalmathematicalmodel.hpp"
 #include "pycanha-core/tmm/thermalnetwork.hpp"
-#include "pycanha-core/utils/logger.hpp"
+#include "pycanha-core/utils/profiling.hpp"
 
 namespace pycanha {
 

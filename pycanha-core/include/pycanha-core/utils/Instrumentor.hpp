@@ -177,7 +177,7 @@ class InstrumentationTimer {
 };
 
 #ifdef PROFILING
-#define PROFILE_SCOPE(name) InstrumentationTimer timer##__LINE__(name)
+#define PROFILE_SCOPE(name) const InstrumentationTimer timer##__LINE__(name)
 #define PROFILE_FUNCTION() PROFILE_SCOPE(__FUNCTION__)
 #else
 #define PROFILE_SCOPE(name)

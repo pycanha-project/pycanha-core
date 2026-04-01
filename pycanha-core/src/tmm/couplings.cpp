@@ -9,7 +9,6 @@
 #include <tuple>
 #include <utility>
 
-#include "pycanha-core/config.hpp"
 #include "pycanha-core/globals.hpp"
 #include "pycanha-core/tmm/coupling.hpp"
 #include "pycanha-core/tmm/couplingmatrices.hpp"

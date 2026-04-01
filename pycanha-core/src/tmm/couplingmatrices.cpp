@@ -8,7 +8,6 @@
 #include <tuple>
 #include <utility>
 
-#include "pycanha-core/config.hpp"
 #include "pycanha-core/globals.hpp"
 #include "pycanha-core/utils/SparseUtils.hpp"
 #include "pycanha-core/utils/logger.hpp"

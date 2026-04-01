@@ -19,7 +19,6 @@
 #include <mkl_types.h>
 #endif
 
-#include "pycanha-core/config.hpp"
 #include "pycanha-core/solvers/tscnrl.hpp"
 #include "pycanha-core/tmm/thermalmathematicalmodel.hpp"
 #include "pycanha-core/utils/SparseUtils.hpp"

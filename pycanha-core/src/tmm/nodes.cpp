@@ -11,7 +11,6 @@
 #include <utility>
 #include <vector>
 
-#include "pycanha-core/config.hpp"
 #include "pycanha-core/globals.hpp"
 #include "pycanha-core/tmm/literalstring.hpp"
 #include "pycanha-core/tmm/node.hpp"
@@ -116,6 +115,7 @@ Nodes& Nodes::operator=(const Nodes& other) {
 // Move Constructor
 Nodes::Nodes(Nodes&& other) noexcept
     : estimated_number_of_nodes(other.estimated_number_of_nodes),
+      _self_pointer(std::move(other._self_pointer)),
       _diff_node_num_vector(std::move(other._diff_node_num_vector)),
       _bound_node_num_vector(std::move(other._bound_node_num_vector)),
       T_vector(std::move(other.T_vector)),
@@ -147,9 +147,6 @@ Nodes::Nodes(Nodes&& other) noexcept
       _node_num_mapped(other._node_num_mapped) {
     SPDLOG_LOGGER_TRACE(pycanha::get_logger(),
                         "Move constructor of TNs called");
-
-    // Transfer the self_pointer
-    _self_pointer = std::move(other._self_pointer);
 
     // Reset the other object's self_pointer
     other._self_pointer.reset();

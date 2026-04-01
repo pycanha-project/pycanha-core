@@ -10,7 +10,6 @@
 #include <string>
 #include <utility>
 
-#include "pycanha-core/config.hpp"
 #include "pycanha-core/globals.hpp"
 #include "pycanha-core/tmm/nodes.hpp"
 #include "pycanha-core/utils/logger.hpp"
