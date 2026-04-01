@@ -18,6 +18,7 @@ set(TEST_SOURCES
       "${CMAKE_CURRENT_SOURCE_DIR}/tmm/test_nodes.cpp"
       "${CMAKE_CURRENT_SOURCE_DIR}/tmm/test_thermal_network.cpp"
       "${CMAKE_CURRENT_SOURCE_DIR}/tmm/test_thermal_mathematical_model.cpp"
+      "${CMAKE_CURRENT_SOURCE_DIR}/tmm/test_esatan_reader.cpp"
       "${CMAKE_CURRENT_SOURCE_DIR}/tmm/parameters/test_parameters.cpp"
       "${CMAKE_CURRENT_SOURCE_DIR}/tmm/parameters/test_formulas.cpp"
       "${CMAKE_CURRENT_SOURCE_DIR}/tmm/thermaldata/test_thermaldata.cpp"
@@ -29,7 +30,7 @@ set(TEST_HEADERS "")
 
 #Tests need Catch2
 find_package(Catch2 REQUIRED)
-find_package(HDF5 REQUIRED)
+find_package(HDF5 REQUIRED COMPONENTS CXX)
 find_package(symengine REQUIRED CONFIG)
 
 # Create the target "tests_lib". This target only includes the library and prints info
@@ -50,6 +51,9 @@ target_link_libraries(${TEST_TARGET_NAME} PRIVATE ${LIB_NAME})
 target_link_libraries(${TEST_TARGET_NAME} PRIVATE Catch2::Catch2WithMain)
 target_link_libraries(${TEST_TARGET_NAME} PRIVATE HDF5::HDF5)
 target_link_libraries(${TEST_TARGET_NAME} PRIVATE symengine)
+if(UNIX AND NOT APPLE)
+  target_link_libraries(${TEST_TARGET_NAME} PRIVATE m)
+endif()
 
 target_set_warnings(
   TARGET
@@ -123,12 +127,6 @@ if(PYCANHA_OPTION_COVERAGE)
       "11/*"
       )
       
-  # Using this flag to avoid member function to be inlined and not reported in codecov
-  # It works in this example but seems to break things... 
-  # See: https://stackoverflow.com/questions/9666800/getting-useful-gcov-results-for-header-only-libraries
-  target_compile_options(${TEST_TARGET_NAME} PRIVATE -fkeep-inline-functions)
-
-
   setup_target_for_coverage_lcov(
       NAME ${COVERAGE_MAIN}
       EXECUTABLE ${TEST_TARGET_NAME}

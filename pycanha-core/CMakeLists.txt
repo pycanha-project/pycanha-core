@@ -23,6 +23,7 @@ set(PYCANHA_USE_MKL_INT 0)
 # Eigen 5 from Conan currently exports Eigen3 CMake config/target names.
 find_package(Eigen3 REQUIRED CONFIG)
 find_package(spdlog REQUIRED CONFIG)
+find_package(HDF5 REQUIRED COMPONENTS CXX)
 
 
 # CDT: https://github.com/artem-ogre/CDT
@@ -62,6 +63,8 @@ endif()
 add_library(${LIB_NAME} STATIC 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/triangulation.cpp
 
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/io/esatan.cpp
+
     ${CMAKE_CURRENT_SOURCE_DIR}/src/parameters/parameters.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/parameters/formulas.cpp
 
@@ -99,6 +102,7 @@ target_link_libraries( ${LIB_NAME}
     Eigen3::Eigen
     spdlog::spdlog
     PRIVATE
+    HDF5::HDF5
     CDT::CDT
 )
 
