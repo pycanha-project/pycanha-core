@@ -15,7 +15,6 @@
 #include <utility>
 #include <variant>
 
-#include "pycanha-core/config.hpp"
 #include "pycanha-core/utils/logger.hpp"
 
 namespace pycanha {
