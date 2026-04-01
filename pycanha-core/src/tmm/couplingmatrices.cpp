@@ -244,16 +244,16 @@ void CouplingMatrices::_move_node(Index to_idx, Index from_idx) {
 }
 
 void CouplingMatrices::print_sparse() const {
-    SPDLOG_LOGGER_DEBUG(pycanha::get_logger(), "     Kdd matrix");
-    SPDLOG_LOGGER_DEBUG(pycanha::get_logger(), "-------------------");
+    SPDLOG_LOGGER_INFO(pycanha::get_logger(), "     Kdd matrix");
+    SPDLOG_LOGGER_INFO(pycanha::get_logger(), "-------------------");
     sparse_utils::print_sparse(sparse_dd);
 
-    SPDLOG_LOGGER_DEBUG(pycanha::get_logger(), "     Kdb matrix");
-    SPDLOG_LOGGER_DEBUG(pycanha::get_logger(), "-------------------");
+    SPDLOG_LOGGER_INFO(pycanha::get_logger(), "     Kdb matrix");
+    SPDLOG_LOGGER_INFO(pycanha::get_logger(), "-------------------");
     sparse_utils::print_sparse(sparse_db);
 
-    SPDLOG_LOGGER_DEBUG(pycanha::get_logger(), "     Kbb matrix");
-    SPDLOG_LOGGER_DEBUG(pycanha::get_logger(), "-------------------");
+    SPDLOG_LOGGER_INFO(pycanha::get_logger(), "     Kbb matrix");
+    SPDLOG_LOGGER_INFO(pycanha::get_logger(), "-------------------");
     sparse_utils::print_sparse(sparse_bb);
 }
 

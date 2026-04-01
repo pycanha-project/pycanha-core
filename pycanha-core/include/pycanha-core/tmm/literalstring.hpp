@@ -11,9 +11,12 @@
 
 #pragma once
 
-#include <iostream>
+#include <spdlog/spdlog.h>
+
 #include <string>
 #include <utility>
+
+#include "pycanha-core/utils/logger.hpp"
 
 namespace pycanha {
 
@@ -57,7 +60,9 @@ class LiteralString {
         return *this;
     }
 
-    void print_string() const { std::cout << _string; }
+    void print_string() const {
+        SPDLOG_LOGGER_INFO(pycanha::get_logger(), "{}", _string);
+    }
     [[nodiscard]] const std::string& get_literal() const { return _string; }
     [[nodiscard]] bool is_empty() const { return _string.empty(); }
 

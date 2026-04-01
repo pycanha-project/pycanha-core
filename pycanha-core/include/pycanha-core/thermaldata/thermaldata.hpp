@@ -1,11 +1,13 @@
 #pragma once
 
+#include <spdlog/spdlog.h>
+
 #include <Eigen/Core>
 #include <cstddef>
-#include <iostream>
 #include <memory>
 #include <pycanha-core/config.hpp>
 #include <pycanha-core/tmm/thermalnetwork.hpp>
+#include <pycanha-core/utils/logger.hpp>
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
@@ -53,13 +55,12 @@ class ThermalData {
         auto [iterator, inserted] =
             _tables.try_emplace(name, MatrixDataType::Zero(rows, cols));
 
-        if constexpr (DEBUG) {
-            if (inserted) {
-                std::cout << "Table '" << iterator->first << "' added\n";
-            } else {
-                std::cout << "Table '" << iterator->first
-                          << "' already exists\n";
-            }
+        if (inserted) {
+            SPDLOG_LOGGER_INFO(pycanha::get_logger(), "Table '{}' added",
+                               iterator->first);
+        } else {
+            SPDLOG_LOGGER_INFO(pycanha::get_logger(),
+                               "Table '{}' already exists", iterator->first);
         }
     }
 
@@ -78,20 +79,17 @@ class ThermalData {
         }
 
         iterator->second = MatrixDataType::Zero(rows, cols);
-
-        if constexpr (DEBUG) {
-            std::cout << "Table '" << name << "' resized\n";
-        }
+        SPDLOG_LOGGER_INFO(pycanha::get_logger(), "Table '{}' resized", name);
     }
 
     void remove_table(const std::string& name) {
         const auto removed = _tables.erase(name);
-        if constexpr (DEBUG) {
-            if (removed == 0U) {
-                std::cout << "Table '" << name << "' doesn't exist\n";
-            } else {
-                std::cout << "Table '" << name << "' removed\n";
-            }
+        if (removed == 0U) {
+            SPDLOG_LOGGER_INFO(pycanha::get_logger(),
+                               "Table '{}' doesn't exist", name);
+        } else {
+            SPDLOG_LOGGER_INFO(pycanha::get_logger(), "Table '{}' removed",
+                               name);
         }
     }
 

@@ -3,11 +3,11 @@
 // HDF5 C++ API symbols are provided through umbrella headers/macros.
 // NOLINTBEGIN(misc-include-cleaner)
 #include <H5Cpp.h>
+#include <spdlog/spdlog.h>
 
 #include <array>
 #include <cstddef>
 #include <cstdint>
-#include <iostream>
 #include <stdexcept>
 #include <string>
 #include <unordered_set>
@@ -15,6 +15,7 @@
 
 #include "pycanha-core/tmm/node.hpp"
 #include "pycanha-core/tmm/thermalmathematicalmodel.hpp"
+#include "pycanha-core/utils/logger.hpp"
 
 namespace pycanha {
 namespace {
@@ -307,10 +308,13 @@ void ESATANReader::read_tmd(const std::string& filepath) {
     }
 
     if (verbose) {
-        std::cout << "Read TMD: " << filepath << '\n'
-                  << "  Nodes: " << node_numbers.size() << '\n'
-                  << "  GLs: " << gl_values.size() << '\n'
-                  << "  GRs: " << gr_values.size() << '\n';
+        SPDLOG_LOGGER_INFO(pycanha::get_logger(), "Read TMD: {}", filepath);
+        SPDLOG_LOGGER_INFO(pycanha::get_logger(), "  Nodes: {}",
+                           node_numbers.size());
+        SPDLOG_LOGGER_INFO(pycanha::get_logger(), "  GLs: {}",
+                           gl_values.size());
+        SPDLOG_LOGGER_INFO(pycanha::get_logger(), "  GRs: {}",
+                           gr_values.size());
     }
 }
 

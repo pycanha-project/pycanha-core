@@ -1184,25 +1184,17 @@ using TriMeshModelPtr = std::shared_ptr<TriMeshModel>;
 namespace trimesher {
 
 inline void print_point2d(const Point2D& p) {
-#if SPDLOG_ACTIVE_LEVEL <= SPDLOG_LEVEL_DEBUG
-    SPDLOG_LOGGER_DEBUG(pycanha::get_logger(), "[{}, {}],", p[0], p[1]);
-#else
-    (void)p;
-#endif
+    SPDLOG_LOGGER_INFO(pycanha::get_logger(), "[{}, {}],", p[0], p[1]);
 }
 
 inline void print_point3d(const Point3D& p) {
-#if SPDLOG_ACTIVE_LEVEL <= SPDLOG_LEVEL_DEBUG
-    SPDLOG_LOGGER_DEBUG(pycanha::get_logger(), "[{}, {}, {}],", p[0], p[1],
-                        p[2]);
-#else
-    (void)p;
-#endif
+    SPDLOG_LOGGER_INFO(pycanha::get_logger(), "[{}, {}, {}],", p[0], p[1],
+                       p[2]);
 }
 
 inline void print_points(const TriMesh& trimesh) {
     for (int i = 0; i < trimesh.get_vertices().rows(); ++i) {
-        SPDLOG_LOGGER_DEBUG(pycanha::get_logger(), "Point: {}", i);
+        SPDLOG_LOGGER_INFO(pycanha::get_logger(), "Point: {}", i);
         print_point3d(trimesh.get_vertices().row(i));
     }
 }

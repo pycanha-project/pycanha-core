@@ -1,19 +1,22 @@
 #include "pycanha-core/parameters/parameters.hpp"
 
+#include <spdlog/spdlog.h>
+
 #include <bit>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
-#include <iostream>
 #include <iterator>
 #include <limits>
 #include <memory>
+#include <sstream>
 #include <string>
 #include <type_traits>
 #include <utility>
 #include <variant>
 
 #include "pycanha-core/config.hpp"
+#include "pycanha-core/utils/logger.hpp"
 
 namespace pycanha {
 
@@ -72,30 +75,24 @@ void Parameters::add_parameter(std::string name, ThermalValue value) {
     auto [iterator, inserted] =
         _parameters.emplace(std::move(name), std::move(value));
 
-    if constexpr (DEBUG) {
-        if (inserted) {
-            std::cout << "Parameter '" << iterator->first << "' added\n";
-        } else {
-            std::cout << "Parameter '" << iterator->first
-                      << "' already exists\n";
-        }
+    if (inserted) {
+        SPDLOG_LOGGER_INFO(pycanha::get_logger(), "Parameter '{}' added",
+                           iterator->first);
     } else {
-        (void)iterator;
-        (void)inserted;
+        SPDLOG_LOGGER_INFO(pycanha::get_logger(),
+                           "Parameter '{}' already exists", iterator->first);
     }
 }
 
 void Parameters::remove_parameter(const std::string& name) {
     const auto removed = _parameters.erase(name);
 
-    if constexpr (DEBUG) {
-        if (removed == 0U) {
-            std::cout << "Parameter '" << name << "' doesn't exist\n";
-        } else {
-            std::cout << "Parameter '" << name << "' removed\n";
-        }
+    if (removed == 0U) {
+        SPDLOG_LOGGER_INFO(pycanha::get_logger(),
+                           "Parameter '{}' doesn't exist", name);
     } else {
-        (void)removed;
+        SPDLOG_LOGGER_INFO(pycanha::get_logger(), "Parameter '{}' removed",
+                           name);
     }
 }
 
@@ -106,9 +103,8 @@ Parameters::ThermalValue Parameters::get_parameter(
         return iterator->second;
     }
 
-    if constexpr (DEBUG) {
-        std::cout << "Parameter '" << name << "' doesn't exist\n";
-    }
+    SPDLOG_LOGGER_INFO(pycanha::get_logger(), "Parameter '{}' doesn't exist",
+                       name);
 
     return ThermalValue{std::numeric_limits<double>::quiet_NaN()};
 }
@@ -116,16 +112,14 @@ Parameters::ThermalValue Parameters::get_parameter(
 void Parameters::set_parameter(const std::string& name, ThermalValue value) {
     auto iterator = _parameters.find(name);
     if (iterator == _parameters.end()) {
-        if constexpr (DEBUG) {
-            std::cout << "Parameter '" << name << "' doesn't exist\n";
-        }
+        SPDLOG_LOGGER_INFO(pycanha::get_logger(),
+                           "Parameter '{}' doesn't exist", name);
         return;
     }
 
     if (iterator->second.index() != value.index()) {
-        if constexpr (DEBUG) {
-            std::cout << "Parameter '" << name << "' type mismatch\n";
-        }
+        SPDLOG_LOGGER_INFO(pycanha::get_logger(),
+                           "Parameter '{}' type mismatch", name);
         return;
     }
 
@@ -140,10 +134,8 @@ void Parameters::set_parameter(const std::string& name, ThermalValue value) {
             if constexpr (is_matrix_type_v<ExistingType>) {
                 if ((existing.rows() != incoming->rows()) ||
                     (existing.cols() != incoming->cols())) {
-                    if constexpr (DEBUG) {
-                        std::cout << "Parameter '" << name
-                                  << "' shape mismatch\n";
-                    }
+                    SPDLOG_LOGGER_INFO(pycanha::get_logger(),
+                                       "Parameter '{}' shape mismatch", name);
                     return;
                 }
             }
@@ -156,53 +148,45 @@ void Parameters::set_parameter(const std::string& name, ThermalValue value) {
 void Parameters::print_memory_address(const std::string& name) const {
     const auto iterator = _parameters.find(name);
     if (iterator == _parameters.end()) {
-        if constexpr (DEBUG) {
-            std::cout << "Parameter '" << name << "' doesn't exist\n";
-        }
+        SPDLOG_LOGGER_INFO(pycanha::get_logger(),
+                           "Parameter '{}' doesn't exist", name);
         return;
     }
 
     const void* const address =
         std::visit(ConstDataMemoryAddress{}, iterator->second);
 
-    if constexpr (DEBUG) {
-        std::cout << "Mem. addr: " << address << '\n';
-    } else {
-        (void)address;
-    }
+    SPDLOG_LOGGER_INFO(pycanha::get_logger(), "Mem. addr: {}", address);
 }
 
 void Parameters::print_parameter(const std::string& name) const {
     const auto iterator = _parameters.find(name);
     if (iterator == _parameters.end()) {
-        if constexpr (DEBUG) {
-            std::cout << "Parameter '" << name << "' doesn't exist\n";
-        }
+        SPDLOG_LOGGER_INFO(pycanha::get_logger(),
+                           "Parameter '{}' doesn't exist", name);
         return;
     }
 
-    if constexpr (DEBUG) {
-        std::cout << name << " = ";
-        std::visit(
-            [&](const auto& value) {
-                if constexpr (is_matrix_type_v<std::decay_t<decltype(value)>>) {
-                    std::cout << '\n' << value << '\n';
-                } else {
-                    std::cout << value;
-                }
-            },
-            iterator->second);
+    std::ostringstream oss;
+    oss << name << " = ";
+    std::visit(
+        [&](const auto& value) {
+            if constexpr (is_matrix_type_v<std::decay_t<decltype(value)>>) {
+                oss << '\n' << value;
+            } else {
+                oss << value;
+            }
+        },
+        iterator->second);
 
-        std::cout << '\n';
-    }
+    SPDLOG_LOGGER_INFO(pycanha::get_logger(), "{}", oss.str());
 }
 
 void* Parameters::get_value_ptr(const std::string& name) {
     auto iterator = _parameters.find(name);
     if (iterator == _parameters.end()) {
-        if constexpr (DEBUG) {
-            std::cout << "Parameter '" << name << "' doesn't exist\n";
-        }
+        SPDLOG_LOGGER_INFO(pycanha::get_logger(),
+                           "Parameter '{}' doesn't exist", name);
         return nullptr;
     }
 
@@ -212,9 +196,8 @@ void* Parameters::get_value_ptr(const std::string& name) {
 const void* Parameters::get_value_ptr(const std::string& name) const {
     auto iterator = _parameters.find(name);
     if (iterator == _parameters.end()) {
-        if constexpr (DEBUG) {
-            std::cout << "Parameter '" << name << "' doesn't exist\n";
-        }
+        SPDLOG_LOGGER_INFO(pycanha::get_logger(),
+                           "Parameter '{}' doesn't exist", name);
         return nullptr;
     }
 
@@ -233,9 +216,8 @@ std::uint64_t Parameters::get_memory_address(const std::string& name) const {
 int Parameters::get_idx(const std::string& name) const {
     const auto iterator = _parameters.find(name);
     if (iterator == _parameters.end()) {
-        if constexpr (DEBUG) {
-            std::cout << "Parameter '" << name << "' doesn't exist\n";
-        }
+        SPDLOG_LOGGER_INFO(pycanha::get_logger(),
+                           "Parameter '{}' doesn't exist", name);
         return -1;
     }
 
@@ -245,9 +227,8 @@ int Parameters::get_idx(const std::string& name) const {
 std::size_t Parameters::get_size_of_parameter(const std::string& name) const {
     const auto iterator = _parameters.find(name);
     if (iterator == _parameters.end()) {
-        if constexpr (DEBUG) {
-            std::cout << "Parameter '" << name << "' doesn't exist\n";
-        }
+        SPDLOG_LOGGER_INFO(pycanha::get_logger(),
+                           "Parameter '{}' doesn't exist", name);
         return 0U;
     }
 
