@@ -11,6 +11,7 @@ var hierarchy =
       [ "pycanha::gmm::GeometryModel", "classpycanha_1_1gmm_1_1GeometryModel.html", null ]
     ] ],
     [ "pycanha::detail::EntityMap< Key, Value, Size >", "structpycanha_1_1detail_1_1EntityMap.html", null ],
+    [ "pycanha::ESATANReader", "classpycanha_1_1ESATANReader.html", null ],
     [ "pycanha::Formula", "classpycanha_1_1Formula.html", [
       [ "pycanha::ParameterFormula", "classpycanha_1_1ParameterFormula.html", null ],
       [ "pycanha::ValueFormula", "classpycanha_1_1ValueFormula.html", null ]

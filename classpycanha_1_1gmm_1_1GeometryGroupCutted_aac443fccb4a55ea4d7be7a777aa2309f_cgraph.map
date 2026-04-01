@@ -1,11 +1,13 @@
 <map id="pycanha::gmm::GeometryGroupCutted::create_cutted_mesh" name="pycanha::gmm::GeometryGroupCutted::create_cutted_mesh">
-<area shape="rect" id="Node000001" title="Creates the cutted mesh." alt="" coords="5,37,236,77"/>
+<area shape="rect" id="Node000001" title="Creates the cutted mesh." alt="" coords="5,63,236,103"/>
 <area shape="rect" id="Node000002" href="$classpycanha_1_1gmm_1_1GeometryGroupCutted.html#ad4999df9e16d08d9623bd9e5aa8c9195" title="Clears the resultant cutting meshes." alt="" coords="284,5,515,45"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="236,41,270,37,271,43,237,47"/>
-<area shape="rect" id="Node000003" href="$classpycanha_1_1gmm_1_1GeometryGroup.html#acaeec5a5ecddcaa60a934e6d88807dc1" title="Recursively iterates over all geometry below a GeometryGroupCutted. Call this function only from top ..." alt="" coords="284,69,515,109"/>
-<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="237,68,271,72,270,77,236,73"/>
-<area shape="rect" id="Node000004" href="$classpycanha_1_1gmm_1_1CoordinateTransformation.html#a2223d8c13985136ad110d1cb4126f9d9" title="Creates a new transformation equivalent to applying other and then this." alt="" coords="563,69,761,109"/>
-<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="515,87,549,87,549,92,515,92"/>
-<area shape="rect" id="Node000005" href="$classpycanha_1_1gmm_1_1CoordinateTransformation.html#adb564610750eb3d80d29e8a4de0d7aae" title="Default constructor for CoordinateTransformation class." alt="" coords="809,69,1107,109"/>
-<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="761,87,795,87,795,92,761,92"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="218,60,288,46,289,51,219,65"/>
+<area shape="rect" id="Node000003" href="$namespacepycanha.html#af116674b7649af0e33b3d7e78ecb1b1b" title=" " alt="" coords="322,70,477,95"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="236,80,308,80,308,85,236,85"/>
+<area shape="rect" id="Node000004" href="$classpycanha_1_1gmm_1_1GeometryGroup.html#acaeec5a5ecddcaa60a934e6d88807dc1" title="Recursively iterates over all geometry below a GeometryGroupCutted. Call this function only from top ..." alt="" coords="284,120,515,160"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="219,100,289,115,288,120,218,105"/>
+<area shape="rect" id="Node000005" href="$classpycanha_1_1gmm_1_1CoordinateTransformation.html#a2223d8c13985136ad110d1cb4126f9d9" title="Creates a new transformation equivalent to applying other and then this." alt="" coords="563,120,761,160"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="515,137,549,137,549,143,515,143"/>
+<area shape="rect" id="Node000006" href="$classpycanha_1_1gmm_1_1CoordinateTransformation.html#adb564610750eb3d80d29e8a4de0d7aae" title="Default constructor for CoordinateTransformation class." alt="" coords="809,120,1107,160"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="761,137,795,137,795,143,761,143"/>
 </map>

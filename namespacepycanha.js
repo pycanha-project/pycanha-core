@@ -7,6 +7,7 @@ var namespacepycanha =
     [ "CouplingEntity", "classpycanha_1_1CouplingEntity.html", null ],
     [ "CouplingMatrices", "classpycanha_1_1CouplingMatrices.html", "classpycanha_1_1CouplingMatrices" ],
     [ "Couplings", "classpycanha_1_1Couplings.html", null ],
+    [ "ESATANReader", "classpycanha_1_1ESATANReader.html", null ],
     [ "Formula", "classpycanha_1_1Formula.html", "classpycanha_1_1Formula" ],
     [ "Formulas", "classpycanha_1_1Formulas.html", null ],
     [ "InstrumentationSession", "structpycanha_1_1InstrumentationSession.html", null ],
@@ -32,5 +33,10 @@ var namespacepycanha =
     [ "TSCN", "classpycanha_1_1TSCN.html", null ],
     [ "TSCNRL", "classpycanha_1_1TSCNRL.html", null ],
     [ "TSCNRLDS", "classpycanha_1_1TSCNRLDS.html", null ],
-    [ "ValueFormula", "classpycanha_1_1ValueFormula.html", null ]
+    [ "ValueFormula", "classpycanha_1_1ValueFormula.html", null ],
+    [ "create_ostream_logger", "namespacepycanha.html#a87d68876c66af5fddcbbfde5c82c80e6", null ],
+    [ "get_logger", "namespacepycanha.html#af116674b7649af0e33b3d7e78ecb1b1b", null ],
+    [ "get_profiling_logger", "namespacepycanha.html#aa10488c2ff5bd88e91d25b92af8f7733", null ],
+    [ "set_logger_level", "namespacepycanha.html#a08752753ff47555d437f581a37fc88f7", null ],
+    [ "set_profiling_logger_level", "namespacepycanha.html#ac16465a1012e572c68d461c52897466d", null ]
 ];

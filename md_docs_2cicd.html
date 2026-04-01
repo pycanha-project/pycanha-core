@@ -95,11 +95,11 @@ $(document).ready(function(){initNavTree('md_docs_2cicd.html',''); initResizable
   <div class="headertitle"><div class="title">CI/CD</div></div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><p><a class="anchor" id="autotoc_md38"></a> At this moment, there are several workflows to build, test and deploy the package. They are stored under the <code>.github/workflows</code> folder. The workflows can be divided in those that are executed for every commit or pull request to <code>main</code> and those</p>
-<h1><a class="anchor" id="autotoc_md39"></a>
+<div class="textblock"><p><a class="anchor" id="autotoc_md39"></a> At this moment, there are several workflows to build, test and deploy the package. They are stored under the <code>.github/workflows</code> folder. The workflows can be divided in those that are executed for every commit or pull request to <code>main</code> and those</p>
+<h1><a class="anchor" id="autotoc_md40"></a>
 Workflows for every commit/pull request to main</h1>
 <p>These workflows are only checks. They do not create new commits or change the code. </p>
-<h2><a class="anchor" id="autotoc_md40"></a>
+<h2><a class="anchor" id="autotoc_md41"></a>
 Code Checks</h2>
 <p>It is stored in the <code>code-checks.yml</code> file. This workflow checks that the code follow best practices standards. The badge <code>Code Checks</code> tracks if this workflow is passing or not. The following tools are used to check the code:</p>
 <ul>
@@ -108,10 +108,10 @@ Code Checks</h2>
 <li>cppcheck</li>
 <li>clang-tidy</li>
 </ul>
-<h2><a class="anchor" id="autotoc_md41"></a>
+<h2><a class="anchor" id="autotoc_md42"></a>
 CodeQL</h2>
 <p>It is stored in the <code>code-ql.yml</code> file. This is also a workflow to check the code statically for bugs or vulnerabilities. It is also triggered every month. It uses <a href="https://codeql.github.com/">GitHub CodeQL</a>. The badge <code>CodeQL</code> tracks if this workflow is passing or not.</p>
-<h2><a class="anchor" id="autotoc_md42"></a>
+<h2><a class="anchor" id="autotoc_md43"></a>
 CI</h2>
 <p>It is stored in the <code>ci.yml</code> file. This is the <b>Continuous Integration</b> workflow, where we check the library can be built and the test passes for different OS and compilers. In this workflow the compiler warnings are active and all the warnings are treated as errors. The process is done for <code>Release</code> and <code>Debug</code> configurations for the following combination of OS and compiler:</p>
 <ul>
@@ -120,15 +120,15 @@ CI</h2>
 <li>Ubuntu Clang 14</li>
 </ul>
 <p>The badge <code>ci</code> tracks if this workflow is passing or not.</p>
-<h2><a class="anchor" id="autotoc_md43"></a>
+<h2><a class="anchor" id="autotoc_md44"></a>
 Coverage</h2>
 <p>It is stored in the <code>coverage.yml</code> file. The workflow checks how much of the code is covered by the tests. It also upload the coverage report to <code>CodeCov</code>, where the coverage evolution over time can be checked. The badge <code>codecov</code> track the percentage of the code covered by the tests.</p>
-<h2><a class="anchor" id="autotoc_md44"></a>
+<h2><a class="anchor" id="autotoc_md45"></a>
 Docs</h2>
 <p>It is stored in the <code>docs.yml</code> file. This workflow checks that the doxygen documentation can be built.</p>
-<h1><a class="anchor" id="autotoc_md45"></a>
+<h1><a class="anchor" id="autotoc_md46"></a>
 Workflows for a Release</h1>
-<h2><a class="anchor" id="autotoc_md46"></a>
+<h2><a class="anchor" id="autotoc_md47"></a>
 Deploy</h2>
 <p>It is stored in the <code>deploy.yml</code> file. At the moment, because the library is header-only, there is no need to build binaries, so the workflow only build the documentation. After building the documentation, the html built files are uploaded to the <code>gh-pages</code> branch, which is used by GitHub Pages. The docs are build as usual, but the deployment is automatically handled by the GitHub Action GitHub Pages deploy. </p>
 </div></div><!-- contents -->

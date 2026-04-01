@@ -1,8 +1,8 @@
 var searchData=
 [
-  ['library_0',['3. Build the library',['../md_docs_2configuring.html#autotoc_md31',1,'']]],
-  ['library_20with_20conan_20and_20start_20the_20development_1',['3.5. Build the library with conan and start the development',['../md_docs_2configuring.html#autotoc_md36',1,'']]],
-  ['linux_2',['Linux',['../md_docs_2configuring.html#autotoc_md27',1,'']]],
+  ['library_0',['3. Build the library',['../md_docs_2configuring.html#autotoc_md32',1,'']]],
+  ['library_20with_20conan_20and_20start_20the_20development_1',['3.5. Build the library with conan and start the development',['../md_docs_2configuring.html#autotoc_md37',1,'']]],
+  ['linux_2',['Linux',['../md_docs_2configuring.html#autotoc_md28',1,'']]],
   ['literals_5fa_3',['literals_a',['../classpycanha_1_1Nodes.html#aa7404b1e68f2aaadb0c85ba2a3b1956a',1,'pycanha::Nodes']]],
   ['literals_5faph_4',['literals_aph',['../classpycanha_1_1Nodes.html#a721b0a604634adf012a80ec6d6c9ce50',1,'pycanha::Nodes']]],
   ['literals_5fc_5',['literals_C',['../classpycanha_1_1Nodes.html#aaca4a75472321d6ceec6a935c7b582eb',1,'pycanha::Nodes']]],
@@ -17,5 +17,6 @@ var searchData=
   ['literals_5fqs_14',['literals_qs',['../classpycanha_1_1Nodes.html#aca0bf0cbea81dfcf3b8457099dca8860',1,'pycanha::Nodes']]],
   ['literalstring_15',['LiteralString',['../classpycanha_1_1LiteralString.html',1,'pycanha']]],
   ['local_5fstorage_5fdestructor_16',['local_storage_destructor',['../classpycanha_1_1Node.html#a6b3e48a500d2f713fc7ee37e26693749',1,'pycanha::Node']]],
-  ['localstorage_17',['LocalStorage',['../structpycanha_1_1Node_1_1LocalStorage.html',1,'pycanha::Node']]]
+  ['localstorage_17',['LocalStorage',['../structpycanha_1_1Node_1_1LocalStorage.html',1,'pycanha::Node']]],
+  ['logging_20and_20profiling_18',['Logging and profiling',['../index.html#autotoc_md1',1,'']]]
 ];

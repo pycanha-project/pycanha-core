@@ -95,7 +95,7 @@ $(document).ready(function(){initNavTree('md_docs_2configuring.html',''); initRe
   <div class="headertitle"><div class="title">Configuration for VS Code</div></div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><p><a class="anchor" id="autotoc_md22"></a>You can use your favourite IDE to follow the suggested <a class="el" href="md_docs_2workflow.html">development workflow</a>, but I recommend VS Code. Because there are many steps to setup the development environment, and is easy to forget some of them, here is a practical guide on how to do it. In a nutshell, what you need to do is:</p>
+<div class="textblock"><p><a class="anchor" id="autotoc_md23"></a>You can use your favourite IDE to follow the suggested <a class="el" href="md_docs_2workflow.html">development workflow</a>, but I recommend VS Code. Because there are many steps to setup the development environment, and is easy to forget some of them, here is a practical guide on how to do it. In a nutshell, what you need to do is:</p>
 <ol type="1">
 <li><b>Installing the build tools:</b><ul>
 <li>Compiler</li>
@@ -120,14 +120,14 @@ $(document).ready(function(){initNavTree('md_docs_2configuring.html',''); initRe
 </li>
 </ol>
 <p>The step-by-step guide starts below. I've tested all those steps in clean installations of Windows and Linux and they seems to work fine. If that were not the case, or if there is some missing step, feel free to open an Issue or create a Pull Request.</p>
-<h1><a class="anchor" id="autotoc_md23"></a>
+<h1><a class="anchor" id="autotoc_md24"></a>
 1. Installing the build tools</h1>
 <p>The idea is to use the same tools in Linux and Windows, with the only exception of the compiler. However, the installation process is different, so here we need to differenciate between Windows and Linux.</p>
-<h2><a class="anchor" id="autotoc_md24"></a>
+<h2><a class="anchor" id="autotoc_md25"></a>
 Windows</h2>
 <p>The MSVC compiler is the easier choice for Windows, so here are the instructions for that.</p>
 <p>Usually in Windows you would need to install each tool manually, going to the website, downloading the installer, and following the installer instructions. But, you can automate the installation process using a package manager like <a href="https://chocolatey.org/">Chocolatey</a>. So depending on what you choose, you should follow <em>1.a)</em> or <em>1.b)</em>. I would recommend to use <code>Chocolatey</code> as it is easier and faster. And if you have any problem with any of the installations, you can always check the manual section for that tool.</p>
-<h3><a class="anchor" id="autotoc_md25"></a>
+<h3><a class="anchor" id="autotoc_md26"></a>
 1.a. Automatically using choco</h3>
 <p>To do that, first install the <b>Chocolatey</b> package manager, and then all the other tools through the <code>choco</code> command. Everything can be done through the command line. Open the Windows PowerShell with administrative rights and type:</p>
 <div class="fragment"><div class="line">Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString(&#39;https://community.chocolatey.org/install.ps1&#39;))</div>
@@ -141,7 +141,7 @@ Windows</h2>
 <div class="line">choco install python -y</div>
 <div class="line"> </div>
 <div class="line">choco install vscode -y</div>
-</div><!-- fragment --><h3><a class="anchor" id="autotoc_md26"></a>
+</div><!-- fragment --><h3><a class="anchor" id="autotoc_md27"></a>
 1.b. Manually</h3>
 <p>You can skip the step if the tool is already installed.</p><ol type="1">
 <li><a href="https://visualstudio.microsoft.com/vs/features/cplusplus/">MSVC 2022</a></li>
@@ -159,14 +159,14 @@ Windows</h2>
 <p class="startli">The next step is to configure Visual Studio Code, installing some extensions and adding some custom rules to execute <code>clang-format</code>, <code>clang-tidy</code>, etc.</p>
 </li>
 </ol>
-<h2><a class="anchor" id="autotoc_md27"></a>
+<h2><a class="anchor" id="autotoc_md28"></a>
 Linux</h2>
 <p>Install GCC or Clang, CMake and VS Code. That's all. In Ubuntu, for example, you can use <code>apt</code> to install GCC and CMake and <code>snap</code> for VS Code: </p><div class="fragment"><div class="line">sudo apt update</div>
 <div class="line">sudo apt upgrade</div>
 <div class="line">sudo apt install build-essential</div>
 <div class="line">sudo apt install cmake</div>
 <div class="line">sudo snap install --classic code</div>
-</div><!-- fragment --><h1><a class="anchor" id="autotoc_md28"></a>
+</div><!-- fragment --><h1><a class="anchor" id="autotoc_md29"></a>
 2. Configure VS Code</h1>
 <p>There many extensions and settings you could tweak in VS Code to make you life easier. Here I gather what I consider the minimum to have a smooth experience.</p><ol type="1">
 <li><b>Extensions:</b><ul>
@@ -190,12 +190,12 @@ Linux</h2>
 </li>
 </ol>
 <p>Same as before, you can install the extensions and configure the settings manually or automatically.</p>
-<h2><a class="anchor" id="autotoc_md29"></a>
+<h2><a class="anchor" id="autotoc_md30"></a>
 2.a. Automatic configuration by importing a VS Code profile</h2>
 <p>In VS Code you can now use profiles to customize all the settings in an isolated profile. This makes really easy to share the whole configuration of VS Code. For convenience, I have created a <a href="https://github.com/jpiqueras/vscode-profile-cpp-python">repo with two VS Code profiles for C++ and Python development</a>. If you just want the settings mentioned above, import the <code>Minimal</code> profile by pasting the following url in the VS Code command <code>Profiles: Import Profile...</code>:</p>
 <div class="fragment"><div class="line">https://raw.githubusercontent.com/jpiqueras/vscode-profile-cpp-python/main/Cpp_Python_minimal.code-profile</div>
 </div><!-- fragment --><p>You can also check the <code>Complete</code> profile for the complete set of settings and extensions I like. Even if you only want some of the extensions or settings, importing the profile is still convenient because during the import process you can check and customize what do you want to import.</p>
-<h2><a class="anchor" id="autotoc_md30"></a>
+<h2><a class="anchor" id="autotoc_md31"></a>
 2.b Manual configuration</h2>
 <p>First, install the extensions listed above and after that apply the settings by copying the following code in the <code>settings.json</code> file (in the command palette <code>Preferences: Open User Settings (JSON)</code>):</p>
 <div class="fragment"><div class="line">&quot;terminal.integrated.profiles.windows&quot;: {</div>
@@ -217,10 +217,10 @@ Linux</h2>
 <div class="line">    &quot;test/mytest1.cpp&quot;</div>
 <div class="line">],</div>
 </div><!-- fragment --><p> For a detailed explanation of each option, check the description in VS Code <code>Preferences: Open User Settings</code> (the not JSON command).</p>
-<h1><a class="anchor" id="autotoc_md31"></a>
+<h1><a class="anchor" id="autotoc_md32"></a>
 3. Build the library</h1>
 <p>At this stage, you should have VS Code configured with the other tools working (git, cmake and python). From this point the idea is to use the built-in methods of VS Code to do the typical things you would do within the terminal (clone the repository, create python virtual environments, etc.).</p>
-<h2><a class="anchor" id="autotoc_md32"></a>
+<h2><a class="anchor" id="autotoc_md33"></a>
 3.1. Clone the repository</h2>
 <p>Open VS Code and clone the repository:</p><ol type="1">
 <li>Open the command palette (<code>ctrl+shift+p</code>)</li>
@@ -229,7 +229,7 @@ Linux</h2>
 </ol>
 <dl class="section note"><dt>Note</dt><dd>You need to set the folder you just cloned as <b>Trusted</b> when the message pops up.</dd></dl>
 <dl class="section warning"><dt>Warning</dt><dd>The <code>CMake</code> extension will probably ask if you want to configure the project. You should <b>not</b> configure the project until you install the library with <code>conan</code>. Otherwise the configuration will fail, as the the dependencies and the package options are not yet configured.</dd></dl>
-<h2><a class="anchor" id="autotoc_md33"></a>
+<h2><a class="anchor" id="autotoc_md34"></a>
 3.2. Create a Python virtual environment and activate it in VS Code</h2>
 <p>Before installing <code>conan</code>, it is very recommendable to use a virtual environment. If you use <code>anaconda</code> to manage python, just follow the conda instructions to create and environment, VS Code should detect the new environment just fine. If you are using the regular Python distribution of your system, then it is easier to just use the python built-in <code>venv</code>, which can also be used directly from VS Code (when the Python extension is installed). To do so:</p><ol type="1">
 <li>Open the command palette (<code>ctrl+shift+p</code>)</li>
@@ -239,7 +239,7 @@ Linux</h2>
 <li>The environment is created in the root of the package in the folder <code>.venv</code>.</li>
 </ol>
 <p>Finally, you need to activate the environment within VS Code. To do so, in the command palette use the option <code>Python: Select Interpreter</code> and choose the one you just created. Now you can open a Terminal within VS Code (<code>Terminal: Create New Terminal</code>), and the python environment will be activated automatically.</p>
-<h2><a class="anchor" id="autotoc_md34"></a>
+<h2><a class="anchor" id="autotoc_md35"></a>
 3.3. Install conan</h2>
 <p><a href="https://conan.io/">Conan</a> can be installed through <code>pip</code>. You need the newer versions of conan (<a href="https://docs.conan.io/2/">Conan 2.X</a>).</p><ol type="1">
 <li>Open a terminal in VS Code (<code>Terminal: Create New Terminal</code> or the configure shorcut), check that the python environment has been activated and type:</li>
@@ -248,7 +248,7 @@ Linux</h2>
 </div><!-- fragment --><p>Tested working Conan version for this pycanha-core release:</p>
 <div class="fragment"><div class="line">Conan version 2.22.1</div>
 </div><!-- fragment --><p>Update this value over time when validating newer Conan versions.</p>
-<h2><a class="anchor" id="autotoc_md35"></a>
+<h2><a class="anchor" id="autotoc_md36"></a>
 3.4. Configure conan build</h2>
 <p>Because conan is installed in a virtual environment, the most convenience way to use it is to set the <code>default</code> profile to the one we want to use to build the library. You can also use directly the profiles saved in the repository that are used for the <code>ci</code> workflows (check the <a class="el" href="md_docs_2tools.html">Using the tools section</a>, the <a class="el" href="md_docs_2cicd.html">CI/CD section</a> or <a href="https://docs.conan.io/2/reference/config_files/profiles.html">the Conan documentation</a> ).</p>
 <ol type="1">
@@ -275,10 +275,12 @@ Linux</h2>
 <div class="line">PYCANHA_OPTION_INCLUDE_WHAT_YOU_USE = False</div>
 <div class="line">PYCANHA_OPTION_CLANG_TIDY = False</div>
 <div class="line">PYCANHA_OPTION_CPPCHECK = False</div>
+<div class="line">PYCANHA_OPTION_PROFILING = True</div>
+<div class="line">PYCANHA_OPTION_ACTIVATE_ALL_LOGS_OVERRIDE = True</div>
 <div class="line">PYCANHA_OPTION_SANITIZE_ADDR = False</div>
 <div class="line">PYCANHA_OPTION_SANITIZE_UNDEF = False</div>
 </div><!-- fragment --><p>If you disable <code>PYCANHA_OPTION_USE_MKL</code>, the build now falls back to Eigen's <code>SparseLU</code> solver automatically. This allows running the transient <code>TSCNRLDS</code> solver without the Intel oneMKL runtime, which is useful on machines where MKL isn't available. You can check what each option is intended for here in the root <code>CMakeList.txt</code> file.</p>
-<h2><a class="anchor" id="autotoc_md36"></a>
+<h2><a class="anchor" id="autotoc_md37"></a>
 3.5. Build the library with conan and start the development</h2>
 <p>Finally we are ready to build the package. In the terminal, type:</p>
 <div class="fragment"><div class="line">conan install . --build=missing</div>
@@ -286,7 +288,7 @@ Linux</h2>
 <p>Now, in VS Code, select the <code>conan-default</code> config of CMake through the bottom bar. If that configuration preset is not available you might need to restart VS Code.</p>
 <p>After that you will be able to choose the build preset <code>conan-release</code> or <code>conan-debug</code> depending on the options you have chosen.</p>
 <p>You can test that the library work by running the <code>tests</code> target.</p>
-<h1><a class="anchor" id="autotoc_md37"></a>
+<h1><a class="anchor" id="autotoc_md38"></a>
 E. Extra configuration</h1>
 </div></div><!-- contents -->
 </div><!-- PageDoc -->

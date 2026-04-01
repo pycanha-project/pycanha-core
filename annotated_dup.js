@@ -41,6 +41,7 @@ var annotated_dup =
       [ "CouplingEntity", "classpycanha_1_1CouplingEntity.html", null ],
       [ "CouplingMatrices", "classpycanha_1_1CouplingMatrices.html", "classpycanha_1_1CouplingMatrices" ],
       [ "Couplings", "classpycanha_1_1Couplings.html", null ],
+      [ "ESATANReader", "classpycanha_1_1ESATANReader.html", null ],
       [ "Formula", "classpycanha_1_1Formula.html", "classpycanha_1_1Formula" ],
       [ "Formulas", "classpycanha_1_1Formulas.html", null ],
       [ "InstrumentationSession", "structpycanha_1_1InstrumentationSession.html", null ],

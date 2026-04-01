@@ -11,10 +11,10 @@
 <!-- Node0 -->
 <g id="Node000000" class="node">
 <title>Node0</title>
-<g id="a_Node000000"><a xlink:href="classpycanha_1_1random__generators_1_1RealGenerator.html" target="_top" xlink:title=" ">
+<g id="a_Node000000"><a xlink:href="classpycanha_1_1random__generators_1_1IntGenerator.html" target="_top" xlink:title=" ">
 <polygon fill="white" stroke="#666666" points="159,-30 0,-30 0,0 159,0 159,-30"/>
 <text text-anchor="start" x="8" y="-18" font-family="Helvetica,sans-Serif" font-size="10.00">pycanha::random_generators</text>
-<text text-anchor="middle" x="79.5" y="-7" font-family="Helvetica,sans-Serif" font-size="10.00">::RealGenerator&lt; RandT &gt;</text>
+<text text-anchor="middle" x="79.5" y="-7" font-family="Helvetica,sans-Serif" font-size="10.00">::IntGenerator&lt; RandT &gt;</text>
 </a>
 </g>
 </g>

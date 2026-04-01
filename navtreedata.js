@@ -25,73 +25,78 @@
 var NAVTREE =
 [
   [ "pycanha-core", "index.html", [
+    [ "Logging and profiling", "index.html#autotoc_md1", null ],
     [ "Index", "md_docs_2index.html", null ],
     [ "Using the tools", "md_docs_2tools.html", [
-      [ "Code formatting tools", "md_docs_2tools.html#autotoc_md3", [
-        [ "clang-format", "md_docs_2tools.html#autotoc_md4", null ]
+      [ "Code formatting tools", "md_docs_2tools.html#autotoc_md4", [
+        [ "clang-format", "md_docs_2tools.html#autotoc_md5", null ]
       ] ],
-      [ "Static analysis tools", "md_docs_2tools.html#autotoc_md5", [
-        [ "clang-tidy", "md_docs_2tools.html#autotoc_md6", null ],
-        [ "cpplint", "md_docs_2tools.html#autotoc_md7", null ],
-        [ "cppcheck", "md_docs_2tools.html#autotoc_md8", null ],
-        [ "CodeQL", "md_docs_2tools.html#autotoc_md9", null ]
+      [ "Static analysis tools", "md_docs_2tools.html#autotoc_md6", [
+        [ "clang-tidy", "md_docs_2tools.html#autotoc_md7", null ],
+        [ "cpplint", "md_docs_2tools.html#autotoc_md8", null ],
+        [ "cppcheck", "md_docs_2tools.html#autotoc_md9", null ],
+        [ "CodeQL", "md_docs_2tools.html#autotoc_md10", null ]
       ] ],
-      [ "Testing tools", "md_docs_2tools.html#autotoc_md10", [
-        [ "Catch2", "md_docs_2tools.html#autotoc_md11", null ],
-        [ "Code coverage", "md_docs_2tools.html#autotoc_md12", null ]
+      [ "Testing tools", "md_docs_2tools.html#autotoc_md11", [
+        [ "Catch2", "md_docs_2tools.html#autotoc_md12", null ],
+        [ "Code coverage", "md_docs_2tools.html#autotoc_md13", null ]
       ] ],
-      [ "Documentation", "md_docs_2tools.html#autotoc_md13", [
-        [ "Doxygen + graphviz + Doxygen Awesome CSS", "md_docs_2tools.html#autotoc_md14", null ]
+      [ "Documentation", "md_docs_2tools.html#autotoc_md14", [
+        [ "Doxygen + graphviz + Doxygen Awesome CSS", "md_docs_2tools.html#autotoc_md15", null ]
       ] ],
-      [ "Package managers: Conan", "md_docs_2tools.html#autotoc_md15", [
-        [ "conanfile.py", "md_docs_2tools.html#autotoc_md16", null ],
-        [ "Conan profiles", "md_docs_2tools.html#autotoc_md17", null ],
-        [ "Note on vcpkg vs conan", "md_docs_2tools.html#autotoc_md18", null ]
+      [ "Package managers: Conan", "md_docs_2tools.html#autotoc_md16", [
+        [ "conanfile.py", "md_docs_2tools.html#autotoc_md17", null ],
+        [ "Conan profiles", "md_docs_2tools.html#autotoc_md18", null ],
+        [ "Note on vcpkg vs conan", "md_docs_2tools.html#autotoc_md19", null ]
       ] ]
     ] ],
     [ "Development workflow", "md_docs_2workflow.html", [
-      [ "Releases and versioning", "md_docs_2workflow.html#autotoc_md20", null ],
-      [ "Documentation", "md_docs_2workflow.html#autotoc_md21", null ]
+      [ "Releases and versioning", "md_docs_2workflow.html#autotoc_md21", null ],
+      [ "Documentation", "md_docs_2workflow.html#autotoc_md22", null ]
     ] ],
     [ "Configuration for VS Code", "md_docs_2configuring.html", [
-      [ "1. Installing the build tools", "md_docs_2configuring.html#autotoc_md23", [
-        [ "Windows", "md_docs_2configuring.html#autotoc_md24", [
-          [ "1.a. Automatically using choco", "md_docs_2configuring.html#autotoc_md25", null ],
-          [ "1.b. Manually", "md_docs_2configuring.html#autotoc_md26", null ]
+      [ "1. Installing the build tools", "md_docs_2configuring.html#autotoc_md24", [
+        [ "Windows", "md_docs_2configuring.html#autotoc_md25", [
+          [ "1.a. Automatically using choco", "md_docs_2configuring.html#autotoc_md26", null ],
+          [ "1.b. Manually", "md_docs_2configuring.html#autotoc_md27", null ]
         ] ],
-        [ "Linux", "md_docs_2configuring.html#autotoc_md27", null ]
+        [ "Linux", "md_docs_2configuring.html#autotoc_md28", null ]
       ] ],
-      [ "2. Configure VS Code", "md_docs_2configuring.html#autotoc_md28", [
-        [ "2.a. Automatic configuration by importing a VS Code profile", "md_docs_2configuring.html#autotoc_md29", null ],
-        [ "2.b Manual configuration", "md_docs_2configuring.html#autotoc_md30", null ]
+      [ "2. Configure VS Code", "md_docs_2configuring.html#autotoc_md29", [
+        [ "2.a. Automatic configuration by importing a VS Code profile", "md_docs_2configuring.html#autotoc_md30", null ],
+        [ "2.b Manual configuration", "md_docs_2configuring.html#autotoc_md31", null ]
       ] ],
-      [ "3. Build the library", "md_docs_2configuring.html#autotoc_md31", [
-        [ "3.1. Clone the repository", "md_docs_2configuring.html#autotoc_md32", null ],
-        [ "3.2. Create a Python virtual environment and activate it in VS Code", "md_docs_2configuring.html#autotoc_md33", null ],
-        [ "3.3. Install conan", "md_docs_2configuring.html#autotoc_md34", null ],
-        [ "3.4. Configure conan build", "md_docs_2configuring.html#autotoc_md35", null ],
-        [ "3.5. Build the library with conan and start the development", "md_docs_2configuring.html#autotoc_md36", null ]
+      [ "3. Build the library", "md_docs_2configuring.html#autotoc_md32", [
+        [ "3.1. Clone the repository", "md_docs_2configuring.html#autotoc_md33", null ],
+        [ "3.2. Create a Python virtual environment and activate it in VS Code", "md_docs_2configuring.html#autotoc_md34", null ],
+        [ "3.3. Install conan", "md_docs_2configuring.html#autotoc_md35", null ],
+        [ "3.4. Configure conan build", "md_docs_2configuring.html#autotoc_md36", null ],
+        [ "3.5. Build the library with conan and start the development", "md_docs_2configuring.html#autotoc_md37", null ]
       ] ],
-      [ "E. Extra configuration", "md_docs_2configuring.html#autotoc_md37", null ]
+      [ "E. Extra configuration", "md_docs_2configuring.html#autotoc_md38", null ]
     ] ],
     [ "CI/CD", "md_docs_2cicd.html", [
-      [ "Workflows for every commit/pull request to main", "md_docs_2cicd.html#autotoc_md39", [
-        [ "Code Checks", "md_docs_2cicd.html#autotoc_md40", null ],
-        [ "CodeQL", "md_docs_2cicd.html#autotoc_md41", null ],
-        [ "CI", "md_docs_2cicd.html#autotoc_md42", null ],
-        [ "Coverage", "md_docs_2cicd.html#autotoc_md43", null ],
-        [ "Docs", "md_docs_2cicd.html#autotoc_md44", null ]
+      [ "Workflows for every commit/pull request to main", "md_docs_2cicd.html#autotoc_md40", [
+        [ "Code Checks", "md_docs_2cicd.html#autotoc_md41", null ],
+        [ "CodeQL", "md_docs_2cicd.html#autotoc_md42", null ],
+        [ "CI", "md_docs_2cicd.html#autotoc_md43", null ],
+        [ "Coverage", "md_docs_2cicd.html#autotoc_md44", null ],
+        [ "Docs", "md_docs_2cicd.html#autotoc_md45", null ]
       ] ],
-      [ "Workflows for a Release", "md_docs_2cicd.html#autotoc_md45", [
-        [ "Deploy", "md_docs_2cicd.html#autotoc_md46", null ]
+      [ "Workflows for a Release", "md_docs_2cicd.html#autotoc_md46", [
+        [ "Deploy", "md_docs_2cicd.html#autotoc_md47", null ]
       ] ]
     ] ],
     [ "FAQ", "md_docs_2faq.html", [
-      [ "CMake not found", "md_docs_2faq.html#autotoc_md48", null ],
-      [ "Eigen3 not found after conan install", "md_docs_2faq.html#autotoc_md49", null ]
+      [ "CMake not found", "md_docs_2faq.html#autotoc_md49", null ],
+      [ "Eigen3 not found after conan install", "md_docs_2faq.html#autotoc_md50", null ]
     ] ],
     [ "Namespaces", "namespaces.html", [
-      [ "Namespace List", "namespaces.html", "namespaces_dup" ]
+      [ "Namespace List", "namespaces.html", "namespaces_dup" ],
+      [ "Namespace Members", "namespacemembers.html", [
+        [ "All", "namespacemembers.html", null ],
+        [ "Functions", "namespacemembers_func.html", null ]
+      ] ]
     ] ],
     [ "Concepts", "concepts.html", "concepts" ],
     [ "Classes", "annotated.html", [
@@ -113,9 +118,9 @@ var NAVTREE =
 var NAVTREEINDEX =
 [
 "Instrumentor_8hpp_source.html",
-"classpycanha_1_1Nodes.html#aa7404b1e68f2aaadb0c85ba2a3b1956a",
-"classpycanha_1_1gmm_1_1GeometryGroup.html#af310e7c7fa1034f186f9983724fd3771",
-"classpycanha_1_1gmm_1_1Triangle.html#a0c56b7dfb65893dda749bba83f6f01c7"
+"classpycanha_1_1Nodes.html#aa4306b969bf890105bb8fd4c75257568",
+"classpycanha_1_1gmm_1_1GeometryGroup.html#ae75f44503092e1037b27deee59b9ecd4",
+"classpycanha_1_1gmm_1_1TriMeshModel.html#afed6654346822240fc18bf4f714994eb"
 ];
 
 var SYNCONMSG = 'click to disable panel synchronisation';
