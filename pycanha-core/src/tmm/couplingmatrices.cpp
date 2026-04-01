@@ -1,12 +1,12 @@
 #include "pycanha-core/tmm/couplingmatrices.hpp"
 
+#include <spdlog/spdlog.h>
+
 #include <bit>
 #include <cmath>
 #include <cstdint>
 #include <tuple>
 #include <utility>
-
-#include <spdlog/spdlog.h>
 
 #include "pycanha-core/config.hpp"
 #include "pycanha-core/globals.hpp"
@@ -92,14 +92,14 @@ void CouplingMatrices::set_conductor_value_from_idx(Index idx1, Index idx2,
 
     if (sp_ptr == nullptr) {
         SPDLOG_LOGGER_ERROR(pycanha::get_logger(),
-                                "Conductor has not been set.");
+                            "Conductor has not been set.");
         return;
     }
 
     if (!_validate_conductor_value(val)) {
         // TODO: Error/log handling
         SPDLOG_LOGGER_WARN(pycanha::get_logger(),
-                                "Conductor should be positive.");
+                           "Conductor should be positive.");
         return;
     }
 
@@ -107,10 +107,9 @@ void CouplingMatrices::set_conductor_value_from_idx(Index idx1, Index idx2,
     if (!sparse_utils::is_trivial_zero(*sp_ptr, sp_idx1, sp_idx2)) {
         sp_ptr->coeffRef(sp_idx1, sp_idx2) = val;
     } else {
-        SPDLOG_LOGGER_WARN(
-                pycanha::get_logger(),
-                "Conductor does not exist. Value has not been set. "
-                "Add it before trying to change the value.");
+        SPDLOG_LOGGER_WARN(pycanha::get_logger(),
+                           "Conductor does not exist. Value has not been set. "
+                           "Add it before trying to change the value.");
     }
 }
 
@@ -185,8 +184,8 @@ CouplingMatrices::get_idxs_and_coupling_value_from_coupling_idx(
     Index cidx) const {
     if (cidx < 0) {
         SPDLOG_LOGGER_ERROR(pycanha::get_logger(),
-                             "Invalid coupling index: {}. Should be positive.",
-                             cidx);
+                            "Invalid coupling index: {}. Should be positive.",
+                            cidx);
         return std::make_tuple(-1, -1, nan(""));
     }
 
@@ -295,11 +294,11 @@ void CouplingMatrices::_add_ovw_coupling_sparse_verbose(
     if (!sparse_utils::is_trivial_zero(sparse, sp_idx1, sp_idx2)) {
         double& coupling_val = sparse.coeffRef(sp_idx1, sp_idx2);
         if (!are_coupling_values_almost_equal(coupling_val, val)) {
-            SPDLOG_LOGGER_WARN(
-                pycanha::get_logger(),
-                "Duplicated coupling at indexes ({}, {}). "
-                "Overwriting old value: {} with: {}",
-                sp_idx1, sp_idx2, sparse.coeff(sp_idx1, sp_idx2), val);
+            SPDLOG_LOGGER_WARN(pycanha::get_logger(),
+                               "Duplicated coupling at indexes ({}, {}). "
+                               "Overwriting old value: {} with: {}",
+                               sp_idx1, sp_idx2, sparse.coeff(sp_idx1, sp_idx2),
+                               val);
         }
         coupling_val = val;
     } else {
@@ -317,11 +316,11 @@ void CouplingMatrices::_add_sum_coupling_sparse_verbose(
     Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse, Index sp_idx1,
     Index sp_idx2, double val) {
     if (!sparse_utils::is_trivial_zero(sparse, sp_idx1, sp_idx2)) {
-        SPDLOG_LOGGER_WARN(
-            pycanha::get_logger(),
-            "Duplicated coupling at indexes ({}, {}). "
-            "Adding up old value: {} with: {}",
-            sp_idx1, sp_idx2, sparse.coeff(sp_idx1, sp_idx2), val);
+        SPDLOG_LOGGER_WARN(pycanha::get_logger(),
+                           "Duplicated coupling at indexes ({}, {}). "
+                           "Adding up old value: {} with: {}",
+                           sp_idx1, sp_idx2, sparse.coeff(sp_idx1, sp_idx2),
+                           val);
     }
     _add_sum_coupling_sparse(sparse, sp_idx1, sp_idx2, val);
 }
@@ -330,11 +329,10 @@ void CouplingMatrices::_add_new_coupling_sparse(
     Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse, Index sp_idx1,
     Index sp_idx2, double val) {
     if (!sparse_utils::is_trivial_zero(sparse, sp_idx1, sp_idx2)) {
-        SPDLOG_LOGGER_WARN(
-            pycanha::get_logger(),
-            "Duplicated coupling at indexes ({}, {}). "
-            "Old value: {} left unchanged.",
-            sp_idx1, sp_idx2, sparse.coeff(sp_idx1, sp_idx2));
+        SPDLOG_LOGGER_WARN(pycanha::get_logger(),
+                           "Duplicated coupling at indexes ({}, {}). "
+                           "Old value: {} left unchanged.",
+                           sp_idx1, sp_idx2, sparse.coeff(sp_idx1, sp_idx2));
         return;
     }
     _add_ovw_coupling_sparse(sparse, sp_idx1, sp_idx2, val);
@@ -396,7 +394,7 @@ void CouplingMatrices::_validate_coupling_call_add_generic(
     }
     if (!_validate_conductor_value(val)) {
         SPDLOG_LOGGER_WARN(pycanha::get_logger(),
-                            "Coupling should be positive.");
+                           "Coupling should be positive.");
         return;
     }
 

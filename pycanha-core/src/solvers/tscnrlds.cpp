@@ -1,5 +1,7 @@
 #include "pycanha-core/solvers/tscnrlds.hpp"
 
+#include <spdlog/spdlog.h>
+
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
@@ -7,8 +9,6 @@
 #include <stdexcept>
 #include <string>
 #include <utility>
-
-#include <spdlog/spdlog.h>
 
 #include "pycanha-core/solvers/solver.hpp"
 
@@ -45,8 +45,7 @@ void TSCNRLDS::initialize() {
 
 #if PYCANHA_USE_MKL
     SPDLOG_LOGGER_INFO(get_logger(), "TSCNRLDS (MKL) initializing...");
-    SPDLOG_LOGGER_INFO(get_logger(), "MKL threads: {}",
-                        mkl_get_max_threads());
+    SPDLOG_LOGGER_INFO(get_logger(), "MKL threads: {}", mkl_get_max_threads());
 #else
     SPDLOG_LOGGER_INFO(get_logger(), "TSCNRLDS (Eigen) initializing...");
 #endif
@@ -234,12 +233,12 @@ void TSCNRLDS::solve() {
             Index max_index = -1;
             dTd.cwiseAbs().maxCoeff(&max_index);
             SPDLOG_LOGGER_ERROR(
-                get_logger(),
-                "TSCNRLDS did not converge after {} iterations.", MAX_ITERS);
-            SPDLOG_LOGGER_ERROR(
-                get_logger(), "Time iter: {} Time: {} s", time_iter, time);
-            SPDLOG_LOGGER_ERROR(
-                get_logger(), "Max. dT: {} K at index: {}", max_dT, max_index);
+                get_logger(), "TSCNRLDS did not converge after {} iterations.",
+                MAX_ITERS);
+            SPDLOG_LOGGER_ERROR(get_logger(), "Time iter: {} Time: {} s",
+                                time_iter, time);
+            SPDLOG_LOGGER_ERROR(get_logger(), "Max. dT: {} K at index: {}",
+                                max_dT, max_index);
         }
 
         callback_transient_after_timestep();

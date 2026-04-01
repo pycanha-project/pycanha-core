@@ -1,9 +1,9 @@
 #pragma once
+#include <spdlog/spdlog.h>
+
 #include <algorithm>
 #include <functional>
 #include <vector>
-
-#include <spdlog/spdlog.h>
 
 #include "pycanha-core/gmm/id.hpp"
 #include "pycanha-core/utils/logger.hpp"

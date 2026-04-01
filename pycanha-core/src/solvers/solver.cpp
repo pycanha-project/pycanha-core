@@ -1,10 +1,10 @@
 #include "pycanha-core/solvers/solver.hpp"
 
+#include <spdlog/spdlog.h>
+
 #include <memory>
 #include <unordered_set>
 #include <utility>
-
-#include <spdlog/spdlog.h>
 
 #include "pycanha-core/globals.hpp"
 #include "pycanha-core/tmm/nodes.hpp"

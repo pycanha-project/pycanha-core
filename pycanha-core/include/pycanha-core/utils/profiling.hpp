@@ -23,8 +23,7 @@ namespace pycanha {
 class ProfileScope {
   public:
     explicit ProfileScope(std::string_view name)
-        : _name(name),
-          _start(std::chrono::steady_clock::now()) {}
+        : _name(name), _start(std::chrono::steady_clock::now()) {}
 
     ~ProfileScope() {
         const auto end = std::chrono::steady_clock::now();
@@ -57,8 +56,9 @@ class ProfileScope {
 #define PYCANHA_PROFILING_CONCAT_(a, b) a##b
 // NOLINTNEXTLINE(bugprone-reserved-identifier)
 #define PYCANHA_PROFILING_CONCAT(a, b) PYCANHA_PROFILING_CONCAT_(a, b)
-#define PYCANHA_PROFILE_SCOPE(name) \
-    ::pycanha::ProfileScope PYCANHA_PROFILING_CONCAT(_pycanha_prof_, __LINE__)(name)
+#define PYCANHA_PROFILE_SCOPE(name)                                  \
+    ::pycanha::ProfileScope PYCANHA_PROFILING_CONCAT(_pycanha_prof_, \
+                                                     __LINE__)(name)
 #define PYCANHA_PROFILE_FUNCTION() PYCANHA_PROFILE_SCOPE(__func__)
 // NOLINTEND(cppcoreguidelines-macro-usage)
 #else

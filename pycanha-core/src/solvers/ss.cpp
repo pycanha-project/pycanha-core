@@ -1,9 +1,9 @@
 #include "pycanha-core/solvers/ss.hpp"
 
+#include <spdlog/spdlog.h>
+
 #include <memory>
 #include <utility>
-
-#include <spdlog/spdlog.h>
 
 #include "pycanha-core/solvers/solver.hpp"
 #include "pycanha-core/tmm/thermalmathematicalmodel.hpp"

@@ -1,12 +1,12 @@
 #pragma once
+#include <spdlog/spdlog.h>
+
 #include <algorithm>
 #include <memory>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
-
-#include <spdlog/spdlog.h>
 
 #include "pycanha-core/gmm/geometry.hpp"
 #include "pycanha-core/gmm/id.hpp"
@@ -140,7 +140,9 @@ class GeometryModel : public UniqueID,
 
     static void callback_primitive_changed(GeometryIdType primitive_id) {
         // Print
-        SPDLOG_LOGGER_DEBUG(pycanha::get_logger(), "Primitive with id: {} has been modified.", primitive_id);
+        SPDLOG_LOGGER_DEBUG(pycanha::get_logger(),
+                            "Primitive with id: {} has been modified.",
+                            primitive_id);
     }
 
     /**

@@ -1,11 +1,11 @@
 #pragma once
+#include <spdlog/spdlog.h>
+
 #include <memory>
 #include <string>
 #include <utility>
 #include <variant>
 #include <vector>
-
-#include <spdlog/spdlog.h>
 
 #include "pycanha-core/gmm/id.hpp"
 #include "pycanha-core/gmm/primitives.hpp"
@@ -625,7 +625,8 @@ class GeometryGroupCutted : public GeometryGroup {
      * @param tol - Tolerance used to create the mesh.
      */
     void create_cutted_mesh(double tol) {
-        SPDLOG_LOGGER_INFO(pycanha::get_logger(), "Creating cutted mesh (experimental), tol={}", tol);
+        SPDLOG_LOGGER_INFO(pycanha::get_logger(),
+                           "Creating cutted mesh (experimental), tol={}", tol);
 
         // TODO:
         // Reset all the cutting information vectors

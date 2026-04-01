@@ -1,5 +1,7 @@
 #include "pycanha-core/solvers/ts.hpp"
 
+#include <spdlog/spdlog.h>
+
 #include <Eigen/Dense>
 #include <algorithm>
 #include <cmath>
@@ -9,8 +11,6 @@
 #include <memory>
 #include <stdexcept>
 #include <utility>
-
-#include <spdlog/spdlog.h>
 
 #include "pycanha-core/solvers/solver.hpp"
 #include "pycanha-core/thermaldata/thermaldata.hpp"

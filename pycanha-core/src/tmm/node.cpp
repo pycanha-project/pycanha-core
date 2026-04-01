@@ -1,14 +1,14 @@
 
 #include "pycanha-core/tmm/node.hpp"
 
+#include <spdlog/spdlog.h>
+
 #include <bit>
 #include <cmath>
 #include <cstdint>
 #include <memory>
 #include <string>
 #include <utility>
-
-#include <spdlog/spdlog.h>
 
 #include "pycanha-core/config.hpp"
 #include "pycanha-core/globals.hpp"
@@ -43,10 +43,9 @@ double Node::resolve_get_double(double (Nodes::*nodes_getter)(int),
         return (*_local_storage_ptr).*local_member;
     }
 
-    SPDLOG_LOGGER_WARN(
-        pycanha::get_logger(),
-        "The node is an invalid container. "
-        "Create a new one to have a valid node again.");
+    SPDLOG_LOGGER_WARN(pycanha::get_logger(),
+                       "The node is an invalid container. "
+                       "Create a new one to have a valid node again.");
     return std::nan("");
 }
 
@@ -70,10 +69,9 @@ void Node::resolve_set_double(bool (Nodes::*nodes_setter)(int, double),
         return;
     }
 
-    SPDLOG_LOGGER_WARN(
-        pycanha::get_logger(),
-        "The node is an invalid container. "
-        "Create a new one to have a valid node again.");
+    SPDLOG_LOGGER_WARN(pycanha::get_logger(),
+                       "The node is an invalid container. "
+                       "Create a new one to have a valid node again.");
 }
 
 // Move constructor
@@ -125,7 +123,7 @@ Node& Node::operator=(Node&& other_node) noexcept {
         _local_storage_ptr = std::move(other_node._local_storage_ptr);
 
         SPDLOG_LOGGER_TRACE(pycanha::get_logger(),
-                             "Node: move assignment operator called");
+                            "Node: move assignment operator called");
     }
     return *this;
 }
@@ -250,10 +248,9 @@ char Node::get_type() {
     } else if (_local_storage_ptr != nullptr) {
         return _local_storage_ptr->type;
     } else {
-        SPDLOG_LOGGER_WARN(
-            pycanha::get_logger(),
-            "The node is an invalid container. "
-            "Create a new one to have a valid node again.");
+        SPDLOG_LOGGER_WARN(pycanha::get_logger(),
+                           "The node is an invalid container. "
+                           "Create a new one to have a valid node again.");
         return static_cast<char>(0);
     }
 }
@@ -270,10 +267,9 @@ void Node::set_type(char type) {
     } else if (_local_storage_ptr != nullptr) {
         _local_storage_ptr->type = type;
     } else {
-        SPDLOG_LOGGER_WARN(
-            pycanha::get_logger(),
-            "The node is an invalid container. "
-            "Create a new one to have a valid node again.");
+        SPDLOG_LOGGER_WARN(pycanha::get_logger(),
+                           "The node is an invalid container. "
+                           "Create a new one to have a valid node again.");
     }
 }
 
@@ -283,10 +279,9 @@ std::string Node::get_literal_C() const {
     } else if (_local_storage_ptr != nullptr) {
         return _local_storage_ptr->literal_C;
     } else {
-        SPDLOG_LOGGER_WARN(
-            pycanha::get_logger(),
-            "The node is an invalid container. "
-            "Create a new one to have a valid node again.");
+        SPDLOG_LOGGER_WARN(pycanha::get_logger(),
+                           "The node is an invalid container. "
+                           "Create a new one to have a valid node again.");
         return {};
     }
 }
@@ -303,10 +298,9 @@ void Node::set_literal_C(const std::string& str) {
     } else if (_local_storage_ptr != nullptr) {
         _local_storage_ptr->literal_C = str;
     } else {
-        SPDLOG_LOGGER_WARN(
-            pycanha::get_logger(),
-            "The node is an invalid container. "
-            "Create a new one to have a valid node again.");
+        SPDLOG_LOGGER_WARN(pycanha::get_logger(),
+                           "The node is an invalid container. "
+                           "Create a new one to have a valid node again.");
     }
 }
 // TODO: Put in the macro?
@@ -327,10 +321,9 @@ int Node::get_int_node_num() {
         }
         return static_cast<int>(temp);
     } else {
-        SPDLOG_LOGGER_DEBUG(
-            pycanha::get_logger(),
-            "Node is not associated to any TNs. "
-            "IntNodeNum is undefined. Returning -1.");
+        SPDLOG_LOGGER_DEBUG(pycanha::get_logger(),
+                            "Node is not associated to any TNs. "
+                            "IntNodeNum is undefined. Returning -1.");
         return -1;
     }
 }

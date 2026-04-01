@@ -1,6 +1,8 @@
 
 #include "pycanha-core/utils/SparseUtils.hpp"
 
+#include <spdlog/spdlog.h>
+
 #include <algorithm>
 #include <cmath>
 #include <cstring>
@@ -13,12 +15,10 @@
 #include <utility>
 #include <vector>
 
-#include <spdlog/spdlog.h>
-
 #include "pycanha-core/config.hpp"
-#include "pycanha-core/utils/logger.hpp"
 #include "pycanha-core/utils/Instrumentor.hpp"
 #include "pycanha-core/utils/RandomGenerators.hpp"
+#include "pycanha-core/utils/logger.hpp"
 
 // USE MKL FUNCTION IF AVAILABLE
 #if PYCANHA_USE_MKL
@@ -893,8 +893,8 @@ void print_sparse(const Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse) {
 
     for (Eigen::Index row = 0; row < sparse.rows(); row++) {
         for (Eigen::Index col = 0; col < sparse.cols(); col++) {
-            oss << std::fixed << std::setprecision(0)
-                << sparse.coeff(row, col) << " ";
+            oss << std::fixed << std::setprecision(0) << sparse.coeff(row, col)
+                << " ";
         }
         oss << '\n';
     }

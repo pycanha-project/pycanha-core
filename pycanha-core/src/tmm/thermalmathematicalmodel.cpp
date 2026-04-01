@@ -1,10 +1,10 @@
 #include "pycanha-core/tmm/thermalmathematicalmodel.hpp"
 
+#include <spdlog/spdlog.h>
+
 #include <memory>
 #include <string>
 #include <utility>
-
-#include <spdlog/spdlog.h>
 
 #include "pycanha-core/globals.hpp"
 #include "pycanha-core/parameters/formulas.hpp"
@@ -30,7 +30,7 @@ ThermalMathematicalModel::ThermalMathematicalModel(std::string model_name)
     associate_resources();
 
     SPDLOG_LOGGER_TRACE(get_logger(),
-                         "ThermalMathematicalModel: default constructor");
+                        "ThermalMathematicalModel: default constructor");
 }
 
 ThermalMathematicalModel::ThermalMathematicalModel(
@@ -80,8 +80,7 @@ ThermalMathematicalModel::ThermalMathematicalModel(
 }
 
 ThermalMathematicalModel::~ThermalMathematicalModel() {
-    SPDLOG_LOGGER_TRACE(get_logger(),
-                         "ThermalMathematicalModel: destructor");
+    SPDLOG_LOGGER_TRACE(get_logger(), "ThermalMathematicalModel: destructor");
 }
 
 ThermalNetwork& ThermalMathematicalModel::network() noexcept {
@@ -164,7 +163,7 @@ void ThermalMathematicalModel::add_radiative_coupling(Coupling coupling) {
 
 void ThermalMathematicalModel::callback_solver_loop() {
     SPDLOG_LOGGER_DEBUG(get_logger(),
-                         "ThermalMathematicalModel: callback_solver_loop");
+                        "ThermalMathematicalModel: callback_solver_loop");
 
     if (!callbacks_active) {
         return;
@@ -234,17 +233,15 @@ void ThermalMathematicalModel::internal_callback_solver_loop() {
 }
 
 void ThermalMathematicalModel::internal_callback_transient_time_change() {
-    SPDLOG_LOGGER_DEBUG(
-        get_logger(),
-        "ThermalMathematicalModel: internal transient change");
+    SPDLOG_LOGGER_DEBUG(get_logger(),
+                        "ThermalMathematicalModel: internal transient change");
 
     internal_callback_common();
 }
 
 void ThermalMathematicalModel::internal_callback_transient_after_timestep() {
-    SPDLOG_LOGGER_DEBUG(
-        get_logger(),
-        "ThermalMathematicalModel: internal after timestep");
+    SPDLOG_LOGGER_DEBUG(get_logger(),
+                        "ThermalMathematicalModel: internal after timestep");
 
     internal_callback_common();
 }

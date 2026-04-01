@@ -1,9 +1,9 @@
 #include "pycanha-core/solvers/sslu.hpp"
 
+#include <spdlog/spdlog.h>
+
 #include <memory>
 #include <utility>
-
-#include <spdlog/spdlog.h>
 
 #include "pycanha-core/solvers/solver.hpp"
 #include "pycanha-core/solvers/ss.hpp"
@@ -108,8 +108,7 @@ void SSLU::solve() {
 
         if (max_dT < abstol_temp) {
             SPDLOG_LOGGER_INFO(
-                get_logger(),
-                "SSLU converged. Num. iters: {}. Max. dT = {} K.",
+                get_logger(), "SSLU converged. Num. iters: {}. Max. dT = {} K.",
                 solver_iter + 1, max_dT);
             solver_converged = true;
             break;

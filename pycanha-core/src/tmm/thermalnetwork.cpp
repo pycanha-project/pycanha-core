@@ -1,20 +1,20 @@
 #include "pycanha-core/tmm/thermalnetwork.hpp"
 
+#include <spdlog/spdlog.h>
+
 #include <algorithm>
 #include <iterator>
 #include <limits>
 #include <memory>
 #include <utility>
 
-#include <spdlog/spdlog.h>
-
 #include "pycanha-core/config.hpp"
 #include "pycanha-core/globals.hpp"
-#include "pycanha-core/utils/logger.hpp"
 #include "pycanha-core/tmm/conductivecouplings.hpp"
 #include "pycanha-core/tmm/node.hpp"
 #include "pycanha-core/tmm/nodes.hpp"
 #include "pycanha-core/tmm/radiativecouplings.hpp"
+#include "pycanha-core/utils/logger.hpp"
 
 namespace pycanha {
 
@@ -32,7 +32,7 @@ ThermalNetwork::ThermalNetwork()
       _conductive_couplings(std::make_shared<ConductiveCouplings>(_nodes)),
       _radiative_couplings(std::make_shared<RadiativeCouplings>(_nodes)) {
     SPDLOG_LOGGER_TRACE(pycanha::get_logger(),
-                         "ThermalNetwork: default constructor");
+                        "ThermalNetwork: default constructor");
 }
 
 ThermalNetwork::ThermalNetwork(std::shared_ptr<Nodes> nodes,
@@ -53,9 +53,8 @@ ThermalNetwork::ThermalNetwork(std::shared_ptr<Nodes> nodes,
         _radiative_couplings = std::make_shared<RadiativeCouplings>(_nodes);
     }
 
-    SPDLOG_LOGGER_TRACE(
-        pycanha::get_logger(),
-        "ThermalNetwork: constructor with shared resources");
+    SPDLOG_LOGGER_TRACE(pycanha::get_logger(),
+                        "ThermalNetwork: constructor with shared resources");
 }
 
 void ThermalNetwork::add_node(Node& node) {
@@ -69,8 +68,8 @@ void ThermalNetwork::add_node(Node& node) {
 
     if (_nodes->is_node(user_node_num)) {
         SPDLOG_LOGGER_WARN(pycanha::get_logger(),
-                            "ThermalNetwork: node {} already exists.",
-                            user_node_num);
+                           "ThermalNetwork: node {} already exists.",
+                           user_node_num);
         return;
     }
 
@@ -106,8 +105,8 @@ void ThermalNetwork::add_node(Node& node) {
         total_insert_idx = diff_count + insert_idx;
     } else {
         SPDLOG_LOGGER_WARN(pycanha::get_logger(),
-                            "ThermalNetwork: wrong node type for {}",
-                            user_node_num);
+                           "ThermalNetwork: wrong node type for {}",
+                           user_node_num);
         return;
     }
 
@@ -122,8 +121,8 @@ void ThermalNetwork::remove_node(Index node_num) {
 
     if (!is_node_number_in_range(node_num)) {
         SPDLOG_LOGGER_WARN(pycanha::get_logger(),
-                            "ThermalNetwork: node number out of range {}",
-                            node_num);
+                           "ThermalNetwork: node number out of range {}",
+                           node_num);
         return;
     }
 
