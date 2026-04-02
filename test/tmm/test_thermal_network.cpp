@@ -141,8 +141,11 @@ struct ThermalNetworkFlowFixture {
         const FlowFunction& flow_function) {
         double total_flow = 0.0;
 
+        // TODO: Replace this helper with the planned matrix-based group flow
+        // calculation.
         for (const Index node_num_1 : node_nums_1) {
             for (const Index node_num_2 : node_nums_2) {
+                // cppcheck-suppress useStlAlgorithm
                 total_flow += flow_function(node_num_1, node_num_2);
             }
         }
