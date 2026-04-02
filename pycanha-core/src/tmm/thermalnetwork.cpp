@@ -5,8 +5,10 @@
 #include <algorithm>
 #include <cmath>
 #include <iterator>
+#include <limits>
 #include <memory>
 #include <utility>
+#include <vector>
 
 #include "pycanha-core/globals.hpp"
 #include "pycanha-core/tmm/conductivecouplings.hpp"
@@ -28,7 +30,7 @@ namespace {
 template <typename FlowFunction>
 [[nodiscard]] double sum_flow_over_node_groups(
     const std::vector<Index>& node_nums_1,
-    const std::vector<Index>& node_nums_2, FlowFunction&& flow_function) {
+    const std::vector<Index>& node_nums_2, const FlowFunction& flow_function) {
     double total_flow = 0.0;
 
     for (const Index node_num_1 : node_nums_1) {

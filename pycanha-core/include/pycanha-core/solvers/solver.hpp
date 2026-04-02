@@ -125,7 +125,6 @@ class Solver {
         _original_non_zeros_krdb;
     std::unordered_set<std::pair<int, int>, IntPairHash>
         _original_non_zeros_kldb;
-    // NOLINTEND(readability-identifier-naming)
 
   private:
     static void store_sparse_nonzero_indices_in_set(

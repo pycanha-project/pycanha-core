@@ -23,8 +23,6 @@ struct FlowLink {
 
 struct ThermalNetworkFlowFixture {
     ThermalNetwork network;
-    const std::vector<Index> group_1{17, 11, 40};
-    const std::vector<Index> group_2{2, 55};
 
     ThermalNetworkFlowFixture() {
         add_node(17, 290.0);
@@ -51,32 +49,42 @@ struct ThermalNetworkFlowFixture {
         network.add_node(node);
     }
 
-    [[nodiscard]] double expected_conductive_pair(Index node_num_1,
-                                                  Index node_num_2) const {
+    [[nodiscard]] static double expected_conductive_pair(Index node_num_1,
+                                                         Index node_num_2) {
         return lookup_link_value(conductive_links(), node_num_1, node_num_2) *
                (temperature(node_num_2) - temperature(node_num_1));
     }
 
-    [[nodiscard]] double expected_radiative_pair(Index node_num_1,
-                                                 Index node_num_2) const {
+    [[nodiscard]] static double expected_radiative_pair(Index node_num_1,
+                                                        Index node_num_2) {
         return lookup_link_value(radiative_links(), node_num_1, node_num_2) *
                STF_BOLTZ *
                (std::pow(temperature(node_num_2), 4) -
                 std::pow(temperature(node_num_1), 4));
     }
 
-    [[nodiscard]] double expected_conductive_group() const {
+    [[nodiscard]] static double expected_conductive_group() {
         return expected_group_flow(
-            group_1, group_2, [this](Index node_num_1, Index node_num_2) {
+            group_1(), group_2(), [](Index node_num_1, Index node_num_2) {
                 return expected_conductive_pair(node_num_1, node_num_2);
             });
     }
 
-    [[nodiscard]] double expected_radiative_group() const {
+    [[nodiscard]] static double expected_radiative_group() {
         return expected_group_flow(
-            group_1, group_2, [this](Index node_num_1, Index node_num_2) {
+            group_1(), group_2(), [](Index node_num_1, Index node_num_2) {
                 return expected_radiative_pair(node_num_1, node_num_2);
             });
+    }
+
+    [[nodiscard]] static const std::vector<Index>& group_1() {
+        static const std::vector<Index> nodes{17, 11, 40};
+        return nodes;
+    }
+
+    [[nodiscard]] static const std::vector<Index>& group_2() {
+        static const std::vector<Index> nodes{2, 55};
+        return nodes;
     }
 
     [[nodiscard]] static double temperature(Index node_num) {
@@ -129,7 +137,8 @@ struct ThermalNetworkFlowFixture {
     template <typename FlowFunction>
     [[nodiscard]] static double expected_group_flow(
         const std::vector<Index>& node_nums_1,
-        const std::vector<Index>& node_nums_2, FlowFunction&& flow_function) {
+        const std::vector<Index>& node_nums_2,
+        const FlowFunction& flow_function) {
         double total_flow = 0.0;
 
         for (const Index node_num_1 : node_nums_1) {
@@ -234,9 +243,10 @@ TEST_CASE("ThermalNetwork calculates conductive flow for node groups",
     REQUIRE((fixture.network.flow_conductive(40, 55) ==
              Catch::Approx(fixture.expected_conductive_pair(40, 55))));
 
-    REQUIRE(
-        (fixture.network.flow_conductive(fixture.group_1, fixture.group_2) ==
-         Catch::Approx(fixture.expected_conductive_group())));
+    REQUIRE((
+        fixture.network.flow_conductive(ThermalNetworkFlowFixture::group_1(),
+                                        ThermalNetworkFlowFixture::group_2()) ==
+        Catch::Approx(fixture.expected_conductive_group())));
 }
 
 TEST_CASE("ThermalNetwork calculates radiative flow for node groups",
@@ -248,6 +258,8 @@ TEST_CASE("ThermalNetwork calculates radiative flow for node groups",
     REQUIRE((fixture.network.flow_radiative(40, 55) ==
              Catch::Approx(fixture.expected_radiative_pair(40, 55))));
 
-    REQUIRE((fixture.network.flow_radiative(fixture.group_1, fixture.group_2) ==
-             Catch::Approx(fixture.expected_radiative_group())));
+    REQUIRE(
+        (fixture.network.flow_radiative(ThermalNetworkFlowFixture::group_1(),
+                                        ThermalNetworkFlowFixture::group_2()) ==
+         Catch::Approx(fixture.expected_radiative_group())));
 }
