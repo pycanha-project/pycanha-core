@@ -37,6 +37,7 @@ class TSCNRLDS_JACOBIAN : public TSCNRLDS {
     void build_mk();
     void build_mq();
     void build_mc();
+    void solve_jacobian_step();
     void save_jacobian_data();
 
     double* _output_jacobian_data = nullptr;

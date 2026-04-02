@@ -120,7 +120,6 @@ TEST_CASE("TSCNRLDS_JACOBIAN reproduces the Python example",
     solver.initialize();
     solver.solve();
 
-#if PYCANHA_USE_MKL
     REQUIRE(model->thermal_data.has_table("TSCNRLDS_JACOBIAN_OUTPUT"));
 
     const auto& temperature_output =
@@ -155,8 +154,4 @@ TEST_CASE("TSCNRLDS_JACOBIAN reproduces the Python example",
                 Catch::Approx(expected_dc_samples[sample_index][1])
                     .margin(comparison_tolerance));
     }
-#else
-    REQUIRE_FALSE(model->thermal_data.has_table("TSCNRLDS_JACOBIAN_OUTPUT"));
-    REQUIRE(model->thermal_data.has_table("TSCNRLDS_OUTPUT"));
-#endif
 }

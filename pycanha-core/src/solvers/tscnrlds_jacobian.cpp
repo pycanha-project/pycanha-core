@@ -41,12 +41,6 @@ TSCNRLDS_JACOBIAN::TSCNRLDS_JACOBIAN(
 void TSCNRLDS_JACOBIAN::initialize() {
     TSCNRLDS::initialize();
 
-#if !PYCANHA_USE_MKL
-    SPDLOG_LOGGER_WARN(get_logger(),
-                       "TSCNRLDS_JACOBIAN was built without MKL. Jacobian "
-                       "output is disabled.");
-    return;
-#else
     collect_parameter_names();
     if (_parameter_names.empty()) {
         throw std::invalid_argument(
@@ -125,7 +119,6 @@ void TSCNRLDS_JACOBIAN::initialize() {
                           derivatives->at(dependency_index));
         }
     }
-#endif
 }
 
 void TSCNRLDS_JACOBIAN::collect_parameter_names() {
@@ -156,11 +149,6 @@ void TSCNRLDS_JACOBIAN::collect_parameter_names() {
 void TSCNRLDS_JACOBIAN::fill_matrices(ThermalEntity& entity,
                                       Index parameter_index,
                                       double derivative_value) {
-#if !PYCANHA_USE_MKL
-    (void)entity;
-    (void)parameter_index;
-    (void)derivative_value;
-#else
     const auto& type = entity.type();
 
     if ((type == "GL") || (type == "GR")) {
@@ -218,11 +206,9 @@ void TSCNRLDS_JACOBIAN::fill_matrices(ThermalEntity& entity,
 
     SPDLOG_LOGGER_WARN(get_logger(), "Unsupported jacobian entity type '{}'",
                        type);
-#endif
 }
 
 void TSCNRLDS_JACOBIAN::build_mk() {
-#if PYCANHA_USE_MKL
     for (std::size_t parameter_index = 0;
          parameter_index < _parameter_names.size(); ++parameter_index) {
         const auto& d_kl_dd = _d_kl_dd_matrices[parameter_index];
@@ -244,11 +230,9 @@ void TSCNRLDS_JACOBIAN::build_mk() {
             conductive_diagonal.cwiseProduct(Td) +
             radiative_diagonal.cwiseProduct(_t4_domain);
     }
-#endif
 }
 
 void TSCNRLDS_JACOBIAN::build_mq() {
-#if PYCANHA_USE_MKL
     for (std::size_t parameter_index = 0;
          parameter_index < _parameter_names.size(); ++parameter_index) {
         const auto& d_kl_db = _d_kl_db_matrices[parameter_index];
@@ -260,21 +244,43 @@ void TSCNRLDS_JACOBIAN::build_mq() {
         _m_q.col(static_cast<Index>(parameter_index)).noalias() +=
             d_kr_db * _t4_boundary;
     }
-#endif
 }
 
 void TSCNRLDS_JACOBIAN::build_mc() {
-#if PYCANHA_USE_MKL
     const VectorXd initial_temperature_derivative =
         _capacities_inverse.asDiagonal() * (-_kt_q_n0);
     _m_c = initial_temperature_derivative.asDiagonal() * _d_capacity_matrix;
+}
+
+void TSCNRLDS_JACOBIAN::solve_jacobian_step() {
+#if PYCANHA_USE_MKL
+    _pardiso_phase = 33;
+    _pardiso_nrhs = static_cast<MKL_INT>(_parameter_names.size());
+    // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast)
+    pardiso(reinterpret_cast<void*>(_pardiso_pt.data()), &_pardiso_maxfct,
+            &_pardiso_mnum, &_pardiso_mtype, &_pardiso_phase, &_pardiso_size,
+            _k_matrix.valuePtr(), _k_matrix_outer_index.data(),
+            _k_matrix_inner_index.data(), _pardiso_perm.data(), &_pardiso_nrhs,
+            _pardiso_iparm.data(), &_pardiso_msglvl, _mb.data(), _mt.data(),
+            &_pardiso_error);
+    // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast)
+    _pardiso_phase = 23;
+    _pardiso_nrhs = 1;
+
+    if (_pardiso_error != 0) {
+        throw std::runtime_error(
+            "MKL PARDISO jacobian solve failed with error " +
+            std::to_string(_pardiso_error));
+    }
+#else
+    _mt = _eigen_solver.solve(_mb);
+    if (_eigen_solver.info() != Eigen::Success) {
+        throw std::runtime_error("Eigen SparseLU jacobian solve failed");
+    }
 #endif
 }
 
 void TSCNRLDS_JACOBIAN::solve() {
-#if !PYCANHA_USE_MKL
-    TSCNRLDS::solve();
-#else
     SPDLOG_LOGGER_INFO(get_logger(), "TSCNRLDS_JACOBIAN solving...");
 
     if (_parameter_names.empty()) {
@@ -349,32 +355,18 @@ void TSCNRLDS_JACOBIAN::solve() {
         }
 
         _sp_nd_diag.diagonal() = _capacities.array() * (2.0 / dtime);
+#if PYCANHA_USE_MKL
         _kt_q_n0 = (-_k_matrix + _sp_nd_diag) * Td + Qd;
+#else
+        _kt_q_n0 = (_k_matrix + _sp_nd_diag) * Td + Qd;
+#endif
 
         build_mc();
         build_mk();
         build_mq();
 
         _mb += _m_c + _m_k + _m_q;
-
-        _pardiso_phase = 33;
-        _pardiso_nrhs = static_cast<MKL_INT>(_parameter_names.size());
-        // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast)
-        pardiso(reinterpret_cast<void*>(_pardiso_pt.data()), &_pardiso_maxfct,
-                &_pardiso_mnum, &_pardiso_mtype, &_pardiso_phase,
-                &_pardiso_size, _k_matrix.valuePtr(),
-                _k_matrix_outer_index.data(), _k_matrix_inner_index.data(),
-                _pardiso_perm.data(), &_pardiso_nrhs, _pardiso_iparm.data(),
-                &_pardiso_msglvl, _mb.data(), _mt.data(), &_pardiso_error);
-        // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast)
-        _pardiso_phase = 23;
-        _pardiso_nrhs = 1;
-
-        if (_pardiso_error != 0) {
-            throw std::runtime_error(
-                "MKL PARDISO jacobian solve failed with error " +
-                std::to_string(_pardiso_error));
-        }
+        solve_jacobian_step();
 
         callback_transient_after_timestep();
         outputs();
@@ -385,11 +377,9 @@ void TSCNRLDS_JACOBIAN::solve() {
 
     outputs_first_last();
     save_jacobian_data();
-#endif
 }
 
 void TSCNRLDS_JACOBIAN::save_jacobian_data() {
-#if PYCANHA_USE_MKL
     if (_output_jacobian_data == nullptr) {
         return;
     }
@@ -409,7 +399,6 @@ void TSCNRLDS_JACOBIAN::save_jacobian_data() {
             ++output_index;
         }
     }
-#endif
 }
 
 void TSCNRLDS_JACOBIAN::deinitialize() { TSCNRLDS::deinitialize(); }
