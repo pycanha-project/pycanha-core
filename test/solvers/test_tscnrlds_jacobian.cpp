@@ -18,8 +18,6 @@ namespace {
 constexpr double initial_temperature = 0.0;
 constexpr double environment_temperature = 1.0;
 constexpr double heat_load = 1.0;
-constexpr double conductive_coupling = 0.1;
-constexpr double capacity = 100.0;
 constexpr double end_time = 5.0;
 constexpr double time_step = 0.01;
 constexpr double output_stride = 0.1;
