@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <iterator>
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -101,7 +102,7 @@ void TSCNRLDS_JACOBIAN::initialize() {
     }
 
     for (const auto& formula : tmm.formulas.formulas()) {
-        auto* derivatives = formula->get_derivative_values();
+        const auto* derivatives = formula->get_derivative_values();
         if ((derivatives == nullptr) || derivatives->empty()) {
             continue;
         }
@@ -132,7 +133,7 @@ void TSCNRLDS_JACOBIAN::collect_parameter_names() {
 
     std::unordered_set<std::string> seen_parameters;
     for (const auto& formula : tmm.formulas.formulas()) {
-        auto* derivatives = formula->get_derivative_values();
+        const auto* derivatives = formula->get_derivative_values();
         if ((derivatives == nullptr) || derivatives->empty()) {
             continue;
         }
@@ -144,11 +145,11 @@ void TSCNRLDS_JACOBIAN::collect_parameter_names() {
                 formula->entity().string_representation());
         }
 
-        for (const auto& dependency : dependencies) {
-            if (seen_parameters.insert(dependency).second) {
-                _parameter_names.push_back(dependency);
-            }
-        }
+        std::copy_if(dependencies.begin(), dependencies.end(),
+                     std::back_inserter(_parameter_names),
+                     [&seen_parameters](const std::string& dependency) {
+                         return seen_parameters.insert(dependency).second;
+                     });
     }
 }
 
@@ -387,19 +388,19 @@ void TSCNRLDS_JACOBIAN::solve() {
 
 void TSCNRLDS_JACOBIAN::save_jacobian_data() {
     const auto parameter_count = static_cast<Index>(_parameter_names.size());
-    auto& output_table = tmm.thermal_data.get_table(output_jacobian_table_name);
-    output_table(idata_out, 0) = time;
+    const auto row_stride = nd * parameter_count + 1;
+    const auto row_offset = static_cast<std::size_t>(idata_out * row_stride);
+
+    _output_jacobian_data[row_offset] = time;
     std::size_t output_index = 1U;
     for (Index node_index = 0; node_index < nd; ++node_index) {
         for (Index parameter_index = 0; parameter_index < parameter_count;
              ++parameter_index) {
-            output_table(idata_out, static_cast<Index>(output_index)) =
+            _output_jacobian_data[row_offset + output_index] =
                 _mt(node_index, parameter_index);
             ++output_index;
         }
     }
 }
-
-void TSCNRLDS_JACOBIAN::deinitialize() { TSCNRLDS::deinitialize(); }
 
 }  // namespace pycanha

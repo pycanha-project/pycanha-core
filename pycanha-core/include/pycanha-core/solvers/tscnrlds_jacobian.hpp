@@ -19,7 +19,6 @@ class TSCNRLDS_JACOBIAN : public TSCNRLDS {
 
     void initialize() override;
     void solve() override;
-    void deinitialize() override;
 
     [[nodiscard]] const std::vector<std::string>& parameter_names()
         const noexcept {
