@@ -12,6 +12,7 @@
 #include <unordered_set>
 #include <utility>
 
+#include "pycanha-core/globals.hpp"
 #include "pycanha-core/parameters/entity.hpp"
 #include "pycanha-core/parameters/formulas.hpp"
 #include "pycanha-core/solvers/solver.hpp"
@@ -58,8 +59,6 @@ void TSCNRLDS_JACOBIAN::initialize() {
     tmm.thermal_data.create_reset_table(
         output_jacobian_table_name, num_outputs,
         nd * static_cast<Index>(_parameter_names.size()) + 1);
-    _output_jacobian_data =
-        tmm.thermal_data.get_table(output_jacobian_table_name).data();
 
     _d_kl_dd_matrices.clear();
     _d_kl_db_matrices.clear();
@@ -388,15 +387,13 @@ void TSCNRLDS_JACOBIAN::solve() {
 
 void TSCNRLDS_JACOBIAN::save_jacobian_data() {
     const auto parameter_count = static_cast<Index>(_parameter_names.size());
-    const auto row_stride = nd * parameter_count + 1;
-    const auto row_offset = static_cast<std::size_t>(idata_out * row_stride);
-
-    _output_jacobian_data[row_offset] = time;
+    auto& output_table = tmm.thermal_data.get_table(output_jacobian_table_name);
+    output_table(idata_out, 0) = time;
     std::size_t output_index = 1U;
     for (Index node_index = 0; node_index < nd; ++node_index) {
         for (Index parameter_index = 0; parameter_index < parameter_count;
              ++parameter_index) {
-            _output_jacobian_data[row_offset + output_index] =
+            output_table(idata_out, static_cast<Index>(output_index)) =
                 _mt(node_index, parameter_index);
             ++output_index;
         }

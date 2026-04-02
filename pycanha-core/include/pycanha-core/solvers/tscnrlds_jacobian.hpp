@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 
+#include "pycanha-core/globals.hpp"
 #include "pycanha-core/solvers/tscnrlds.hpp"
 
 namespace pycanha {
@@ -39,7 +40,6 @@ class TSCNRLDS_JACOBIAN : public TSCNRLDS {
     void solve_jacobian_step();
     void save_jacobian_data();
 
-    double* _output_jacobian_data = nullptr;
     std::vector<std::string> _parameter_names;
 
     std::vector<SpMatRow> _d_kl_dd_matrices;
