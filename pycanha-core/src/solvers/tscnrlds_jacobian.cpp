@@ -3,6 +3,8 @@
 #include <spdlog/spdlog.h>
 
 #include <algorithm>
+#include <cstddef>
+#include <memory>
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
@@ -10,14 +12,18 @@
 #include <utility>
 
 #include "pycanha-core/parameters/entity.hpp"
-#include "pycanha-core/parameters/formula.hpp"
 #include "pycanha-core/parameters/formulas.hpp"
+#include "pycanha-core/solvers/solver.hpp"
+#include "pycanha-core/solvers/tscnrlds.hpp"
 #include "pycanha-core/thermaldata/thermaldata.hpp"
 #include "pycanha-core/tmm/thermalmathematicalmodel.hpp"
+#include "pycanha-core/utils/SparseUtils.hpp"
 #include "pycanha-core/utils/logger.hpp"
+#include "pycanha-core/utils/profiling.hpp"
 
 #if PYCANHA_USE_MKL
 #include <mkl_pardiso.h>
+#include <mkl_types.h>
 #endif
 
 namespace pycanha {
@@ -32,10 +38,10 @@ namespace {
 
 TSCNRLDS_JACOBIAN::TSCNRLDS_JACOBIAN(
     std::shared_ptr<ThermalMathematicalModel> tmm_shptr)
-    : TSCNRLDS(std::move(tmm_shptr)) {
+    : TSCNRLDS(std::move(tmm_shptr)),
+      output_jacobian_table_name("TSCNRLDS_JACOBIAN_OUTPUT") {
     solver_name = "TSCNRLDS_JACOBIAN";
     output_table_name = "TSCNRLDS_OUTPUT";
-    output_jacobian_table_name = "TSCNRLDS_JACOBIAN_OUTPUT";
 }
 
 void TSCNRLDS_JACOBIAN::initialize() {
@@ -380,22 +386,15 @@ void TSCNRLDS_JACOBIAN::solve() {
 }
 
 void TSCNRLDS_JACOBIAN::save_jacobian_data() {
-    if (_output_jacobian_data == nullptr) {
-        return;
-    }
-
     const auto parameter_count = static_cast<Index>(_parameter_names.size());
-    const auto row_width = static_cast<std::size_t>(nd) *
-                               static_cast<std::size_t>(parameter_count) +
-                           1U;
-    double* row_ptr =
-        _output_jacobian_data + row_width * static_cast<std::size_t>(idata_out);
-    row_ptr[0] = time;
+    auto& output_table = tmm.thermal_data.get_table(output_jacobian_table_name);
+    output_table(idata_out, 0) = time;
     std::size_t output_index = 1U;
     for (Index node_index = 0; node_index < nd; ++node_index) {
         for (Index parameter_index = 0; parameter_index < parameter_count;
              ++parameter_index) {
-            row_ptr[output_index] = _mt(node_index, parameter_index);
+            output_table(idata_out, static_cast<Index>(output_index)) =
+                _mt(node_index, parameter_index);
             ++output_index;
         }
     }

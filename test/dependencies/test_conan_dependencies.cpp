@@ -16,9 +16,12 @@ TEST_CASE("HDF5 basic lifecycle works", "[deps][hdf5]") {
 }
 
 TEST_CASE("SymEngine builds a simple expression", "[deps][symengine]") {
+    // False positive from clang static analyzer in SymEngine reference
+    // counting. NOLINTBEGIN(clang-analyzer-cplusplus.NewDelete)
     const auto x = SymEngine::symbol("x");
     const auto one = SymEngine::integer(1);
     const auto expr = SymEngine::add(x, one);
 
     REQUIRE(SymEngine::eq(*expr, *SymEngine::add(x, one)));
+    // NOLINTEND(clang-analyzer-cplusplus.NewDelete)
 }

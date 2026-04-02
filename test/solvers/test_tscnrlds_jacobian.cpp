@@ -2,7 +2,9 @@
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
 #include <cmath>
+#include <cstddef>
 #include <memory>
+#include <stdexcept>
 
 #include "pycanha-core/parameters/entity.hpp"
 #include "pycanha-core/parameters/formula.hpp"
@@ -105,6 +107,47 @@ Eigen::Index find_time_row(const pycanha::ThermalData::MatrixDataType& table,
         "Requested sample time not found in solver output");
 }
 
+void require_temperature_sample(
+    const pycanha::ThermalData::MatrixDataType& temperature_output,
+    Eigen::Index row, const std::array<double, 2>& expected_temperature) {
+    REQUIRE(
+        temperature_output(row, 0) ==
+        Catch::Approx(expected_temperature.at(0)).margin(comparison_tolerance));
+    REQUIRE(
+        temperature_output(row, 1) ==
+        Catch::Approx(expected_temperature.at(1)).margin(comparison_tolerance));
+}
+
+void require_jacobian_sample(
+    const pycanha::ThermalData::MatrixDataType& jacobian_output,
+    Eigen::Index row, const std::array<double, 2>& expected_dk,
+    const std::array<double, 2>& expected_dc) {
+    REQUIRE(jacobian_output(row, 0) ==
+            Catch::Approx(expected_dk.at(0)).margin(comparison_tolerance));
+    REQUIRE(jacobian_output(row, 1) ==
+            Catch::Approx(expected_dk.at(1)).margin(comparison_tolerance));
+    REQUIRE(jacobian_output(row, 2) ==
+            Catch::Approx(expected_dc.at(1)).margin(comparison_tolerance));
+}
+
+void require_python_example_samples(
+    const pycanha::ThermalData::MatrixDataType& temperature_output,
+    const pycanha::ThermalData::MatrixDataType& jacobian_output) {
+    for (std::size_t sample_index = 0; sample_index < sample_times.size();
+         ++sample_index) {
+        const auto& expected_temperature =
+            expected_temperature_samples.at(sample_index);
+        const auto& expected_dk = expected_dk_samples.at(sample_index);
+        const auto& expected_dc = expected_dc_samples.at(sample_index);
+        const Eigen::Index row =
+            find_time_row(temperature_output, sample_times.at(sample_index));
+
+        require_temperature_sample(temperature_output, row,
+                                   expected_temperature);
+        require_jacobian_sample(jacobian_output, row, expected_dk, expected_dc);
+    }
+}
+
 }  // namespace
 
 TEST_CASE("TSCNRLDS_JACOBIAN reproduces the Python example",
@@ -130,26 +173,5 @@ TEST_CASE("TSCNRLDS_JACOBIAN reproduces the Python example",
     REQUIRE(solver.parameter_names().at(0) == "k");
     REQUIRE(solver.parameter_names().at(1) == "C");
 
-    for (std::size_t sample_index = 0; sample_index < sample_times.size();
-         ++sample_index) {
-        const Eigen::Index row =
-            find_time_row(temperature_output, sample_times[sample_index]);
-
-        REQUIRE(temperature_output(row, 0) ==
-                Catch::Approx(expected_temperature_samples[sample_index][0])
-                    .margin(comparison_tolerance));
-        REQUIRE(temperature_output(row, 1) ==
-                Catch::Approx(expected_temperature_samples[sample_index][1])
-                    .margin(comparison_tolerance));
-
-        REQUIRE(jacobian_output(row, 0) ==
-                Catch::Approx(expected_dk_samples[sample_index][0])
-                    .margin(comparison_tolerance));
-        REQUIRE(jacobian_output(row, 1) ==
-                Catch::Approx(expected_dk_samples[sample_index][1])
-                    .margin(comparison_tolerance));
-        REQUIRE(jacobian_output(row, 2) ==
-                Catch::Approx(expected_dc_samples[sample_index][1])
-                    .margin(comparison_tolerance));
-    }
+    require_python_example_samples(temperature_output, jacobian_output);
 }
