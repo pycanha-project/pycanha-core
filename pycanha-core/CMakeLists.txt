@@ -87,6 +87,7 @@ add_library(${LIB_NAME} STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/tscn.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/tscnrl.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/tscnrlds.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/tscnrlds_jacobian.cpp
 
 )
 target_include_directories(${LIB_NAME} 

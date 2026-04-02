@@ -55,6 +55,16 @@ class Formula {
         return _dependencies;
     }
 
+    void add_parameter_dependency(std::string dependency) {
+        _dependencies.push_back(std::move(dependency));
+    }
+
+    void set_parameter_dependencies(DependencyList dependencies) {
+        _dependencies = std::move(dependencies);
+    }
+
+    void clear_parameter_dependencies() noexcept { _dependencies.clear(); }
+
     virtual void compile_formula() = 0;
     virtual void apply_formula() = 0;
     virtual void apply_compiled_formula() = 0;
@@ -154,7 +164,7 @@ class ParameterFormula final : public Formula {
     }
 
     [[nodiscard]] std::vector<double>* get_derivative_values() override {
-        return nullptr;
+        return &_derivatives;
     }
 
     [[nodiscard]] std::unique_ptr<Formula> clone() const override {
@@ -165,6 +175,7 @@ class ParameterFormula final : public Formula {
     Parameters* _parameters;
     std::string _parameter_name;
     double* _parameter_data{nullptr};
+    std::vector<double> _derivatives{1.0};
 };
 
 class ValueFormula final : public Formula {
@@ -199,6 +210,19 @@ class ValueFormula final : public Formula {
     [[nodiscard]] std::vector<double>* get_derivative_values() override {
         return &_derivatives;
     }
+
+    [[nodiscard]] const std::vector<double>& derivative_values()
+        const noexcept {
+        return _derivatives;
+    }
+
+    void add_derivative_value(double value) { _derivatives.push_back(value); }
+
+    void set_derivative_values(std::vector<double> values) {
+        _derivatives = std::move(values);
+    }
+
+    void clear_derivative_values() noexcept { _derivatives.clear(); }
 
     [[nodiscard]] std::unique_ptr<Formula> clone() const override {
         return std::make_unique<ValueFormula>(*this);
