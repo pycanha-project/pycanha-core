@@ -10,6 +10,7 @@
 #include <string>
 #include <utility>
 
+#include "pycanha-core/globals.hpp"
 #include "pycanha-core/solvers/solver.hpp"
 
 #if PYCANHA_USE_MKL
