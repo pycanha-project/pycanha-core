@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <vector>
 
 #include "pycanha-core/globals.hpp"
 
@@ -48,6 +49,14 @@ class ThermalNetwork {
     [[nodiscard]] RadiativeCouplings& radiative_couplings() noexcept;
     [[nodiscard]] const RadiativeCouplings& radiative_couplings()
         const noexcept;
+
+    [[nodiscard]] double flow_conductive(Index node_num_1, Index node_num_2);
+    [[nodiscard]] double flow_conductive(const std::vector<Index>& node_nums_1,
+                                         const std::vector<Index>& node_nums_2);
+
+    [[nodiscard]] double flow_radiative(Index node_num_1, Index node_num_2);
+    [[nodiscard]] double flow_radiative(const std::vector<Index>& node_nums_1,
+                                        const std::vector<Index>& node_nums_2);
 
     [[nodiscard]] std::shared_ptr<Nodes> nodes_ptr() noexcept;
     [[nodiscard]] std::shared_ptr<const Nodes> nodes_ptr() const noexcept;

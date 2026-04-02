@@ -5,6 +5,7 @@
 #include <memory>
 #include <utility>
 
+#include "pycanha-core/globals.hpp"
 #include "pycanha-core/solvers/solver.hpp"
 #include "pycanha-core/solvers/ss.hpp"
 #include "pycanha-core/tmm/thermalmathematicalmodel.hpp"
