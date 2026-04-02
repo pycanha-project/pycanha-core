@@ -16,6 +16,8 @@ constexpr double ANGLE_TOL = 1e-9;
 constexpr double TOL = 1e-11;
 constexpr double ZERO_THR_ATTR = std::numeric_limits<double>::epsilon() * 1e3;
 constexpr double ALMOST_EQUAL_COUPLING_EPSILON = 1.0e-5;
+// DOI: 10.1103/RevModPhys.97.025002
+constexpr double STF_BOLTZ = 5.670374419e-8;
 // NOLINTEND(readability-identifier-naming)
 
 using Point2D = Eigen::Vector2d;

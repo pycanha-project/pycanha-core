@@ -3,8 +3,8 @@
 #include <spdlog/spdlog.h>
 
 #include <algorithm>
+#include <cmath>
 #include <iterator>
-#include <limits>
 #include <memory>
 #include <utility>
 
@@ -19,9 +19,29 @@ namespace pycanha {
 
 namespace {
 
-[[nodiscard]] bool is_node_number_in_range(Index node_num) {
-    return node_num <= static_cast<Index>(std::numeric_limits<int>::max()) &&
-           node_num >= static_cast<Index>(std::numeric_limits<int>::min());
+[[nodiscard]] int to_inttype_node_num(Index node_num) {
+    // TODO: Remove this conversion after Nodes migrates its node-number API
+    // from int to Index.
+    return static_cast<int>(node_num);
+}
+
+template <typename FlowFunction>
+[[nodiscard]] double sum_flow_over_node_groups(
+    const std::vector<Index>& node_nums_1,
+    const std::vector<Index>& node_nums_2, FlowFunction&& flow_function) {
+    double total_flow = 0.0;
+
+    for (const Index node_num_1 : node_nums_1) {
+        for (const Index node_num_2 : node_nums_2) {
+            const double pair_flow = flow_function(node_num_1, node_num_2);
+            if (std::isnan(pair_flow)) {
+                return std::numeric_limits<double>::quiet_NaN();
+            }
+            total_flow += pair_flow;
+        }
+    }
+
+    return total_flow;
 }
 
 }  // namespace
@@ -118,15 +138,8 @@ void ThermalNetwork::remove_node(Index node_num) {
         return;
     }
 
-    if (!is_node_number_in_range(node_num)) {
-        SPDLOG_LOGGER_WARN(pycanha::get_logger(),
-                           "ThermalNetwork: node number out of range {}",
-                           node_num);
-        return;
-    }
-
-    const int user_node_num = static_cast<int>(node_num);
-    const Index idx = _nodes->get_idx_from_node_num(user_node_num);
+    const int inttype_node_num = to_inttype_node_num(node_num);
+    const Index idx = _nodes->get_idx_from_node_num(inttype_node_num);
 
     if (idx < 0) {
         return;
@@ -149,7 +162,7 @@ void ThermalNetwork::remove_node(Index node_num) {
         radiative_storage._remove_node_bound(boundary_idx);
     }
 
-    _nodes->remove_node(user_node_num);
+    _nodes->remove_node(inttype_node_num);
 }
 
 Nodes& ThermalNetwork::nodes() noexcept { return *_nodes; }
@@ -187,6 +200,71 @@ RadiativeCouplings& ThermalNetwork::radiative_couplings() noexcept {
 
 const RadiativeCouplings& ThermalNetwork::radiative_couplings() const noexcept {
     return *_radiative_couplings;
+}
+
+double ThermalNetwork::flow_conductive(Index node_num_1, Index node_num_2) {
+    if (node_num_1 == node_num_2) {
+        return 0.0;
+    }
+
+    const int inttype_node_num_1 = to_inttype_node_num(node_num_1);
+    const int inttype_node_num_2 = to_inttype_node_num(node_num_2);
+
+    if (!_nodes->is_node(inttype_node_num_1) ||
+        !_nodes->is_node(inttype_node_num_2)) {
+        SPDLOG_LOGGER_WARN(pycanha::get_logger(),
+                           "ThermalNetwork: invalid node numbers {}, {}",
+                           node_num_1, node_num_2);
+        return std::numeric_limits<double>::quiet_NaN();
+    }
+
+    const double temperature_1 = _nodes->get_T(inttype_node_num_1);
+    const double temperature_2 = _nodes->get_T(inttype_node_num_2);
+    const double conductance =
+        _conductive_couplings->get_coupling_value(node_num_1, node_num_2);
+
+    return conductance * (temperature_2 - temperature_1);
+}
+
+double ThermalNetwork::flow_conductive(const std::vector<Index>& node_nums_1,
+                                       const std::vector<Index>& node_nums_2) {
+    return sum_flow_over_node_groups(
+        node_nums_1, node_nums_2, [this](Index node_num_1, Index node_num_2) {
+            return flow_conductive(node_num_1, node_num_2);
+        });
+}
+
+double ThermalNetwork::flow_radiative(Index node_num_1, Index node_num_2) {
+    if (node_num_1 == node_num_2) {
+        return 0.0;
+    }
+
+    const int inttype_node_num_1 = to_inttype_node_num(node_num_1);
+    const int inttype_node_num_2 = to_inttype_node_num(node_num_2);
+
+    if (!_nodes->is_node(inttype_node_num_1) ||
+        !_nodes->is_node(inttype_node_num_2)) {
+        SPDLOG_LOGGER_WARN(pycanha::get_logger(),
+                           "ThermalNetwork: invalid node numbers {}, {}",
+                           node_num_1, node_num_2);
+        return std::numeric_limits<double>::quiet_NaN();
+    }
+
+    const double temperature_1 = _nodes->get_T(inttype_node_num_1);
+    const double temperature_2 = _nodes->get_T(inttype_node_num_2);
+    const double radiative_conductance =
+        _radiative_couplings->get_coupling_value(node_num_1, node_num_2);
+
+    return radiative_conductance * STF_BOLTZ *
+           (std::pow(temperature_2, 4) - std::pow(temperature_1, 4));
+}
+
+double ThermalNetwork::flow_radiative(const std::vector<Index>& node_nums_1,
+                                      const std::vector<Index>& node_nums_2) {
+    return sum_flow_over_node_groups(
+        node_nums_1, node_nums_2, [this](Index node_num_1, Index node_num_2) {
+            return flow_radiative(node_num_1, node_num_2);
+        });
 }
 
 std::shared_ptr<Nodes> ThermalNetwork::nodes_ptr() noexcept { return _nodes; }

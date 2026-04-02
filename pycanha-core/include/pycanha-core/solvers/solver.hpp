@@ -7,6 +7,7 @@
 #include <unordered_set>
 #include <utility>
 
+#include "pycanha-core/globals.hpp"
 #include "pycanha-core/tmm/couplingmatrices.hpp"
 #include "pycanha-core/tmm/thermalmathematicalmodel.hpp"
 #include "pycanha-core/utils/SparseUtils.hpp"
@@ -18,7 +19,6 @@ using SpMatRow = Eigen::SparseMatrix<double, Eigen::RowMajor>;
 using SpVec = Eigen::SparseVector<double>;
 using VectorXd = Eigen::VectorXd;
 using WrappVectorXd = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>;
-using Index = Eigen::Index;
 
 // TODO: Move this helper to a dedicated utilities file if reused elsewhere.
 struct IntPairHash {
@@ -35,10 +35,6 @@ class Solver {
     friend class TransientSolver;
 
   public:
-    // NOLINTBEGIN(readability-identifier-naming)
-    static constexpr double STF_BOLTZ = 5.670374419e-8;
-    // DOI: 10.1103/RevModPhys.97.025002
-
     explicit Solver(std::shared_ptr<ThermalMathematicalModel> tmm_shptr);
     virtual ~Solver() = default;
     Solver(const Solver&) = delete;
