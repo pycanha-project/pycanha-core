@@ -387,13 +387,13 @@ void TSCNRLDS_JACOBIAN::solve() {
 
 void TSCNRLDS_JACOBIAN::save_jacobian_data() {
     const auto parameter_count = static_cast<Index>(_parameter_names.size());
-    auto& output_table = tmm.thermal_data.get_table(output_jacobian_table_name);
-    output_table(idata_out, 0) = time;
+    tmm.thermal_data.get_table(output_jacobian_table_name)(idata_out, 0) = time;
     std::size_t output_index = 1U;
     for (Index node_index = 0; node_index < nd; ++node_index) {
         for (Index parameter_index = 0; parameter_index < parameter_count;
              ++parameter_index) {
-            output_table(idata_out, static_cast<Index>(output_index)) =
+            tmm.thermal_data.get_table(output_jacobian_table_name)(
+                idata_out, static_cast<Index>(output_index)) =
                 _mt(node_index, parameter_index);
             ++output_index;
         }
