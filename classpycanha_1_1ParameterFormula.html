@@ -27,7 +27,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.8</span>
+   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.9</span>
    </div>
    <div id="projectbrief">The C++ core of pycanha</div>
   </td>
@@ -161,6 +161,15 @@ const <a class="el" href="classpycanha_1_1ThermalEntity.html">ThermalEntity</a> 
 <tr class="memitem:a664dd609dd4280141e432cf56d1d9a3d inherit pub_methods_classpycanha_1_1Formula" id="r_a664dd609dd4280141e432cf56d1d9a3d"><td class="memItemLeft" align="right" valign="top">
 const DependencyList &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>parameter_dependencies</b> () const noexcept</td></tr>
 <tr class="separator:a664dd609dd4280141e432cf56d1d9a3d inherit pub_methods_classpycanha_1_1Formula"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5fff398d441434502325dd2b8f0e1d66 inherit pub_methods_classpycanha_1_1Formula" id="r_a5fff398d441434502325dd2b8f0e1d66"><td class="memItemLeft" align="right" valign="top">
+void&#160;</td><td class="memItemRight" valign="bottom"><b>add_parameter_dependency</b> (std::string dependency)</td></tr>
+<tr class="separator:a5fff398d441434502325dd2b8f0e1d66 inherit pub_methods_classpycanha_1_1Formula"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7e1fca8b416cd998542af80455c9ace9 inherit pub_methods_classpycanha_1_1Formula" id="r_a7e1fca8b416cd998542af80455c9ace9"><td class="memItemLeft" align="right" valign="top">
+void&#160;</td><td class="memItemRight" valign="bottom"><b>set_parameter_dependencies</b> (DependencyList dependencies)</td></tr>
+<tr class="separator:a7e1fca8b416cd998542af80455c9ace9 inherit pub_methods_classpycanha_1_1Formula"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acd5b5f42a4d046b0b91cfa7a28c78241 inherit pub_methods_classpycanha_1_1Formula" id="r_acd5b5f42a4d046b0b91cfa7a28c78241"><td class="memItemLeft" align="right" valign="top">
+void&#160;</td><td class="memItemRight" valign="bottom"><b>clear_parameter_dependencies</b> () noexcept</td></tr>
+<tr class="separator:acd5b5f42a4d046b0b91cfa7a28c78241 inherit pub_methods_classpycanha_1_1Formula"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pri-attribs" name="pri-attribs"></a>
 Private Attributes</h2></td></tr>
@@ -173,6 +182,9 @@ std::string&#160;</td><td class="memItemRight" valign="bottom"><b>_parameter_nam
 <tr class="memitem:ac0267c128325e03c7d53e00947bb9071" id="r_ac0267c128325e03c7d53e00947bb9071"><td class="memItemLeft" align="right" valign="top"><a id="ac0267c128325e03c7d53e00947bb9071" name="ac0267c128325e03c7d53e00947bb9071"></a>
 double *&#160;</td><td class="memItemRight" valign="bottom"><b>_parameter_data</b> {nullptr}</td></tr>
 <tr class="separator:ac0267c128325e03c7d53e00947bb9071"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5273d920daaf7de8519cefce6b37951a" id="r_a5273d920daaf7de8519cefce6b37951a"><td class="memItemLeft" align="right" valign="top"><a id="a5273d920daaf7de8519cefce6b37951a" name="a5273d920daaf7de8519cefce6b37951a"></a>
+std::vector&lt; double &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>_derivatives</b> {1.0}</td></tr>
+<tr class="separator:a5273d920daaf7de8519cefce6b37951a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="inherited" name="inherited"></a>
 Additional Inherited Members</h2></td></tr>

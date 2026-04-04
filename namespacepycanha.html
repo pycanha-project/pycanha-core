@@ -27,7 +27,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.8</span>
+   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.9</span>
    </div>
    <div id="projectbrief">The C++ core of pycanha</div>
   </td>
@@ -174,6 +174,8 @@ Classes</h2></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classpycanha_1_1TSCNRLDS.html">TSCNRLDS</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classpycanha_1_1TSCNRLDS__JACOBIAN.html">TSCNRLDS_JACOBIAN</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classpycanha_1_1ValueFormula.html">ValueFormula</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
@@ -191,9 +193,9 @@ using&#160;</td><td class="memItemRight" valign="bottom"><b>Vector2D</b> = Eigen
 <tr class="memitem:a525c9142c824aec86a753eb5217c8b2e" id="r_a525c9142c824aec86a753eb5217c8b2e"><td class="memItemLeft" align="right" valign="top"><a id="a525c9142c824aec86a753eb5217c8b2e" name="a525c9142c824aec86a753eb5217c8b2e"></a>
 using&#160;</td><td class="memItemRight" valign="bottom"><b>Vector3D</b> = Eigen::Vector3d</td></tr>
 <tr class="separator:a525c9142c824aec86a753eb5217c8b2e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a782b540c2b72fe90e49e971fb2f0243a" id="r_a782b540c2b72fe90e49e971fb2f0243a"><td class="memItemLeft" align="right" valign="top"><a id="a782b540c2b72fe90e49e971fb2f0243a" name="a782b540c2b72fe90e49e971fb2f0243a"></a>
+<tr class="memitem:a0ddba25e04e691bcad2dae1ff7a6dab0" id="r_a0ddba25e04e691bcad2dae1ff7a6dab0"><td class="memItemLeft" align="right" valign="top"><a id="a0ddba25e04e691bcad2dae1ff7a6dab0" name="a0ddba25e04e691bcad2dae1ff7a6dab0"></a>
 using&#160;</td><td class="memItemRight" valign="bottom"><b>Index</b> = Eigen::Index</td></tr>
-<tr class="separator:a782b540c2b72fe90e49e971fb2f0243a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="separator:a0ddba25e04e691bcad2dae1ff7a6dab0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8b685edc3ee449d322e5102965ea1320" id="r_a8b685edc3ee449d322e5102965ea1320"><td class="memItemLeft" align="right" valign="top"><a id="a8b685edc3ee449d322e5102965ea1320" name="a8b685edc3ee449d322e5102965ea1320"></a>
 using&#160;</td><td class="memItemRight" valign="bottom"><b>VectorIndex</b> = std::vector&lt; double &gt;::size_type</td></tr>
 <tr class="separator:a8b685edc3ee449d322e5102965ea1320"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -274,6 +276,9 @@ constexpr double&#160;</td><td class="memItemRight" valign="bottom"><b>ZERO_THR_
 <tr class="memitem:a8113a7c023942cd593afd7fcb159487e" id="r_a8113a7c023942cd593afd7fcb159487e"><td class="memItemLeft" align="right" valign="top"><a id="a8113a7c023942cd593afd7fcb159487e" name="a8113a7c023942cd593afd7fcb159487e"></a>
 constexpr double&#160;</td><td class="memItemRight" valign="bottom"><b>ALMOST_EQUAL_COUPLING_EPSILON</b> = 1.0e-5</td></tr>
 <tr class="separator:a8113a7c023942cd593afd7fcb159487e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0518eb4b87038b89eaf26d8ba53b20a5" id="r_a0518eb4b87038b89eaf26d8ba53b20a5"><td class="memItemLeft" align="right" valign="top"><a id="a0518eb4b87038b89eaf26d8ba53b20a5" name="a0518eb4b87038b89eaf26d8ba53b20a5"></a>
+constexpr double&#160;</td><td class="memItemRight" valign="bottom"><b>STF_BOLTZ</b> = 5.670374419e-8</td></tr>
+<tr class="separator:a0518eb4b87038b89eaf26d8ba53b20a5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>C++ Implementation of ThermalConductos (TCs) </p>

@@ -67,6 +67,7 @@ var annotated_dup =
       [ "TSCN", "classpycanha_1_1TSCN.html", null ],
       [ "TSCNRL", "classpycanha_1_1TSCNRL.html", null ],
       [ "TSCNRLDS", "classpycanha_1_1TSCNRLDS.html", null ],
+      [ "TSCNRLDS_JACOBIAN", "classpycanha_1_1TSCNRLDS__JACOBIAN.html", null ],
       [ "ValueFormula", "classpycanha_1_1ValueFormula.html", null ]
     ] ]
 ];

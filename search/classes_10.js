@@ -11,5 +11,6 @@ var searchData=
   ['trimeshmodel_8',['TriMeshModel',['../classpycanha_1_1gmm_1_1TriMeshModel.html',1,'pycanha::gmm']]],
   ['tscn_9',['TSCN',['../classpycanha_1_1TSCN.html',1,'pycanha']]],
   ['tscnrl_10',['TSCNRL',['../classpycanha_1_1TSCNRL.html',1,'pycanha']]],
-  ['tscnrlds_11',['TSCNRLDS',['../classpycanha_1_1TSCNRLDS.html',1,'pycanha']]]
+  ['tscnrlds_11',['TSCNRLDS',['../classpycanha_1_1TSCNRLDS.html',1,'pycanha']]],
+  ['tscnrlds_5fjacobian_12',['TSCNRLDS_JACOBIAN',['../classpycanha_1_1TSCNRLDS__JACOBIAN.html',1,'pycanha']]]
 ];

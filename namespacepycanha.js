@@ -33,6 +33,7 @@ var namespacepycanha =
     [ "TSCN", "classpycanha_1_1TSCN.html", null ],
     [ "TSCNRL", "classpycanha_1_1TSCNRL.html", null ],
     [ "TSCNRLDS", "classpycanha_1_1TSCNRLDS.html", null ],
+    [ "TSCNRLDS_JACOBIAN", "classpycanha_1_1TSCNRLDS__JACOBIAN.html", null ],
     [ "ValueFormula", "classpycanha_1_1ValueFormula.html", null ],
     [ "create_ostream_logger", "namespacepycanha.html#a87d68876c66af5fddcbbfde5c82c80e6", null ],
     [ "get_logger", "namespacepycanha.html#af116674b7649af0e33b3d7e78ecb1b1b", null ],

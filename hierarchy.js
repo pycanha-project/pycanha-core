@@ -50,7 +50,9 @@ var hierarchy =
       [ "pycanha::TransientSolver", "classpycanha_1_1TransientSolver.html", [
         [ "pycanha::TSCN", "classpycanha_1_1TSCN.html", [
           [ "pycanha::TSCNRL", "classpycanha_1_1TSCNRL.html", [
-            [ "pycanha::TSCNRLDS", "classpycanha_1_1TSCNRLDS.html", null ]
+            [ "pycanha::TSCNRLDS", "classpycanha_1_1TSCNRLDS.html", [
+              [ "pycanha::TSCNRLDS_JACOBIAN", "classpycanha_1_1TSCNRLDS__JACOBIAN.html", null ]
+            ] ]
           ] ]
         ] ]
       ] ]
