@@ -24,6 +24,7 @@ set(PYCANHA_USE_MKL_INT 0)
 find_package(Eigen3 REQUIRED CONFIG)
 find_package(spdlog REQUIRED CONFIG)
 find_package(HDF5 REQUIRED COMPONENTS CXX)
+find_package(symengine REQUIRED CONFIG)
 
 
 # CDT: https://github.com/artem-ogre/CDT
@@ -65,6 +66,7 @@ add_library(${LIB_NAME} STATIC
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/io/esatan.cpp
 
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/parameters/formula.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/parameters/parameters.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/parameters/formulas.cpp
 
@@ -102,6 +104,7 @@ target_link_libraries( ${LIB_NAME}
     PUBLIC 
     Eigen3::Eigen
     spdlog::spdlog
+    symengine
     PRIVATE
     HDF5::HDF5
     CDT::CDT
