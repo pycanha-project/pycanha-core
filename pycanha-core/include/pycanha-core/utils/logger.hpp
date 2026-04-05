@@ -5,13 +5,6 @@
 // correctly. The actual value is set via CMake compile definitions.
 // Default behaviour is TRACE in Debug and INFO otherwise, and it can be
 // overridden with PYCANHA_OPTION_ACTIVATE_ALL_LOGS_OVERRIDE.
-//
-// Future Python sink integration:
-//   In pycanha-core-python, create a C++ class subclassing
-//   spdlog::sinks::base_sink<std::mutex> whose sink_it_() acquires the GIL
-//   and calls a Python logging callback (e.g. Loguru).  Then call
-//   set_main_logger_sink() / set_profiling_logger_sink() from the binding
-//   init code to inject the Python-side sinks.
 
 #include <spdlog/common.h>
 #include <spdlog/logger.h>
@@ -23,13 +16,17 @@
 namespace pycanha {
 
 /// Main library logger ("pycanha-core").
-/// Default level: info.  Pattern: [HH:MM:SS.mmm] [level] message
+/// Default level: info. Pattern: [HH:MM:SS.mmm] [logger-name] [level] message
 std::shared_ptr<spdlog::logger> get_logger();
 
 /// Profiling logger ("pycanha-core.profiling").
-/// Default level: info when PYCANHA_PROFILING is defined, off otherwise.
 /// Pattern: [HH:MM:SS.mmm] [profiling] message
 std::shared_ptr<spdlog::logger> get_profiling_logger();
+
+/// Python-facing logger ("pycanha-python") sharing the main logger sinks.
+/// Default level: inherits the main logger level at creation time.
+/// Pattern: [HH:MM:SS.mmm] [logger-name] [level] message
+std::shared_ptr<spdlog::logger> get_python_logger();
 
 /// Create a logger that writes to the given ostream (useful for testing).
 std::shared_ptr<spdlog::logger> create_ostream_logger(
@@ -37,9 +34,13 @@ std::shared_ptr<spdlog::logger> create_ostream_logger(
     spdlog::level::level_enum level = spdlog::level::info);
 
 /// Change the main logger level at runtime.
+/// Throws std::invalid_argument if the requested level is more verbose than
+/// the compile-time SPDLOG_ACTIVE_LEVEL.
 void set_logger_level(spdlog::level::level_enum level);
 
-/// Change the profiling logger level at runtime.
-void set_profiling_logger_level(spdlog::level::level_enum level);
+/// Change the Python logger level at runtime.
+/// Throws std::invalid_argument if the requested level is more verbose than
+/// the compile-time SPDLOG_ACTIVE_LEVEL.
+void set_python_logger_level(spdlog::level::level_enum level);
 
 }  // namespace pycanha
