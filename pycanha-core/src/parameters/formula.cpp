@@ -10,8 +10,10 @@
 #include <symengine/symbol.h>
 #include <symengine/symengine_rcp.h>
 
+#include <algorithm>
 #include <cstddef>
 #include <exception>
+#include <iterator>
 #include <map>
 #include <memory>
 #include <stdexcept>
@@ -65,9 +67,9 @@ void collect_symbols(const ExpressionNode& expr, SymbolMap& symbols) {
             continue;
         }
 
-        for (const auto& argument : current->get_args()) {
-            pending.emplace_back(argument);
-        }
+        const auto arguments = current->get_args();
+        std::copy(arguments.rbegin(), arguments.rend(),
+                  std::back_inserter(pending));
     }
 }
 
@@ -147,9 +149,11 @@ void ExpressionFormula::initialize_expression() {
 
     _derivative_exprs.clear();
     _derivative_exprs.reserve(_symbols.size());
-    for (const auto& symbol : _symbols) {
-        _derivative_exprs.emplace_back(SymEngine::diff(_parsed_expr, symbol));
-    }
+    std::transform(_symbols.begin(), _symbols.end(),
+                   std::back_inserter(_derivative_exprs),
+                   [this](const auto& symbol) {
+                       return SymEngine::diff(_parsed_expr, symbol);
+                   });
 
     _derivatives.assign(_symbols.size(), 0.0);
     _param_ptrs.clear();
@@ -161,9 +165,7 @@ void ExpressionFormula::initialize_expression() {
 SymEngine::vec_basic ExpressionFormula::lambda_inputs() const {
     SymEngine::vec_basic inputs;
     inputs.reserve(_symbols.size());
-    for (const auto& symbol : _symbols) {
-        inputs.emplace_back(symbol);
-    }
+    std::copy(_symbols.begin(), _symbols.end(), std::back_inserter(inputs));
     return inputs;
 }
 
@@ -227,9 +229,9 @@ void ExpressionFormula::compile_formula() {
 
     _param_ptrs.clear();
     _param_ptrs.reserve(_bindings.size());
-    for (const auto& binding : _bindings) {
-        _param_ptrs.emplace_back(resolve_symbol_ptr(binding));
-    }
+    std::transform(
+        _bindings.begin(), _bindings.end(), std::back_inserter(_param_ptrs),
+        [this](const auto& binding) { return resolve_symbol_ptr(binding); });
 
     const auto inputs = lambda_inputs();
     try {
