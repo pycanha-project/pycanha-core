@@ -1,6 +1,8 @@
+#include <spdlog/common.h>
 #include <spdlog/spdlog.h>
 
 #include <catch2/catch_test_macros.hpp>
+#include <cstddef>
 #include <sstream>
 #include <string>
 
@@ -16,6 +18,8 @@ class LoggerRegistryGuard {
 
     LoggerRegistryGuard(const LoggerRegistryGuard&) = delete;
     LoggerRegistryGuard& operator=(const LoggerRegistryGuard&) = delete;
+    LoggerRegistryGuard(LoggerRegistryGuard&&) = delete;
+    LoggerRegistryGuard& operator=(LoggerRegistryGuard&&) = delete;
 
   private:
     static void drop_test_loggers() {
@@ -38,7 +42,7 @@ TEST_CASE("ostream logger emits formatted messages", "[utils][logger]") {
 }
 
 TEST_CASE("python logger shares main logger sinks", "[utils][logger]") {
-    LoggerRegistryGuard logger_registry_guard;
+    const LoggerRegistryGuard logger_registry_guard;
     std::ostringstream output;
     auto main_logger = pycanha::create_ostream_logger("pycanha-core", output);
 
@@ -57,7 +61,7 @@ TEST_CASE("python logger shares main logger sinks", "[utils][logger]") {
 }
 
 TEST_CASE("python logger level is configurable at runtime", "[utils][logger]") {
-    LoggerRegistryGuard logger_registry_guard;
+    const LoggerRegistryGuard logger_registry_guard;
     std::ostringstream output;
     auto main_logger = pycanha::create_ostream_logger("pycanha-core", output,
                                                       spdlog::level::warn);
@@ -75,7 +79,7 @@ TEST_CASE("python logger level is configurable at runtime", "[utils][logger]") {
 
 TEST_CASE("general loggers reject levels compiled away by SPDLOG_ACTIVE_LEVEL",
           "[utils][logger]") {
-    LoggerRegistryGuard logger_registry_guard;
+    const LoggerRegistryGuard logger_registry_guard;
     std::ostringstream output;
     auto main_logger = pycanha::create_ostream_logger("pycanha-core", output);
 
@@ -107,7 +111,7 @@ TEST_CASE("general loggers reject levels compiled away by SPDLOG_ACTIVE_LEVEL",
 
 TEST_CASE("main and python loggers emit into the same ostream",
           "[utils][logger]") {
-    LoggerRegistryGuard logger_registry_guard;
+    const LoggerRegistryGuard logger_registry_guard;
     std::ostringstream output;
     auto main_logger = pycanha::create_ostream_logger("pycanha-core", output);
 
