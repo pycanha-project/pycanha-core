@@ -5,9 +5,12 @@
 #include <symengine/parser.h>
 #include <symengine/real_double.h>
 
+#include <map>
+#include <memory>
 #include <stdexcept>
 #include <string>
 #include <utility>
+#include <vector>
 
 namespace pycanha {
 
