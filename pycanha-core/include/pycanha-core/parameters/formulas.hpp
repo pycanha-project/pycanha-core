@@ -40,6 +40,7 @@ class Formulas {
     void add_formula(const std::shared_ptr<Formula>& formula);
 
     void apply_formulas();
+    void calculate_derivatives();
 
     [[nodiscard]] const std::vector<std::shared_ptr<Formula>>& formulas()
         const noexcept {

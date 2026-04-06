@@ -74,4 +74,10 @@ void Formulas::apply_formulas() {
     }
 }
 
+void Formulas::calculate_derivatives() {
+    for (const auto& formula : _formulas) {
+        formula->calculate_derivatives();
+    }
+}
+
 }  // namespace pycanha

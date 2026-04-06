@@ -1,5 +1,9 @@
 #pragma once
 
+#include <symengine/basic.h>
+#include <symengine/lambda_double.h>
+#include <symengine/symbol.h>
+
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -68,6 +72,7 @@ class Formula {
     virtual void compile_formula() = 0;
     virtual void apply_formula() = 0;
     virtual void apply_compiled_formula() = 0;
+    virtual void calculate_derivatives() {}
 
     [[nodiscard]] virtual std::unique_ptr<Formula> clone() const = 0;
 
@@ -233,6 +238,58 @@ class ValueFormula final : public Formula {
   private:
     double _value{0.0};
     std::vector<double> _derivatives;
+};
+
+class ExpressionFormula final : public Formula {
+  public:
+    ExpressionFormula(ThermalEntity& entity, Parameters& parameters,
+                      std::string expression);
+    ExpressionFormula(std::shared_ptr<ThermalEntity> entity,
+                      Parameters& parameters, std::string expression);
+
+    void compile_formula() override;
+    void apply_formula() override;
+    void apply_compiled_formula() override;
+    void calculate_derivatives() override;
+
+    [[nodiscard]] std::unique_ptr<Formula> clone() const override;
+    [[nodiscard]] double get_value() const override;
+    [[nodiscard]] std::vector<double>* get_derivative_values() override;
+    [[nodiscard]] const std::string& expression() const noexcept;
+
+  private:
+    struct ParameterBinding {
+        std::string dependency_name;
+        std::string parameter_name;
+    };
+
+    void initialize_expression();
+
+    [[nodiscard]] SymEngine::vec_basic lambda_inputs() const;
+    [[nodiscard]] double evaluate_expression(
+        const SymEngine::RCP<const SymEngine::Basic>& expr) const;
+    [[nodiscard]] double evaluate_symbol_value(
+        const ParameterBinding& binding) const;
+    [[nodiscard]] double* resolve_symbol_ptr(
+        const ParameterBinding& binding) const;
+
+    Parameters* _parameters;
+    std::string _expression;
+    std::string _normalized_expression;
+    double _cached_value{0.0};
+    std::vector<double> _derivatives;
+    std::vector<ParameterBinding> _bindings;
+
+    SymEngine::RCP<const SymEngine::Basic> _parsed_expr;
+    std::vector<SymEngine::RCP<const SymEngine::Symbol>> _symbols;
+    std::vector<SymEngine::RCP<const SymEngine::Basic>> _derivative_exprs;
+
+    SymEngine::LambdaRealDoubleVisitor _compiled_eval;
+    std::vector<SymEngine::LambdaRealDoubleVisitor> _compiled_derivs;
+
+    std::vector<double*> _param_ptrs;
+    std::vector<bool> _compiled_derivs_ready;
+    bool _compiled{false};
 };
 
 }  // namespace pycanha
