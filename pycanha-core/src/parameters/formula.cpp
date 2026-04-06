@@ -1,20 +1,35 @@
 #include "pycanha-core/parameters/formula.hpp"
 
+#include <symengine/basic.h>
 #include <symengine/derivative.h>
+#include <symengine/dict.h>
 #include <symengine/eval_double.h>
+#include <symengine/lambda_double.h>
 #include <symengine/parser.h>
 #include <symengine/real_double.h>
+#include <symengine/symbol.h>
+#include <symengine/symengine_rcp.h>
 
+#include <cstddef>
+#include <exception>
 #include <map>
 #include <memory>
 #include <stdexcept>
 #include <string>
 #include <utility>
+#include <variant>
 #include <vector>
+
+#include "pycanha-core/parameters/entity.hpp"
+#include "pycanha-core/parameters/parameters.hpp"
 
 namespace pycanha {
 
 namespace {
+
+using ExpressionNode = SymEngine::RCP<const SymEngine::Basic>;
+using SymbolMap =
+    std::map<std::string, SymEngine::RCP<const SymEngine::Symbol>>;
 
 [[nodiscard]] std::string replace_python_power(std::string expression) {
     std::size_t position = 0U;
@@ -35,18 +50,24 @@ namespace {
     return replace_python_power(expression);
 }
 
-void collect_symbols(
-    const SymEngine::RCP<const SymEngine::Basic>& expr,
-    std::map<std::string, SymEngine::RCP<const SymEngine::Symbol>>& symbols) {
-    if (auto* symbol = dynamic_cast<const SymEngine::Symbol*>(expr.get());
-        symbol != nullptr) {
-        symbols.emplace(symbol->get_name(),
-                        SymEngine::symbol(symbol->get_name()));
-        return;
-    }
+void collect_symbols(const ExpressionNode& expr, SymbolMap& symbols) {
+    std::vector<ExpressionNode> pending{expr};
 
-    for (const auto& argument : expr->get_args()) {
-        collect_symbols(argument, symbols);
+    while (!pending.empty()) {
+        const ExpressionNode current = pending.back();
+        pending.pop_back();
+
+        if (const auto* symbol =
+                dynamic_cast<const SymEngine::Symbol*>(current.get());
+            symbol != nullptr) {
+            symbols.emplace(symbol->get_name(),
+                            SymEngine::symbol(symbol->get_name()));
+            continue;
+        }
+
+        for (const auto& argument : current->get_args()) {
+            pending.emplace_back(argument);
+        }
     }
 }
 
@@ -95,7 +116,7 @@ void ExpressionFormula::initialize_expression() {
                                     _expression + "': " + exception.what());
     }
 
-    std::map<std::string, SymEngine::RCP<const SymEngine::Symbol>> symbols;
+    SymbolMap symbols;
     collect_symbols(_parsed_expr, symbols);
 
     _symbols.clear();
@@ -117,9 +138,9 @@ void ExpressionFormula::initialize_expression() {
         static_cast<void>(
             expect_scalar_parameter(value, binding.parameter_name));
 
-        _symbols.push_back(symbol);
-        dependencies.push_back(binding.dependency_name);
-        _bindings.push_back(std::move(binding));
+        _symbols.emplace_back(symbol);
+        dependencies.emplace_back(binding.dependency_name);
+        _bindings.emplace_back(std::move(binding));
     }
 
     set_parameter_dependencies(std::move(dependencies));
@@ -127,7 +148,7 @@ void ExpressionFormula::initialize_expression() {
     _derivative_exprs.clear();
     _derivative_exprs.reserve(_symbols.size());
     for (const auto& symbol : _symbols) {
-        _derivative_exprs.push_back(SymEngine::diff(_parsed_expr, symbol));
+        _derivative_exprs.emplace_back(SymEngine::diff(_parsed_expr, symbol));
     }
 
     _derivatives.assign(_symbols.size(), 0.0);
@@ -141,7 +162,7 @@ SymEngine::vec_basic ExpressionFormula::lambda_inputs() const {
     SymEngine::vec_basic inputs;
     inputs.reserve(_symbols.size());
     for (const auto& symbol : _symbols) {
-        inputs.push_back(symbol);
+        inputs.emplace_back(symbol);
     }
     return inputs;
 }
@@ -207,7 +228,7 @@ void ExpressionFormula::compile_formula() {
     _param_ptrs.clear();
     _param_ptrs.reserve(_bindings.size());
     for (const auto& binding : _bindings) {
-        _param_ptrs.push_back(resolve_symbol_ptr(binding));
+        _param_ptrs.emplace_back(resolve_symbol_ptr(binding));
     }
 
     const auto inputs = lambda_inputs();
@@ -229,11 +250,11 @@ void ExpressionFormula::compile_formula() {
         try {
             auto visitor = SymEngine::LambdaRealDoubleVisitor();
             visitor.init(inputs, *derivative, true);
-            _compiled_derivs.push_back(std::move(visitor));
-            _compiled_derivs_ready.push_back(true);
+            _compiled_derivs.emplace_back(std::move(visitor));
+            _compiled_derivs_ready.emplace_back(true);
         } catch (const std::exception&) {
             _compiled_derivs.emplace_back();
-            _compiled_derivs_ready.push_back(false);
+            _compiled_derivs_ready.emplace_back(false);
         }
     }
 
