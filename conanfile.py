@@ -18,7 +18,7 @@ class Recipe_pycanha_core(ConanFile):
 
     # This is the version used everywhere. Right now is set manually,
     # but it could be set automatically from the git tag for example.
-    version = "0.10"
+    version = "0.11"
 
     # I've followed the instructions from https://docs.conan.io/2/tutorial/creating_packages/other_types_of_packages/header_only_packages.html
     # but without adding the "header-only" keyword to the recipe, it doesn't work. The use of the "header-only" is from here:
@@ -307,6 +307,24 @@ class Recipe_pycanha_core(ConanFile):
             "spdlog::libspdlog",
             "symengine::symengine",
         ]
+
+        # Public formula headers include <symengine/...>. The current Conan
+        # symengine package resolves the library target correctly, but does not
+        # populate include dirs in the generated CMakeDeps metadata, so expose
+        # the header path from pycanha-core itself for downstream consumers.
+        symengine_dep = self.dependencies.get("symengine")
+        if symengine_dep is not None and symengine_dep.package_folder:
+            self.cpp_info.includedirs.append(
+                str(Path(symengine_dep.package_folder) / "include")
+            )
+
+        # SymEngine public headers also include <gmp.h>, so downstream
+        # consumers of pycanha-core's public API need GMP headers transitively.
+        gmp_dep = self.dependencies.get("gmp")
+        if gmp_dep is not None and gmp_dep.package_folder:
+            self.cpp_info.includedirs.append(
+                str(Path(gmp_dep.package_folder) / "include")
+            )
 
         if self.options.PYCANHA_OPTION_USE_MKL:
             self.cpp_info.defines.append("PYCANHA_USE_MKL=1")
