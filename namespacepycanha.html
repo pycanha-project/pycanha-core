@@ -124,6 +124,8 @@ Classes</h2></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classpycanha_1_1ESATANReader.html">ESATANReader</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classpycanha_1_1ExpressionFormula.html">ExpressionFormula</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classpycanha_1_1Formula.html">Formula</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classpycanha_1_1Formulas.html">Formulas</a></td></tr>
@@ -243,18 +245,16 @@ Functions</h2></td></tr>
 <tr class="separator:af116674b7649af0e33b3d7e78ecb1b1b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa10488c2ff5bd88e91d25b92af8f7733" id="r_aa10488c2ff5bd88e91d25b92af8f7733"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; spdlog::logger &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacepycanha.html#aa10488c2ff5bd88e91d25b92af8f7733">get_profiling_logger</a> ()</td></tr>
 <tr class="separator:aa10488c2ff5bd88e91d25b92af8f7733"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a986a70b1a008f250032d3580e2696ec9" id="r_a986a70b1a008f250032d3580e2696ec9"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; spdlog::logger &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacepycanha.html#a986a70b1a008f250032d3580e2696ec9">get_python_logger</a> ()</td></tr>
+<tr class="separator:a986a70b1a008f250032d3580e2696ec9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a87d68876c66af5fddcbbfde5c82c80e6" id="r_a87d68876c66af5fddcbbfde5c82c80e6"><td class="memItemLeft" align="right" valign="top"><a id="a87d68876c66af5fddcbbfde5c82c80e6" name="a87d68876c66af5fddcbbfde5c82c80e6"></a>
 std::shared_ptr&lt; spdlog::logger &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>create_ostream_logger</b> (std::string_view name, std::ostream &amp;stream, spdlog::level::level_enum level=spdlog::level::info)</td></tr>
 <tr class="memdesc:a87d68876c66af5fddcbbfde5c82c80e6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a logger that writes to the given ostream (useful for testing). <br /></td></tr>
 <tr class="separator:a87d68876c66af5fddcbbfde5c82c80e6"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a08752753ff47555d437f581a37fc88f7" id="r_a08752753ff47555d437f581a37fc88f7"><td class="memItemLeft" align="right" valign="top"><a id="a08752753ff47555d437f581a37fc88f7" name="a08752753ff47555d437f581a37fc88f7"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>set_logger_level</b> (spdlog::level::level_enum level)</td></tr>
-<tr class="memdesc:a08752753ff47555d437f581a37fc88f7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Change the main logger level at runtime. <br /></td></tr>
+<tr class="memitem:a08752753ff47555d437f581a37fc88f7" id="r_a08752753ff47555d437f581a37fc88f7"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacepycanha.html#a08752753ff47555d437f581a37fc88f7">set_logger_level</a> (spdlog::level::level_enum level)</td></tr>
 <tr class="separator:a08752753ff47555d437f581a37fc88f7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac16465a1012e572c68d461c52897466d" id="r_ac16465a1012e572c68d461c52897466d"><td class="memItemLeft" align="right" valign="top"><a id="ac16465a1012e572c68d461c52897466d" name="ac16465a1012e572c68d461c52897466d"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>set_profiling_logger_level</b> (spdlog::level::level_enum level)</td></tr>
-<tr class="memdesc:ac16465a1012e572c68d461c52897466d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Change the profiling logger level at runtime. <br /></td></tr>
-<tr class="separator:ac16465a1012e572c68d461c52897466d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a046e6c70018788fee7e68442286f8e6f" id="r_a046e6c70018788fee7e68442286f8e6f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacepycanha.html#a046e6c70018788fee7e68442286f8e6f">set_python_logger_level</a> (spdlog::level::level_enum level)</td></tr>
+<tr class="separator:a046e6c70018788fee7e68442286f8e6f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a768d7bf588a6a1fcbd00cb2bfa6c7914" id="r_a768d7bf588a6a1fcbd00cb2bfa6c7914"><td class="memItemLeft" align="right" valign="top"><a id="a768d7bf588a6a1fcbd00cb2bfa6c7914" name="a768d7bf588a6a1fcbd00cb2bfa6c7914"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>print_package_info</b> ()</td></tr>
 <tr class="separator:a768d7bf588a6a1fcbd00cb2bfa6c7914"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -325,7 +325,7 @@ constexpr double&#160;</td><td class="memItemRight" valign="bottom"><b>STF_BOLTZ
         </tr>
       </table>
 </div><div class="memdoc">
-<p>Main library logger ("pycanha-core"). Default level: info. Pattern: [HH:MM:SS.mmm] [level] message </p>
+<p>Main library logger ("pycanha-core"). Default level: info. Pattern: [HH:MM:SS.mmm] [logger-name] [level] message </p>
 
 </div>
 </div>
@@ -343,7 +343,78 @@ constexpr double&#160;</td><td class="memItemRight" valign="bottom"><b>STF_BOLTZ
         </tr>
       </table>
 </div><div class="memdoc">
-<p>Profiling logger ("pycanha-core.profiling"). Default level: info when PYCANHA_PROFILING is defined, off otherwise. Pattern: [HH:MM:SS.mmm] [profiling] message </p>
+<p>Profiling logger ("pycanha-core.profiling"). Pattern: [HH:MM:SS.mmm] [profiling] message </p>
+
+</div>
+</div>
+<a id="a986a70b1a008f250032d3580e2696ec9" name="a986a70b1a008f250032d3580e2696ec9"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a986a70b1a008f250032d3580e2696ec9">&#9670;&#160;</a></span>get_python_logger()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::shared_ptr&lt; spdlog::logger &gt; pycanha::get_python_logger </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Python-facing logger ("pycanha-python") sharing the main logger sinks. Default level: inherits the main logger level at creation time. Pattern: [HH:MM:SS.mmm] [logger-name] [level] message </p>
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="namespacepycanha_a986a70b1a008f250032d3580e2696ec9_cgraph.svg" width="372" height="51"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+
+</div>
+</div>
+<a id="a08752753ff47555d437f581a37fc88f7" name="a08752753ff47555d437f581a37fc88f7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a08752753ff47555d437f581a37fc88f7">&#9670;&#160;</a></span>set_logger_level()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void pycanha::set_logger_level </td>
+          <td>(</td>
+          <td class="paramtype">spdlog::level::level_enum&#160;</td>
+          <td class="paramname"><em>level</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Change the main logger level at runtime. Throws std::invalid_argument if the requested level is more verbose than the compile-time SPDLOG_ACTIVE_LEVEL. </p>
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="namespacepycanha_a08752753ff47555d437f581a37fc88f7_cgraph.svg" width="367" height="51"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+
+</div>
+</div>
+<a id="a046e6c70018788fee7e68442286f8e6f" name="a046e6c70018788fee7e68442286f8e6f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a046e6c70018788fee7e68442286f8e6f">&#9670;&#160;</a></span>set_python_logger_level()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void pycanha::set_python_logger_level </td>
+          <td>(</td>
+          <td class="paramtype">spdlog::level::level_enum&#160;</td>
+          <td class="paramname"><em>level</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Change the Python logger level at runtime. Throws std::invalid_argument if the requested level is more verbose than the compile-time SPDLOG_ACTIVE_LEVEL. </p>
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="namespacepycanha_a046e6c70018788fee7e68442286f8e6f_cgraph.svg" width="578" height="51"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
 
 </div>
 </div>

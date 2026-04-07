@@ -143,31 +143,32 @@ $(document).ready(function(){initNavTree('formulas_8hpp_source.html',''); initRe
 <div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>    <span class="keywordtype">void</span> add_formula(<span class="keyword">const</span> std::shared_ptr&lt;Formula&gt;&amp; formula);</div>
 <div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span> </div>
 <div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>    <span class="keywordtype">void</span> apply_formulas();</div>
-<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span> </div>
-<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>    [[nodiscard]] <span class="keyword">const</span> std::vector&lt;std::shared_ptr&lt;Formula&gt;&gt;&amp; formulas()</div>
-<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>        <span class="keyword">const</span> <span class="keyword">noexcept</span> {</div>
-<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>        <span class="keywordflow">return</span> _formulas;</div>
-<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>    }</div>
-<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span> </div>
-<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>    [[nodiscard]] <span class="keyword">const</span> std::unordered_map&lt;</div>
-<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>        std::string, std::vector&lt;std::shared_ptr&lt;Formula&gt;&gt;&gt;&amp;</div>
-<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>    parameter_dependencies() <span class="keyword">const</span> <span class="keyword">noexcept</span> {</div>
-<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>        <span class="keywordflow">return</span> _parameter_dependencies;</div>
-<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>    }</div>
-<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span> </div>
-<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>  <span class="keyword">private</span>:</div>
-<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>    std::shared_ptr&lt;ThermalNetwork&gt; _network;</div>
-<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>    std::shared_ptr&lt;Parameters&gt; _parameters;</div>
-<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>    std::vector&lt;std::shared_ptr&lt;Formula&gt;&gt; _formulas;</div>
-<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>    std::unordered_map&lt;std::string, std::vector&lt;std::shared_ptr&lt;Formula&gt;&gt;&gt;</div>
-<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>        _parameter_dependencies;</div>
-<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>};</div>
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>    <span class="keywordtype">void</span> calculate_derivatives();</div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span> </div>
+<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>    [[nodiscard]] <span class="keyword">const</span> std::vector&lt;std::shared_ptr&lt;Formula&gt;&gt;&amp; formulas()</div>
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>        <span class="keyword">const</span> <span class="keyword">noexcept</span> {</div>
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>        <span class="keywordflow">return</span> _formulas;</div>
+<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>    }</div>
+<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span> </div>
+<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>    [[nodiscard]] <span class="keyword">const</span> std::unordered_map&lt;</div>
+<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>        std::string, std::vector&lt;std::shared_ptr&lt;Formula&gt;&gt;&gt;&amp;</div>
+<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>    parameter_dependencies() <span class="keyword">const</span> <span class="keyword">noexcept</span> {</div>
+<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>        <span class="keywordflow">return</span> _parameter_dependencies;</div>
+<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>    }</div>
+<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span> </div>
+<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>  <span class="keyword">private</span>:</div>
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>    std::shared_ptr&lt;ThermalNetwork&gt; _network;</div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>    std::shared_ptr&lt;Parameters&gt; _parameters;</div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>    std::vector&lt;std::shared_ptr&lt;Formula&gt;&gt; _formulas;</div>
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>    std::unordered_map&lt;std::string, std::vector&lt;std::shared_ptr&lt;Formula&gt;&gt;&gt;</div>
+<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>        _parameter_dependencies;</div>
+<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>};</div>
 </div>
-<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span> </div>
-<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>}  <span class="comment">// namespace pycanha</span></div>
-<div class="ttc" id="aclasspycanha_1_1Formula_html"><div class="ttname"><a href="classpycanha_1_1Formula.html">pycanha::Formula</a></div><div class="ttdef"><b>Definition</b> formula.hpp:14</div></div>
+<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span> </div>
+<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>}  <span class="comment">// namespace pycanha</span></div>
+<div class="ttc" id="aclasspycanha_1_1Formula_html"><div class="ttname"><a href="classpycanha_1_1Formula.html">pycanha::Formula</a></div><div class="ttdef"><b>Definition</b> formula.hpp:18</div></div>
 <div class="ttc" id="aclasspycanha_1_1Formulas_html"><div class="ttname"><a href="classpycanha_1_1Formulas.html">pycanha::Formulas</a></div><div class="ttdef"><b>Definition</b> formulas.hpp:14</div></div>
-<div class="ttc" id="aclasspycanha_1_1ParameterFormula_html"><div class="ttname"><a href="classpycanha_1_1ParameterFormula.html">pycanha::ParameterFormula</a></div><div class="ttdef"><b>Definition</b> formula.hpp:89</div></div>
+<div class="ttc" id="aclasspycanha_1_1ParameterFormula_html"><div class="ttname"><a href="classpycanha_1_1ParameterFormula.html">pycanha::ParameterFormula</a></div><div class="ttdef"><b>Definition</b> formula.hpp:94</div></div>
 <div class="ttc" id="aclasspycanha_1_1ThermalEntity_html"><div class="ttname"><a href="classpycanha_1_1ThermalEntity.html">pycanha::ThermalEntity</a></div><div class="ttdef"><b>Definition</b> entity.hpp:92</div></div>
 <div class="ttc" id="anamespacepycanha_html"><div class="ttname"><a href="namespacepycanha.html">pycanha</a></div><div class="ttdoc">C++ Implementation of ThermalConductos (TCs)</div><div class="ttdef"><b>Definition</b> globals.hpp:6</div></div>
 </div><!-- fragment --></div><!-- contents -->

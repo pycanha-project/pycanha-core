@@ -7,5 +7,6 @@ var searchData=
   ['eps_5fvector_4',['eps_vector',['../classpycanha_1_1Nodes.html#a40f2dd0b0c26104bd4520bb05513be10',1,'pycanha::Nodes']]],
   ['esatanreader_5',['ESATANReader',['../classpycanha_1_1ESATANReader.html',1,'pycanha']]],
   ['every_20commit_20pull_20request_20to_20main_6',['Workflows for every commit/pull request to main',['../md_docs_2cicd.html#autotoc_md40',1,'']]],
-  ['extra_20configuration_7',['E. Extra configuration',['../md_docs_2configuring.html#autotoc_md38',1,'']]]
+  ['expressionformula_7',['ExpressionFormula',['../classpycanha_1_1ExpressionFormula.html',1,'pycanha']]],
+  ['extra_20configuration_8',['E. Extra configuration',['../md_docs_2configuring.html#autotoc_md38',1,'']]]
 ];

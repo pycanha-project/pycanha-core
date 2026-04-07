@@ -43,7 +43,7 @@ var searchData=
   ['set_5fparent_40',['set_parent',['../classpycanha_1_1gmm_1_1Geometry.html#acddf47d3d835de90683818940668eda5',1,'pycanha::gmm::Geometry']]],
   ['set_5fperimeter_5fedges_41',['set_perimeter_edges',['../classpycanha_1_1gmm_1_1TriMesh.html#a493b607aa11005d377995eb9fccc4aab',1,'pycanha::gmm::TriMesh::set_perimeter_edges()'],['../classpycanha_1_1gmm_1_1TriMeshModel.html#a2f4fcf5442d9918aabf3e723bffe9713',1,'pycanha::gmm::TriMeshModel::set_perimeter_edges()']]],
   ['set_5fprimitive_42',['set_primitive',['../classpycanha_1_1gmm_1_1GeometryItem.html#a4a6b159b9759a2acf5f4b2b93af65949',1,'pycanha::gmm::GeometryItem']]],
-  ['set_5fprofiling_5flogger_5flevel_43',['set_profiling_logger_level',['../namespacepycanha.html#ac16465a1012e572c68d461c52897466d',1,'pycanha']]],
+  ['set_5fpython_5flogger_5flevel_43',['set_python_logger_level',['../namespacepycanha.html#a046e6c70018788fee7e68442286f8e6f',1,'pycanha']]],
   ['set_5fqa_44',['set_qa',['../classpycanha_1_1Node.html#a1259de95545d29ea866e10b45469607c',1,'pycanha::Node::set_qa()'],['../classpycanha_1_1Nodes.html#ac455776962a19c94d568708d4d00f497',1,'pycanha::Nodes::set_qa()']]],
   ['set_5fqe_45',['set_qe',['../classpycanha_1_1Node.html#ab25463b4dc1be843362646e6e1dcd2b1',1,'pycanha::Node::set_qe()'],['../classpycanha_1_1Nodes.html#aec873c9eb8a89a14d102b543f8b4e369',1,'pycanha::Nodes::set_qe()']]],
   ['set_5fqi_46',['set_qi',['../classpycanha_1_1Node.html#a40ac285f684a0300075c5aeaba317e58',1,'pycanha::Node::set_qi()'],['../classpycanha_1_1Nodes.html#a6869a605cdb0575d7322c212edb37e62',1,'pycanha::Nodes::set_qi()']]],

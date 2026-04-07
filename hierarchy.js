@@ -13,6 +13,7 @@ var hierarchy =
     [ "pycanha::detail::EntityMap< Key, Value, Size >", "structpycanha_1_1detail_1_1EntityMap.html", null ],
     [ "pycanha::ESATANReader", "classpycanha_1_1ESATANReader.html", null ],
     [ "pycanha::Formula", "classpycanha_1_1Formula.html", [
+      [ "pycanha::ExpressionFormula", "classpycanha_1_1ExpressionFormula.html", null ],
       [ "pycanha::ParameterFormula", "classpycanha_1_1ParameterFormula.html", null ],
       [ "pycanha::ValueFormula", "classpycanha_1_1ValueFormula.html", null ]
     ] ],
@@ -38,6 +39,7 @@ var hierarchy =
     [ "pycanha::Node::LocalStorage", "structpycanha_1_1Node_1_1LocalStorage.html", null ],
     [ "pycanha::Node", "classpycanha_1_1Node.html", null ],
     [ "pycanha::Nodes", "classpycanha_1_1Nodes.html", null ],
+    [ "pycanha::ExpressionFormula::ParameterBinding", "structpycanha_1_1ExpressionFormula_1_1ParameterBinding.html", null ],
     [ "pycanha::Parameters", "classpycanha_1_1Parameters.html", null ],
     [ "pycanha::Parameters::ParameterSize", "structpycanha_1_1Parameters_1_1ParameterSize.html", null ],
     [ "pycanha::ProfileResult", "structpycanha_1_1ProfileResult.html", null ],

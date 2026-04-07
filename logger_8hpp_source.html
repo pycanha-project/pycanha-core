@@ -107,42 +107,38 @@ $(document).ready(function(){initNavTree('logger_8hpp_source.html',''); initResi
 <div class="line"><a id="l00005" name="l00005"></a><span class="lineno">    5</span><span class="comment">// correctly. The actual value is set via CMake compile definitions.</span></div>
 <div class="line"><a id="l00006" name="l00006"></a><span class="lineno">    6</span><span class="comment">// Default behaviour is TRACE in Debug and INFO otherwise, and it can be</span></div>
 <div class="line"><a id="l00007" name="l00007"></a><span class="lineno">    7</span><span class="comment">// overridden with PYCANHA_OPTION_ACTIVATE_ALL_LOGS_OVERRIDE.</span></div>
-<div class="line"><a id="l00008" name="l00008"></a><span class="lineno">    8</span><span class="comment">//</span></div>
-<div class="line"><a id="l00009" name="l00009"></a><span class="lineno">    9</span><span class="comment">// Future Python sink integration:</span></div>
-<div class="line"><a id="l00010" name="l00010"></a><span class="lineno">   10</span><span class="comment">//   In pycanha-core-python, create a C++ class subclassing</span></div>
-<div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span><span class="comment">//   spdlog::sinks::base_sink&lt;std::mutex&gt; whose sink_it_() acquires the GIL</span></div>
-<div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span><span class="comment">//   and calls a Python logging callback (e.g. Loguru).  Then call</span></div>
-<div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span><span class="comment">//   set_main_logger_sink() / set_profiling_logger_sink() from the binding</span></div>
-<div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span><span class="comment">//   init code to inject the Python-side sinks.</span></div>
+<div class="line"><a id="l00008" name="l00008"></a><span class="lineno">    8</span> </div>
+<div class="line"><a id="l00009" name="l00009"></a><span class="lineno">    9</span><span class="preprocessor">#include &lt;spdlog/common.h&gt;</span></div>
+<div class="line"><a id="l00010" name="l00010"></a><span class="lineno">   10</span><span class="preprocessor">#include &lt;spdlog/logger.h&gt;</span></div>
+<div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span> </div>
+<div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span><span class="preprocessor">#include &lt;memory&gt;</span></div>
+<div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span><span class="preprocessor">#include &lt;ostream&gt;</span></div>
+<div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span><span class="preprocessor">#include &lt;string_view&gt;</span></div>
 <div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span> </div>
-<div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span><span class="preprocessor">#include &lt;spdlog/common.h&gt;</span></div>
-<div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span><span class="preprocessor">#include &lt;spdlog/logger.h&gt;</span></div>
-<div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span> </div>
-<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span><span class="preprocessor">#include &lt;memory&gt;</span></div>
-<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span><span class="preprocessor">#include &lt;ostream&gt;</span></div>
-<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span><span class="preprocessor">#include &lt;string_view&gt;</span></div>
-<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span> </div>
-<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespacepycanha.html">pycanha</a> {</div>
-<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span> </div>
-<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span>std::shared_ptr&lt;spdlog::logger&gt; <a class="code hl_function" href="namespacepycanha.html#af116674b7649af0e33b3d7e78ecb1b1b">get_logger</a>();</div>
-<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span> </div>
-<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>std::shared_ptr&lt;spdlog::logger&gt; <a class="code hl_function" href="namespacepycanha.html#aa10488c2ff5bd88e91d25b92af8f7733">get_profiling_logger</a>();</div>
-<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span> </div>
-<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>std::shared_ptr&lt;spdlog::logger&gt; <a class="code hl_function" href="namespacepycanha.html#a87d68876c66af5fddcbbfde5c82c80e6">create_ostream_logger</a>(</div>
-<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>    std::string_view name, std::ostream&amp; stream,</div>
-<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>    spdlog::level::level_enum level = spdlog::level::info);</div>
-<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span> </div>
-<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span><span class="keywordtype">void</span> <a class="code hl_function" href="namespacepycanha.html#a08752753ff47555d437f581a37fc88f7">set_logger_level</a>(spdlog::level::level_enum level);</div>
-<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span> </div>
-<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span><span class="keywordtype">void</span> <a class="code hl_function" href="namespacepycanha.html#ac16465a1012e572c68d461c52897466d">set_profiling_logger_level</a>(spdlog::level::level_enum level);</div>
-<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span> </div>
-<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>}  <span class="comment">// namespace pycanha</span></div>
+<div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespacepycanha.html">pycanha</a> {</div>
+<div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span> </div>
+<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span>std::shared_ptr&lt;spdlog::logger&gt; <a class="code hl_function" href="namespacepycanha.html#af116674b7649af0e33b3d7e78ecb1b1b">get_logger</a>();</div>
+<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span> </div>
+<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span>std::shared_ptr&lt;spdlog::logger&gt; <a class="code hl_function" href="namespacepycanha.html#aa10488c2ff5bd88e91d25b92af8f7733">get_profiling_logger</a>();</div>
+<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span> </div>
+<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span>std::shared_ptr&lt;spdlog::logger&gt; <a class="code hl_function" href="namespacepycanha.html#a986a70b1a008f250032d3580e2696ec9">get_python_logger</a>();</div>
+<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span> </div>
+<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>std::shared_ptr&lt;spdlog::logger&gt; <a class="code hl_function" href="namespacepycanha.html#a87d68876c66af5fddcbbfde5c82c80e6">create_ostream_logger</a>(</div>
+<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>    std::string_view name, std::ostream&amp; stream,</div>
+<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>    spdlog::level::level_enum level = spdlog::level::info);</div>
+<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span> </div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span><span class="keywordtype">void</span> <a class="code hl_function" href="namespacepycanha.html#a08752753ff47555d437f581a37fc88f7">set_logger_level</a>(spdlog::level::level_enum level);</div>
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span> </div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span><span class="keywordtype">void</span> <a class="code hl_function" href="namespacepycanha.html#a046e6c70018788fee7e68442286f8e6f">set_python_logger_level</a>(spdlog::level::level_enum level);</div>
+<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span> </div>
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>}  <span class="comment">// namespace pycanha</span></div>
 <div class="ttc" id="anamespacepycanha_html"><div class="ttname"><a href="namespacepycanha.html">pycanha</a></div><div class="ttdoc">C++ Implementation of ThermalConductos (TCs)</div><div class="ttdef"><b>Definition</b> globals.hpp:6</div></div>
-<div class="ttc" id="anamespacepycanha_html_a08752753ff47555d437f581a37fc88f7"><div class="ttname"><a href="namespacepycanha.html#a08752753ff47555d437f581a37fc88f7">pycanha::set_logger_level</a></div><div class="ttdeci">void set_logger_level(spdlog::level::level_enum level)</div><div class="ttdoc">Change the main logger level at runtime.</div><div class="ttdef"><b>Definition</b> logger.cpp:55</div></div>
-<div class="ttc" id="anamespacepycanha_html_a87d68876c66af5fddcbbfde5c82c80e6"><div class="ttname"><a href="namespacepycanha.html#a87d68876c66af5fddcbbfde5c82c80e6">pycanha::create_ostream_logger</a></div><div class="ttdeci">std::shared_ptr&lt; spdlog::logger &gt; create_ostream_logger(std::string_view name, std::ostream &amp;stream, spdlog::level::level_enum level=spdlog::level::info)</div><div class="ttdoc">Create a logger that writes to the given ostream (useful for testing).</div><div class="ttdef"><b>Definition</b> logger.cpp:43</div></div>
-<div class="ttc" id="anamespacepycanha_html_aa10488c2ff5bd88e91d25b92af8f7733"><div class="ttname"><a href="namespacepycanha.html#aa10488c2ff5bd88e91d25b92af8f7733">pycanha::get_profiling_logger</a></div><div class="ttdeci">std::shared_ptr&lt; spdlog::logger &gt; get_profiling_logger()</div><div class="ttdef"><b>Definition</b> logger.cpp:28</div></div>
-<div class="ttc" id="anamespacepycanha_html_ac16465a1012e572c68d461c52897466d"><div class="ttname"><a href="namespacepycanha.html#ac16465a1012e572c68d461c52897466d">pycanha::set_profiling_logger_level</a></div><div class="ttdeci">void set_profiling_logger_level(spdlog::level::level_enum level)</div><div class="ttdoc">Change the profiling logger level at runtime.</div><div class="ttdef"><b>Definition</b> logger.cpp:59</div></div>
-<div class="ttc" id="anamespacepycanha_html_af116674b7649af0e33b3d7e78ecb1b1b"><div class="ttname"><a href="namespacepycanha.html#af116674b7649af0e33b3d7e78ecb1b1b">pycanha::get_logger</a></div><div class="ttdeci">std::shared_ptr&lt; spdlog::logger &gt; get_logger()</div><div class="ttdef"><b>Definition</b> logger.cpp:17</div></div>
+<div class="ttc" id="anamespacepycanha_html_a046e6c70018788fee7e68442286f8e6f"><div class="ttname"><a href="namespacepycanha.html#a046e6c70018788fee7e68442286f8e6f">pycanha::set_python_logger_level</a></div><div class="ttdeci">void set_python_logger_level(spdlog::level::level_enum level)</div><div class="ttdef"><b>Definition</b> logger.cpp:128</div></div>
+<div class="ttc" id="anamespacepycanha_html_a08752753ff47555d437f581a37fc88f7"><div class="ttname"><a href="namespacepycanha.html#a08752753ff47555d437f581a37fc88f7">pycanha::set_logger_level</a></div><div class="ttdeci">void set_logger_level(spdlog::level::level_enum level)</div><div class="ttdef"><b>Definition</b> logger.cpp:123</div></div>
+<div class="ttc" id="anamespacepycanha_html_a87d68876c66af5fddcbbfde5c82c80e6"><div class="ttname"><a href="namespacepycanha.html#a87d68876c66af5fddcbbfde5c82c80e6">pycanha::create_ostream_logger</a></div><div class="ttdeci">std::shared_ptr&lt; spdlog::logger &gt; create_ostream_logger(std::string_view name, std::ostream &amp;stream, spdlog::level::level_enum level=spdlog::level::info)</div><div class="ttdoc">Create a logger that writes to the given ostream (useful for testing).</div><div class="ttdef"><b>Definition</b> logger.cpp:111</div></div>
+<div class="ttc" id="anamespacepycanha_html_a986a70b1a008f250032d3580e2696ec9"><div class="ttname"><a href="namespacepycanha.html#a986a70b1a008f250032d3580e2696ec9">pycanha::get_python_logger</a></div><div class="ttdeci">std::shared_ptr&lt; spdlog::logger &gt; get_python_logger()</div><div class="ttdef"><b>Definition</b> logger.cpp:96</div></div>
+<div class="ttc" id="anamespacepycanha_html_aa10488c2ff5bd88e91d25b92af8f7733"><div class="ttname"><a href="namespacepycanha.html#aa10488c2ff5bd88e91d25b92af8f7733">pycanha::get_profiling_logger</a></div><div class="ttdeci">std::shared_ptr&lt; spdlog::logger &gt; get_profiling_logger()</div><div class="ttdef"><b>Definition</b> logger.cpp:85</div></div>
+<div class="ttc" id="anamespacepycanha_html_af116674b7649af0e33b3d7e78ecb1b1b"><div class="ttname"><a href="namespacepycanha.html#af116674b7649af0e33b3d7e78ecb1b1b">pycanha::get_logger</a></div><div class="ttdeci">std::shared_ptr&lt; spdlog::logger &gt; get_logger()</div><div class="ttdef"><b>Definition</b> logger.cpp:74</div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
