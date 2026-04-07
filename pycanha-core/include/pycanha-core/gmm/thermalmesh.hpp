@@ -83,7 +83,7 @@ class ThermalMesh : public UniqueID {
     }
 
     [[nodiscard]] MeshIndex get_dir1_mesh_size() const {
-        return static_cast<MeshIndex>(_dir1_mesh.size());
+        return to_meshidx(_dir1_mesh.size());
     }
 
     [[nodiscard]] std::vector<double> get_dir2_mesh() const {
@@ -95,7 +95,7 @@ class ThermalMesh : public UniqueID {
     }
 
     [[nodiscard]] MeshIndex get_dir2_mesh_size() const {
-        return static_cast<MeshIndex>(_dir2_mesh.size());
+        return to_meshidx(_dir2_mesh.size());
     }
     // Setters
     void set_side1_activity(bool side1_activity) {
@@ -186,8 +186,7 @@ class ThermalMesh : public UniqueID {
      * @return Number of pair of faces
      */
     [[nodiscard]] MeshIndex get_number_of_pair_faces() const {
-        return static_cast<MeshIndex>((_dir1_mesh.size() - 1) *
-                                      (_dir2_mesh.size() - 1));
+        return to_meshidx((_dir1_mesh.size() - 1) * (_dir2_mesh.size() - 1));
     }
 };
 }  // namespace pycanha::gmm

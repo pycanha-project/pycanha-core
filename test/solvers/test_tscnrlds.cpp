@@ -42,6 +42,87 @@ constexpr std::array<std::array<double, num_nodes>, num_time_steps + 1>
 
 constexpr std::array<int, num_nodes> node_ids = {10, 15, 20, 25, 99};
 
+template <typename OutputTable>
+[[nodiscard]] bool has_expected_output_shape(const OutputTable& output_table,
+                                             bool print_diffs) {
+    const auto output_rows = static_cast<std::size_t>(output_table.rows());
+    const auto output_cols = static_cast<std::size_t>(output_table.cols());
+
+    if (output_rows == times.size() && output_cols == num_nodes + 1) {
+        return true;
+    }
+
+    if (print_diffs) {
+        std::cout << "Unexpected output table shape: " << output_rows << "x"
+                  << output_cols << " (expected " << times.size() << "x"
+                  << (num_nodes + 1) << ")\n";
+    }
+    return false;
+}
+
+[[nodiscard]] bool resolve_node_column_indices(
+    const pycanha::Nodes& nodes,
+    std::array<Eigen::Index, num_nodes>& node_column_indices,
+    bool print_diffs) {
+    for (std::size_t i = 0; i < node_ids.size(); ++i) {
+        const auto node_index = nodes.get_idx_from_node_num(node_ids.at(i));
+        if (!node_index.has_value()) {
+            if (print_diffs) {
+                std::cout << "Node " << node_ids.at(i)
+                          << " is missing from the model output.\n";
+            }
+            return false;
+        }
+
+        node_column_indices.at(i) = *node_index + 1;
+    }
+
+    return true;
+}
+
+template <typename OutputTable>
+[[nodiscard]] bool compare_output_row(
+    const OutputTable& output_table, std::size_t time_idx,
+    const std::array<Eigen::Index, num_nodes>& node_column_indices,
+    bool print_diffs) {
+    const auto row = static_cast<Eigen::Index>(time_idx);
+    const double computed_time = output_table(row, 0);
+    const double expected_time = times.at(time_idx);
+    bool row_within_tol = true;
+
+    if (std::fabs(computed_time - expected_time) > tol_time) {
+        row_within_tol = false;
+        if (print_diffs) {
+            std::cout << "Time index " << time_idx
+                      << ": Computed time = " << computed_time
+                      << " s, Expected time = " << expected_time << " s\n";
+        }
+    }
+
+    for (std::size_t node_idx = 0; node_idx < node_ids.size(); ++node_idx) {
+        const auto column = node_column_indices.at(node_idx);
+        const double computed_temp = output_table(row, column);
+        const double expected_temp = expected_temps.at(time_idx).at(node_idx);
+        const double temp_diff = std::fabs(computed_temp - expected_temp);
+
+        if (temp_diff <= tol_temp) {
+            continue;
+        }
+
+        row_within_tol = false;
+        if (!print_diffs) {
+            continue;
+        }
+
+        std::cout << "t=" << expected_time << " s, Node "
+                  << node_ids.at(node_idx) << ": Computed = " << computed_temp
+                  << " K, Expected = " << expected_temp
+                  << " K, Diff = " << temp_diff << " K\n";
+    }
+
+    return row_within_tol;
+}
+
 std::shared_ptr<pycanha::ThermalMathematicalModel> make_model() {
     auto model =
         std::make_shared<pycanha::ThermalMathematicalModel>("test_model");
@@ -104,58 +185,21 @@ bool compare_temps(pycanha::ThermalMathematicalModel& model,
     }
 
     const auto& output_table = thermal_data.get_table("TSCNRLDS_OUTPUT");
-    const auto output_rows = static_cast<std::size_t>(output_table.rows());
-    const auto output_cols = static_cast<std::size_t>(output_table.cols());
-
-    bool all_within_tol = true;
-
-    if (output_rows != times.size() || output_cols != num_nodes + 1) {
-        if (print_diffs) {
-            std::cout << "Unexpected output table shape: " << output_rows << "x"
-                      << output_cols << " (expected " << times.size() << "x"
-                      << (num_nodes + 1) << ")\n";
-        }
+    if (!has_expected_output_shape(output_table, print_diffs)) {
         return false;
     }
 
     std::array<Eigen::Index, num_nodes> node_column_indices{};
-    const auto& nodes = model.nodes();
-    for (std::size_t i = 0; i < node_ids.size(); ++i) {
-        node_column_indices.at(i) =
-            nodes.get_idx_from_node_num(node_ids.at(i)) + 1;
+    if (!resolve_node_column_indices(model.nodes(), node_column_indices,
+                                     print_diffs)) {
+        return false;
     }
 
+    bool all_within_tol = true;
     for (std::size_t time_idx = 0; time_idx < times.size(); ++time_idx) {
-        const auto row = static_cast<Eigen::Index>(time_idx);
-        const double computed_time = output_table(row, 0);
-        const double expected_time = times.at(time_idx);
-
-        if (std::fabs(computed_time - expected_time) > tol_time) {
+        if (!compare_output_row(output_table, time_idx, node_column_indices,
+                                print_diffs)) {
             all_within_tol = false;
-            if (print_diffs) {
-                std::cout << "Time index " << time_idx
-                          << ": Computed time = " << computed_time
-                          << " s, Expected time = " << expected_time << " s\n";
-            }
-        }
-
-        for (std::size_t node_idx = 0; node_idx < node_ids.size(); ++node_idx) {
-            const auto column = node_column_indices.at(node_idx);
-            const double computed_temp = output_table(row, column);
-            const double expected_temp =
-                expected_temps.at(time_idx).at(node_idx);
-
-            if (std::fabs(computed_temp - expected_temp) > tol_temp) {
-                all_within_tol = false;
-            }
-
-            if (print_diffs) {
-                std::cout << "t=" << expected_time << " s, Node "
-                          << node_ids.at(node_idx)
-                          << ": Computed = " << computed_temp
-                          << " K, Expected = " << expected_temp << " K, Diff = "
-                          << std::fabs(computed_temp - expected_temp) << " K\n";
-            }
         }
     }
 

@@ -3,10 +3,13 @@
 #include <Eigen/Sparse>
 #include <cstddef>
 #include <cstdint>
+#include <optional>
 #include <pycanha-core/config.hpp>
 #include <string>
 #include <unordered_map>
 #include <variant>
+
+#include "pycanha-core/globals.hpp"
 
 namespace pycanha {
 
@@ -44,7 +47,7 @@ class Parameters {
     [[nodiscard]] std::uint64_t get_memory_address(
         const std::string& name) const;
 
-    [[nodiscard]] int get_idx(const std::string& name) const;
+    [[nodiscard]] std::optional<Index> get_idx(const std::string& name) const;
     [[nodiscard]] std::size_t get_size_of_parameter(
         const std::string& name) const;
 

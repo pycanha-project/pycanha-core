@@ -44,6 +44,7 @@
 #pragma once
 #include <Eigen/Sparse>
 #include <memory>
+#include <optional>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -76,14 +77,14 @@ class Nodes {
      * ordered from lower user node number to higher.
      */
     // TODO: Consistent nomenclature
-    std::vector<int> _diff_node_num_vector;
+    std::vector<NodeNum> _diff_node_num_vector;
 
     /**
      * Vector with the user node number of the boundary nodes. The vector is
      * ordered from lower user node number to higher.
      */
     // TODO: Consistent nomenclature
-    std::vector<int> _bound_node_num_vector;
+    std::vector<NodeNum> _bound_node_num_vector;
 
     // The concatenated vector [diff_node_num_vector, bound_node_num_vector]
     // would contain the user node number of all the nodes of the model ordered
@@ -186,7 +187,7 @@ class Nodes {
      * bound_node_num_vector).
      */
     // TODO: Consistent nomenclature
-    mutable std::unordered_map<int, int> _usr_to_int_node_num;
+    mutable std::unordered_map<NodeNum, Index> _usr_to_int_node_num;
 
     /**
      * Variable to track changes in the structure of the nodes.
@@ -257,129 +258,135 @@ class Nodes {
      * also deleted, so any information regarding the links of the deleted node
      * with other nodes of the model is also deleted.
      */
-    void remove_node(int node_num);
+    void remove_node(NodeNum node_num);
 
     // Attribute getters and setters
-    char get_type(int node_num);  ///< Type getter.
+    char get_type(NodeNum node_num);  ///< Type getter.
     // NOLINTBEGIN(readability-identifier-naming)
-    double get_T(int node_num);  ///< Temperature [K] getter.
-    double get_C(int node_num);  ///< Thermal capacity [J/K] getter.
+    double get_T(NodeNum node_num);  ///< Temperature [K] getter.
+    double get_C(NodeNum node_num);  ///< Thermal capacity [J/K] getter.
     // NOLINTEND(readability-identifier-naming)
-    double get_qs(int node_num);   ///< Solar load [W] getter.
-    double get_qa(int node_num);   ///< Albedo load [W] getter.
-    double get_qe(int node_num);   ///< Earth IR load [W] getter.
-    double get_qi(int node_num);   ///< Internal load [W] getter.
-    double get_qr(int node_num);   ///< Other load [W] getter.
-    double get_a(int node_num);    ///< Area [m^2] getter.
-    double get_fx(int node_num);   ///< X coordinate [m] getter.
-    double get_fy(int node_num);   ///< Y coordinate [m] getter.
-    double get_fz(int node_num);   ///< Z coordinate [m] getter.
-    double get_eps(int node_num);  ///< IR emissivity getter.
-    double get_aph(int node_num);  ///< Solar absortivity getter.
+    double get_qs(NodeNum node_num);   ///< Solar load [W] getter.
+    double get_qa(NodeNum node_num);   ///< Albedo load [W] getter.
+    double get_qe(NodeNum node_num);   ///< Earth IR load [W] getter.
+    double get_qi(NodeNum node_num);   ///< Internal load [W] getter.
+    double get_qr(NodeNum node_num);   ///< Other load [W] getter.
+    double get_a(NodeNum node_num);    ///< Area [m^2] getter.
+    double get_fx(NodeNum node_num);   ///< X coordinate [m] getter.
+    double get_fy(NodeNum node_num);   ///< Y coordinate [m] getter.
+    double get_fz(NodeNum node_num);   ///< Z coordinate [m] getter.
+    double get_eps(NodeNum node_num);  ///< IR emissivity getter.
+    double get_aph(NodeNum node_num);  ///< Solar absortivity getter.
 
     // NOLINTBEGIN(readability-identifier-naming)
     std::string get_literal_C(
-        int node_num) const;  ///< Literal thermal capacity getter.
+        NodeNum node_num) const;  ///< Literal thermal capacity getter.
     // NOLINTEND(readability-identifier-naming)
 
-    bool set_type(int node_num, char type);  ///< Type setter.
+    bool set_type(NodeNum node_num, char type);  ///< Type setter.
     // NOLINTBEGIN(readability-identifier-naming)
-    bool set_T(int node_num, double T);  ///< Temperature [K] setter.
-    bool set_C(int node_num, double C);  ///< Thermal capacity [J/K] setter.
+    bool set_T(NodeNum node_num, double T);  ///< Temperature [K] setter.
+    bool set_C(NodeNum node_num, double C);  ///< Thermal capacity [J/K] setter.
     // NOLINTEND(readability-identifier-naming)
-    bool set_qs(int node_num, double value);   ///< Solar load [W] setter.
-    bool set_qa(int node_num, double value);   ///< Albedo load [W] setter.
-    bool set_qe(int node_num, double value);   ///< Earth IR load [W] setter.
-    bool set_qi(int node_num, double value);   ///< Internal load [W] setter.
-    bool set_qr(int node_num, double value);   ///< Other load [W] setter.
-    bool set_a(int node_num, double value);    ///< Area [m^2] setter.
-    bool set_fx(int node_num, double value);   ///< X coordinate [m] setter.
-    bool set_fy(int node_num, double value);   ///< Y coordinate [m] setter.
-    bool set_fz(int node_num, double value);   ///< Z coordinate [m] setter.
-    bool set_eps(int node_num, double value);  ///< IR emissivity setter.
-    bool set_aph(int node_num, double value);  ///< Solar absortivity setter.
+    bool set_qs(NodeNum node_num,
+                double value);  ///< Solar load [W] setter.
+    bool set_qa(NodeNum node_num,
+                double value);  ///< Albedo load [W] setter.
+    bool set_qe(NodeNum node_num,
+                double value);  ///< Earth IR load [W] setter.
+    bool set_qi(NodeNum node_num,
+                double value);                    ///< Internal load [W] setter.
+    bool set_qr(NodeNum node_num, double value);  ///< Other load [W] setter.
+    bool set_a(NodeNum node_num, double value);   ///< Area [m^2] setter.
+    bool set_fx(NodeNum node_num, double value);  ///< X coordinate [m] setter.
+    bool set_fy(NodeNum node_num, double value);  ///< Y coordinate [m] setter.
+    bool set_fz(NodeNum node_num, double value);  ///< Z coordinate [m] setter.
+    bool set_eps(NodeNum node_num,
+                 double value);  ///< IR emissivity setter.
+    bool set_aph(NodeNum node_num,
+                 double value);  ///< Solar absortivity setter.
 
     // NOLINTBEGIN(readability-identifier-naming)
     bool set_literal_C(
-        int node_num,
+        NodeNum node_num,
         const std::string &str);  ///< Literal thermal capacity setter.
 
     double *get_T_value_ref(
-        int node_num);  ///< Pointer where the temperature value is stored.
+        NodeNum node_num);  ///< Pointer where the temperature value is stored.
     double *get_C_value_ref(
-        int node_num);  ///< Pointer where the capacity value is stored.
+        NodeNum node_num);  ///< Pointer where the capacity value is stored.
     // NOLINTEND(readability-identifier-naming)
     double *get_qs_value_ref(
-        int node_num);  ///< Solar load [W] pointer to the value. Note:
-                        ///< Values are store in sparse vectors. Calling
-                        ///< this function will create a zero value in the
-                        ///< matrix if not exist.
+        NodeNum node_num);  ///< Solar load [W] pointer to the value. Note:
+                            ///< Values are store in sparse vectors. Calling
+                            ///< this function will create a zero value in the
+                            ///< matrix if not exist.
     double *get_qa_value_ref(
-        int node_num);  ///< Albedo load [W] pointer to the value. Note:
-                        ///< Values are store in sparse vectors. Calling
-                        ///< this function will create a zero value in the
-                        ///< matrix if not exist.
+        NodeNum node_num);  ///< Albedo load [W] pointer to the value. Note:
+                            ///< Values are store in sparse vectors. Calling
+                            ///< this function will create a zero value in the
+                            ///< matrix if not exist.
     double *get_qe_value_ref(
-        int node_num);  ///< Earth IR load [W] pointer to the value. Note:
-                        ///< Values are store in sparse vectors. Calling
-                        ///< this function will create a zero value in the
-                        ///< matrix if not exist.
+        NodeNum node_num);  ///< Earth IR load [W] pointer to the value. Note:
+                            ///< Values are store in sparse vectors. Calling
+                            ///< this function will create a zero value in the
+                            ///< matrix if not exist.
     double *get_qi_value_ref(
-        int node_num);  ///< Internal load [W] pointer to the value. Note:
-                        ///< Values are store in sparse vectors. Calling
-                        ///< this function will create a zero value in the
-                        ///< matrix if not exist.
+        NodeNum node_num);  ///< Internal load [W] pointer to the value. Note:
+                            ///< Values are store in sparse vectors. Calling
+                            ///< this function will create a zero value in the
+                            ///< matrix if not exist.
     double *get_qr_value_ref(
-        int node_num);  ///< Other load [W] pointer to the value. Note:
-                        ///< Values are store in sparse vectors. Calling
-                        ///< this function will create a zero value in the
-                        ///< matrix if not exist.
+        NodeNum node_num);  ///< Other load [W] pointer to the value. Note:
+                            ///< Values are store in sparse vectors. Calling
+                            ///< this function will create a zero value in the
+                            ///< matrix if not exist.
     double *get_a_value_ref(
-        int node_num);  ///< Area [m^2] pointer to the value. Note: Values
-                        ///< are store in sparse vectors. Calling this
-                        ///< function will create a zero value in the matrix
-                        ///< if not exist.
+        NodeNum node_num);  ///< Area [m^2] pointer to the value. Note: Values
+                            ///< are store in sparse vectors. Calling this
+                            ///< function will create a zero value in the matrix
+                            ///< if not exist.
     double *get_fx_value_ref(
-        int node_num);  ///< X coordinate [m] pointer to the value. Note:
-                        ///< Values are store in sparse vectors. Calling
-                        ///< this function will create a zero value in the
-                        ///< matrix if not exist.
+        NodeNum node_num);  ///< X coordinate [m] pointer to the value. Note:
+                            ///< Values are store in sparse vectors. Calling
+                            ///< this function will create a zero value in the
+                            ///< matrix if not exist.
     double *get_fy_value_ref(
-        int node_num);  ///< Y coordinate [m] pointer to the value. Note:
-                        ///< Values are store in sparse vectors. Calling
-                        ///< this function will create a zero value in the
-                        ///< matrix if not exist.
+        NodeNum node_num);  ///< Y coordinate [m] pointer to the value. Note:
+                            ///< Values are store in sparse vectors. Calling
+                            ///< this function will create a zero value in the
+                            ///< matrix if not exist.
     double *get_fz_value_ref(
-        int node_num);  ///< Z coordinate [m] pointer to the value. Note:
-                        ///< Values are store in sparse vectors. Calling
-                        ///< this function will create a zero value in the
-                        ///< matrix if not exist.
+        NodeNum node_num);  ///< Z coordinate [m] pointer to the value. Note:
+                            ///< Values are store in sparse vectors. Calling
+                            ///< this function will create a zero value in the
+                            ///< matrix if not exist.
     double *get_eps_value_ref(
-        int node_num);  ///< IR emissivity pointer to the value. Note:
-                        ///< Values are store in sparse vectors. Calling
-                        ///< this function will create a zero value in the
-                        ///< matrix if not exist.
+        NodeNum node_num);  ///< IR emissivity pointer to the value. Note:
+                            ///< Values are store in sparse vectors. Calling
+                            ///< this function will create a zero value in the
+                            ///< matrix if not exist.
     double *get_aph_value_ref(
-        int node_num);  ///< Solar absortivity pointer to the value. Note:
-                        ///< Values are store in sparse vectors. Calling
-                        ///< this function will create a zero value in the
-                        ///< matrix if not exist.
+        NodeNum node_num);  ///< Solar absortivity pointer to the value. Note:
+                            ///< Values are store in sparse vectors. Calling
+                            ///< this function will create a zero value in the
+                            ///< matrix if not exist.
 
-    Index get_idx_from_node_num(
-        int node_num) const;  ///< Get internal node numbre from user number.
-    int get_node_num_from_idx(
-        Index idx) const;  ///< Get internal node numbre from user number.
-    bool is_node(int node_num) const;  ///< Check if node is stored.
+    std::optional<Index> get_idx_from_node_num(NodeNum node_num) const;
+    ///< Get internal node numbre from user number.
+    std::optional<NodeNum> get_node_num_from_idx(Index idx) const;
+    ///< Get internal node numbre from user number.
+    bool is_node(NodeNum node_num) const;  ///< Check if node is stored.
     Node get_node_from_node_num(
-        int node_num);                  ///< Get node object from node number.
+        NodeNum node_num);              ///< Get node object from node number.
     Node get_node_from_idx(Index idx);  ///< Get node object from idx.
 
     // TODO: select one I/F num_nodes or get_num_nodes
-    int num_nodes() const;      ///< Number of nodes of the model.
-    int get_num_nodes() const;  ///< Number of nodes of the model.
-    int get_num_diff_nodes()
+    Index num_nodes() const;      ///< Number of nodes of the model.
+    Index get_num_nodes() const;  ///< Number of nodes of the model.
+    Index get_num_diff_nodes()
         const;  ///< Number of diffusive nodes of the model.
-    int get_num_bound_nodes()
+    Index get_num_bound_nodes()
         const;  ///< Number of boundary nodes of the model.
 
     bool is_mapped() const;  ///< Check if the internal node structure has
@@ -397,24 +404,25 @@ class Nodes {
     void create_node_num_map() const;
 
     void ensure_node_map() const;
-    bool find_node_index(int node_num, Index &index,
+    bool find_node_index(NodeNum node_num, Index &index,
                          const char *error_prefix) const;
-    double resolve_get_dense_attr(int node_num,
+    double resolve_get_dense_attr(NodeNum node_num,
                                   const std::vector<double> &storage) const;
-    bool resolve_set_dense_attr(int node_num, std::vector<double> &storage,
+    bool resolve_set_dense_attr(NodeNum node_num, std::vector<double> &storage,
                                 double value);
-    double *resolve_get_dense_attr_ref(int node_num,
+    double *resolve_get_dense_attr_ref(NodeNum node_num,
                                        std::vector<double> &storage);
     double resolve_get_sparse_attr(
-        int node_num, const Eigen::SparseVector<double> &storage) const;
-    bool resolve_set_sparse_attr(int node_num,
+        NodeNum node_num, const Eigen::SparseVector<double> &storage) const;
+    bool resolve_set_sparse_attr(NodeNum node_num,
                                  Eigen::SparseVector<double> &storage,
                                  double value);
-    double *resolve_get_sparse_attr_ref(int node_num,
+    double *resolve_get_sparse_attr_ref(NodeNum node_num,
                                         Eigen::SparseVector<double> &storage);
     std::string resolve_get_literal_attr(
-        int node_num, const Eigen::SparseVector<LiteralString> &storage) const;
-    bool resolve_set_literal_attr(int node_num,
+        NodeNum node_num,
+        const Eigen::SparseVector<LiteralString> &storage) const;
+    bool resolve_set_literal_attr(NodeNum node_num,
                                   Eigen::SparseVector<LiteralString> &storage,
                                   const std::string &value);
 
@@ -422,13 +430,13 @@ class Nodes {
      * Change the type of the node from diffusive to boundary. Because of how
      * the internal order is defined, the node structure needs to be rearranged.
      */
-    void diffusive_to_boundary(int usr_node_num);
+    void diffusive_to_boundary(NodeNum usr_node_num);
 
     /**
      * Change the type of the node from boundary to diffusive. Because of how
      * the internal order is defined, the node structure needs to be rearranged.
      */
-    void boundary_to_diffusive(int usr_node_num);
+    void boundary_to_diffusive(NodeNum usr_node_num);
 
     // Insert methods for SparseVectors
 

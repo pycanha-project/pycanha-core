@@ -9,12 +9,14 @@
 #include <iterator>
 #include <limits>
 #include <memory>
+#include <optional>
 #include <sstream>
 #include <string>
 #include <type_traits>
 #include <utility>
 #include <variant>
 
+#include "pycanha-core/globals.hpp"
 #include "pycanha-core/utils/logger.hpp"
 
 namespace pycanha {
@@ -212,15 +214,15 @@ std::uint64_t Parameters::get_memory_address(const std::string& name) const {
     return static_cast<std::uint64_t>(std::bit_cast<std::uintptr_t>(address));
 }
 
-int Parameters::get_idx(const std::string& name) const {
+std::optional<Index> Parameters::get_idx(const std::string& name) const {
     const auto iterator = _parameters.find(name);
     if (iterator == _parameters.end()) {
         SPDLOG_LOGGER_INFO(pycanha::get_logger(),
                            "Parameter '{}' doesn't exist", name);
-        return -1;
+        return std::nullopt;
     }
 
-    return static_cast<int>(std::distance(_parameters.begin(), iterator));
+    return to_idx(std::distance(_parameters.begin(), iterator));
 }
 
 std::size_t Parameters::get_size_of_parameter(const std::string& name) const {

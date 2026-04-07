@@ -20,16 +20,16 @@ namespace pycanha {
 
 namespace {
 
-[[nodiscard]] std::optional<int> to_int_node_number(Index node_num) {
-    if (node_num > static_cast<Index>(std::numeric_limits<int>::max()) ||
-        node_num < static_cast<Index>(std::numeric_limits<int>::min())) {
+[[nodiscard]] std::optional<NodeNum> to_int_node_number(Index node_num) {
+    if (node_num > static_cast<Index>(std::numeric_limits<NodeNum>::max()) ||
+        node_num < static_cast<Index>(std::numeric_limits<NodeNum>::min())) {
         SPDLOG_LOGGER_WARN(pycanha::get_logger(),
                            "Couplings: Node number {} exceeds supported "
-                           "int range.",
+                           "NodeNum range.",
                            node_num);
         return std::nullopt;
     }
-    return static_cast<int>(node_num);
+    return static_cast<NodeNum>(node_num);
 }
 
 template <typename SparseMatrix>
@@ -213,14 +213,26 @@ Coupling Couplings::get_coupling_from_coupling_idx(Index cidx) {
         return {Index{-1}, Index{-1}, std::numeric_limits<double>::quiet_NaN()};
     }
 
-    const Index node_num_1 =
-        _nodes != nullptr
-            ? static_cast<Index>(_nodes->get_node_num_from_idx(idx1))
-            : idx1;
-    const Index node_num_2 =
-        _nodes != nullptr
-            ? static_cast<Index>(_nodes->get_node_num_from_idx(idx2))
-            : idx2;
+    Index node_num_1 = idx1;
+    Index node_num_2 = idx2;
+
+    if (_nodes != nullptr) {
+        const auto resolved_node_num_1 = _nodes->get_node_num_from_idx(idx1);
+        const auto resolved_node_num_2 = _nodes->get_node_num_from_idx(idx2);
+
+        if (!resolved_node_num_1.has_value() ||
+            !resolved_node_num_2.has_value()) {
+            return {Index{-1}, Index{-1},
+                    std::numeric_limits<double>::quiet_NaN()};
+        }
+
+        node_num_1 = to_idx(*resolved_node_num_1);
+        node_num_2 = to_idx(*resolved_node_num_2);
+    }
+
+    if (node_num_1 < 0 || node_num_2 < 0) {
+        return {Index{-1}, Index{-1}, std::numeric_limits<double>::quiet_NaN()};
+    }
     return {node_num_1, node_num_2, value};
 }
 
@@ -229,10 +241,8 @@ void Couplings::synchronize_structure() {
         return;
     }
 
-    const auto diff_count =
-        static_cast<Index>(_nodes->_diff_node_num_vector.size());
-    const auto bound_count =
-        static_cast<Index>(_nodes->_bound_node_num_vector.size());
+    const auto diff_count = to_idx(_nodes->_diff_node_num_vector.size());
+    const auto bound_count = to_idx(_nodes->_bound_node_num_vector.size());
 
     ensure_sparse_dimensions(_matrices.sparse_dd, diff_count, diff_count);
     ensure_sparse_dimensions(_matrices.sparse_db, diff_count, bound_count);
@@ -260,25 +270,25 @@ std::optional<std::pair<Index, Index>> Couplings::get_indices_from_node_numbers(
     auto idx1 = _nodes->get_idx_from_node_num(*node_num_1_int);
     auto idx2 = _nodes->get_idx_from_node_num(*node_num_2_int);
 
-    if (idx1 < 0 || idx2 < 0) {
+    if (!idx1.has_value() || !idx2.has_value()) {
         SPDLOG_LOGGER_WARN(pycanha::get_logger(),
                            "Couplings: Invalid node numbers {}, {}", node_num_1,
                            node_num_2);
         return std::nullopt;
     }
 
-    if (idx1 == idx2) {
+    if (*idx1 == *idx2) {
         SPDLOG_LOGGER_WARN(pycanha::get_logger(),
                            "Couplings: Node numbers correspond to the same "
                            "node.");
         return std::nullopt;
     }
 
-    if (idx1 > idx2) {
+    if (*idx1 > *idx2) {
         std::swap(idx1, idx2);
     }
 
-    return std::pair<Index, Index>{idx1, idx2};
+    return std::pair<Index, Index>{*idx1, *idx2};
 }
 
 std::tuple<Index, Index, Eigen::SparseMatrix<double, Eigen::RowMajor>*>

@@ -89,7 +89,7 @@ TEST_CASE("Parameters report missing entries with NaN", "[parameters]") {
     REQUIRE(std::holds_alternative<double>(missing));
     REQUIRE(std::isnan(std::get<double>(missing)));
 
-    REQUIRE(params.get_idx("missing") == -1);
+    REQUIRE_FALSE(params.get_idx("missing").has_value());
     REQUIRE(params.get_size_of_parameter("missing") == 0U);
 }
 
@@ -117,8 +117,8 @@ TEST_CASE("Parameters expose memory pointers and sizes", "[parameters]") {
     const auto expected_label_size = std::string("alpha").size() + 1U;
     REQUIRE(label_size == expected_label_size);
 
-    REQUIRE(params.get_idx("scalar") >= 0);
-    REQUIRE(params.get_idx("label") >= 0);
+    REQUIRE(params.get_idx("scalar").has_value());
+    REQUIRE(params.get_idx("label").has_value());
 }
 
 // NOLINTEND(bugprone-chained-comparison)

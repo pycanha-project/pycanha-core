@@ -63,7 +63,7 @@ void assert_trivial_zeros(const std::vector<Index>& non_zero_nodes,
                           Eigen::SparseVector<double>& attr_sp_vector) {
     for (Index i = 0; i < attr_sp_vector.nonZeros(); i++) {
         // NOLINTBEGIN(cppcoreguidelines-pro-bounds-pointer-arithmetic)
-        REQUIRE(non_zero_nodes[static_cast<VectorIndex>(i)] ==
+        REQUIRE(non_zero_nodes[to_sizet(i)] ==
                 attr_sp_vector.innerIndexPtr()[i]);
         // NOLINTEND(cppcoreguidelines-pro-bounds-pointer-arithmetic)
     }
@@ -73,7 +73,7 @@ void assert_trivial_zeros(const std::vector<Index>& non_zero_nodes,
                           Eigen::SparseVector<LiteralString>& attr_sp_vector) {
     for (Index i = 0; i < attr_sp_vector.nonZeros(); i++) {
         // NOLINTBEGIN(cppcoreguidelines-pro-bounds-pointer-arithmetic)
-        REQUIRE(non_zero_nodes[static_cast<VectorIndex>(i)] ==
+        REQUIRE(non_zero_nodes[to_sizet(i)] ==
                 attr_sp_vector.innerIndexPtr()[i]);
         // NOLINTEND(cppcoreguidelines-pro-bounds-pointer-arithmetic)
     }
@@ -84,8 +84,9 @@ void assert_blank_nodes_attributes_are_trivial_zeros(
     std::vector<Index> blank_internal_number;
     std::vector<Index> non_blank_internal_number;
     for (Index i = 0; i < tns.num_nodes(); i++) {
-        const int usr_num = tns.get_node_num_from_idx(i);
-        if (std::find(blank_nodes.begin(), blank_nodes.end(), usr_num) !=
+        const auto usr_num = tns.get_node_num_from_idx(i);
+        REQUIRE(usr_num.has_value());
+        if (std::find(blank_nodes.begin(), blank_nodes.end(), *usr_num) !=
             blank_nodes.end()) {
             blank_internal_number.push_back(i);
         } else {
@@ -140,17 +141,16 @@ TEST_CASE("Nodes Testing", "[nodes]") {
     const Index N = std::ssize(num_nodes);
     std::vector<Node> nodes_vector;
     std::vector<Node> nodes_vector_copy;
-    nodes_vector.reserve(static_cast<SizeType>(N));
-    nodes_vector_copy.reserve(static_cast<SizeType>(N));
+    nodes_vector.reserve(to_sizet(N));
+    nodes_vector_copy.reserve(to_sizet(N));
 
     // Internal order vector
     std::vector<Index> internal_order;
-    internal_order.reserve(static_cast<SizeType>(N));
+    internal_order.reserve(to_sizet(N));
     Index diff_index = 0;
 
     for (Index i = 0; i < N; i++) {
-        const int usr_num =
-            static_cast<int>(num_nodes[static_cast<VectorIndex>(i)]);
+        const NodeNum usr_num = static_cast<NodeNum>(num_nodes[to_sizet(i)]);
         Node node(usr_num);
 
         // Blank/filled nodes
@@ -188,35 +188,36 @@ TEST_CASE("Nodes Testing", "[nodes]") {
 
     // Add nodes to thermal nodes
     for (Index i = 0; i < N; i++) {
-        const int usr_num =
-            static_cast<int>(insertion_order[static_cast<VectorIndex>(i)]);
+        const NodeNum usr_num =
+            static_cast<NodeNum>(insertion_order[to_sizet(i)]);
         auto it =
             std::find(insertion_order.begin(), insertion_order.end(), usr_num);
         if (it != insertion_order.end()) {
             const Index node_ix = it - insertion_order.begin();
-            tns.add_node(nodes_vector[static_cast<VectorIndex>(node_ix)]);
+            tns.add_node(nodes_vector[to_sizet(node_ix)]);
         }
     }
     // Assert all nodes have been inserted
     REQUIRE(tns.num_nodes() == N);
 
     // Assert that tns have the values of the nodes stored
-    for (SizeType i = 0; i < static_cast<SizeType>(N); i++) {
+    for (std::size_t i = 0; i < to_sizet(N); i++) {
         assert_tn_has_same_values_as_tns(nodes_vector_copy[i], tns,
                                          /*check_internal=*/false);
     }
 
     // Assert that the nodes added to tns return the same values as tns
-    for (SizeType i = 0; i < static_cast<SizeType>(N); i++) {
+    for (std::size_t i = 0; i < to_sizet(N); i++) {
         assert_tn_has_same_values_as_tns(nodes_vector[i], tns,
                                          /*check_internal=*/true);
     }
 
     // Assert internal order is correct
-    for (SizeType i = 0; i < static_cast<SizeType>(N); i++) {
-        const auto int_ix = static_cast<SizeType>(internal_order[i]);
-        REQUIRE(nodes_vector_copy[int_ix].get_node_num() ==
-                tns.get_node_num_from_idx(static_cast<int>(i)));
+    for (std::size_t i = 0; i < to_sizet(N); i++) {
+        const auto int_ix = to_sizet(internal_order[i]);
+        const auto node_num = tns.get_node_num_from_idx(to_idx(i));
+        REQUIRE(node_num.has_value());
+        REQUIRE(nodes_vector_copy[int_ix].get_node_num() == *node_num);
     }
 
     // NOLINTBEGIN(cppcoreguidelines-pro-bounds-pointer-arithmetic)
@@ -224,8 +225,8 @@ TEST_CASE("Nodes Testing", "[nodes]") {
     // Assert temperatures and capacities are contiguous in memory
     const double* temperatures_vector = tns.T_vector.data();
     const double* capacities_vector = tns.C_vector.data();
-    for (SizeType i = 0; i < static_cast<SizeType>(N); i++) {
-        const auto int_ix = static_cast<SizeType>(internal_order[i]);
+    for (std::size_t i = 0; i < to_sizet(N); i++) {
+        const auto int_ix = to_sizet(internal_order[i]);
         const double node_temp = nodes_vector_copy[int_ix].get_T();
         const double node_capacity = nodes_vector_copy[int_ix].get_C();
         REQUIRE(node_temp == temperatures_vector[i]);
