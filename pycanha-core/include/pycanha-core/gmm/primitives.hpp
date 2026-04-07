@@ -230,7 +230,8 @@ class Primitive : public UniqueID, public GeometryUpdateCallback {
             for (auto it = common_faces.begin(); it != last_common_face_it;
                  ++it) {
                 if (*it != -1) {
-                    auto index = to_sizet(*it) / 2;
+                    const auto index =
+                        to_sizet_safe(static_cast<Index>(*it)) / 2;
 
                     // Get the current size of the matrix at face_edges[index]
                     const Index current_size = face_edges[index].size();
@@ -2233,7 +2234,7 @@ inline MeshIndex Triangle::get_faceid_from_uv(const ThermalMesh& thermal_mesh,
     const auto& dir2_mesh = *dir2_mesh_ptr;
 
     std::vector<double> dir1_mesh_normalized(dir1_mesh.size());
-    std::vector<double> dir2_mesh_normalized(dir2_mesh.size());
+    std::vector<double> dir2_mesh_normalized(to_sizet(dir2_mesh.size()));
 
     for (std::size_t i = 0; i < dir1_mesh.size(); ++i) {
         dir1_mesh_normalized[i] =
@@ -3314,7 +3315,7 @@ inline TriMesh Sphere::create_mesh1(const ThermalMesh& thermal_mesh,
         throw std::invalid_argument("dir2_mesh is not normalized.");
     }
 
-    std::vector<double> dir2_mesh_normalized(dir2_mesh.size());
+    std::vector<double> dir2_mesh_normalized(to_sizet(dir2_mesh.size()));
     for (MeshIndex i = 0; i < dir2_mesh.size(); ++i) {
         dir2_mesh_normalized[i] =
             (_start_angle + dir2_mesh[i] * (_end_angle - _start_angle)) /
@@ -3956,7 +3957,7 @@ inline TriMesh Sphere::create_mesh2(const ThermalMesh& thermal_mesh,
         throw std::invalid_argument("dir2_mesh is not normalized.");
     }
 
-    std::vector<double> dir2_mesh_normalized(dir2_mesh.size());
+    std::vector<double> dir2_mesh_normalized(to_sizet(dir2_mesh.size()));
     for (MeshIndex i = 0; i < dir2_mesh.size(); ++i) {
         dir2_mesh_normalized[i] =
             (_start_angle + dir2_mesh[i] * (_end_angle - _start_angle)) /
