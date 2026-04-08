@@ -33,7 +33,7 @@ class Formulas {
         return _parameters;
     }
 
-    ParameterFormula create_parameter_formula(ThermalEntity& entity,
+    ParameterFormula create_parameter_formula(Entity entity,
                                               const std::string& parameter);
 
     void add_formula(const Formula& formula);

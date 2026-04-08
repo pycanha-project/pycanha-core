@@ -32,13 +32,14 @@ namespace pycanha {
 
 namespace {
 
-[[nodiscard]] bool is_heat_flux_entity(const std::string& type) {
-    return !type.empty() && type.front() == 'Q';
+[[nodiscard]] bool is_heat_flux_entity(EntityType type) {
+    return type == EntityType::qs || type == EntityType::qa ||
+           type == EntityType::qe || type == EntityType::qi ||
+           type == EntityType::qr;
 }
 
-[[nodiscard]] Index require_node_index(const Nodes& nodes, int node_num) {
-    const auto resolved =
-        nodes.get_idx_from_node_num(static_cast<NodeNum>(node_num));
+[[nodiscard]] Index require_node_index(const Nodes& nodes, NodeNum node_num) {
+    const auto resolved = nodes.get_idx_from_node_num(node_num);
     if (!resolved.has_value()) {
         throw std::invalid_argument("Jacobian references a missing node");
     }
@@ -161,16 +162,14 @@ void TSCNRLDS_JACOBIAN::collect_parameter_names() {
     }
 }
 
-void TSCNRLDS_JACOBIAN::fill_matrices(ThermalEntity& entity,
+void TSCNRLDS_JACOBIAN::fill_matrices(const Entity& entity,
                                       Index parameter_index,
                                       double derivative_value) {
-    const auto& type = entity.type();
+    const auto type = entity.type();
 
-    if ((type == "GL") || (type == "GR")) {
-        const Index index_1 =
-            require_node_index(tmm.nodes(), entity.node_index_1());
-        const Index index_2 =
-            require_node_index(tmm.nodes(), entity.node_index_2());
+    if (type == EntityType::gl || type == EntityType::gr) {
+        const Index index_1 = require_node_index(tmm.nodes(), entity.node_1());
+        const Index index_2 = require_node_index(tmm.nodes(), entity.node_2());
 
         const bool first_is_domain = index_1 < nd;
         const bool second_is_domain = index_2 < nd;
@@ -178,7 +177,7 @@ void TSCNRLDS_JACOBIAN::fill_matrices(ThermalEntity& entity,
         if (first_is_domain && second_is_domain) {
             const auto row = std::min(index_1, index_2);
             const auto col = std::max(index_1, index_2);
-            auto& matrix = (type == "GL")
+            auto& matrix = (type == EntityType::gl)
                                ? _d_kl_dd_matrices[to_sizet(parameter_index)]
                                : _d_kr_dd_matrices[to_sizet(parameter_index)];
             matrix.coeffRef(row, col) += derivative_value;
@@ -188,7 +187,7 @@ void TSCNRLDS_JACOBIAN::fill_matrices(ThermalEntity& entity,
         if (first_is_domain != second_is_domain) {
             const auto diff_index = first_is_domain ? index_1 : index_2;
             const auto bound_index = first_is_domain ? index_2 : index_1;
-            auto& matrix = (type == "GL")
+            auto& matrix = (type == EntityType::gl)
                                ? _d_kl_db_matrices[to_sizet(parameter_index)]
                                : _d_kr_db_matrices[to_sizet(parameter_index)];
             matrix.coeffRef(diff_index, bound_index - nd) += derivative_value;
@@ -197,9 +196,8 @@ void TSCNRLDS_JACOBIAN::fill_matrices(ThermalEntity& entity,
         return;
     }
 
-    if (type == "C") {
-        const Index index =
-            require_node_index(tmm.nodes(), entity.node_index_1());
+    if (type == EntityType::c) {
+        const Index index = require_node_index(tmm.nodes(), entity.node_1());
         if (index < nd) {
             _d_capacity_matrix(index, parameter_index) += derivative_value;
         }
@@ -207,8 +205,7 @@ void TSCNRLDS_JACOBIAN::fill_matrices(ThermalEntity& entity,
     }
 
     if (is_heat_flux_entity(type)) {
-        const Index index =
-            require_node_index(tmm.nodes(), entity.node_index_1());
+        const Index index = require_node_index(tmm.nodes(), entity.node_1());
         if (index < nd) {
             _d_heat_flux_matrix(index, parameter_index) += derivative_value;
         }
@@ -216,7 +213,7 @@ void TSCNRLDS_JACOBIAN::fill_matrices(ThermalEntity& entity,
     }
 
     SPDLOG_LOGGER_WARN(get_logger(), "Unsupported jacobian entity type '{}'",
-                       type);
+                       entity.string_representation());
 }
 
 void TSCNRLDS_JACOBIAN::build_mk() {

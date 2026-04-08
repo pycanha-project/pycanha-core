@@ -85,19 +85,9 @@ void collect_symbols(const ExpressionNode& expr, SymbolMap& symbols) {
 
 }  // namespace
 
-ExpressionFormula::ExpressionFormula(ThermalEntity& entity,
-                                     Parameters& parameters,
+ExpressionFormula::ExpressionFormula(Entity entity, Parameters& parameters,
                                      std::string expression)
     : Formula(entity),
-      _parameters(&parameters),
-      _expression(std::move(expression)) {
-    initialize_expression();
-}
-
-ExpressionFormula::ExpressionFormula(std::shared_ptr<ThermalEntity> entity,
-                                     Parameters& parameters,
-                                     std::string expression)
-    : Formula(std::move(entity)),
       _parameters(&parameters),
       _expression(std::move(expression)) {
     initialize_expression();
@@ -265,7 +255,10 @@ void ExpressionFormula::compile_formula() {
 
 void ExpressionFormula::apply_formula() {
     _cached_value = evaluate_expression(_parsed_expr);
-    entity().set_value(_cached_value);
+    if (!entity().set_value(_cached_value)) {
+        throw std::runtime_error(
+            "ExpressionFormula could not assign entity value");
+    }
 }
 
 void ExpressionFormula::apply_compiled_formula() {
@@ -329,9 +322,8 @@ std::vector<double>* ExpressionFormula::get_derivative_values() {
 }
 
 std::unique_ptr<Formula> ExpressionFormula::clone() const {
-    auto entity_clone = std::shared_ptr<ThermalEntity>(entity().clone());
-    auto clone = std::make_unique<ExpressionFormula>(std::move(entity_clone),
-                                                     *_parameters, _expression);
+    auto clone = std::make_unique<ExpressionFormula>(entity(), *_parameters,
+                                                     _expression);
     clone->_cached_value = _cached_value;
     clone->_derivatives = _derivatives;
     if (_compiled) {

@@ -6,11 +6,10 @@
 #include <vector>
 
 #include "pycanha-core/globals.hpp"
+#include "pycanha-core/parameters/entity.hpp"
 #include "pycanha-core/solvers/tscnrlds.hpp"
 
 namespace pycanha {
-
-class ThermalEntity;
 
 class TSCNRLDS_JACOBIAN : public TSCNRLDS {
   public:
@@ -32,7 +31,7 @@ class TSCNRLDS_JACOBIAN : public TSCNRLDS {
     using DenseJacobian = Eigen::MatrixXd;
 
     void collect_parameter_names();
-    void fill_matrices(ThermalEntity& entity, Index parameter_index,
+    void fill_matrices(const Entity& entity, Index parameter_index,
                        double derivative_value);
     void build_mk();
     void build_mq();

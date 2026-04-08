@@ -3,12 +3,18 @@
 
 #include <algorithm>
 #include <array>
-#include <memory>
-#include <stdexcept>
+#include <cctype>
+#include <charconv>
+#include <cmath>
+#include <cstdint>
+#include <functional>
+#include <limits>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <utility>
 
+#include "pycanha-core/globals.hpp"
 #include "pycanha-core/tmm/conductivecouplings.hpp"
 #include "pycanha-core/tmm/nodes.hpp"
 #include "pycanha-core/tmm/radiativecouplings.hpp"
@@ -16,275 +22,487 @@
 
 namespace pycanha {
 
-namespace detail {
-
-template <typename Key, typename Value, std::size_t Size>
-struct EntityMap {
-    std::array<std::pair<Key, Value>, Size> data;
-
-    [[nodiscard]] constexpr Value at(const Key& key) const {
-        const auto it = std::find_if(
-            data.begin(), data.end(),
-            [&key](const auto& pair) { return pair.first == key; });
-        if (it == data.end()) {
-            throw std::out_of_range("Unknown thermal entity attribute: " +
-                                    std::string(key));
-        }
-        return it->second;
-    }
+enum class EntityType : std::uint8_t {
+    t,
+    c,
+    qs,
+    qa,
+    qe,
+    qi,
+    qr,
+    gl,
+    gr,
 };
 
-using ValueAccessor = double* (*)(ThermalNetwork&, int, int);
+namespace detail {
+
+using GetValueFn = double (*)(ThermalNetwork&, NodeNum, NodeNum);
+using GetValueRefFn = double* (*)(ThermalNetwork&, NodeNum, NodeNum);
+using SetValueFn = bool (*)(ThermalNetwork&, NodeNum, NodeNum, double);
+using ExistsFn = bool (*)(ThermalNetwork&, NodeNum, NodeNum);
+
+struct EntityOps {
+    std::string_view token;
+    std::uint8_t node_count;
+    bool writable;
+    GetValueFn get_value;
+    GetValueRefFn get_value_ref;
+    SetValueFn set_value;
+    ExistsFn exists;
+};
+
+[[nodiscard]] inline bool node_exists(ThermalNetwork& network, NodeNum node_1,
+                                      NodeNum /*unused*/) {
+    return network.nodes().get_idx_from_node_num(node_1).has_value();
+}
+
+[[nodiscard]] inline bool conductive_coupling_exists(ThermalNetwork& network,
+                                                     NodeNum node_1,
+                                                     NodeNum node_2) {
+    return network.conductive_couplings().get_coupling_value_ref(
+               node_1, node_2) != nullptr;
+}
+
+[[nodiscard]] inline bool radiative_coupling_exists(ThermalNetwork& network,
+                                                    NodeNum node_1,
+                                                    NodeNum node_2) {
+    return network.radiative_couplings().get_coupling_value_ref(
+               node_1, node_2) != nullptr;
+}
 
 using std::literals::string_view_literals::operator""sv;
 
-constexpr std::array<std::pair<std::string_view, ValueAccessor>, 9>
-    attribute_table{{
-        {"T"sv,
-         [](ThermalNetwork& network, int node_1, int /*unused*/) {
-             return network.nodes().get_T_value_ref(node_1);
-         }},
-        {"C"sv,
-         [](ThermalNetwork& network, int node_1, int /*unused*/) {
-             return network.nodes().get_C_value_ref(node_1);
-         }},
-        {"QS"sv,
-         [](ThermalNetwork& network, int node_1, int /*unused*/) {
-             return network.nodes().get_qs_value_ref(node_1);
-         }},
-        {"QE"sv,
-         [](ThermalNetwork& network, int node_1, int /*unused*/) {
-             return network.nodes().get_qe_value_ref(node_1);
-         }},
-        {"QA"sv,
-         [](ThermalNetwork& network, int node_1, int /*unused*/) {
-             return network.nodes().get_qa_value_ref(node_1);
-         }},
-        {"QI"sv,
-         [](ThermalNetwork& network, int node_1, int /*unused*/) {
-             return network.nodes().get_qi_value_ref(node_1);
-         }},
-        {"QR"sv,
-         [](ThermalNetwork& network, int node_1, int /*unused*/) {
-             return network.nodes().get_qr_value_ref(node_1);
-         }},
-        {"GL"sv,
-         [](ThermalNetwork& network, int node_1, int node_2) {
-             return network.conductive_couplings().get_coupling_value_ref(
-                 node_1, node_2);
-         }},
-        {"GR"sv,
-         [](ThermalNetwork& network, int node_1, int node_2) {
-             return network.radiative_couplings().get_coupling_value_ref(
-                 node_1, node_2);
-         }},
-    }};
+constexpr std::array<EntityOps, 9> entity_ops_table{{
+    {"T"sv, 1U, true,
+     [](ThermalNetwork& network, NodeNum node_1, NodeNum /*unused*/) {
+         return network.nodes().get_T(node_1);
+     },
+     [](ThermalNetwork& network, NodeNum node_1, NodeNum /*unused*/) {
+         return network.nodes().get_T_value_ref(node_1);
+     },
+     [](ThermalNetwork& network, NodeNum node_1, NodeNum /*unused*/,
+        double value) { return network.nodes().set_T(node_1, value); },
+     node_exists},
+    {"C"sv, 1U, true,
+     [](ThermalNetwork& network, NodeNum node_1, NodeNum /*unused*/) {
+         return network.nodes().get_C(node_1);
+     },
+     [](ThermalNetwork& network, NodeNum node_1, NodeNum /*unused*/) {
+         return network.nodes().get_C_value_ref(node_1);
+     },
+     [](ThermalNetwork& network, NodeNum node_1, NodeNum /*unused*/,
+        double value) { return network.nodes().set_C(node_1, value); },
+     node_exists},
+    {"QS"sv, 1U, true,
+     [](ThermalNetwork& network, NodeNum node_1, NodeNum /*unused*/) {
+         return network.nodes().get_qs(node_1);
+     },
+     [](ThermalNetwork& network, NodeNum node_1, NodeNum /*unused*/) {
+         return network.nodes().get_qs_value_ref(node_1);
+     },
+     [](ThermalNetwork& network, NodeNum node_1, NodeNum /*unused*/,
+        double value) { return network.nodes().set_qs(node_1, value); },
+     node_exists},
+    {"QA"sv, 1U, true,
+     [](ThermalNetwork& network, NodeNum node_1, NodeNum /*unused*/) {
+         return network.nodes().get_qa(node_1);
+     },
+     [](ThermalNetwork& network, NodeNum node_1, NodeNum /*unused*/) {
+         return network.nodes().get_qa_value_ref(node_1);
+     },
+     [](ThermalNetwork& network, NodeNum node_1, NodeNum /*unused*/,
+        double value) { return network.nodes().set_qa(node_1, value); },
+     node_exists},
+    {"QE"sv, 1U, true,
+     [](ThermalNetwork& network, NodeNum node_1, NodeNum /*unused*/) {
+         return network.nodes().get_qe(node_1);
+     },
+     [](ThermalNetwork& network, NodeNum node_1, NodeNum /*unused*/) {
+         return network.nodes().get_qe_value_ref(node_1);
+     },
+     [](ThermalNetwork& network, NodeNum node_1, NodeNum /*unused*/,
+        double value) { return network.nodes().set_qe(node_1, value); },
+     node_exists},
+    {"QI"sv, 1U, true,
+     [](ThermalNetwork& network, NodeNum node_1, NodeNum /*unused*/) {
+         return network.nodes().get_qi(node_1);
+     },
+     [](ThermalNetwork& network, NodeNum node_1, NodeNum /*unused*/) {
+         return network.nodes().get_qi_value_ref(node_1);
+     },
+     [](ThermalNetwork& network, NodeNum node_1, NodeNum /*unused*/,
+        double value) { return network.nodes().set_qi(node_1, value); },
+     node_exists},
+    {"QR"sv, 1U, true,
+     [](ThermalNetwork& network, NodeNum node_1, NodeNum /*unused*/) {
+         return network.nodes().get_qr(node_1);
+     },
+     [](ThermalNetwork& network, NodeNum node_1, NodeNum /*unused*/) {
+         return network.nodes().get_qr_value_ref(node_1);
+     },
+     [](ThermalNetwork& network, NodeNum node_1, NodeNum /*unused*/,
+        double value) { return network.nodes().set_qr(node_1, value); },
+     node_exists},
+    {"GL"sv, 2U, true,
+     [](ThermalNetwork& network, NodeNum node_1, NodeNum node_2) {
+         return network.conductive_couplings().get_coupling_value(node_1,
+                                                                  node_2);
+     },
+     [](ThermalNetwork& network, NodeNum node_1, NodeNum node_2) {
+         return network.conductive_couplings().get_coupling_value_ref(node_1,
+                                                                      node_2);
+     },
+     [](ThermalNetwork& network, NodeNum node_1, NodeNum node_2, double value) {
+         if (network.conductive_couplings().get_coupling_value_ref(
+                 node_1, node_2) == nullptr) {
+             return false;
+         }
+         network.conductive_couplings().set_coupling_value(node_1, node_2,
+                                                           value);
+         return true;
+     },
+     conductive_coupling_exists},
+    {"GR"sv, 2U, true,
+     [](ThermalNetwork& network, NodeNum node_1, NodeNum node_2) {
+         return network.radiative_couplings().get_coupling_value(node_1,
+                                                                 node_2);
+     },
+     [](ThermalNetwork& network, NodeNum node_1, NodeNum node_2) {
+         return network.radiative_couplings().get_coupling_value_ref(node_1,
+                                                                     node_2);
+     },
+     [](ThermalNetwork& network, NodeNum node_1, NodeNum node_2, double value) {
+         if (network.radiative_couplings().get_coupling_value_ref(
+                 node_1, node_2) == nullptr) {
+             return false;
+         }
+         network.radiative_couplings().set_coupling_value(node_1, node_2,
+                                                          value);
+         return true;
+     },
+     radiative_coupling_exists},
+}};
 
-constexpr EntityMap<std::string_view, ValueAccessor, attribute_table.size()>
-    attribute_lookup{{attribute_table}};
+[[nodiscard]] constexpr const EntityOps& entity_ops(EntityType type) {
+    return entity_ops_table[std::to_underlying(type)];
+}
 
-[[nodiscard]] inline ValueAccessor resolve_accessor(const std::string& type) {
-    return attribute_lookup.at(type);
+[[nodiscard]] inline std::optional<EntityType> lookup_entity_type(
+    std::string_view token) {
+    for (std::size_t index = 0; index < entity_ops_table.size(); ++index) {
+        if (entity_ops_table[index].token == token) {
+            return static_cast<EntityType>(index);
+        }
+    }
+    return std::nullopt;
+}
+
+[[nodiscard]] inline std::string normalize_entity_text(std::string_view text) {
+    std::string normalized;
+    normalized.reserve(text.size());
+
+    for (const char ch : text) {
+        if (std::isspace(static_cast<unsigned char>(ch)) != 0) {
+            continue;
+        }
+
+        normalized.push_back(
+            static_cast<char>(std::toupper(static_cast<unsigned char>(ch))));
+    }
+
+    return normalized;
+}
+
+[[nodiscard]] inline std::optional<NodeNum> parse_node_num(
+    std::string_view text) {
+    NodeNum value = 0;
+    const auto* begin = text.data();
+    const auto* end = begin + text.size();
+    const auto [ptr, err] = std::from_chars(begin, end, value);
+    if (err != std::errc{} || ptr != end) {
+        return std::nullopt;
+    }
+    return value;
 }
 
 }  // namespace detail
 
-class ThermalEntity {
+class Entity {
   public:
-    ThermalEntity(const ThermalEntity&) = default;
-    ThermalEntity& operator=(const ThermalEntity&) = default;
-    ThermalEntity(ThermalEntity&&) noexcept = default;
-    ThermalEntity& operator=(ThermalEntity&&) noexcept = default;
-    virtual ~ThermalEntity() = default;
+    static constexpr NodeNum invalid_node = NodeNum{-1};
 
-    [[nodiscard]] const std::string& type() const noexcept { return _type; }
-    [[nodiscard]] int node_index_1() const noexcept { return _node_1; }
-    [[nodiscard]] int node_index_2() const noexcept { return _node_2; }
+    Entity() = default;
+    Entity(const Entity&) = default;
+    Entity& operator=(const Entity&) = default;
+    Entity(Entity&&) noexcept = default;
+    Entity& operator=(Entity&&) noexcept = default;
+    ~Entity() = default;
 
-    bool operator==(const ThermalEntity& other) const {
-        return string_representation() == other.string_representation();
+    [[nodiscard]] static Entity make(ThermalNetwork& network, EntityType type,
+                                     NodeNum node_1 = invalid_node,
+                                     NodeNum node_2 = invalid_node) {
+        Entity entity;
+        entity._network = &network;
+        entity._type = type;
+        entity._ops = &detail::entity_ops(type);
+
+        if (entity._ops->node_count == 2U && node_1 > node_2) {
+            std::swap(node_1, node_2);
+        }
+
+        if (entity._ops->node_count == 0U) {
+            node_1 = invalid_node;
+            node_2 = invalid_node;
+        } else if (entity._ops->node_count == 1U) {
+            node_2 = invalid_node;
+        }
+
+        entity._node_1 = node_1;
+        entity._node_2 = node_2;
+        return entity;
     }
 
-    [[nodiscard]] bool is_same_as(const ThermalEntity& other) const {
+    [[nodiscard]] static std::optional<Entity> from_string(
+        ThermalNetwork& network, std::string_view text) {
+        const std::string normalized = detail::normalize_entity_text(text);
+        if (normalized.empty()) {
+            return std::nullopt;
+        }
+
+        if (const auto open = normalized.find('('); open != std::string::npos) {
+            const auto comma = normalized.find(',', open + 1U);
+            const auto close = normalized.find(
+                ')', comma == std::string::npos ? open + 1U : comma + 1U);
+            if (comma == std::string::npos || close == std::string::npos ||
+                close != normalized.size() - 1U) {
+                return std::nullopt;
+            }
+
+            const auto parsed_type = detail::lookup_entity_type(
+                std::string_view(normalized).substr(0U, open));
+            if (!parsed_type.has_value() ||
+                detail::entity_ops(*parsed_type).node_count != 2U) {
+                return std::nullopt;
+            }
+
+            const auto parsed_node_1 = detail::parse_node_num(
+                std::string_view(normalized)
+                    .substr(open + 1U, comma - open - 1U));
+            const auto parsed_node_2 = detail::parse_node_num(
+                std::string_view(normalized)
+                    .substr(comma + 1U, close - comma - 1U));
+            if (!parsed_node_1.has_value() || !parsed_node_2.has_value()) {
+                return std::nullopt;
+            }
+
+            return make(network, *parsed_type, *parsed_node_1, *parsed_node_2);
+        }
+
+        std::size_t token_length = 0U;
+        while (token_length < normalized.size() &&
+               std::isalpha(
+                   static_cast<unsigned char>(normalized[token_length])) != 0) {
+            ++token_length;
+        }
+
+        const auto parsed_type = detail::lookup_entity_type(
+            std::string_view(normalized).substr(0U, token_length));
+        if (!parsed_type.has_value()) {
+            return std::nullopt;
+        }
+
+        const auto expected_node_count =
+            detail::entity_ops(*parsed_type).node_count;
+        if (token_length == normalized.size()) {
+            return expected_node_count == 0U
+                       ? std::optional<Entity>(make(network, *parsed_type))
+                       : std::nullopt;
+        }
+
+        if (expected_node_count != 1U) {
+            return std::nullopt;
+        }
+
+        const auto parsed_node = detail::parse_node_num(
+            std::string_view(normalized).substr(token_length));
+        if (!parsed_node.has_value()) {
+            return std::nullopt;
+        }
+
+        return make(network, *parsed_type, *parsed_node);
+    }
+
+    [[nodiscard]] static Entity t(ThermalNetwork& network, NodeNum node) {
+        return make(network, EntityType::t, node);
+    }
+
+    [[nodiscard]] static Entity c(ThermalNetwork& network, NodeNum node) {
+        return make(network, EntityType::c, node);
+    }
+
+    [[nodiscard]] static Entity qs(ThermalNetwork& network, NodeNum node) {
+        return make(network, EntityType::qs, node);
+    }
+
+    [[nodiscard]] static Entity qa(ThermalNetwork& network, NodeNum node) {
+        return make(network, EntityType::qa, node);
+    }
+
+    [[nodiscard]] static Entity qe(ThermalNetwork& network, NodeNum node) {
+        return make(network, EntityType::qe, node);
+    }
+
+    [[nodiscard]] static Entity qi(ThermalNetwork& network, NodeNum node) {
+        return make(network, EntityType::qi, node);
+    }
+
+    [[nodiscard]] static Entity qr(ThermalNetwork& network, NodeNum node) {
+        return make(network, EntityType::qr, node);
+    }
+
+    [[nodiscard]] static Entity gl(ThermalNetwork& network, NodeNum node_1,
+                                   NodeNum node_2) {
+        return make(network, EntityType::gl, node_1, node_2);
+    }
+
+    [[nodiscard]] static Entity gr(ThermalNetwork& network, NodeNum node_1,
+                                   NodeNum node_2) {
+        return make(network, EntityType::gr, node_1, node_2);
+    }
+
+    [[nodiscard]] static Entity temperature(ThermalNetwork& network,
+                                            NodeNum node) {
+        return t(network, node);
+    }
+
+    [[nodiscard]] static Entity capacity(ThermalNetwork& network,
+                                         NodeNum node) {
+        return c(network, node);
+    }
+
+    [[nodiscard]] static Entity solar_heat(ThermalNetwork& network,
+                                           NodeNum node) {
+        return qs(network, node);
+    }
+
+    [[nodiscard]] static Entity albedo_heat(ThermalNetwork& network,
+                                            NodeNum node) {
+        return qa(network, node);
+    }
+
+    [[nodiscard]] static Entity earth_ir(ThermalNetwork& network,
+                                         NodeNum node) {
+        return qe(network, node);
+    }
+
+    [[nodiscard]] static Entity internal_heat(ThermalNetwork& network,
+                                              NodeNum node) {
+        return qi(network, node);
+    }
+
+    [[nodiscard]] static Entity other_heat(ThermalNetwork& network,
+                                           NodeNum node) {
+        return qr(network, node);
+    }
+
+    [[nodiscard]] static Entity conductive(ThermalNetwork& network,
+                                           NodeNum node_1, NodeNum node_2) {
+        return gl(network, node_1, node_2);
+    }
+
+    [[nodiscard]] static Entity radiative(ThermalNetwork& network,
+                                          NodeNum node_1, NodeNum node_2) {
+        return gr(network, node_1, node_2);
+    }
+
+    [[nodiscard]] EntityType type() const noexcept { return _type; }
+    [[nodiscard]] std::string_view token() const noexcept {
+        return _ops != nullptr ? _ops->token : std::string_view{};
+    }
+    [[nodiscard]] NodeNum node_1() const noexcept { return _node_1; }
+    [[nodiscard]] NodeNum node_2() const noexcept { return _node_2; }
+    [[nodiscard]] int node_count() const noexcept {
+        return _ops != nullptr ? static_cast<int>(_ops->node_count) : 0;
+    }
+    [[nodiscard]] bool writable() const noexcept {
+        return _ops != nullptr && _ops->writable;
+    }
+
+    bool operator==(const Entity& other) const noexcept {
+        return _network == other._network && _type == other._type &&
+               _node_1 == other._node_1 && _node_2 == other._node_2;
+    }
+
+    [[nodiscard]] bool is_same_as(const Entity& other) const noexcept {
         return *this == other;
     }
 
-    [[nodiscard]] virtual std::string string_representation() const = 0;
-    [[nodiscard]] virtual double get_value() = 0;
-    [[nodiscard]] virtual double* get_value_ref() = 0;
-    virtual void set_value(double value) = 0;
+    [[nodiscard]] bool exists() const {
+        return _network != nullptr && _ops != nullptr &&
+               _ops->exists(*_network, _node_1, _node_2);
+    }
 
-    [[nodiscard]] virtual std::unique_ptr<ThermalEntity> clone() const = 0;
-
-  protected:
-    ThermalEntity(ThermalNetwork& network, std::string type)
-        : _network(&network), _type(std::move(type)) {
-        if (_network == nullptr) {
-            throw std::invalid_argument("ThermalEntity requires a network");
+    [[nodiscard]] double get_value() const {
+        if (_network == nullptr || _ops == nullptr) {
+            return std::numeric_limits<double>::quiet_NaN();
         }
+
+        return _ops->get_value(*_network, _node_1, _node_2);
     }
 
-    [[nodiscard]] ThermalNetwork& network() noexcept { return *_network; }
-    [[nodiscard]] const ThermalNetwork& network() const noexcept {
-        return *_network;
+    [[nodiscard]] double* get_value_ref() const {
+        if (_network == nullptr || _ops == nullptr || !_ops->writable) {
+            return nullptr;
+        }
+
+        return _ops->get_value_ref(*_network, _node_1, _node_2);
     }
 
-    void set_nodes(int node_1, int node_2 = -1) noexcept {
-        _node_1 = node_1;
-        _node_2 = node_2;
+    [[nodiscard]] bool set_value(double value) const {
+        if (_network == nullptr || _ops == nullptr || !_ops->writable) {
+            return false;
+        }
+
+        return _ops->set_value(*_network, _node_1, _node_2, value);
     }
 
-    [[nodiscard]] detail::ValueAccessor accessor() const {
-        return detail::resolve_accessor(_type);
+    [[nodiscard]] std::string string_representation() const {
+        if (_ops == nullptr) {
+            return {};
+        }
+
+        if (_ops->node_count == 0U) {
+            return std::string(_ops->token);
+        }
+
+        if (_ops->node_count == 1U) {
+            return std::string(_ops->token) + std::to_string(_node_1);
+        }
+
+        return std::string(_ops->token) + "(" + std::to_string(_node_1) + "," +
+               std::to_string(_node_2) + ")";
     }
+
+    struct Hash {
+        [[nodiscard]] std::size_t operator()(const Entity& entity) const {
+            std::size_t seed =
+                std::hash<const ThermalNetwork*>()(entity._network);
+            seed ^= static_cast<std::size_t>(entity._type) + 0x9e3779b9U +
+                    (seed << 6U) + (seed >> 2U);
+            seed ^= std::hash<NodeNum>()(entity._node_1) + 0x9e3779b9U +
+                    (seed << 6U) + (seed >> 2U);
+            seed ^= std::hash<NodeNum>()(entity._node_2) + 0x9e3779b9U +
+                    (seed << 6U) + (seed >> 2U);
+            return seed;
+        }
+    };
 
   private:
-    ThermalNetwork* _network{};
-    std::string _type;
-    int _node_1{-1};
-    int _node_2{-1};
-};
-
-class AttributeEntity final : public ThermalEntity {
-  public:
-    AttributeEntity(ThermalNetwork& network, std::string type, int node)
-        : ThermalEntity(network, std::move(type)) {
-        set_nodes(node);
-    }
-
-    [[nodiscard]] std::string string_representation() const override {
-        return type() + std::to_string(node_index_1());
-    }
-
-    double get_value() override {
-        auto* value_ptr = accessor()(network(), node_index_1(), -1);
-        if (value_ptr == nullptr) {
-            throw std::runtime_error("AttributeEntity has no value pointer");
-        }
-        return *value_ptr;
-    }
-
-    double* get_value_ref() override {
-        auto* value_ptr = accessor()(network(), node_index_1(), -1);
-        if (value_ptr == nullptr) {
-            throw std::runtime_error("AttributeEntity has no value pointer");
-        }
-        return value_ptr;
-    }
-
-    void set_value(double value) override {
-        auto* value_ptr = get_value_ref();
-        *value_ptr = value;
-    }
-
-    [[nodiscard]] std::unique_ptr<ThermalEntity> clone() const override {
-        return std::make_unique<AttributeEntity>(*this);
-    }
-};
-
-class CouplingEntity : public ThermalEntity {
-  public:
-    CouplingEntity(const CouplingEntity&) = default;
-    CouplingEntity& operator=(const CouplingEntity&) = default;
-    CouplingEntity(CouplingEntity&&) noexcept = default;
-    CouplingEntity& operator=(CouplingEntity&&) noexcept = default;
-    ~CouplingEntity() override = default;
-
-    [[nodiscard]] std::string string_representation() const override {
-        return type() + "(" + std::to_string(node_index_1()) + ", " +
-               std::to_string(node_index_2()) + ")";
-    }
-
-    double get_value() override {
-        auto* value_ptr = accessor()(network(), node_index_1(), node_index_2());
-        if (value_ptr == nullptr) {
-            throw std::runtime_error("CouplingEntity has no value pointer");
-        }
-        return *value_ptr;
-    }
-
-    double* get_value_ref() override {
-        auto* value_ptr = accessor()(network(), node_index_1(), node_index_2());
-        if (value_ptr == nullptr) {
-            throw std::runtime_error("CouplingEntity has no value pointer");
-        }
-        return value_ptr;
-    }
-
-    void set_value(double value) override {
-        auto* value_ptr = get_value_ref();
-        *value_ptr = value;
-    }
-
-  protected:
-    CouplingEntity(ThermalNetwork& network, std::string type, int node_1,
-                   int node_2)
-        : ThermalEntity(network, std::move(type)) {
-        const auto [first, second] = std::minmax(node_1, node_2);
-        set_nodes(first, second);
-    }
-};
-
-class ConductiveCouplingEntity final : public CouplingEntity {
-  public:
-    ConductiveCouplingEntity(ThermalNetwork& network, int node_1, int node_2)
-        : CouplingEntity(network, "GL", node_1, node_2) {}
-
-    double get_value() override {
-        return network().conductive_couplings().get_coupling_value(
-            node_index_1(), node_index_2());
-    }
-
-    double* get_value_ref() override {
-        auto* value_ptr =
-            network().conductive_couplings().get_coupling_value_ref(
-                node_index_1(), node_index_2());
-        if (value_ptr == nullptr) {
-            throw std::runtime_error(
-                "ConductiveCouplingEntity has no value pointer");
-        }
-        return value_ptr;
-    }
-
-    void set_value(double value) override {
-        network().conductive_couplings().set_coupling_value(
-            node_index_1(), node_index_2(), value);
-    }
-
-    [[nodiscard]] std::unique_ptr<ThermalEntity> clone() const override {
-        return std::make_unique<ConductiveCouplingEntity>(*this);
-    }
-};
-
-class RadiativeCouplingEntity final : public CouplingEntity {
-  public:
-    RadiativeCouplingEntity(ThermalNetwork& network, int node_1, int node_2)
-        : CouplingEntity(network, "GR", node_1, node_2) {}
-
-    double get_value() override {
-        return network().radiative_couplings().get_coupling_value(
-            node_index_1(), node_index_2());
-    }
-
-    double* get_value_ref() override {
-        auto* value_ptr =
-            network().radiative_couplings().get_coupling_value_ref(
-                node_index_1(), node_index_2());
-        if (value_ptr == nullptr) {
-            throw std::runtime_error(
-                "RadiativeCouplingEntity has no value pointer");
-        }
-        return value_ptr;
-    }
-
-    void set_value(double value) override {
-        network().radiative_couplings().set_coupling_value(
-            node_index_1(), node_index_2(), value);
-    }
-
-    [[nodiscard]] std::unique_ptr<ThermalEntity> clone() const override {
-        return std::make_unique<RadiativeCouplingEntity>(*this);
-    }
+    ThermalNetwork* _network{nullptr};
+    EntityType _type{EntityType::t};
+    NodeNum _node_1{invalid_node};
+    NodeNum _node_2{invalid_node};
+    const detail::EntityOps* _ops{nullptr};
 };
 
 }  // namespace pycanha

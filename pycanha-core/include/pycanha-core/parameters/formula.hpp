@@ -25,18 +25,7 @@ class Formula {
     Formula& operator=(Formula&&) noexcept = default;
     virtual ~Formula() = default;
 
-    explicit Formula(ThermalEntity& entity) : _entity(entity.clone()) {
-        if (_entity == nullptr) {
-            throw std::invalid_argument("Formula requires a valid entity");
-        }
-    }
-
-    explicit Formula(std::shared_ptr<ThermalEntity> entity)
-        : _entity(std::move(entity)) {
-        if (_entity == nullptr) {
-            throw std::invalid_argument("Formula requires a valid entity");
-        }
-    }
+    explicit Formula(Entity entity) : _entity(std::move(entity)) {}
 
     bool operator==(const Formula& other) const {
         return entity().is_same_as(other.entity());
@@ -44,15 +33,12 @@ class Formula {
 
     struct Hash {
         [[nodiscard]] std::size_t operator()(const Formula& formula) const {
-            return std::hash<std::string>()(
-                formula.entity().string_representation());
+            return Entity::Hash{}(formula.entity());
         }
     };
 
-    [[nodiscard]] ThermalEntity& entity() noexcept { return *_entity; }
-    [[nodiscard]] const ThermalEntity& entity() const noexcept {
-        return *_entity;
-    }
+    [[nodiscard]] Entity& entity() noexcept { return _entity; }
+    [[nodiscard]] const Entity& entity() const noexcept { return _entity; }
 
     [[nodiscard]] const DependencyList& parameter_dependencies()
         const noexcept {
@@ -86,27 +72,15 @@ class Formula {
     void set_entity_data_ptr(double* ptr) noexcept { _entity_data = ptr; }
 
   private:
-    std::shared_ptr<ThermalEntity> _entity;
+    Entity _entity;
     DependencyList _dependencies;
     double* _entity_data{nullptr};
 };
 
 class ParameterFormula final : public Formula {
   public:
-    ParameterFormula(ThermalEntity& entity, Parameters& parameters,
+    ParameterFormula(Entity entity, Parameters& parameters,
                      std::string parameter_name)
-        : Formula(entity),
-          _parameters(&parameters),
-          _parameter_name(std::move(parameter_name)) {
-        if (_parameters == nullptr) {
-            throw std::invalid_argument(
-                "ParameterFormula requires parameter storage");
-        }
-        mutable_dependencies().push_back(_parameter_name);
-    }
-
-    ParameterFormula(std::shared_ptr<ThermalEntity> entity,
-                     Parameters& parameters, std::string parameter_name)
         : Formula(std::move(entity)),
           _parameters(&parameters),
           _parameter_name(std::move(parameter_name)) {
@@ -147,7 +121,10 @@ class ParameterFormula final : public Formula {
             throw std::runtime_error(
                 "ParameterFormula expects parameter to hold a double value");
         }
-        entity().set_value(*parameter_value);
+        if (!entity().set_value(*parameter_value)) {
+            throw std::runtime_error(
+                "ParameterFormula could not assign entity value");
+        }
     }
 
     void apply_compiled_formula() override {
@@ -185,10 +162,7 @@ class ParameterFormula final : public Formula {
 
 class ValueFormula final : public Formula {
   public:
-    explicit ValueFormula(ThermalEntity& entity)
-        : Formula(entity), _value(entity.get_value()) {}
-
-    explicit ValueFormula(std::shared_ptr<ThermalEntity> entity)
+    explicit ValueFormula(Entity entity)
         : Formula(std::move(entity)), _value(this->entity().get_value()) {}
 
     void compile_formula() override {
@@ -200,7 +174,11 @@ class ValueFormula final : public Formula {
         set_entity_data_ptr(entity_ptr);
     }
 
-    void apply_formula() override { entity().set_value(_value); }
+    void apply_formula() override {
+        if (!entity().set_value(_value)) {
+            throw std::runtime_error("ValueFormula could not assign entity");
+        }
+    }
 
     void apply_compiled_formula() override {
         if (entity_data_ptr() == nullptr) {
@@ -242,10 +220,8 @@ class ValueFormula final : public Formula {
 
 class ExpressionFormula final : public Formula {
   public:
-    ExpressionFormula(ThermalEntity& entity, Parameters& parameters,
+    ExpressionFormula(Entity entity, Parameters& parameters,
                       std::string expression);
-    ExpressionFormula(std::shared_ptr<ThermalEntity> entity,
-                      Parameters& parameters, std::string expression);
 
     void compile_formula() override;
     void apply_formula() override;

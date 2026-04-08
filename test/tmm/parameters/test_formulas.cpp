@@ -28,9 +28,9 @@ TEST_CASE("Parameter formulas propagate parameter values", "[formulas]") {
     parameters->add_parameter("P2", 11.0);
     parameters->add_parameter("P3", 12.0);
 
-    pycanha::AttributeEntity heat_load(*network, "QI", 1);
-    pycanha::AttributeEntity temperature(*network, "T", 2);
-    pycanha::ConductiveCouplingEntity conductive(*network, 1, 2);
+    const pycanha::Entity heat_load = pycanha::Entity::qi(*network, 1);
+    const pycanha::Entity temperature = pycanha::Entity::t(*network, 2);
+    const pycanha::Entity conductive = pycanha::Entity::gl(*network, 1, 2);
 
     formulas.add_formula(
         pycanha::ParameterFormula(heat_load, *parameters, "P1"));
@@ -76,7 +76,7 @@ TEST_CASE("Value formulas capture static snapshots", "[formulas]") {
 
     network->nodes().set_T(1, 42.0);
 
-    pycanha::AttributeEntity temperature(*network, "T", 1);
+    const pycanha::Entity temperature = pycanha::Entity::t(*network, 1);
     pycanha::ValueFormula snapshot(temperature);
 
     snapshot.compile_formula();
