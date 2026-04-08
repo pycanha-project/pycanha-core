@@ -42,6 +42,8 @@ void Formulas::associate(std::shared_ptr<ThermalNetwork> network,
                          std::shared_ptr<Parameters> parameters) {
     _network = std::move(network);
     _parameters = std::move(parameters);
+    _validated_structure_version.reset();
+    _compiled_structure_version.reset();
 }
 
 ParameterFormula Formulas::create_parameter_formula(
@@ -63,9 +65,34 @@ void Formulas::add_formula(const std::shared_ptr<Formula>& formula) {
     }
 
     _formulas.push_back(formula);
+    _validated_structure_version.reset();
+    _compiled_structure_version.reset();
     for (const auto& dependency : formula->parameter_dependencies()) {
         _parameter_dependencies[dependency].push_back(formula);
     }
+}
+
+void Formulas::validate_for_execution() {
+    auto parameter_storage = ensure_parameters(_parameters);
+
+    for (const auto& formula : _formulas) {
+        static_cast<void>(formula->get_value());
+    }
+
+    _validated_structure_version = parameter_storage->get_structure_version();
+    _compiled_structure_version.reset();
+}
+
+void Formulas::compile_formulas() {
+    if (!is_validation_current()) {
+        validate_for_execution();
+    }
+
+    for (const auto& formula : _formulas) {
+        formula->compile_formula();
+    }
+
+    _compiled_structure_version = _parameters->get_structure_version();
 }
 
 void Formulas::apply_formulas() {
@@ -74,10 +101,54 @@ void Formulas::apply_formulas() {
     }
 }
 
+void Formulas::apply_compiled_formulas() {
+    if (!is_compiled_current()) {
+        throw std::runtime_error(
+            "Compiled formulas are stale or unavailable for execution");
+    }
+
+    for (const auto& formula : _formulas) {
+        formula->apply_compiled_formula();
+    }
+}
+
 void Formulas::calculate_derivatives() {
     for (const auto& formula : _formulas) {
         formula->calculate_derivatives();
     }
+}
+
+void Formulas::lock_parameters_for_execution() {
+    auto parameter_storage = ensure_parameters(_parameters);
+    if (!is_validation_current()) {
+        throw std::runtime_error(
+            "Formulas validation is stale; validate before locking "
+            "parameters for execution");
+    }
+
+    parameter_storage->lock_structure();
+}
+
+void Formulas::unlock_parameters() noexcept {
+    if (_parameters == nullptr) {
+        return;
+    }
+
+    _parameters->unlock_structure();
+}
+
+bool Formulas::is_validation_current() const noexcept {
+    return (_parameters != nullptr) &&
+           _validated_structure_version.has_value() &&
+           (_parameters->get_structure_version() ==
+            *_validated_structure_version);
+}
+
+bool Formulas::is_compiled_current() const noexcept {
+    return (_parameters != nullptr) &&
+           _compiled_structure_version.has_value() &&
+           (_parameters->get_structure_version() ==
+            *_compiled_structure_version);
 }
 
 }  // namespace pycanha

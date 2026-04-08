@@ -217,6 +217,39 @@ TEST_CASE("ExpressionFormula supports common math functions",
             Catch::Approx(std::sin(0.5) + std::exp(1.25)));
 }
 
+TEST_CASE(
+    "ExpressionFormula keeps slot binding across rename in interpreted mode",
+    "[formulas][expression]") {
+    auto network = make_single_node_network();
+    pycanha::Parameters parameters;
+    parameters.add_parameter("p1", 3.0);
+
+    const pycanha::Entity heat_load = pycanha::Entity::qi(*network, 1);
+    pycanha::ExpressionFormula formula(heat_load, parameters, "p1");
+
+    parameters.rename_parameter("p1", "renamed_p1");
+    parameters.set_parameter("renamed_p1", 7.0);
+
+    formula.apply_formula();
+
+    REQUIRE(network->nodes().get_qi(1) == Catch::Approx(7.0));
+}
+
+TEST_CASE("ExpressionFormula compiled mode invalidates on structural changes",
+          "[formulas][expression]") {
+    auto network = make_single_node_network();
+    pycanha::Parameters parameters;
+    parameters.add_parameter("p1", 6.0);
+
+    const pycanha::Entity heat_load = pycanha::Entity::qi(*network, 1);
+    pycanha::ExpressionFormula formula(heat_load, parameters, "p1");
+
+    formula.compile_formula();
+    parameters.add_parameter("p2", 4.0);
+
+    REQUIRE_THROWS_AS(formula.apply_compiled_formula(), std::runtime_error);
+}
+
 TEST_CASE("ExpressionFormula rejects matrix and array syntax for now",
           "[formulas][expression]") {
     auto network = make_single_node_network();

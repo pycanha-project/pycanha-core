@@ -290,6 +290,8 @@ void TSCNRLDS_JACOBIAN::solve_jacobian_step() {
 void TSCNRLDS_JACOBIAN::solve() {
     SPDLOG_LOGGER_INFO(get_logger(), "TSCNRLDS_JACOBIAN solving...");
 
+    const FormulaExecutionGuard formula_execution(*this);
+
     if (_parameter_names.empty()) {
         TSCNRLDS::solve();
         return;

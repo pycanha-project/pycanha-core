@@ -19,7 +19,6 @@
 #include <stdexcept>
 #include <string>
 #include <utility>
-#include <variant>
 #include <vector>
 
 #include "pycanha-core/parameters/entity.hpp"
@@ -73,16 +72,6 @@ void collect_symbols(const ExpressionNode& expr, SymbolMap& symbols) {
     }
 }
 
-[[nodiscard]] const double& expect_scalar_parameter(
-    const Parameters::ThermalValue& value, const std::string& name) {
-    const auto* scalar = std::get_if<double>(&value);
-    if (scalar == nullptr) {
-        throw std::runtime_error("ExpressionFormula expects parameter '" +
-                                 name + "' to store a double");
-    }
-    return *scalar;
-}
-
 }  // namespace
 
 ExpressionFormula::ExpressionFormula(Entity entity, Parameters& parameters,
@@ -118,17 +107,20 @@ void ExpressionFormula::initialize_expression() {
     for (const auto& [symbol_name, symbol] : symbols) {
         ParameterBinding binding;
         binding.dependency_name = symbol_name;
-        binding.parameter_name = symbol_name;
 
-        if (!_parameters->contains(binding.parameter_name)) {
+        const auto parameter_idx = _parameters->get_idx(symbol_name);
+        if (!parameter_idx.has_value()) {
             throw std::invalid_argument(
                 "ExpressionFormula references unknown parameter '" +
-                binding.parameter_name + "'");
+                symbol_name + "'");
         }
 
-        const auto value = _parameters->get_parameter(binding.parameter_name);
-        static_cast<void>(
-            expect_scalar_parameter(value, binding.parameter_name));
+        binding.parameter_idx = *parameter_idx;
+        if (_parameters->get_double_ptr(binding.parameter_idx) == nullptr) {
+            throw std::invalid_argument(
+                "ExpressionFormula expects parameter '" + symbol_name +
+                "' to store a double");
+        }
 
         _symbols.emplace_back(symbol);
         dependencies.emplace_back(binding.dependency_name);
@@ -161,33 +153,31 @@ SymEngine::vec_basic ExpressionFormula::lambda_inputs() const {
 
 double ExpressionFormula::evaluate_symbol_value(
     const ParameterBinding& binding) const {
-    if ((_parameters == nullptr) ||
-        !_parameters->contains(binding.parameter_name)) {
-        throw std::runtime_error("ExpressionFormula lost parameter '" +
-                                 binding.parameter_name + "'");
+    if (_parameters == nullptr) {
+        throw std::runtime_error("ExpressionFormula lost parameter storage");
     }
 
-    const auto value = _parameters->get_parameter(binding.parameter_name);
-    return expect_scalar_parameter(value, binding.parameter_name);
+    const auto* parameter_value =
+        _parameters->get_double_ptr(binding.parameter_idx);
+    if (parameter_value == nullptr) {
+        throw std::runtime_error("ExpressionFormula lost parameter '" +
+                                 binding.dependency_name + "'");
+    }
+
+    return *parameter_value;
 }
 
 double* ExpressionFormula::resolve_symbol_ptr(
     const ParameterBinding& binding) const {
-    if ((_parameters == nullptr) ||
-        !_parameters->contains(binding.parameter_name)) {
-        throw std::runtime_error("ExpressionFormula lost parameter '" +
-                                 binding.parameter_name + "'");
+    if (_parameters == nullptr) {
+        throw std::runtime_error("ExpressionFormula lost parameter storage");
     }
 
-    const auto value = _parameters->get_parameter(binding.parameter_name);
-    static_cast<void>(expect_scalar_parameter(value, binding.parameter_name));
-
-    auto* parameter_ptr = static_cast<double*>(
-        _parameters->get_value_ptr(binding.parameter_name));
+    auto* parameter_ptr = _parameters->get_double_ptr(binding.parameter_idx);
     if (parameter_ptr == nullptr) {
         throw std::runtime_error(
             "ExpressionFormula could not obtain parameter pointer for '" +
-            binding.parameter_name + "'");
+            binding.dependency_name + "'");
     }
 
     return parameter_ptr;
@@ -250,6 +240,7 @@ void ExpressionFormula::compile_formula() {
         }
     }
 
+    _compiled_structure_version = _parameters->get_structure_version();
     _compiled = true;
 }
 
@@ -265,6 +256,11 @@ void ExpressionFormula::apply_compiled_formula() {
     if (!_compiled || (entity_data_ptr() == nullptr)) {
         throw std::runtime_error(
             "ExpressionFormula needs to be compiled before applying");
+    }
+    if (_parameters->get_structure_version() != _compiled_structure_version) {
+        throw std::runtime_error(
+            "ExpressionFormula compiled state is stale after structural "
+            "parameter changes");
     }
 
     std::vector<double> inputs(_param_ptrs.size(), 0.0);
@@ -290,6 +286,12 @@ void ExpressionFormula::calculate_derivatives() {
             _derivatives[index] = evaluate_expression(_derivative_exprs[index]);
         }
         return;
+    }
+
+    if (_parameters->get_structure_version() != _compiled_structure_version) {
+        throw std::runtime_error(
+            "ExpressionFormula compiled derivatives are stale after structural "
+            "parameter changes");
     }
 
     std::vector<double> inputs(_param_ptrs.size(), 0.0);

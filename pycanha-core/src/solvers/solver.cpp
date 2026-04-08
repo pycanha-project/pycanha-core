@@ -7,6 +7,7 @@
 #include <utility>
 
 #include "pycanha-core/globals.hpp"
+#include "pycanha-core/parameters/formulas.hpp"
 #include "pycanha-core/tmm/nodes.hpp"
 #include "pycanha-core/tmm/thermalmathematicalmodel.hpp"
 #include "pycanha-core/tmm/thermalnetwork.hpp"
@@ -40,6 +41,15 @@ Solver::Solver(std::shared_ptr<ThermalMathematicalModel> tmm_shptr)
       C(nullptr, Index{0}),
       Cd(nullptr, Index{0}),
       Cb(nullptr, Index{0}) {}
+
+Solver::FormulaExecutionGuard::FormulaExecutionGuard(Solver& solver)
+    : _solver(solver) {
+    _solver.prepare_formulas_for_execution();
+}
+
+Solver::FormulaExecutionGuard::~FormulaExecutionGuard() {
+    _solver.release_formulas_after_execution();
+}
 
 void Solver::initialize_common() {
     const auto logger = pycanha::get_logger();
@@ -88,6 +98,16 @@ void Solver::callback_solver_loop() {
 void Solver::callback_transient_after_timestep() {
     PYCANHA_PROFILE_SCOPE("Callback Timestep");
     _tmm_shptr->callback_transient_after_timestep();
+}
+
+void Solver::prepare_formulas_for_execution() {
+    tmm.formulas.validate_for_execution();
+    tmm.formulas.compile_formulas();
+    tmm.formulas.lock_parameters_for_execution();
+}
+
+void Solver::release_formulas_after_execution() noexcept {
+    tmm.formulas.unlock_parameters();
 }
 
 bool Solver::temperature_convergence_check() {

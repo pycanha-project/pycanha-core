@@ -193,6 +193,8 @@ void TSCNRLDS::initialize() {
 void TSCNRLDS::solve() {
     SPDLOG_LOGGER_INFO(get_logger(), "TSCNRLDS solving...");
 
+    const FormulaExecutionGuard formula_execution(*this);
+
     restart_solve();
     callback_transient_time_change();
     callback_solver_loop();

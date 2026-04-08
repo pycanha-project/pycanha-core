@@ -55,6 +55,8 @@ void SSLU::solve() {
     }
     SPDLOG_LOGGER_INFO(get_logger(), "SSLU solving...");
 
+    const FormulaExecutionGuard formula_execution(*this);
+
     solver_converged = false;
 
     for (solver_iter = 0; solver_iter < MAX_ITERS; ++solver_iter) {
