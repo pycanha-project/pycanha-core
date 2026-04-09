@@ -7,6 +7,7 @@
 #include <iterator>
 #include <limits>
 #include <memory>
+#include <stdexcept>
 #include <utility>
 #include <vector>
 
@@ -21,10 +22,13 @@ namespace pycanha {
 
 namespace {
 
-[[nodiscard]] int to_inttype_node_num(Index node_num) {
-    // TODO: Remove this conversion after Nodes migrates its node-number API
-    // from int to Index.
-    return static_cast<int>(node_num);
+[[nodiscard]] NodeNum to_node_num(Index node_num) {
+    if (node_num > static_cast<Index>(std::numeric_limits<NodeNum>::max()) ||
+        node_num < static_cast<Index>(std::numeric_limits<NodeNum>::min())) {
+        throw std::out_of_range(
+            "ThermalNetwork node number exceeds NodeNum range");
+    }
+    return static_cast<NodeNum>(node_num);
 }
 
 template <typename FlowFunction>
@@ -106,7 +110,7 @@ void ThermalNetwork::add_node(Node& node) {
         auto& diff_nodes = _nodes->_diff_node_num_vector;
         const auto it = std::upper_bound(diff_nodes.begin(), diff_nodes.end(),
                                          user_node_num);
-        insert_idx = static_cast<Index>(std::distance(diff_nodes.begin(), it));
+        insert_idx = to_idx(std::distance(diff_nodes.begin(), it));
 
         conductive_storage._add_node_diff(insert_idx);
         radiative_storage._add_node_diff(insert_idx);
@@ -114,11 +118,10 @@ void ThermalNetwork::add_node(Node& node) {
         total_insert_idx = insert_idx;
     } else if (type == 'B') {
         auto& bound_nodes = _nodes->_bound_node_num_vector;
-        const auto diff_count =
-            static_cast<Index>(_nodes->_diff_node_num_vector.size());
+        const auto diff_count = to_idx(_nodes->_diff_node_num_vector.size());
         const auto it = std::upper_bound(bound_nodes.begin(), bound_nodes.end(),
                                          user_node_num);
-        insert_idx = static_cast<Index>(std::distance(bound_nodes.begin(), it));
+        insert_idx = to_idx(std::distance(bound_nodes.begin(), it));
 
         conductive_storage._add_node_bound(insert_idx);
         radiative_storage._add_node_bound(insert_idx);
@@ -140,26 +143,25 @@ void ThermalNetwork::remove_node(Index node_num) {
         return;
     }
 
-    const int inttype_node_num = to_inttype_node_num(node_num);
-    const Index idx = _nodes->get_idx_from_node_num(inttype_node_num);
+    const NodeNum inttype_node_num = to_node_num(node_num);
+    const auto idx = _nodes->get_idx_from_node_num(inttype_node_num);
 
-    if (idx < 0) {
+    if (!idx.has_value()) {
         return;
     }
 
-    const auto diff_count =
-        static_cast<Index>(_nodes->_diff_node_num_vector.size());
+    const auto diff_count = to_idx(_nodes->_diff_node_num_vector.size());
 
     auto& conductive_storage =
         _conductive_couplings->_couplings.get_coupling_matrices();
     auto& radiative_storage =
         _radiative_couplings->_couplings.get_coupling_matrices();
 
-    if (idx < diff_count) {
-        conductive_storage._remove_node_diff(idx);
-        radiative_storage._remove_node_diff(idx);
+    if (*idx < diff_count) {
+        conductive_storage._remove_node_diff(*idx);
+        radiative_storage._remove_node_diff(*idx);
     } else {
-        const Index boundary_idx = idx - diff_count;
+        const Index boundary_idx = *idx - diff_count;
         conductive_storage._remove_node_bound(boundary_idx);
         radiative_storage._remove_node_bound(boundary_idx);
     }
@@ -209,8 +211,8 @@ double ThermalNetwork::flow_conductive(Index node_num_1, Index node_num_2) {
         return 0.0;
     }
 
-    const int inttype_node_num_1 = to_inttype_node_num(node_num_1);
-    const int inttype_node_num_2 = to_inttype_node_num(node_num_2);
+    const NodeNum inttype_node_num_1 = to_node_num(node_num_1);
+    const NodeNum inttype_node_num_2 = to_node_num(node_num_2);
 
     if (!_nodes->is_node(inttype_node_num_1) ||
         !_nodes->is_node(inttype_node_num_2)) {
@@ -241,8 +243,8 @@ double ThermalNetwork::flow_radiative(Index node_num_1, Index node_num_2) {
         return 0.0;
     }
 
-    const int inttype_node_num_1 = to_inttype_node_num(node_num_1);
-    const int inttype_node_num_2 = to_inttype_node_num(node_num_2);
+    const NodeNum inttype_node_num_1 = to_node_num(node_num_1);
+    const NodeNum inttype_node_num_2 = to_node_num(node_num_2);
 
     if (!_nodes->is_node(inttype_node_num_1) ||
         !_nodes->is_node(inttype_node_num_2)) {

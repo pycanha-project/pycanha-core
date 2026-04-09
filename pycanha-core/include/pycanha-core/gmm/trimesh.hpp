@@ -303,8 +303,7 @@ class TriMesh {
     void sort_triangles() {
         // Create a vector of indices
         // TODO: Change indices to Eigen object (for avoid castings)
-        std::vector<MeshIndex> indices(
-            static_cast<MeshIndex>(_triangles.rows()));
+        std::vector<MeshIndex> indices(to_sizet(_triangles.rows()));
 
         if (_triangles.rows() == 0) {
             return;
@@ -320,17 +319,15 @@ class TriMesh {
 
         // Sort the triangles
         TrianglesList sorted_triangles(_triangles.rows(), _triangles.cols());
-        for (VectorIndex i = 0; i < indices.size(); ++i) {
-            sorted_triangles.row(static_cast<Index>(i)) =
-                _triangles.row(indices[i]);
+        for (std::size_t i = 0; i < indices.size(); ++i) {
+            sorted_triangles.row(to_idx(i)) = _triangles.row(indices[i]);
         }
         _triangles = std::move(sorted_triangles);
 
         // Reorder the face ids
         FaceIdsList sorted_face_ids(_face_ids.size());
-        for (Index i = 0; i < static_cast<Index>(indices.size()); ++i) {
-            sorted_face_ids[i] =
-                _face_ids[indices[static_cast<VectorIndex>(i)]];
+        for (Index i = 0; i < to_idx(indices.size()); ++i) {
+            sorted_face_ids[i] = _face_ids[indices[to_sizet(i)]];
             // std::cout << sorted_face_ids[i] << "\n";
         }
 
@@ -345,7 +342,7 @@ class TriMesh {
         }
 
         // Size of triangles list
-        auto N = static_cast<MeshIndex>(_triangles.rows());
+        auto N = to_meshidx(_triangles.rows());
 
         if (N == 0) {
             return;
@@ -905,17 +902,15 @@ class TriMeshModel {
      */
     void add_mesh(const TriMesh& trimesh, GeometryIdType geometry_id) {
         // Get the size of the mesh
-        auto new_trimesh_n_points =
-            static_cast<MeshIndex>(trimesh.get_vertices().rows());
+        auto new_trimesh_n_points = to_meshidx(trimesh.get_vertices().rows());
         auto new_trimesh_n_triangles =
-            static_cast<MeshIndex>(trimesh.get_triangles().rows());
-        auto new_trimesh_n_edges =
-            static_cast<MeshIndex>(trimesh.get_edges().size());
+            to_meshidx(trimesh.get_triangles().rows());
+        auto new_trimesh_n_edges = to_meshidx(trimesh.get_edges().size());
 
         // Get the size of the current mesh
-        auto current_n_points = static_cast<MeshIndex>(_vertices.rows());
-        auto current_n_triangles = static_cast<MeshIndex>(_triangles.rows());
-        auto current_n_edges = static_cast<MeshIndex>(_edges.size());
+        auto current_n_points = to_meshidx(_vertices.rows());
+        auto current_n_triangles = to_meshidx(_triangles.rows());
+        auto current_n_edges = to_meshidx(_edges.size());
 
         // MeshIndex offset_points = static_cast<MeshIndex>(_vertices.rows());
         // MeshIndex offset_edges = static_cast<MeshIndex>(_edges.size());
@@ -1261,8 +1256,8 @@ inline TriMesh create_2d_rectangular_mesh(const Eigen::VectorXd& dir1_mesh,
     // TODO(PERFORMANCE): Use Eigen instead of std::vector to avoid casting
 
     // 1. Determine the number of points to reserve space
-    auto dir1_size = static_cast<MeshIndex>(dir1_mesh.size());
-    auto dir2_size = static_cast<MeshIndex>(dir2_mesh.size());
+    auto dir1_size = to_meshidx(dir1_mesh.size());
+    auto dir2_size = to_meshidx(dir2_mesh.size());
 
     MeshIndex num_points_dir1 = dir1_size;  // Minimum number of points
     MeshIndex num_points_dir2 = dir2_size;  // Minimum number of points
@@ -1276,8 +1271,8 @@ inline TriMesh create_2d_rectangular_mesh(const Eigen::VectorXd& dir1_mesh,
     if (max_distance_points_dir1 > LENGTH_TOL) {
         for (MeshIndex i = 0; i < dir1_size - 1; ++i) {
             const double distance = dir1_mesh[i + 1] - dir1_mesh[i];
-            const auto num_additional_points = static_cast<MeshIndex>(
-                std::floor(distance / max_distance_points_dir1));
+            const auto num_additional_points = to_meshidx(static_cast<Index>(
+                std::floor(distance / max_distance_points_dir1)));
             num_points_dir1 += num_additional_points;
             additional_points_dir1[i] = num_additional_points;
         }
@@ -1286,8 +1281,8 @@ inline TriMesh create_2d_rectangular_mesh(const Eigen::VectorXd& dir1_mesh,
     if (max_distance_points_dir2 > LENGTH_TOL) {
         for (MeshIndex i = 0; i < dir2_size - 1; ++i) {
             const double distance = dir2_mesh[i + 1] - dir2_mesh[i];
-            const auto num_additional_points = static_cast<MeshIndex>(
-                std::floor(distance / max_distance_points_dir2));
+            const auto num_additional_points = to_meshidx(static_cast<Index>(
+                std::floor(distance / max_distance_points_dir2)));
             num_points_dir2 += num_additional_points;
             additional_points_dir2[i] = num_additional_points;
         }
@@ -1295,10 +1290,8 @@ inline TriMesh create_2d_rectangular_mesh(const Eigen::VectorXd& dir1_mesh,
 
     // 2. Create the mesh points (3D points with z = 0)
     VerticesList points(num_points_dir1 * num_points_dir2, 3);
-    std::vector<double> full_dir1_mesh(
-        static_cast<VectorIndex>(num_points_dir1));
-    std::vector<double> full_dir2_mesh(
-        static_cast<VectorIndex>(num_points_dir2));
+    std::vector<double> full_dir1_mesh(to_sizet(num_points_dir1));
+    std::vector<double> full_dir2_mesh(to_sizet(num_points_dir2));
 
     // Fill the full mesh arrays with the original and additional mesh
     // points
@@ -1331,8 +1324,8 @@ inline TriMesh create_2d_rectangular_mesh(const Eigen::VectorXd& dir1_mesh,
     p_idx = 0;
     for (MeshIndex i_dir2 = 0; i_dir2 < num_points_dir2; ++i_dir2) {
         for (MeshIndex i_dir1 = 0; i_dir1 < num_points_dir1; ++i_dir1) {
-            points(p_idx, 0) = full_dir1_mesh[static_cast<VectorIndex>(i_dir1)];
-            points(p_idx, 1) = full_dir2_mesh[static_cast<VectorIndex>(i_dir2)];
+            points(p_idx, 0) = full_dir1_mesh[to_sizet(i_dir1)];
+            points(p_idx, 1) = full_dir2_mesh[to_sizet(i_dir2)];
             points(p_idx, 2) = 0.0;
             ++p_idx;
         }
@@ -1427,7 +1420,7 @@ inline TriMesh create_2d_rectangular_mesh(const Eigen::VectorXd& dir1_mesh,
     // Reverse order loop for anti-clockwise edges order
     // To loop in reverse order with an unsigned type, we need to use a
     // trick. See: https://stackoverflow.com/a/5458251
-    for (MeshIndex i_dir1 = dir1_size - 2; i_dir1 != static_cast<MeshIndex>(-1);
+    for (MeshIndex i_dir1 = dir1_size - 2; i_dir1 != INVALID_MESH_INDEX;
          --i_dir1) {
         perimeter_edges[per_edge_idx] = i_dir1 + skip_horizontal_edges;
         ++per_edge_idx;
@@ -1436,7 +1429,7 @@ inline TriMesh create_2d_rectangular_mesh(const Eigen::VectorXd& dir1_mesh,
     // Reverse order loop for anti-clockwise edges order
     // To loop in reverse order with an unsigned type, we need to use a
     // trick. See: https://stackoverflow.com/a/5458251
-    for (MeshIndex i_dir2 = dir2_size - 2; i_dir2 != static_cast<MeshIndex>(-1);
+    for (MeshIndex i_dir2 = dir2_size - 2; i_dir2 != INVALID_MESH_INDEX;
          --i_dir2) {
         perimeter_edges[per_edge_idx] = i_dir2 + skip_horizontal_edges;
         ++per_edge_idx;
@@ -1508,8 +1501,8 @@ inline TriMesh create_2d_quadrilateral_mesh(
     const Eigen::VectorXd dir2_mesh = dir2_mesh_normalized * v23.norm();
 
     // 1. Determine the number of points to reserve space
-    const auto dir1_size = static_cast<MeshIndex>(dir1_mesh.size());
-    const auto dir2_size = static_cast<MeshIndex>(dir2_mesh.size());
+    const auto dir1_size = to_meshidx(dir1_mesh.size());
+    const auto dir2_size = to_meshidx(dir2_mesh.size());
 
     MeshIndex num_points_edges =
         dir1_size * dir2_size;  // Minimum number of points
@@ -1563,8 +1556,9 @@ inline TriMesh create_2d_quadrilateral_mesh(
                 double hdistance = mesh[i + 1] - mesh[i];
                 // Project the distance in the horizontal direction
                 hdistance = hdistance * dir1_directions[j].norm();
-                const auto num_additional_points = static_cast<MeshIndex>(
-                    std::floor(hdistance / max_distance_points_hdir));
+                const auto num_additional_points =
+                    to_meshidx(static_cast<Index>(
+                        std::floor(hdistance / max_distance_points_hdir)));
                 num_points_edges += num_additional_points;
                 additional_points_dir1[j][i] = num_additional_points;
             }
@@ -1580,8 +1574,9 @@ inline TriMesh create_2d_quadrilateral_mesh(
                 double vdistance = mesh[i + 1] - mesh[i];
                 // Project the distance in the vertical direction
                 vdistance = vdistance * dir2_directions[j].norm();
-                const auto num_additional_points = static_cast<MeshIndex>(
-                    std::floor(vdistance / max_distance_points_vdir));
+                const auto num_additional_points =
+                    to_meshidx(static_cast<Index>(
+                        std::floor(vdistance / max_distance_points_vdir)));
                 num_points_edges += num_additional_points;
                 additional_points_dir2[j][i] = num_additional_points;
             }
@@ -1810,7 +1805,7 @@ inline TriMesh create_2d_quadrilateral_mesh(
     // Reverse order loop for anti-clockwise edges order
     // To loop in reverse order with an unsigned type, we need to use a
     // trick. See: https://stackoverflow.com/a/5458251
-    for (MeshIndex i_dir1 = dir1_size - 2; i_dir1 != static_cast<MeshIndex>(-1);
+    for (MeshIndex i_dir1 = dir1_size - 2; i_dir1 != INVALID_MESH_INDEX;
          --i_dir1) {
         perimeter_edges[per_edge_idx] = i_dir1 + skip_horizontal_edges;
         ++per_edge_idx;
@@ -1820,7 +1815,7 @@ inline TriMesh create_2d_quadrilateral_mesh(
     // Reverse order loop for anti-clockwise edges order
     // To loop in reverse order with an unsigned type, we need to use a
     // trick. See: https://stackoverflow.com/a/5458251
-    for (MeshIndex i_dir2 = dir2_size - 2; i_dir2 != static_cast<MeshIndex>(-1);
+    for (MeshIndex i_dir2 = dir2_size - 2; i_dir2 != INVALID_MESH_INDEX;
          --i_dir2) {
         perimeter_edges[per_edge_idx] = i_dir2 + skip_horizontal_edges;
         ++per_edge_idx;

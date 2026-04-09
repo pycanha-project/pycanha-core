@@ -61,6 +61,14 @@ function(add_clang_tidy_to_target target)
         set(CLANG_TIDY_WARNING_AS_ERRORS )
         endif()
 
+        set(CLANG_TIDY_EXTRA_ARGS)
+        if(target MATCHES "^tests")
+            # Catch2 triggers a false positive for this analyzer check when
+            # clang-tidy walks macro-expanded test assertions.
+            list(APPEND CLANG_TIDY_EXTRA_ARGS
+                 --checks=-clang-analyzer-optin.core.EnumCastOutOfRange)
+        endif()
+
         message("==> Added Clang Tidy version ${CLANG_TIDY_VERSION} for Target: ${target}")
         add_custom_target(
             ${target}_clangtidy
@@ -68,6 +76,7 @@ function(add_clang_tidy_to_target target)
                 ${CLANG_TIDY_EXE}
                 --config-file ${CMAKE_SOURCE_DIR}/.clang-tidy
                 --extra-arg-before=-std=${CMAKE_CXX_STANDARD}
+                ${CLANG_TIDY_EXTRA_ARGS}
                 ${CLANG_TIDY_WARNING_AS_ERRORS}
                 -p ${CMAKE_BINARY_DIR}
                 ${TARGET_SOURCES}

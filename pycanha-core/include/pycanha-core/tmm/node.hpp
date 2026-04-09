@@ -37,7 +37,10 @@
 
 #pragma once
 #include <memory>
+#include <optional>
 #include <string>
+
+#include "pycanha-core/globals.hpp"
 
 namespace pycanha {
 
@@ -109,7 +112,7 @@ class Node {
     /**
      * Node attribute: User node number
      */
-    int _node_num;
+    NodeNum _node_num;
 
     // Public methods
   public:
@@ -124,14 +127,14 @@ class Node {
      * set to zero. The node type and attributes can be changed through the
      * setters member functions.
      */
-    explicit Node(int node_num);
+    explicit Node(NodeNum node_num);
 
     /// Associated node constructor 1.
     /**
      * Similar to the previous one, but given directly the weak pointer to the
      * Nodes instance.
      */
-    Node(int node_num, const std::weak_ptr<Nodes>& parent_pointer);
+    Node(NodeNum node_num, const std::weak_ptr<Nodes>& parent_pointer);
 
     // Move constructor
     Node(Node&& other_node) noexcept;
@@ -153,8 +156,8 @@ class Node {
     //-----------------------------------------
 
     // TODO: Inconsistent nomenclature
-    [[nodiscard]] int get_node_num() const;  ///< User node number getter.
-    int get_int_node_num();                  ///< Internal node number getter.
+    [[nodiscard]] NodeNum get_node_num() const;  ///< User node number getter.
+    std::optional<Index> get_int_node_num();  ///< Internal node number getter.
     /**
      * Two valid types:
      * - 'D': Diffusive
@@ -183,7 +186,7 @@ class Node {
     // NOLINTEND(readability-identifier-naming)
 
     // TODO: Inconsistent nomenclature
-    void set_node_num(int node_num);  ///< Internal node number setter.
+    void set_node_num(NodeNum node_num);  ///< Internal node number setter.
     /**
      * Two valid types:
      * - 'D': Diffusive
@@ -248,9 +251,9 @@ class Node {
 
     // Private methods
   private:
-    double resolve_get_double(double (Nodes::*nodes_getter)(int),
+    double resolve_get_double(double (Nodes::*nodes_getter)(NodeNum),
                               double LocalStorage::*local_member);
-    void resolve_set_double(bool (Nodes::*nodes_setter)(int, double),
+    void resolve_set_double(bool (Nodes::*nodes_setter)(NodeNum, double),
                             double LocalStorage::*local_member, double value);
 
     /**

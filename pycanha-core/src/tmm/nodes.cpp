@@ -7,6 +7,7 @@
 #include <cstddef>
 #include <iterator>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -210,7 +211,7 @@ void Nodes::ensure_node_map() const {
     }
 }
 
-bool Nodes::find_node_index(int node_num, Index& index,
+bool Nodes::find_node_index(NodeNum node_num, Index& index,
                             const char* error_prefix) const {
     ensure_node_map();
     auto it = _usr_to_int_node_num.find(node_num);
@@ -225,36 +226,36 @@ bool Nodes::find_node_index(int node_num, Index& index,
     return true;
 }
 
-double Nodes::resolve_get_dense_attr(int node_num,
+double Nodes::resolve_get_dense_attr(NodeNum node_num,
                                      const std::vector<double>& storage) const {
     Index index = 0;
     if (!find_node_index(node_num, index, "Get")) {
         return std::nan("");
     }
-    return storage[static_cast<std::size_t>(index)];
+    return storage[to_sizet(index)];
 }
 
-bool Nodes::resolve_set_dense_attr(int node_num, std::vector<double>& storage,
-                                   double value) {
+bool Nodes::resolve_set_dense_attr(NodeNum node_num,
+                                   std::vector<double>& storage, double value) {
     Index index = 0;
     if (!find_node_index(node_num, index, "Set")) {
         return false;
     }
-    storage[static_cast<std::size_t>(index)] = value;
+    storage[to_sizet(index)] = value;
     return true;
 }
 
-double* Nodes::resolve_get_dense_attr_ref(int node_num,
+double* Nodes::resolve_get_dense_attr_ref(NodeNum node_num,
                                           std::vector<double>& storage) {
     Index index = 0;
     if (!find_node_index(node_num, index, "Get")) {
         return nullptr;
     }
-    return &storage[static_cast<std::size_t>(index)];
+    return &storage[to_sizet(index)];
 }
 
 double Nodes::resolve_get_sparse_attr(
-    int node_num, const Eigen::SparseVector<double>& storage) const {
+    NodeNum node_num, const Eigen::SparseVector<double>& storage) const {
     Index index = 0;
     if (!find_node_index(node_num, index, "Get")) {
         return std::nan("");
@@ -262,7 +263,7 @@ double Nodes::resolve_get_sparse_attr(
     return storage.coeff(index);
 }
 
-bool Nodes::resolve_set_sparse_attr(int node_num,
+bool Nodes::resolve_set_sparse_attr(NodeNum node_num,
                                     Eigen::SparseVector<double>& storage,
                                     double value) {
     Index index = 0;
@@ -274,7 +275,7 @@ bool Nodes::resolve_set_sparse_attr(int node_num,
 }
 
 double* Nodes::resolve_get_sparse_attr_ref(
-    int node_num, Eigen::SparseVector<double>& storage) {
+    NodeNum node_num, Eigen::SparseVector<double>& storage) {
     Index index = 0;
     if (!find_node_index(node_num, index, "Get")) {
         return nullptr;
@@ -283,7 +284,7 @@ double* Nodes::resolve_get_sparse_attr_ref(
 }
 
 std::string Nodes::resolve_get_literal_attr(
-    int node_num, const Eigen::SparseVector<LiteralString>& storage) const {
+    NodeNum node_num, const Eigen::SparseVector<LiteralString>& storage) const {
     Index index = 0;
     if (!find_node_index(node_num, index, "Get")) {
         return {};
@@ -292,7 +293,7 @@ std::string Nodes::resolve_get_literal_attr(
 }
 
 bool Nodes::resolve_set_literal_attr(
-    int node_num, Eigen::SparseVector<LiteralString>& storage,
+    NodeNum node_num, Eigen::SparseVector<LiteralString>& storage,
     const std::string& value) {
     Index index = 0;
     if (!find_node_index(node_num, index, "Set")) {
@@ -305,7 +306,7 @@ bool Nodes::resolve_set_literal_attr(
 void Nodes::add_node(Node& node) {
     // Info obtained from "node"
     const char type = node.get_type();
-    const int node_num = node.get_node_num();
+    const NodeNum node_num = node.get_node_num();
 
     // Update the node number mapping
     Index insert_idx = 0;
@@ -319,14 +320,12 @@ void Nodes::add_node(Node& node) {
     if (type == 'D') {
         auto it = std::upper_bound(_diff_node_num_vector.begin(),
                                    _diff_node_num_vector.end(), node_num);
-        insert_idx = static_cast<Index>(
-            std::distance(_diff_node_num_vector.begin(), it));
+        insert_idx = to_idx(std::distance(_diff_node_num_vector.begin(), it));
     } else if (type == 'B') {
         auto it = std::upper_bound(_bound_node_num_vector.begin(),
                                    _bound_node_num_vector.end(), node_num);
-        insert_idx = static_cast<Index>(
-            std::distance(_bound_node_num_vector.begin(), it));
-        insert_idx += static_cast<Index>(_diff_node_num_vector.size());
+        insert_idx = to_idx(std::distance(_bound_node_num_vector.begin(), it));
+        insert_idx += to_idx(_diff_node_num_vector.size());
     } else {
         SPDLOG_LOGGER_ERROR(pycanha::get_logger(), "Wrong node type.");
         return;
@@ -341,16 +340,16 @@ void Nodes::add_nodes(std::vector<Node>& node_vector) {
     }
 }
 
-int Nodes::num_nodes() const { return static_cast<int>(T_vector.size()); }
+Index Nodes::num_nodes() const { return to_idx(T_vector.size()); }
 
-int Nodes::get_num_nodes() const { return static_cast<int>(T_vector.size()); }
+Index Nodes::get_num_nodes() const { return to_idx(T_vector.size()); }
 
-int Nodes::get_num_diff_nodes() const {
-    return static_cast<int>(_diff_node_num_vector.size());
+Index Nodes::get_num_diff_nodes() const {
+    return to_idx(_diff_node_num_vector.size());
 }
 
-int Nodes::get_num_bound_nodes() const {
-    return static_cast<int>(_bound_node_num_vector.size());
+Index Nodes::get_num_bound_nodes() const {
+    return to_idx(_bound_node_num_vector.size());
 }
 
 double Nodes::get_T(int node_num) {
@@ -540,13 +539,13 @@ bool Nodes::set_type(int node_num, char type) {
         return false;
     }
 }
-char Nodes::get_type(int node_num) {
+char Nodes::get_type(NodeNum node_num) {
     Index index = 0;
     if (!find_node_index(node_num, index, "Get")) {
         return static_cast<char>(0);
     }
 
-    const auto diff_size = static_cast<Index>(_diff_node_num_vector.size());
+    const auto diff_size = to_idx(_diff_node_num_vector.size());
     if (index < diff_size) {
         return 'D';
     }
@@ -557,19 +556,19 @@ void Nodes::create_node_num_map() const {
     _usr_to_int_node_num.clear();
 
     Index internal_index = 0;
-    for (const int diff_node_num : _diff_node_num_vector) {
-        _usr_to_int_node_num[diff_node_num] = static_cast<int>(internal_index);
+    for (const NodeNum diff_node_num : _diff_node_num_vector) {
+        _usr_to_int_node_num[diff_node_num] = internal_index;
         ++internal_index;
     }
-    for (const int bound_node_num : _bound_node_num_vector) {
-        _usr_to_int_node_num[bound_node_num] = static_cast<int>(internal_index);
+    for (const NodeNum bound_node_num : _bound_node_num_vector) {
+        _usr_to_int_node_num[bound_node_num] = internal_index;
         ++internal_index;
     }
 
     _node_num_mapped = true;
 }
 
-void Nodes::diffusive_to_boundary(int usr_node_num) {
+void Nodes::diffusive_to_boundary(NodeNum usr_node_num) {
     SPDLOG_LOGGER_WARN(pycanha::get_logger(),
                        "diffusive_to_boundary: Not implemented yet");
     static_cast<void>(_node_num_mapped);
@@ -581,7 +580,7 @@ void Nodes::diffusive_to_boundary(int usr_node_num) {
     // 4. Insert the copy of the node in the model
 }
 
-void Nodes::boundary_to_diffusive(int usr_node_num) {
+void Nodes::boundary_to_diffusive(NodeNum usr_node_num) {
     SPDLOG_LOGGER_WARN(pycanha::get_logger(),
                        "boundary_to_diffusive: Not implemented yet");
     static_cast<void>(_node_num_mapped);
@@ -593,53 +592,58 @@ void Nodes::boundary_to_diffusive(int usr_node_num) {
     // 4. Insert the copy of the node in the model
 }
 
-Index Nodes::get_idx_from_node_num(int node_num) const {
+std::optional<Index> Nodes::get_idx_from_node_num(NodeNum node_num) const {
     Index index = 0;
     if (!find_node_index(node_num, index, nullptr)) {
         SPDLOG_LOGGER_WARN(pycanha::get_logger(), "Node does not exist");
-        return -1;
+        return std::nullopt;
     }
     return index;
 }
 
-int Nodes::get_node_num_from_idx(Index idx) const {
+std::optional<NodeNum> Nodes::get_node_num_from_idx(Index idx) const {
     ensure_node_map();
-    const auto diff_size = static_cast<Index>(_diff_node_num_vector.size());
-    const auto bound_size = static_cast<Index>(_bound_node_num_vector.size());
+    const auto diff_size = to_idx(_diff_node_num_vector.size());
+    const auto bound_size = to_idx(_bound_node_num_vector.size());
 
     if (idx < 0) {
         SPDLOG_LOGGER_WARN(pycanha::get_logger(), "Node does not exist");
-        return -1;
+        return std::nullopt;
     }
 
     if (idx < diff_size) {
-        return _diff_node_num_vector[static_cast<std::size_t>(idx)];
+        return _diff_node_num_vector[to_sizet(idx)];
     }
 
     const auto adjusted = idx - diff_size;
     if (adjusted >= 0 && adjusted < bound_size) {
-        return _bound_node_num_vector[static_cast<std::size_t>(adjusted)];
+        return _bound_node_num_vector[to_sizet(adjusted)];
     }
 
     SPDLOG_LOGGER_WARN(pycanha::get_logger(), "Node does not exist");
-    return -1;
+    return std::nullopt;
 }
 
-bool Nodes::is_node(int node_num) const {
+bool Nodes::is_node(NodeNum node_num) const {
     Index index = 0;
     return find_node_index(node_num, index, nullptr);
 }
 
-Node Nodes::get_node_from_node_num(int node_num) {
+Node Nodes::get_node_from_node_num(NodeNum node_num) {
     if (is_node(node_num)) {
         return {node_num, _self_pointer};
     } else {
-        return Node(-1);
+        return Node(NodeNum{-1});
     }
 }
 
 Node Nodes::get_node_from_idx(Index idx) {
-    return {get_node_num_from_idx(idx), _self_pointer};
+    const auto node_num = get_node_num_from_idx(idx);
+    if (!node_num.has_value()) {
+        return Node(NodeNum{-1});
+    }
+
+    return {*node_num, _self_pointer};
 }
 
 void Nodes::insert_displace(Eigen::SparseVector<LiteralString>& sparse,
@@ -713,14 +717,14 @@ std::string Nodes::get_literal_C(int node_num) const {
     return resolve_get_literal_attr(node_num, literals_C);
 }
 
-bool Nodes::set_literal_C(int node_num, const std::string& str) {
+bool Nodes::set_literal_C(NodeNum node_num, const std::string& str) {
     return resolve_set_literal_attr(node_num, literals_C, str);
 }
 
-void Nodes::remove_node(int node_num) {
+void Nodes::remove_node(NodeNum node_num) {
     auto idx = get_idx_from_node_num(node_num);
 
-    if (idx < 0) {
+    if (!idx.has_value()) {
         SPDLOG_LOGGER_WARN(pycanha::get_logger(), "Node {} does not exist.",
                            node_num);
         return;
@@ -728,30 +732,30 @@ void Nodes::remove_node(int node_num) {
 
     _usr_to_int_node_num.extract(node_num);
 
-    T_vector.erase(T_vector.begin() + idx);
-    C_vector.erase(C_vector.begin() + idx);
+    T_vector.erase(T_vector.begin() + *idx);
+    C_vector.erase(C_vector.begin() + *idx);
 
-    delete_displace(qs_vector, idx);
-    delete_displace(qa_vector, idx);
-    delete_displace(qe_vector, idx);
-    delete_displace(qi_vector, idx);
-    delete_displace(qr_vector, idx);
-    delete_displace(a_vector, idx);
-    delete_displace(fx_vector, idx);
-    delete_displace(fy_vector, idx);
-    delete_displace(fz_vector, idx);
-    delete_displace(eps_vector, idx);
-    delete_displace(aph_vector, idx);
+    delete_displace(qs_vector, *idx);
+    delete_displace(qa_vector, *idx);
+    delete_displace(qe_vector, *idx);
+    delete_displace(qi_vector, *idx);
+    delete_displace(qr_vector, *idx);
+    delete_displace(a_vector, *idx);
+    delete_displace(fx_vector, *idx);
+    delete_displace(fy_vector, *idx);
+    delete_displace(fz_vector, *idx);
+    delete_displace(eps_vector, *idx);
+    delete_displace(aph_vector, *idx);
 
-    delete_displace(literals_C, idx);
+    delete_displace(literals_C, *idx);
 
     // Reshape node vector and conductors
-    if (idx < _diff_node_num_vector.size()) {
-        _diff_node_num_vector.erase(_diff_node_num_vector.begin() + idx);
+    if (*idx < to_idx(_diff_node_num_vector.size())) {
+        _diff_node_num_vector.erase(_diff_node_num_vector.begin() + *idx);
     } else {
         _bound_node_num_vector.erase(
             _bound_node_num_vector.begin() +
-            (idx - static_cast<Index>(_diff_node_num_vector.size())));
+            (*idx - to_idx(_diff_node_num_vector.size())));
     }
     _node_num_mapped = false;
 }
@@ -759,7 +763,7 @@ void Nodes::remove_node(int node_num) {
 void Nodes::add_node_insert_idx(Node& node, Index insert_idx) {
     // Info obtained from "node"
     const char type = node.get_type();
-    const int node_num = node.get_node_num();
+    const NodeNum node_num = node.get_node_num();
 
     if (type == 'D') {
         _diff_node_num_vector.insert(_diff_node_num_vector.begin() + insert_idx,
@@ -767,7 +771,7 @@ void Nodes::add_node_insert_idx(Node& node, Index insert_idx) {
     } else if (type == 'B') {
         _bound_node_num_vector.insert(
             _bound_node_num_vector.begin() +
-                (insert_idx - static_cast<Index>(_diff_node_num_vector.size())),
+                (insert_idx - to_idx(_diff_node_num_vector.size())),
             node_num);
     } else {
         SPDLOG_LOGGER_ERROR(pycanha::get_logger(), "Wrong node type.");

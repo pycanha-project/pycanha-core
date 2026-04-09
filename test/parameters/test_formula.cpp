@@ -62,8 +62,9 @@ std::shared_ptr<pycanha::ThermalMathematicalModel> make_jacobian_model() {
     model->parameters.add_parameter("k", 1.0);
     model->parameters.add_parameter("C", 1.0);
 
-    pycanha::ConductiveCouplingEntity conductive(model->network(), 1, 2);
-    pycanha::AttributeEntity capacity(model->network(), "C", 1);
+    const pycanha::Entity conductive =
+        pycanha::Entity::gl(model->network(), 1, 2);
+    const pycanha::Entity capacity = pycanha::Entity::c(model->network(), 1);
 
     model->formulas.add_formula(std::make_shared<pycanha::ExpressionFormula>(
         conductive, model->parameters, "k"));
@@ -76,13 +77,56 @@ std::shared_ptr<pycanha::ThermalMathematicalModel> make_jacobian_model() {
 
 }  // namespace
 
+// NOLINTNEXTLINE(clang-analyzer-optin.core.EnumCastOutOfRange)
+TEST_CASE("Entity parses and canonicalizes attribute strings", "[entity]") {
+    auto network = std::make_shared<pycanha::ThermalNetwork>();
+    pycanha::Node node1(1);
+    network->add_node(node1);
+    network->nodes().set_qi(1, 7.0);
+
+    const auto heat_load = pycanha::Entity::from_string(*network, " qi 1 ");
+    if (!heat_load.has_value()) {
+        throw std::runtime_error("Expected QI entity to parse");
+    }
+
+    const pycanha::Entity parsed_heat_load = heat_load.value();
+    REQUIRE(parsed_heat_load.type() == pycanha::EntityType::qi);
+    REQUIRE(parsed_heat_load.string_representation() == "QI1");
+    REQUIRE(parsed_heat_load.exists());
+    REQUIRE(parsed_heat_load.get_value() == Catch::Approx(7.0));
+}
+
+// NOLINTNEXTLINE(clang-analyzer-optin.core.EnumCastOutOfRange)
+TEST_CASE("Entity parses and canonicalizes coupling strings", "[entity]") {
+    auto network = std::make_shared<pycanha::ThermalNetwork>();
+    pycanha::Node node1(1);
+    pycanha::Node node2(2);
+    network->add_node(node1);
+    network->add_node(node2);
+    network->conductive_couplings().add_coupling(1, 2, 3.0);
+
+    const auto coupling =
+        pycanha::Entity::from_string(*network, " gl( 2 , 1 ) ");
+    if (!coupling.has_value()) {
+        throw std::runtime_error("Expected GL entity to parse");
+    }
+
+    const pycanha::Entity parsed_coupling = coupling.value();
+    REQUIRE(parsed_coupling.type() == pycanha::EntityType::gl);
+    REQUIRE(parsed_coupling.string_representation() == "GL(1,2)");
+    REQUIRE(parsed_coupling.exists());
+    REQUIRE(parsed_coupling.get_value() == Catch::Approx(3.0));
+
+    REQUIRE_FALSE(pycanha::Entity::from_string(*network, "GL(1)").has_value());
+}
+
 TEST_CASE("ExpressionFormula parses scalar expressions",
           "[formulas][expression]") {
     auto network = make_single_node_network();
     pycanha::Parameters parameters;
     parameters.add_parameter("p1", 12.5);
 
-    pycanha::AttributeEntity heat_load(*network, "QI", 1);
+    const pycanha::Entity heat_load = pycanha::Entity::qi(*network, 1);
     pycanha::ExpressionFormula formula(heat_load, parameters, "p1");
 
     REQUIRE(formula.expression() == "p1");
@@ -104,7 +148,7 @@ TEST_CASE(
     parameters.add_parameter("p1", 6.0);
     parameters.add_parameter("p2", 4.0);
 
-    pycanha::AttributeEntity heat_load(*network, "QI", 1);
+    const pycanha::Entity heat_load = pycanha::Entity::qi(*network, 1);
     pycanha::ExpressionFormula formula(heat_load, parameters,
                                        "p1*p2/123.0+0.01");
 
@@ -128,7 +172,7 @@ TEST_CASE("ExpressionFormula calculates analytical derivatives",
     parameters.add_parameter("p1", 2.0);
     parameters.add_parameter("p2", 5.0);
 
-    pycanha::AttributeEntity heat_load(*network, "QI", 1);
+    const pycanha::Entity heat_load = pycanha::Entity::qi(*network, 1);
     pycanha::ExpressionFormula formula(heat_load, parameters, "p1*p2");
 
     formula.compile_formula();
@@ -145,7 +189,7 @@ TEST_CASE("ExpressionFormula accepts Python-style power syntax",
     pycanha::Parameters parameters;
     parameters.add_parameter("p1", 3.0);
 
-    pycanha::AttributeEntity heat_load(*network, "QI", 1);
+    const pycanha::Entity heat_load = pycanha::Entity::qi(*network, 1);
     pycanha::ExpressionFormula formula(heat_load, parameters, "p1**2");
 
     formula.apply_formula();
@@ -163,7 +207,7 @@ TEST_CASE("ExpressionFormula supports common math functions",
     parameters.add_parameter("p1", 0.5);
     parameters.add_parameter("p2", 1.25);
 
-    pycanha::AttributeEntity heat_load(*network, "QI", 1);
+    const pycanha::Entity heat_load = pycanha::Entity::qi(*network, 1);
     pycanha::ExpressionFormula formula(heat_load, parameters,
                                        "sin(p1) + exp(p2)");
 
@@ -171,6 +215,39 @@ TEST_CASE("ExpressionFormula supports common math functions",
 
     REQUIRE(network->nodes().get_qi(1) ==
             Catch::Approx(std::sin(0.5) + std::exp(1.25)));
+}
+
+TEST_CASE(
+    "ExpressionFormula keeps slot binding across rename in interpreted mode",
+    "[formulas][expression]") {
+    auto network = make_single_node_network();
+    pycanha::Parameters parameters;
+    parameters.add_parameter("p1", 3.0);
+
+    const pycanha::Entity heat_load = pycanha::Entity::qi(*network, 1);
+    pycanha::ExpressionFormula formula(heat_load, parameters, "p1");
+
+    parameters.rename_parameter("p1", "renamed_p1");
+    parameters.set_parameter("renamed_p1", 7.0);
+
+    formula.apply_formula();
+
+    REQUIRE(network->nodes().get_qi(1) == Catch::Approx(7.0));
+}
+
+TEST_CASE("ExpressionFormula compiled mode invalidates on structural changes",
+          "[formulas][expression]") {
+    auto network = make_single_node_network();
+    pycanha::Parameters parameters;
+    parameters.add_parameter("p1", 6.0);
+
+    const pycanha::Entity heat_load = pycanha::Entity::qi(*network, 1);
+    pycanha::ExpressionFormula formula(heat_load, parameters, "p1");
+
+    formula.compile_formula();
+    parameters.add_parameter("p2", 4.0);
+
+    REQUIRE_THROWS_AS(formula.apply_compiled_formula(), std::runtime_error);
 }
 
 TEST_CASE("ExpressionFormula rejects matrix and array syntax for now",
@@ -183,7 +260,7 @@ TEST_CASE("ExpressionFormula rejects matrix and array syntax for now",
     parameters.add_parameter("mat", matrix);
     parameters.add_parameter("scale", 2.0);
 
-    pycanha::AttributeEntity heat_load(*network, "QI", 1);
+    const pycanha::Entity heat_load = pycanha::Entity::qi(*network, 1);
 
     REQUIRE_THROWS_AS(
         pycanha::ExpressionFormula(heat_load, parameters, "mat[0,1] * scale"),
@@ -197,7 +274,7 @@ TEST_CASE(
     pycanha::Parameters parameters;
     parameters.add_parameter("p1", 1.0);
 
-    pycanha::AttributeEntity heat_load(*network, "QI", 1);
+    const pycanha::Entity heat_load = pycanha::Entity::qi(*network, 1);
 
     REQUIRE_THROWS_AS(pycanha::ExpressionFormula(heat_load, parameters, "sin("),
                       std::invalid_argument);
@@ -226,8 +303,8 @@ TEST_CASE(
     parameters->add_parameter("offset", 2.0);
     parameters->add_parameter("temp", 3.0);
 
-    pycanha::AttributeEntity heat_load(*network, "QI", 1);
-    pycanha::AttributeEntity temperature(*network, "T", 2);
+    const pycanha::Entity heat_load = pycanha::Entity::qi(*network, 1);
+    const pycanha::Entity temperature = pycanha::Entity::t(*network, 2);
 
     auto load_formula = std::make_shared<pycanha::ExpressionFormula>(
         heat_load, *parameters, "load + offset");

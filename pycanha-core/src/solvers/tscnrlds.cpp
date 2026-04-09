@@ -60,7 +60,7 @@ void TSCNRLDS::initialize() {
     _lower_kl_indices.resize(KLdd.nonZeros());
     _upper_kr_indices.resize(KRdd.nonZeros());
     _lower_kr_indices.resize(KRdd.nonZeros());
-    _diagonal_indices.resize(static_cast<std::size_t>(nd));
+    _diagonal_indices.resize(to_sizet(nd));
 
     _radiation_linear_term = VectorXd::Zero(nd);
     _kt_q_n0 = VectorXd::Zero(nd);
@@ -100,7 +100,7 @@ void TSCNRLDS::initialize() {
     // NOLINTEND(cppcoreguidelines-pro-bounds-pointer-arithmetic)
 
     for (Index row = 0; row < nd; ++row) {
-        _diagonal_indices[static_cast<std::size_t>(row)] = static_cast<int>(
+        _diagonal_indices[to_sizet(row)] = static_cast<int>(
             &_k_matrix.coeffRef(row, row) - _k_matrix.valuePtr());
     }
 
@@ -112,7 +112,7 @@ void TSCNRLDS::initialize() {
     build_conductance_matrix();
 
 #if PYCANHA_USE_MKL
-    _pardiso_perm.assign(static_cast<std::size_t>(nd), 0);
+    _pardiso_perm.assign(to_sizet(nd), 0);
     _pardiso_size = static_cast<MKL_INT>(nd);
     _pardiso_maxfct = 1;
     _pardiso_mnum = 1;
@@ -127,9 +127,9 @@ void TSCNRLDS::initialize() {
     _k_matrix_outer_index.resize(outer_size);
     _k_matrix_inner_index.resize(inner_nnz);
 
-    std::copy_n(_k_matrix.outerIndexPtr(), static_cast<std::size_t>(outer_size),
+    std::copy_n(_k_matrix.outerIndexPtr(), to_sizet(outer_size),
                 _k_matrix_outer_index.begin());
-    std::copy_n(_k_matrix.innerIndexPtr(), static_cast<std::size_t>(inner_nnz),
+    std::copy_n(_k_matrix.innerIndexPtr(), to_sizet(inner_nnz),
                 _k_matrix_inner_index.begin());
 
     // TODO(PYC-405): Wrap MKL control structure access to avoid reinterpret
@@ -192,6 +192,8 @@ void TSCNRLDS::initialize() {
 
 void TSCNRLDS::solve() {
     SPDLOG_LOGGER_INFO(get_logger(), "TSCNRLDS solving...");
+
+    const FormulaExecutionGuard formula_execution(*this);
 
     restart_solve();
     callback_transient_time_change();

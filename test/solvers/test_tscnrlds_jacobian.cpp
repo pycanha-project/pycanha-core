@@ -81,8 +81,10 @@ std::shared_ptr<pycanha::ThermalMathematicalModel> make_python_example_model() {
     model->parameters.add_parameter("k", example_conductive_coupling);
     model->parameters.add_parameter("C", example_capacity);
 
-    pycanha::ConductiveCouplingEntity conductive_entity(model->network(), 1, 2);
-    pycanha::AttributeEntity capacity_entity(model->network(), "C", 1);
+    const pycanha::Entity conductive_entity =
+        pycanha::Entity::gl(model->network(), 1, 2);
+    const pycanha::Entity capacity_entity =
+        pycanha::Entity::c(model->network(), 1);
 
     // This is the C++ equivalent of the Python formulas GL(1,2)=k and C1=C.
     // The derivative with respect to the corresponding parameter is 1.

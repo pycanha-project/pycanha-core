@@ -10,7 +10,7 @@ using namespace pycanha;  // NOLINT(build/namespaces)
 void assert_node_default_values(Node& tn) {
     // Suppress false positives from Catch2 expression decomposition.
     // NOLINTBEGIN(bugprone-chained-comparison)
-    REQUIRE(tn.get_int_node_num() == -1);
+    REQUIRE_FALSE(tn.get_int_node_num().has_value());
     REQUIRE(tn.get_type() == 'D');
     REQUIRE(tn.get_T() == 0.0);
     REQUIRE(tn.get_C() == 0.0);
@@ -118,7 +118,7 @@ TEST_CASE("Node Default Values", "[node]") {
 
             // NOLINTBEGIN(bugprone-chained-comparison)
             REQUIRE(usr_num == tn2.get_node_num());
-            REQUIRE(tn2.get_int_node_num() == -1);
+            REQUIRE_FALSE(tn2.get_int_node_num().has_value());
             REQUIRE(tn2.get_type() == type);
             REQUIRE(tn2.get_T() == T);
             REQUIRE(tn2.get_C() == C);
@@ -144,7 +144,7 @@ TEST_CASE("Node Default Values", "[node]") {
 
             // NOLINTBEGIN(bugprone-chained-comparison)
             REQUIRE(usr_num == tn.get_node_num());
-            REQUIRE(tn.get_int_node_num() == -1);
+            REQUIRE_FALSE(tn.get_int_node_num().has_value());
             REQUIRE(tn.get_type() == type);
             REQUIRE(tn.get_T() == T);
             REQUIRE(tn.get_C() == C);
@@ -166,7 +166,7 @@ TEST_CASE("Node Default Values", "[node]") {
         // tn2 destroyed: tn should still hold the values
         // NOLINTBEGIN(bugprone-chained-comparison)
         REQUIRE(usr_num == tn.get_node_num());
-        REQUIRE(tn.get_int_node_num() == -1);
+        REQUIRE_FALSE(tn.get_int_node_num().has_value());
         REQUIRE(tn.get_type() == type);
         REQUIRE(tn.get_T() == T);
         REQUIRE(tn.get_C() == C);

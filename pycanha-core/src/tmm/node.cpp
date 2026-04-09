@@ -7,6 +7,7 @@
 #include <cmath>
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 
@@ -16,14 +17,14 @@
 
 using namespace pycanha;  // NOLINT(build/namespaces)
 
-Node::Node(int node_num)
+Node::Node(NodeNum node_num)
     : _node_num(node_num),
       _local_storage_ptr(std::make_unique<LocalStorage>()) {}
 
-Node::Node(int node_num, const std::weak_ptr<Nodes>& parent_pointer)
+Node::Node(NodeNum node_num, const std::weak_ptr<Nodes>& parent_pointer)
     : _node_num(node_num), _parent_pointer(parent_pointer) {}
 
-double Node::resolve_get_double(double (Nodes::*nodes_getter)(int),
+double Node::resolve_get_double(double (Nodes::*nodes_getter)(NodeNum),
                                 double LocalStorage::*local_member) {
     if (auto parent_nodes = _parent_pointer.lock()) {
         Nodes& nodes_ref = *parent_nodes;
@@ -48,7 +49,7 @@ double Node::resolve_get_double(double (Nodes::*nodes_getter)(int),
     return std::nan("");
 }
 
-void Node::resolve_set_double(bool (Nodes::*nodes_setter)(int, double),
+void Node::resolve_set_double(bool (Nodes::*nodes_setter)(NodeNum, double),
                               double LocalStorage::*local_member,
                               double value) {
     if (auto parent_nodes = _parent_pointer.lock()) {
@@ -304,26 +305,26 @@ void Node::set_literal_C(const std::string& str) {
 }
 // TODO: Put in the macro?
 
-void Node::set_node_num(int node_num) { this->_node_num = node_num; }
+void Node::set_node_num(NodeNum node_num) { _node_num = node_num; }
 
-int Node::get_node_num() const { return _node_num; }
+NodeNum Node::get_node_num() const { return _node_num; }
 
-int Node::get_int_node_num() {
+std::optional<Index> Node::get_int_node_num() {
     if (auto parent_nodes = _parent_pointer.lock()) {
-        const Index temp = parent_nodes->get_idx_from_node_num(_node_num);
-        if (temp < 0) {
+        const auto temp = parent_nodes->get_idx_from_node_num(_node_num);
+        if (!temp.has_value()) {
             SPDLOG_LOGGER_DEBUG(
                 pycanha::get_logger(),
                 "Attribute unavailable. Probably the node was deleted. "
                 "The node is now unassociated from TNs.");
             _parent_pointer.reset();
         }
-        return static_cast<int>(temp);
+        return temp;
     } else {
         SPDLOG_LOGGER_DEBUG(pycanha::get_logger(),
                             "Node is not associated to any TNs. "
-                            "IntNodeNum is undefined. Returning -1.");
-        return -1;
+                            "IntNodeNum is undefined.");
+        return std::nullopt;
     }
 }
 

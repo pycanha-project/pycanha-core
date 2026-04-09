@@ -399,8 +399,7 @@ TEST_CASE("Mesh a cylinder", "[gmm][trimesh][cylinder]") {
         // Create a vector of sets of edges
         std::vector<std::set<pycanha::MeshIndex>> expected_face_edges(
             trimesh->get_faces_edges().size());
-        for (pycanha::VectorIndex i = 0; i < trimesh->get_faces_edges().size();
-             ++i) {
+        for (std::size_t i = 0; i < trimesh->get_faces_edges().size(); ++i) {
             for (auto edge_id : trimesh->get_faces_edges()[i]) {
                 expected_face_edges[i].insert(edge_id);
             }
@@ -416,15 +415,13 @@ TEST_CASE("Mesh a cylinder", "[gmm][trimesh][cylinder]") {
         // Create another vector of sets with the new faces edges
         std::vector<std::set<pycanha::MeshIndex>> reconstructed_face_edges(
             trimesh->get_faces_edges().size());
-        for (pycanha::VectorIndex i = 0; i < trimesh->get_faces_edges().size();
-             ++i) {
+        for (std::size_t i = 0; i < trimesh->get_faces_edges().size(); ++i) {
             for (auto edge_id : trimesh->get_faces_edges()[i]) {
                 reconstructed_face_edges[i].insert(edge_id);
             }
         }
         // Compare reconstructed_face_edges and expected_face_edges face by face
-        for (pycanha::VectorIndex i = 0; i < reconstructed_face_edges.size();
-             ++i) {
+        for (std::size_t i = 0; i < reconstructed_face_edges.size(); ++i) {
             REQUIRE(reconstructed_face_edges[i] == expected_face_edges[i]);
         }
     }

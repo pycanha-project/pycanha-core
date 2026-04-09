@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "pycanha-core/config.hpp"
+#include "pycanha-core/globals.hpp"
 #include "pycanha-core/utils/Instrumentor.hpp"
 #include "pycanha-core/utils/RandomGenerators.hpp"
 #include "pycanha-core/utils/logger.hpp"
@@ -237,8 +238,8 @@ template <class T>
 [[nodiscard]] bool compare_compressed(
     const Eigen::SparseMatrix<double, Eigen::RowMajor>& a,
     const Eigen::SparseMatrix<double, Eigen::RowMajor>& b) noexcept {
-    const auto nnz = static_cast<std::size_t>(a.nonZeros());
-    const auto outer_len = static_cast<std::size_t>(a.outerSize() + 1);
+    const auto nnz = to_sizet(a.nonZeros());
+    const auto outer_len = to_sizet(a.outerSize() + 1);
 
     return equal_buffers(a.innerIndexPtr(), b.innerIndexPtr(), nnz) &&
            equal_buffers(a.outerIndexPtr(), b.outerIndexPtr(), outer_len);
@@ -247,7 +248,7 @@ template <class T>
 [[nodiscard]] bool compare_uncompressed(
     const Eigen::SparseMatrix<double, Eigen::RowMajor>& a,
     const Eigen::SparseMatrix<double, Eigen::RowMajor>& b) noexcept {
-    const auto outer = static_cast<std::size_t>(a.outerSize());
+    const auto outer = to_sizet(a.outerSize());
     const auto outer_len = outer + 1;
 
     // Same number of actually-used entries per outer index (row in RowMajor).
@@ -268,8 +269,8 @@ template <class T>
     const auto* used = a.innerNonZeroPtr();
 
     for (std::size_t i = 0; i < outer; ++i) {
-        const auto beg = static_cast<std::size_t>(start[i]);
-        const auto cnt = static_cast<std::size_t>(used[i]);
+        const auto beg = to_sizet(start[i]);
+        const auto cnt = to_sizet(used[i]);
         if (!equal_buffers(ia + beg, ib + beg, cnt)) {
             return false;
         }
@@ -390,8 +391,8 @@ void move_rows(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
     }
 
     // Need scratch space: use RAII arrays (no zero-init, no leaks)
-    const auto sz_if = static_cast<std::size_t>(num_holes_from);
-    const auto sz_it = static_cast<std::size_t>(num_holes_to);
+    const auto sz_if = to_sizet(num_holes_from);
+    const auto sz_it = to_sizet(num_holes_to);
 
     // NOLINTBEGIN(hicpp-avoid-c-arrays,cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays)
     auto inner_from_copy = std::vector<StorageIndex>(sz_if);
@@ -413,14 +414,12 @@ void move_rows(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
     // Move the between-rows block to make room
     const int num_holes_between_rows = outer[to_idx] - outer[from_idx + 1];
 
-    std::memmove(
-        inner + from_start_vidx + num_holes_to,
-        inner + from_start_vidx + num_holes_from,
-        static_cast<std::size_t>(num_holes_between_rows) * sizeof(*inner));
-    std::memmove(
-        vals + from_start_vidx + num_holes_to,
-        vals + from_start_vidx + num_holes_from,
-        static_cast<std::size_t>(num_holes_between_rows) * sizeof(*vals));
+    std::memmove(inner + from_start_vidx + num_holes_to,
+                 inner + from_start_vidx + num_holes_from,
+                 to_sizet(num_holes_between_rows) * sizeof(*inner));
+    std::memmove(vals + from_start_vidx + num_holes_to,
+                 vals + from_start_vidx + num_holes_from,
+                 to_sizet(num_holes_between_rows) * sizeof(*vals));
 
     // Lay down swapped rows plus preserved middle
     std::memcpy(inner + from_start_vidx, inner_to_copy.data(),
@@ -722,8 +721,8 @@ bool are_compressed_sparse_identical(
 void random_fill_sparse(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
                         double sparsity_ratio, double min, double max,
                         int seed) {
-    const auto rows = static_cast<Index>(sparse.rows());
-    const auto cols = static_cast<Index>(sparse.cols());
+    const auto rows = to_idx(sparse.rows());
+    const auto cols = to_idx(sparse.cols());
 
     if ((sparsity_ratio < 0.0) || (sparsity_ratio > 1.0)) {
         SPDLOG_LOGGER_ERROR(pycanha::get_logger(),
@@ -749,7 +748,7 @@ void random_fill_sparse(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
         Index{0}, rows * cols);
 
     // Avoid Eigen::VectorXi (int) to prevent narrowing; use Index-sized vector.
-    const std::vector<Index> reserve_per_outer(static_cast<std::size_t>(rows),
+    const std::vector<Index> reserve_per_outer(to_sizet(rows),
                                                approx_values_per_outer);
     sparse.reserve(reserve_per_outer);
 

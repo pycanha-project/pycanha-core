@@ -224,7 +224,11 @@ void ThermalMathematicalModel::callback_transient_after_timestep() {
 }
 
 void ThermalMathematicalModel::internal_callback_common() {
-    formulas.apply_formulas();
+    if (parameters.is_structure_locked() && formulas.is_compiled_current()) {
+        formulas.apply_compiled_formulas();
+    } else {
+        formulas.apply_formulas();
+    }
 
     if (python_formulas_active) {
         python_apply_formulas();

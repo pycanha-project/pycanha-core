@@ -62,6 +62,20 @@ class Solver {
     std::shared_ptr<ThermalMathematicalModel> _tmm_shptr;
 
   protected:
+    class FormulaExecutionGuard {
+      public:
+        explicit FormulaExecutionGuard(Solver& solver);
+        ~FormulaExecutionGuard();
+
+        FormulaExecutionGuard(const FormulaExecutionGuard&) = delete;
+        FormulaExecutionGuard& operator=(const FormulaExecutionGuard&) = delete;
+        FormulaExecutionGuard(FormulaExecutionGuard&&) = delete;
+        FormulaExecutionGuard& operator=(FormulaExecutionGuard&&) = delete;
+
+      private:
+        Solver& _solver;
+    };
+
     ThermalMathematicalModel& tmm;
     ThermalNetwork& tnw;
     CouplingMatrices& ltcs;
@@ -106,6 +120,8 @@ class Solver {
     void callback_solver_loop();
     void callback_transient_time_change();
     void callback_transient_after_timestep();
+    void prepare_formulas_for_execution();
+    void release_formulas_after_execution() noexcept;
 
     virtual void restart_solve() = 0;
 

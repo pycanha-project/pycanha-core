@@ -176,7 +176,7 @@ class Primitive : public UniqueID, public GeometryUpdateCallback {
         FaceEdges face_edges(n_faces);
 
         constexpr double eps = LENGTH_TOL * 10.0;
-        constexpr VectorIndex n_offsets = 4;
+        constexpr std::size_t n_offsets = 4;
 
         const std::array<Vector2D, n_offsets> offsets = {
             Vector2D(-eps, -eps), Vector2D(eps, -eps), Vector2D(eps, eps),
@@ -194,7 +194,7 @@ class Primitive : public UniqueID, public GeometryUpdateCallback {
             std::array<int64_t, n_offsets> p1_faces = {-1, -1, -1, -1};
             std::array<int64_t, n_offsets> p2_faces = {-1, -1, -1, -1};
 
-            for (VectorIndex i = 0; i < n_offsets; ++i) {
+            for (std::size_t i = 0; i < n_offsets; ++i) {
                 // get_faceid_from_uv will throw if the point is outside the
                 // primitive. We catch the exception and set the face to -1.
                 // TODO: This might be slow...
@@ -230,7 +230,8 @@ class Primitive : public UniqueID, public GeometryUpdateCallback {
             for (auto it = common_faces.begin(); it != last_common_face_it;
                  ++it) {
                 if (*it != -1) {
-                    auto index = static_cast<VectorIndex>(*it) / 2;
+                    const auto index =
+                        to_sizet_safe(static_cast<Index>(*it)) / 2;
 
                     // Get the current size of the matrix at face_edges[index]
                     const Index current_size = face_edges[index].size();
@@ -1556,13 +1557,13 @@ inline double Rectangle::distance(const Point3D& point) const {
 
     // The projected point is outside the rectangle.
     // Calculate the distance to each edge and take the minimum.
-    constexpr VectorIndex num_vertices = 4;
+    constexpr std::size_t num_vertices = 4;
 
     std::array<Vector3D, num_vertices> edges = {v1(), v2(), v2(), v1()};
     std::array<Point3D, num_vertices> vertices = {_p1, _p1, _p2, _p3};
     double min_dist = std::numeric_limits<double>::max();
 
-    for (VectorIndex i = 0; i < num_vertices; ++i) {
+    for (std::size_t i = 0; i < num_vertices; ++i) {
         // https://github.com/llvm/llvm-project/issues/53997
         // NOLINTBEGIN(cppcoreguidelines-pro-bounds-constant-array-index)
         const Vector3D& edge = edges[i];
@@ -2233,13 +2234,13 @@ inline MeshIndex Triangle::get_faceid_from_uv(const ThermalMesh& thermal_mesh,
     const auto& dir2_mesh = *dir2_mesh_ptr;
 
     std::vector<double> dir1_mesh_normalized(dir1_mesh.size());
-    std::vector<double> dir2_mesh_normalized(dir2_mesh.size());
+    std::vector<double> dir2_mesh_normalized(to_sizet(dir2_mesh.size()));
 
-    for (VectorIndex i = 0; i < dir1_mesh.size(); ++i) {
+    for (std::size_t i = 0; i < dir1_mesh.size(); ++i) {
         dir1_mesh_normalized[i] =
             dir1_mesh[i] / dir1_mesh[dir1_mesh.size() - 1];
     }
-    for (VectorIndex i = 0; i < dir2_mesh.size(); ++i) {
+    for (std::size_t i = 0; i < dir2_mesh.size(); ++i) {
         dir2_mesh_normalized[i] =
             dir2_mesh[i] / dir2_mesh[dir2_mesh.size() - 1];
     }
@@ -2297,15 +2298,13 @@ inline MeshIndex Triangle::get_faceid_from_uv(const ThermalMesh& thermal_mesh,
     // }
 
     // Calculate indices
-    const auto x_index = static_cast<MeshIndex>(
-        std::distance(dir1_mesh_normalized.begin(), x_it) - 1);
-    const auto y_index = static_cast<MeshIndex>(
-        std::distance(dir2_mesh_normalized.begin(), y_it) - 1);
+    const auto x_index =
+        to_meshidx(std::distance(dir1_mesh_normalized.begin(), x_it) - 1);
+    const auto y_index =
+        to_meshidx(std::distance(dir2_mesh_normalized.begin(), y_it) - 1);
 
     // Compute face_id
-    return (y_index * (static_cast<MeshIndex>(dir1_mesh.size()) - 1) +
-            x_index) *
-           2;
+    return (y_index * (to_meshidx(dir1_mesh.size()) - 1) + x_index) * 2;
 }
 
 inline MeshIndex Rectangle::get_faceid_from_uv(const ThermalMesh& thermal_mesh,
@@ -2332,15 +2331,11 @@ inline MeshIndex Rectangle::get_faceid_from_uv(const ThermalMesh& thermal_mesh,
     }
 
     // Calculate indices
-    const auto x_index =
-        static_cast<MeshIndex>(std::distance(dir1_mesh.begin(), x_it) - 1);
-    const auto y_index =
-        static_cast<MeshIndex>(std::distance(dir2_mesh.begin(), y_it) - 1);
+    const auto x_index = to_meshidx(std::distance(dir1_mesh.begin(), x_it) - 1);
+    const auto y_index = to_meshidx(std::distance(dir2_mesh.begin(), y_it) - 1);
 
     // Compute face_id
-    return (y_index * (static_cast<MeshIndex>(dir1_mesh.size()) - 1) +
-            x_index) *
-           2;
+    return (y_index * (to_meshidx(dir1_mesh.size()) - 1) + x_index) * 2;
 }
 
 inline MeshIndex Quadrilateral::get_faceid_from_uv(
@@ -2367,15 +2362,11 @@ inline MeshIndex Quadrilateral::get_faceid_from_uv(
     }
 
     // Calculate indices
-    const auto x_index =
-        static_cast<MeshIndex>(std::distance(dir1_mesh.begin(), x_it) - 1);
-    const auto y_index =
-        static_cast<MeshIndex>(std::distance(dir2_mesh.begin(), y_it) - 1);
+    const auto x_index = to_meshidx(std::distance(dir1_mesh.begin(), x_it) - 1);
+    const auto y_index = to_meshidx(std::distance(dir2_mesh.begin(), y_it) - 1);
 
     // Compute face_id
-    return (y_index * (static_cast<MeshIndex>(dir1_mesh.size()) - 1) +
-            x_index) *
-           2;
+    return (y_index * (to_meshidx(dir1_mesh.size()) - 1) + x_index) * 2;
 }
 
 inline MeshIndex Disc::get_faceid_from_uv(const ThermalMesh& thermal_mesh,
@@ -2418,15 +2409,12 @@ inline MeshIndex Disc::get_faceid_from_uv(const ThermalMesh& thermal_mesh,
     }
 
     // Calculate indices
-    const auto r_index =
-        static_cast<MeshIndex>(std::distance(dir1_mesh.begin(), r_it) - 1);
+    const auto r_index = to_meshidx(std::distance(dir1_mesh.begin(), r_it) - 1);
     const auto angle_index =
-        static_cast<MeshIndex>(std::distance(dir2_mesh.begin(), angle_it) - 1);
+        to_meshidx(std::distance(dir2_mesh.begin(), angle_it) - 1);
 
     // Compute face_id
-    return (angle_index * (static_cast<MeshIndex>(dir1_mesh.size()) - 1) +
-            r_index) *
-           2;
+    return (angle_index * (to_meshidx(dir1_mesh.size()) - 1) + r_index) * 2;
 }
 
 // Face ID calculation methods
@@ -2454,15 +2442,11 @@ inline MeshIndex Cylinder::get_faceid_from_uv(const ThermalMesh& thermal_mesh,
     }
 
     // Calculate indices
-    const auto x_index =
-        static_cast<MeshIndex>(std::distance(dir1_mesh.begin(), x_it) - 1);
-    const auto y_index =
-        static_cast<MeshIndex>(std::distance(dir2_mesh.begin(), y_it) - 1);
+    const auto x_index = to_meshidx(std::distance(dir1_mesh.begin(), x_it) - 1);
+    const auto y_index = to_meshidx(std::distance(dir2_mesh.begin(), y_it) - 1);
 
     // Compute face_id
-    return (y_index * (static_cast<MeshIndex>(dir1_mesh.size()) - 1) +
-            x_index) *
-           2;
+    return (y_index * (to_meshidx(dir1_mesh.size()) - 1) + x_index) * 2;
 }
 
 inline MeshIndex Cone::get_faceid_from_uv(const ThermalMesh& thermal_mesh,
@@ -2494,7 +2478,7 @@ inline MeshIndex Cone::get_faceid_from_uv(const ThermalMesh& thermal_mesh,
     auto inner_radius = s2;
     auto outer_radius = s;
     if (inner_radius != 0.0) {
-        for (VectorIndex i = 0; i < dir1_mesh.size() - 1; i++) {
+        for (std::size_t i = 0; i + 1 < dir1_mesh.size(); ++i) {
             dir1_mesh[i] =
                 dir1_mesh[i] * (outer_radius - inner_radius) / outer_radius +
                 inner_radius / outer_radius;
@@ -2527,15 +2511,12 @@ inline MeshIndex Cone::get_faceid_from_uv(const ThermalMesh& thermal_mesh,
     }
 
     // Calculate indices
-    const auto r_index =
-        static_cast<MeshIndex>(std::distance(dir1_mesh.begin(), r_it) - 1);
+    const auto r_index = to_meshidx(std::distance(dir1_mesh.begin(), r_it) - 1);
     const auto angle_index =
-        static_cast<MeshIndex>(std::distance(dir2_mesh.begin(), angle_it) - 1);
+        to_meshidx(std::distance(dir2_mesh.begin(), angle_it) - 1);
 
     // Compute face_id
-    return (angle_index * (static_cast<MeshIndex>(dir1_mesh.size()) - 1) +
-            r_index) *
-           2;
+    return (angle_index * (to_meshidx(dir1_mesh.size()) - 1) + r_index) * 2;
 }
 
 inline MeshIndex Sphere::get_faceid_from_uv(const ThermalMesh& thermal_mesh,
@@ -2585,14 +2566,12 @@ inline MeshIndex Sphere::get_faceid_from_uv(const ThermalMesh& thermal_mesh,
 
     // Calculate indices
     const auto lat_index =
-        static_cast<MeshIndex>(std::distance(dir1_mesh.begin(), lat_it) - 1);
+        to_meshidx(std::distance(dir1_mesh.begin(), lat_it) - 1);
     const auto lon_index =
-        static_cast<MeshIndex>(std::distance(dir2_mesh.begin(), lon_it) - 1);
+        to_meshidx(std::distance(dir2_mesh.begin(), lon_it) - 1);
 
     // Compute face_id
-    return (lon_index * (static_cast<MeshIndex>(dir1_mesh.size()) - 1) +
-            lat_index) *
-           2;
+    return (lon_index * (to_meshidx(dir1_mesh.size()) - 1) + lat_index) * 2;
 }
 
 // Triangular mesh creation methods
@@ -3336,8 +3315,7 @@ inline TriMesh Sphere::create_mesh1(const ThermalMesh& thermal_mesh,
         throw std::invalid_argument("dir2_mesh is not normalized.");
     }
 
-    std::vector<double> dir2_mesh_normalized(
-        static_cast<VectorIndex>(dir2_mesh.size()));
+    std::vector<double> dir2_mesh_normalized(to_sizet(dir2_mesh.size()));
     for (MeshIndex i = 0; i < dir2_mesh.size(); ++i) {
         dir2_mesh_normalized[i] =
             (_start_angle + dir2_mesh[i] * (_end_angle - _start_angle)) /
@@ -3979,8 +3957,7 @@ inline TriMesh Sphere::create_mesh2(const ThermalMesh& thermal_mesh,
         throw std::invalid_argument("dir2_mesh is not normalized.");
     }
 
-    std::vector<double> dir2_mesh_normalized(
-        static_cast<VectorIndex>(dir2_mesh.size()));
+    std::vector<double> dir2_mesh_normalized(to_sizet(dir2_mesh.size()));
     for (MeshIndex i = 0; i < dir2_mesh.size(); ++i) {
         dir2_mesh_normalized[i] =
             (_start_angle + dir2_mesh[i] * (_end_angle - _start_angle)) /

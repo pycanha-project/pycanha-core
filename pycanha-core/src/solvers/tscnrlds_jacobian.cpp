@@ -32,8 +32,18 @@ namespace pycanha {
 
 namespace {
 
-[[nodiscard]] bool is_heat_flux_entity(const std::string& type) {
-    return !type.empty() && type.front() == 'Q';
+[[nodiscard]] bool is_heat_flux_entity(EntityType type) {
+    return type == EntityType::qs || type == EntityType::qa ||
+           type == EntityType::qe || type == EntityType::qi ||
+           type == EntityType::qr;
+}
+
+[[nodiscard]] Index require_node_index(const Nodes& nodes, NodeNum node_num) {
+    const auto resolved = nodes.get_idx_from_node_num(node_num);
+    if (!resolved.has_value()) {
+        throw std::invalid_argument("Jacobian references a missing node");
+    }
+    return *resolved;
 }
 
 }  // namespace
@@ -58,7 +68,7 @@ void TSCNRLDS_JACOBIAN::initialize() {
 
     tmm.thermal_data.create_reset_table(
         output_jacobian_table_name, num_outputs,
-        nd * static_cast<Index>(_parameter_names.size()) + 1);
+        nd * to_idx(_parameter_names.size()) + 1);
 
     _d_kl_dd_matrices.clear();
     _d_kl_db_matrices.clear();
@@ -79,15 +89,15 @@ void TSCNRLDS_JACOBIAN::initialize() {
     }
 
     _d_capacity_matrix =
-        DenseJacobian::Zero(nd, static_cast<Index>(_parameter_names.size()));
+        DenseJacobian::Zero(nd, to_idx(_parameter_names.size()));
     _d_heat_flux_matrix =
-        DenseJacobian::Zero(nd, static_cast<Index>(_parameter_names.size()));
+        DenseJacobian::Zero(nd, to_idx(_parameter_names.size()));
 
-    _m_k = DenseJacobian::Zero(nd, static_cast<Index>(_parameter_names.size()));
-    _m_q = DenseJacobian::Zero(nd, static_cast<Index>(_parameter_names.size()));
-    _m_c = DenseJacobian::Zero(nd, static_cast<Index>(_parameter_names.size()));
-    _mt = DenseJacobian::Zero(nd, static_cast<Index>(_parameter_names.size()));
-    _mb = DenseJacobian::Zero(nd, static_cast<Index>(_parameter_names.size()));
+    _m_k = DenseJacobian::Zero(nd, to_idx(_parameter_names.size()));
+    _m_q = DenseJacobian::Zero(nd, to_idx(_parameter_names.size()));
+    _m_c = DenseJacobian::Zero(nd, to_idx(_parameter_names.size()));
+    _mt = DenseJacobian::Zero(nd, to_idx(_parameter_names.size()));
+    _mb = DenseJacobian::Zero(nd, to_idx(_parameter_names.size()));
 
     _sp_nd_diag.resize(nd, nd);
     sparse_utils::add_zero_diag_square(_sp_nd_diag);
@@ -97,7 +107,7 @@ void TSCNRLDS_JACOBIAN::initialize() {
     for (std::size_t parameter_index = 0;
          parameter_index < _parameter_names.size(); ++parameter_index) {
         parameter_lookup.emplace(_parameter_names[parameter_index],
-                                 static_cast<Index>(parameter_index));
+                                 to_idx(parameter_index));
     }
 
     for (const auto& formula : tmm.formulas.formulas()) {
@@ -152,16 +162,14 @@ void TSCNRLDS_JACOBIAN::collect_parameter_names() {
     }
 }
 
-void TSCNRLDS_JACOBIAN::fill_matrices(ThermalEntity& entity,
+void TSCNRLDS_JACOBIAN::fill_matrices(const Entity& entity,
                                       Index parameter_index,
                                       double derivative_value) {
-    const auto& type = entity.type();
+    const auto type = entity.type();
 
-    if ((type == "GL") || (type == "GR")) {
-        const Index index_1 =
-            tmm.nodes().get_idx_from_node_num(entity.node_index_1());
-        const Index index_2 =
-            tmm.nodes().get_idx_from_node_num(entity.node_index_2());
+    if (type == EntityType::gl || type == EntityType::gr) {
+        const Index index_1 = require_node_index(tmm.nodes(), entity.node_1());
+        const Index index_2 = require_node_index(tmm.nodes(), entity.node_2());
 
         const bool first_is_domain = index_1 < nd;
         const bool second_is_domain = index_2 < nd;
@@ -169,11 +177,9 @@ void TSCNRLDS_JACOBIAN::fill_matrices(ThermalEntity& entity,
         if (first_is_domain && second_is_domain) {
             const auto row = std::min(index_1, index_2);
             const auto col = std::max(index_1, index_2);
-            auto& matrix = (type == "GL")
-                               ? _d_kl_dd_matrices[static_cast<std::size_t>(
-                                     parameter_index)]
-                               : _d_kr_dd_matrices[static_cast<std::size_t>(
-                                     parameter_index)];
+            auto& matrix = (type == EntityType::gl)
+                               ? _d_kl_dd_matrices[to_sizet(parameter_index)]
+                               : _d_kr_dd_matrices[to_sizet(parameter_index)];
             matrix.coeffRef(row, col) += derivative_value;
             return;
         }
@@ -181,20 +187,17 @@ void TSCNRLDS_JACOBIAN::fill_matrices(ThermalEntity& entity,
         if (first_is_domain != second_is_domain) {
             const auto diff_index = first_is_domain ? index_1 : index_2;
             const auto bound_index = first_is_domain ? index_2 : index_1;
-            auto& matrix = (type == "GL")
-                               ? _d_kl_db_matrices[static_cast<std::size_t>(
-                                     parameter_index)]
-                               : _d_kr_db_matrices[static_cast<std::size_t>(
-                                     parameter_index)];
+            auto& matrix = (type == EntityType::gl)
+                               ? _d_kl_db_matrices[to_sizet(parameter_index)]
+                               : _d_kr_db_matrices[to_sizet(parameter_index)];
             matrix.coeffRef(diff_index, bound_index - nd) += derivative_value;
         }
 
         return;
     }
 
-    if (type == "C") {
-        const Index index =
-            tmm.nodes().get_idx_from_node_num(entity.node_index_1());
+    if (type == EntityType::c) {
+        const Index index = require_node_index(tmm.nodes(), entity.node_1());
         if (index < nd) {
             _d_capacity_matrix(index, parameter_index) += derivative_value;
         }
@@ -202,8 +205,7 @@ void TSCNRLDS_JACOBIAN::fill_matrices(ThermalEntity& entity,
     }
 
     if (is_heat_flux_entity(type)) {
-        const Index index =
-            tmm.nodes().get_idx_from_node_num(entity.node_index_1());
+        const Index index = require_node_index(tmm.nodes(), entity.node_1());
         if (index < nd) {
             _d_heat_flux_matrix(index, parameter_index) += derivative_value;
         }
@@ -211,7 +213,7 @@ void TSCNRLDS_JACOBIAN::fill_matrices(ThermalEntity& entity,
     }
 
     SPDLOG_LOGGER_WARN(get_logger(), "Unsupported jacobian entity type '{}'",
-                       type);
+                       entity.string_representation());
 }
 
 void TSCNRLDS_JACOBIAN::build_mk() {
@@ -230,7 +232,7 @@ void TSCNRLDS_JACOBIAN::build_mk() {
             d_kr_dd.selfadjointView<Eigen::Upper>() * (-_ones_domain);
         radiative_diagonal.noalias() -= d_kr_db * _ones_boundary;
 
-        _m_k.col(static_cast<Index>(parameter_index)) =
+        _m_k.col(to_idx(parameter_index)) =
             d_kl_dd.selfadjointView<Eigen::Upper>() * Td +
             d_kr_dd.selfadjointView<Eigen::Upper>() * _t4_domain +
             conductive_diagonal.cwiseProduct(Td) +
@@ -244,11 +246,10 @@ void TSCNRLDS_JACOBIAN::build_mq() {
         const auto& d_kl_db = _d_kl_db_matrices[parameter_index];
         const auto& d_kr_db = _d_kr_db_matrices[parameter_index];
 
-        _m_q.col(static_cast<Index>(parameter_index)) =
-            _d_heat_flux_matrix.col(static_cast<Index>(parameter_index));
-        _m_q.col(static_cast<Index>(parameter_index)).noalias() += d_kl_db * Tb;
-        _m_q.col(static_cast<Index>(parameter_index)).noalias() +=
-            d_kr_db * _t4_boundary;
+        _m_q.col(to_idx(parameter_index)) =
+            _d_heat_flux_matrix.col(to_idx(parameter_index));
+        _m_q.col(to_idx(parameter_index)).noalias() += d_kl_db * Tb;
+        _m_q.col(to_idx(parameter_index)).noalias() += d_kr_db * _t4_boundary;
     }
 }
 
@@ -288,6 +289,8 @@ void TSCNRLDS_JACOBIAN::solve_jacobian_step() {
 
 void TSCNRLDS_JACOBIAN::solve() {
     SPDLOG_LOGGER_INFO(get_logger(), "TSCNRLDS_JACOBIAN solving...");
+
+    const FormulaExecutionGuard formula_execution(*this);
 
     if (_parameter_names.empty()) {
         TSCNRLDS::solve();
@@ -386,14 +389,14 @@ void TSCNRLDS_JACOBIAN::solve() {
 }
 
 void TSCNRLDS_JACOBIAN::save_jacobian_data() {
-    const auto parameter_count = static_cast<Index>(_parameter_names.size());
+    const auto parameter_count = to_idx(_parameter_names.size());
     tmm.thermal_data.get_table(output_jacobian_table_name)(idata_out, 0) = time;
     std::size_t output_index = 1U;
     for (Index node_index = 0; node_index < nd; ++node_index) {
         for (Index parameter_index = 0; parameter_index < parameter_count;
              ++parameter_index) {
             tmm.thermal_data.get_table(output_jacobian_table_name)(
-                idata_out, static_cast<Index>(output_index)) =
+                idata_out, to_idx(output_index)) =
                 _mt(node_index, parameter_index);
             ++output_index;
         }

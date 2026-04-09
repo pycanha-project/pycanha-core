@@ -1,6 +1,7 @@
 #include <Eigen/Sparse>
 #include <algorithm>
 #include <catch2/catch_test_macros.hpp>
+#include <cstddef>
 #include <utility>
 #include <vector>
 
@@ -15,8 +16,6 @@ using namespace pycanha;  // NOLINT(build/namespaces)
 using namespace pycanha::sparse_utils;  // NOLINT(build/namespaces)
 
 namespace {
-using VectorIndex = pycanha::VectorIndex;  // NOLINT(misc-include-cleaner)
-
 // Size of sparse for testing
 int ROW_SIZE = 20;  // NOLINT
 int COL_SIZE = 20;  // NOLINT
@@ -111,11 +110,9 @@ void zero_row_col_test() {
 
     Index row2 = 0;
     Index col2 = 0;
-    VectorIndex zero_row_idx = 0;
-    VectorIndex zero_col_idx = 0;
+    std::size_t zero_row_idx = 0;
 
     for (Index row1 = 0; row1 < sparse1.rows(); row1++) {
-        zero_col_idx = 0;
         col2 = 0;
 
         if (row1 == zero_row_indexes[zero_row_idx]) {
@@ -126,6 +123,7 @@ void zero_row_col_test() {
             }
             zero_row_idx++;
         } else {
+            std::size_t zero_col_idx = 0;
             for (Index col1 = 0; col1 < sparse1.cols(); col1++) {
                 if (col1 == zero_col_indexes[zero_col_idx]) {
                     // Check added cols are trivial zeros
@@ -155,15 +153,13 @@ void move_test() {
 
     constexpr int num_permutation = 100;
 
-    std::vector<int> rows_idxs(static_cast<VectorIndex>(sparse.rows()));
-    std::vector<int> cols_idxs(static_cast<VectorIndex>(sparse.cols()));
+    std::vector<int> rows_idxs(to_sizet(sparse.rows()));
+    std::vector<int> cols_idxs(to_sizet(sparse.cols()));
     // Initialize vectors in sequence
-    for (VectorIndex i = 0; i < static_cast<VectorIndex>(rows_idxs.size());
-         i++) {
+    for (std::size_t i = 0; i < rows_idxs.size(); ++i) {
         rows_idxs[i] = static_cast<int>(i);
     }
-    for (VectorIndex i = 0; i < static_cast<VectorIndex>(cols_idxs.size());
-         i++) {
+    for (std::size_t i = 0; i < cols_idxs.size(); ++i) {
         cols_idxs[i] = static_cast<int>(i);
     }
 
@@ -182,10 +178,8 @@ void move_test() {
         move_rows(sparse, from_row, to_row);
         move_cols(sparse, from_col, to_col);
 
-        std::swap(rows_idxs[static_cast<VectorIndex>(from_row)],
-                  rows_idxs[static_cast<VectorIndex>(to_row)]);
-        std::swap(cols_idxs[static_cast<VectorIndex>(from_col)],
-                  cols_idxs[static_cast<VectorIndex>(to_col)]);
+        std::swap(rows_idxs[to_sizet(from_row)], rows_idxs[to_sizet(to_row)]);
+        std::swap(cols_idxs[to_sizet(from_col)], cols_idxs[to_sizet(to_col)]);
     }
 
     // Permute randomly using move_row_cols
@@ -203,22 +197,19 @@ void move_test() {
 
         move_row_col(sparse, from_row_col, to_row_col);
 
-        std::swap(rows_idxs[static_cast<VectorIndex>(from_row_col)],
-                  rows_idxs[static_cast<VectorIndex>(to_row_col)]);
-        std::swap(cols_idxs[static_cast<VectorIndex>(from_row_col)],
-                  cols_idxs[static_cast<VectorIndex>(to_row_col)]);
+        std::swap(rows_idxs[to_sizet(from_row_col)],
+                  rows_idxs[to_sizet(to_row_col)]);
+        std::swap(cols_idxs[to_sizet(from_row_col)],
+                  cols_idxs[to_sizet(to_row_col)]);
     }
 
     // Move rows again to the original position
-    for (VectorIndex i = 0; i < static_cast<VectorIndex>(rows_idxs.size());
-         i++) {
+    for (std::size_t i = 0; i < rows_idxs.size(); ++i) {
         if (rows_idxs[i] != static_cast<int>(i)) {
-            for (VectorIndex j = i + 1;
-                 j < static_cast<VectorIndex>(rows_idxs.size()); j++) {
+            for (std::size_t j = i + 1; j < rows_idxs.size(); ++j) {
                 if (rows_idxs[j] == static_cast<int>(i)) {
                     std::swap(rows_idxs[i], rows_idxs[j]);
-                    move_rows(sparse, static_cast<Index>(i),
-                              static_cast<Index>(j));
+                    move_rows(sparse, to_idx(i), to_idx(j));
                     break;
                 }
             }
@@ -226,15 +217,12 @@ void move_test() {
     }
 
     // Move cols again to the original position
-    for (VectorIndex i = 0; i < static_cast<VectorIndex>(cols_idxs.size());
-         i++) {
+    for (std::size_t i = 0; i < cols_idxs.size(); ++i) {
         if (cols_idxs[i] != static_cast<int>(i)) {
-            for (VectorIndex j = i + 1;
-                 j < static_cast<VectorIndex>(cols_idxs.size()); j++) {
+            for (std::size_t j = i + 1; j < cols_idxs.size(); ++j) {
                 if (cols_idxs[j] == static_cast<int>(i)) {
                     std::swap(cols_idxs[i], cols_idxs[j]);
-                    move_cols(sparse, static_cast<Index>(i),
-                              static_cast<Index>(j));
+                    move_cols(sparse, to_idx(i), to_idx(j));
                     break;
                 }
             }
@@ -289,8 +277,8 @@ void remove_test() {
     std::vector<int> original_row_idxs;
     std::vector<int> original_col_idxs;
 
-    original_row_idxs.reserve(static_cast<VectorIndex>(sparse.rows()));
-    original_col_idxs.reserve(static_cast<VectorIndex>(sparse.cols()));
+    original_row_idxs.reserve(to_sizet(sparse.rows()));
+    original_col_idxs.reserve(to_sizet(sparse.cols()));
 
     for (Index i = 0; i < sparse.rows(); i++) {
         original_row_idxs.push_back(static_cast<int>(i));
@@ -347,11 +335,9 @@ void remove_test() {
                 REQUIRE(
                     (sparse.coeff(irow, icol) ==
                      sparse_copy.coeff(
+                         static_cast<Index>(original_row_idxs[to_sizet(irow)]),
                          static_cast<Index>(
-                             original_row_idxs[static_cast<VectorIndex>(irow)]),
-                         static_cast<Index>(
-                             original_col_idxs[static_cast<VectorIndex>(
-                                 icol)]))));
+                             original_col_idxs[to_sizet(icol)]))));
             }
         }
 

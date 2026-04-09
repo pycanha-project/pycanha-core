@@ -12,6 +12,7 @@
 #include <stdexcept>
 #include <utility>
 
+#include "pycanha-core/globals.hpp"
 #include "pycanha-core/solvers/solver.hpp"
 #include "pycanha-core/thermaldata/thermaldata.hpp"
 #include "pycanha-core/tmm/thermalmathematicalmodel.hpp"
@@ -79,8 +80,7 @@ void TransientSolver::save_temp_data() {
         return;
     }
 
-    const auto row_offset =
-        static_cast<std::size_t>(N + 1) * static_cast<std::size_t>(idata_out);
+    const auto row_offset = to_sizet(N + 1) * to_sizet(idata_out);
     double* data_ptr_row =
         std::next(output_data, static_cast<std::ptrdiff_t>(row_offset));
     Eigen::Map<Eigen::VectorXd> row_map(data_ptr_row, N + 1);

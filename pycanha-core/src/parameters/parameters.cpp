@@ -6,15 +6,17 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
-#include <iterator>
+#include <deque>
 #include <limits>
 #include <memory>
+#include <optional>
 #include <sstream>
 #include <string>
 #include <type_traits>
 #include <utility>
 #include <variant>
 
+#include "pycanha-core/globals.hpp"
 #include "pycanha-core/utils/logger.hpp"
 
 namespace pycanha {
@@ -70,53 +72,278 @@ struct Parameters::ParameterSize {
     }
 };
 
-void Parameters::add_parameter(std::string name, ThermalValue value) {
-    auto [iterator, inserted] =
-        _parameters.emplace(std::move(name), std::move(value));
-
-    if (inserted) {
-        SPDLOG_LOGGER_INFO(pycanha::get_logger(), "Parameter '{}' added",
-                           iterator->first);
-    } else {
-        SPDLOG_LOGGER_INFO(pycanha::get_logger(),
-                           "Parameter '{}' already exists", iterator->first);
-    }
-}
-
-void Parameters::remove_parameter(const std::string& name) {
-    const auto removed = _parameters.erase(name);
-
-    if (removed == 0U) {
-        SPDLOG_LOGGER_INFO(pycanha::get_logger(),
-                           "Parameter '{}' doesn't exist", name);
-    } else {
-        SPDLOG_LOGGER_INFO(pycanha::get_logger(), "Parameter '{}' removed",
-                           name);
-    }
-}
-
-Parameters::ThermalValue Parameters::get_parameter(
-    const std::string& name) const {
-    const auto iterator = _parameters.find(name);
-    if (iterator != _parameters.end()) {
-        return iterator->second;
-    }
-
-    SPDLOG_LOGGER_INFO(pycanha::get_logger(), "Parameter '{}' doesn't exist",
-                       name);
-
+Parameters::ThermalValue Parameters::missing_parameter_value() {
     return ThermalValue{std::numeric_limits<double>::quiet_NaN()};
 }
 
-void Parameters::set_parameter(const std::string& name, ThermalValue value) {
-    auto iterator = _parameters.find(name);
-    if (iterator == _parameters.end()) {
+Parameters::ParameterSlot* Parameters::find_slot(
+    const std::string& name) noexcept {
+    const auto iterator = _name_to_slot.find(name);
+    if (iterator == _name_to_slot.end()) {
+        return nullptr;
+    }
+
+    return find_slot(to_idx(iterator->second));
+}
+
+const Parameters::ParameterSlot* Parameters::find_slot(
+    const std::string& name) const noexcept {
+    const auto iterator = _name_to_slot.find(name);
+    if (iterator == _name_to_slot.end()) {
+        return nullptr;
+    }
+
+    return find_slot(to_idx(iterator->second));
+}
+
+Parameters::ParameterSlot* Parameters::find_slot(Index idx) noexcept {
+    if (idx < 0) {
+        return nullptr;
+    }
+
+    const auto position = to_sizet(idx);
+    if (position >= _slots.size()) {
+        return nullptr;
+    }
+
+    auto* slot = std::addressof(_slots[position]);
+    if (!slot->active) {
+        return nullptr;
+    }
+
+    return slot;
+}
+
+const Parameters::ParameterSlot* Parameters::find_slot(
+    Index idx) const noexcept {
+    if (idx < 0) {
+        return nullptr;
+    }
+
+    const auto position = to_sizet(idx);
+    if (position >= _slots.size()) {
+        return nullptr;
+    }
+
+    const auto* slot = std::addressof(_slots[position]);
+    if (!slot->active) {
+        return nullptr;
+    }
+
+    return slot;
+}
+
+void Parameters::invalidate_data_cache() const noexcept {
+    _data_cache_dirty = true;
+}
+
+void Parameters::mark_structural_change() noexcept {
+    ++_structure_version;
+    invalidate_data_cache();
+}
+
+bool Parameters::Parameter::is_valid() const noexcept {
+    return (_parameters != nullptr) && _parameters->is_parameter_valid(_idx);
+}
+
+std::optional<Index> Parameters::Parameter::get_idx() const noexcept {
+    if (!is_valid()) {
+        return std::nullopt;
+    }
+
+    return _idx;
+}
+
+std::optional<std::string> Parameters::Parameter::get_name() const {
+    if (_parameters == nullptr) {
+        return std::nullopt;
+    }
+
+    return _parameters->get_parameter_name(_idx);
+}
+
+std::optional<Parameters::ThermalValue> Parameters::Parameter::get_value()
+    const {
+    if (_parameters == nullptr) {
+        return std::nullopt;
+    }
+
+    return _parameters->get_parameter_optional(_idx);
+}
+
+void Parameters::Parameter::set_value(ThermalValue value) {
+    if (_parameters == nullptr) {
+        return;
+    }
+
+    const auto name = get_name();
+    if (!name.has_value()) {
+        return;
+    }
+
+    _parameters->set_parameter(*name, std::move(value));
+}
+
+void Parameters::Parameter::rename(std::string new_name) {
+    if (_parameters == nullptr) {
+        return;
+    }
+
+    const auto current_name = get_name();
+    if (!current_name.has_value()) {
+        return;
+    }
+
+    _parameters->rename_parameter(*current_name, std::move(new_name));
+}
+
+void Parameters::Parameter::remove() {
+    if (_parameters == nullptr) {
+        return;
+    }
+
+    const auto name = get_name();
+    if (!name.has_value()) {
+        return;
+    }
+
+    _parameters->remove_parameter(*name);
+}
+
+void Parameters::add_parameter(std::string name, ThermalValue value) {
+    if (_structure_locked) {
+        SPDLOG_LOGGER_INFO(pycanha::get_logger(),
+                           "Parameter '{}' cannot be added while parameters "
+                           "are structurally locked",
+                           name);
+        return;
+    }
+
+    if (_name_to_slot.contains(name)) {
+        SPDLOG_LOGGER_INFO(pycanha::get_logger(),
+                           "Parameter '{}' already exists", name);
+        return;
+    }
+
+    _name_to_slot.emplace(name, _slots.size());
+    _slots.push_back(ParameterSlot{std::move(name), std::move(value), true});
+    ++_active_size;
+    mark_structural_change();
+
+    SPDLOG_LOGGER_INFO(pycanha::get_logger(), "Parameter '{}' added",
+                       _slots.back().name);
+}
+
+void Parameters::remove_parameter(const std::string& name) {
+    if (_structure_locked) {
+        SPDLOG_LOGGER_INFO(pycanha::get_logger(),
+                           "Parameter '{}' cannot be removed while parameters "
+                           "are structurally locked",
+                           name);
+        return;
+    }
+
+    auto* slot = find_slot(name);
+    if (slot == nullptr) {
         SPDLOG_LOGGER_INFO(pycanha::get_logger(),
                            "Parameter '{}' doesn't exist", name);
         return;
     }
 
-    if (iterator->second.index() != value.index()) {
+    _name_to_slot.erase(name);
+    slot->active = false;
+    slot->value = missing_parameter_value();
+    --_active_size;
+    mark_structural_change();
+
+    SPDLOG_LOGGER_INFO(pycanha::get_logger(), "Parameter '{}' removed", name);
+}
+
+void Parameters::rename_parameter(const std::string& current_name,
+                                  std::string new_name) {
+    if (_structure_locked) {
+        SPDLOG_LOGGER_INFO(pycanha::get_logger(),
+                           "Parameter '{}' cannot be renamed while parameters "
+                           "are structurally locked",
+                           current_name);
+        return;
+    }
+
+    auto* slot = find_slot(current_name);
+    if (slot == nullptr) {
+        SPDLOG_LOGGER_INFO(pycanha::get_logger(),
+                           "Parameter '{}' doesn't exist", current_name);
+        return;
+    }
+
+    if (_name_to_slot.contains(new_name)) {
+        SPDLOG_LOGGER_INFO(pycanha::get_logger(),
+                           "Parameter '{}' already exists", new_name);
+        return;
+    }
+
+    const auto slot_index = _name_to_slot.at(current_name);
+    _name_to_slot.erase(current_name);
+    _name_to_slot.emplace(new_name, slot_index);
+    slot->name = std::move(new_name);
+    mark_structural_change();
+
+    SPDLOG_LOGGER_INFO(pycanha::get_logger(), "Parameter '{}' renamed",
+                       slot->name);
+}
+
+Parameters::Parameter Parameters::get_parameter_handle(
+    const std::string& name) noexcept {
+    const auto index = get_idx(name);
+    if (!index.has_value()) {
+        return {};
+    }
+
+    return {this, *index};
+}
+
+Parameters::ThermalValue Parameters::get_parameter(
+    const std::string& name) const {
+    const auto parameter = get_parameter_optional(name);
+    if (parameter.has_value()) {
+        return *parameter;
+    }
+
+    SPDLOG_LOGGER_INFO(pycanha::get_logger(), "Parameter '{}' doesn't exist",
+                       name);
+
+    return missing_parameter_value();
+}
+
+std::optional<Parameters::ThermalValue> Parameters::get_parameter_optional(
+    const std::string& name) const {
+    const auto* slot = find_slot(name);
+    if (slot == nullptr) {
+        return std::nullopt;
+    }
+
+    return slot->value;
+}
+
+std::optional<Parameters::ThermalValue> Parameters::get_parameter_optional(
+    Index idx) const {
+    const auto* slot = find_slot(idx);
+    if (slot == nullptr) {
+        return std::nullopt;
+    }
+
+    return slot->value;
+}
+
+void Parameters::set_parameter(const std::string& name, ThermalValue value) {
+    auto* slot = find_slot(name);
+    if (slot == nullptr) {
+        SPDLOG_LOGGER_INFO(pycanha::get_logger(),
+                           "Parameter '{}' doesn't exist", name);
+        return;
+    }
+
+    if (slot->value.index() != value.index()) {
         SPDLOG_LOGGER_INFO(pycanha::get_logger(),
                            "Parameter '{}' type mismatch", name);
         return;
@@ -141,26 +368,28 @@ void Parameters::set_parameter(const std::string& name, ThermalValue value) {
 
             existing = std::move(*incoming);
         },
-        iterator->second);
+        slot->value);
+
+    invalidate_data_cache();
 }
 
 void Parameters::print_memory_address(const std::string& name) const {
-    const auto iterator = _parameters.find(name);
-    if (iterator == _parameters.end()) {
+    const auto* slot = find_slot(name);
+    if (slot == nullptr) {
         SPDLOG_LOGGER_INFO(pycanha::get_logger(),
                            "Parameter '{}' doesn't exist", name);
         return;
     }
 
     const void* const address =
-        std::visit(ConstDataMemoryAddress{}, iterator->second);
+        std::visit(ConstDataMemoryAddress{}, slot->value);
 
     SPDLOG_LOGGER_INFO(pycanha::get_logger(), "Mem. addr: {}", address);
 }
 
 void Parameters::print_parameter(const std::string& name) const {
-    const auto iterator = _parameters.find(name);
-    if (iterator == _parameters.end()) {
+    const auto* slot = find_slot(name);
+    if (slot == nullptr) {
         SPDLOG_LOGGER_INFO(pycanha::get_logger(),
                            "Parameter '{}' doesn't exist", name);
         return;
@@ -176,31 +405,67 @@ void Parameters::print_parameter(const std::string& name) const {
                 oss << value;
             }
         },
-        iterator->second);
+        slot->value);
 
     SPDLOG_LOGGER_INFO(pycanha::get_logger(), "{}", oss.str());
 }
 
 void* Parameters::get_value_ptr(const std::string& name) {
-    auto iterator = _parameters.find(name);
-    if (iterator == _parameters.end()) {
+    const auto index = get_idx(name);
+    if (!index.has_value()) {
         SPDLOG_LOGGER_INFO(pycanha::get_logger(),
                            "Parameter '{}' doesn't exist", name);
         return nullptr;
     }
 
-    return std::visit(DataMemoryAddress{}, iterator->second);
+    return get_value_ptr(*index);
+}
+
+void* Parameters::get_value_ptr(Index idx) {
+    auto* slot = find_slot(idx);
+    if (slot == nullptr) {
+        return nullptr;
+    }
+
+    return std::visit(DataMemoryAddress{}, slot->value);
 }
 
 const void* Parameters::get_value_ptr(const std::string& name) const {
-    auto iterator = _parameters.find(name);
-    if (iterator == _parameters.end()) {
+    const auto index = get_idx(name);
+    if (!index.has_value()) {
         SPDLOG_LOGGER_INFO(pycanha::get_logger(),
                            "Parameter '{}' doesn't exist", name);
         return nullptr;
     }
 
-    return std::visit(ConstDataMemoryAddress{}, iterator->second);
+    return get_value_ptr(*index);
+}
+
+const void* Parameters::get_value_ptr(Index idx) const {
+    const auto* slot = find_slot(idx);
+    if (slot == nullptr) {
+        return nullptr;
+    }
+
+    return std::visit(ConstDataMemoryAddress{}, slot->value);
+}
+
+double* Parameters::get_double_ptr(Index idx) {
+    auto* slot = find_slot(idx);
+    if (slot == nullptr) {
+        return nullptr;
+    }
+
+    return std::get_if<double>(&slot->value);
+}
+
+const double* Parameters::get_double_ptr(Index idx) const {
+    const auto* slot = find_slot(idx);
+    if (slot == nullptr) {
+        return nullptr;
+    }
+
+    return std::get_if<double>(&slot->value);
 }
 
 std::uint64_t Parameters::get_memory_address(const std::string& name) const {
@@ -212,36 +477,81 @@ std::uint64_t Parameters::get_memory_address(const std::string& name) const {
     return static_cast<std::uint64_t>(std::bit_cast<std::uintptr_t>(address));
 }
 
-int Parameters::get_idx(const std::string& name) const {
-    const auto iterator = _parameters.find(name);
-    if (iterator == _parameters.end()) {
+std::optional<Index> Parameters::get_idx(const std::string& name) const {
+    const auto iterator = _name_to_slot.find(name);
+    if (iterator == _name_to_slot.end()) {
         SPDLOG_LOGGER_INFO(pycanha::get_logger(),
                            "Parameter '{}' doesn't exist", name);
-        return -1;
+        return std::nullopt;
     }
 
-    return static_cast<int>(std::distance(_parameters.begin(), iterator));
+    const auto* slot = find_slot(to_idx(iterator->second));
+    if (slot == nullptr) {
+        SPDLOG_LOGGER_INFO(pycanha::get_logger(),
+                           "Parameter '{}' doesn't exist", name);
+        return std::nullopt;
+    }
+
+    return to_idx(iterator->second);
+}
+
+bool Parameters::is_parameter_valid(Index idx) const noexcept {
+    return find_slot(idx) != nullptr;
+}
+
+std::optional<std::string> Parameters::get_parameter_name(Index idx) const {
+    const auto* slot = find_slot(idx);
+    if (slot == nullptr) {
+        return std::nullopt;
+    }
+
+    return slot->name;
 }
 
 std::size_t Parameters::get_size_of_parameter(const std::string& name) const {
-    const auto iterator = _parameters.find(name);
-    if (iterator == _parameters.end()) {
+    const auto* slot = find_slot(name);
+    if (slot == nullptr) {
         SPDLOG_LOGGER_INFO(pycanha::get_logger(),
                            "Parameter '{}' doesn't exist", name);
         return 0U;
     }
 
-    return std::visit(ParameterSize{}, iterator->second);
+    return std::visit(ParameterSize{}, slot->value);
+}
+
+void Parameters::lock_structure() noexcept { _structure_locked = true; }
+
+void Parameters::unlock_structure() noexcept { _structure_locked = false; }
+
+bool Parameters::is_structure_locked() const noexcept {
+    return _structure_locked;
+}
+
+std::uint64_t Parameters::get_structure_version() const noexcept {
+    return _structure_version;
 }
 
 bool Parameters::contains(const std::string& name) const noexcept {
-    return _parameters.find(name) != _parameters.end();
+    return _name_to_slot.find(name) != _name_to_slot.end();
 }
 
-std::size_t Parameters::size() const noexcept { return _parameters.size(); }
+std::size_t Parameters::size() const noexcept { return _active_size; }
 
-const Parameters::ParametersDict& Parameters::data() const noexcept {
-    return _parameters;
+const Parameters::ParametersDict& Parameters::data() const {
+    if (_data_cache_dirty) {
+        _data_cache.clear();
+        for (const auto& slot : _slots) {
+            if (!slot.active) {
+                continue;
+            }
+
+            _data_cache.emplace(slot.name, slot.value);
+        }
+
+        _data_cache_dirty = false;
+    }
+
+    return _data_cache;
 }
 
 }  // namespace pycanha

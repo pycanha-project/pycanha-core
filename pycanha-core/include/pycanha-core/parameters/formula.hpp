@@ -4,6 +4,7 @@
 #include <symengine/lambda_double.h>
 #include <symengine/symbol.h>
 
+#include <cstdint>
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -25,18 +26,7 @@ class Formula {
     Formula& operator=(Formula&&) noexcept = default;
     virtual ~Formula() = default;
 
-    explicit Formula(ThermalEntity& entity) : _entity(entity.clone()) {
-        if (_entity == nullptr) {
-            throw std::invalid_argument("Formula requires a valid entity");
-        }
-    }
-
-    explicit Formula(std::shared_ptr<ThermalEntity> entity)
-        : _entity(std::move(entity)) {
-        if (_entity == nullptr) {
-            throw std::invalid_argument("Formula requires a valid entity");
-        }
-    }
+    explicit Formula(Entity entity) : _entity(std::move(entity)) {}
 
     bool operator==(const Formula& other) const {
         return entity().is_same_as(other.entity());
@@ -44,15 +34,12 @@ class Formula {
 
     struct Hash {
         [[nodiscard]] std::size_t operator()(const Formula& formula) const {
-            return std::hash<std::string>()(
-                formula.entity().string_representation());
+            return Entity::Hash{}(formula.entity());
         }
     };
 
-    [[nodiscard]] ThermalEntity& entity() noexcept { return *_entity; }
-    [[nodiscard]] const ThermalEntity& entity() const noexcept {
-        return *_entity;
-    }
+    [[nodiscard]] Entity& entity() noexcept { return _entity; }
+    [[nodiscard]] const Entity& entity() const noexcept { return _entity; }
 
     [[nodiscard]] const DependencyList& parameter_dependencies()
         const noexcept {
@@ -86,27 +73,15 @@ class Formula {
     void set_entity_data_ptr(double* ptr) noexcept { _entity_data = ptr; }
 
   private:
-    std::shared_ptr<ThermalEntity> _entity;
+    Entity _entity;
     DependencyList _dependencies;
     double* _entity_data{nullptr};
 };
 
 class ParameterFormula final : public Formula {
   public:
-    ParameterFormula(ThermalEntity& entity, Parameters& parameters,
+    ParameterFormula(Entity entity, Parameters& parameters,
                      std::string parameter_name)
-        : Formula(entity),
-          _parameters(&parameters),
-          _parameter_name(std::move(parameter_name)) {
-        if (_parameters == nullptr) {
-            throw std::invalid_argument(
-                "ParameterFormula requires parameter storage");
-        }
-        mutable_dependencies().push_back(_parameter_name);
-    }
-
-    ParameterFormula(std::shared_ptr<ThermalEntity> entity,
-                     Parameters& parameters, std::string parameter_name)
         : Formula(std::move(entity)),
           _parameters(&parameters),
           _parameter_name(std::move(parameter_name)) {
@@ -114,6 +89,21 @@ class ParameterFormula final : public Formula {
             throw std::invalid_argument(
                 "ParameterFormula requires parameter storage");
         }
+
+        const auto parameter_idx = _parameters->get_idx(_parameter_name);
+        if (!parameter_idx.has_value()) {
+            throw std::invalid_argument(
+                "ParameterFormula references unknown parameter '" +
+                _parameter_name + "'");
+        }
+
+        _parameter_idx = *parameter_idx;
+        if (_parameters->get_double_ptr(_parameter_idx) == nullptr) {
+            throw std::invalid_argument("ParameterFormula expects parameter '" +
+                                        _parameter_name +
+                                        "' to hold a double value");
+        }
+
         mutable_dependencies().push_back(_parameter_name);
     }
 
@@ -125,29 +115,27 @@ class ParameterFormula final : public Formula {
         }
         set_entity_data_ptr(entity_ptr);
 
-        const auto parameter = _parameters->get_parameter(_parameter_name);
-        if (std::get_if<double>(&parameter) == nullptr) {
+        auto* parameter_ptr = _parameters->get_double_ptr(_parameter_idx);
+        if (parameter_ptr == nullptr) {
             throw std::runtime_error(
                 "ParameterFormula expects parameter to hold a double value");
         }
 
-        auto* parameter_ptr =
-            static_cast<double*>(_parameters->get_value_ptr(_parameter_name));
-        if (parameter_ptr == nullptr) {
-            throw std::runtime_error(
-                "ParameterFormula could not obtain parameter pointer");
-        }
         _parameter_data = parameter_ptr;
+        _compiled_structure_version = _parameters->get_structure_version();
     }
 
     void apply_formula() override {
-        const auto parameter = _parameters->get_parameter(_parameter_name);
-        const auto* parameter_value = std::get_if<double>(&parameter);
+        const auto* parameter_value =
+            _parameters->get_double_ptr(_parameter_idx);
         if (parameter_value == nullptr) {
             throw std::runtime_error(
                 "ParameterFormula expects parameter to hold a double value");
         }
-        entity().set_value(*parameter_value);
+        if (!entity().set_value(*parameter_value)) {
+            throw std::runtime_error(
+                "ParameterFormula could not assign entity value");
+        }
     }
 
     void apply_compiled_formula() override {
@@ -155,12 +143,18 @@ class ParameterFormula final : public Formula {
             throw std::runtime_error(
                 "ParameterFormula needs to be compiled before applying");
         }
+        if (_parameters->get_structure_version() !=
+            _compiled_structure_version) {
+            throw std::runtime_error(
+                "ParameterFormula compiled state is stale after structural "
+                "parameter changes");
+        }
         *entity_data_ptr() = *_parameter_data;
     }
 
     [[nodiscard]] double get_value() const override {
-        const auto parameter = _parameters->get_parameter(_parameter_name);
-        const auto* parameter_value = std::get_if<double>(&parameter);
+        const auto* parameter_value =
+            _parameters->get_double_ptr(_parameter_idx);
         if (parameter_value == nullptr) {
             throw std::runtime_error(
                 "ParameterFormula expects parameter to hold a double value");
@@ -179,16 +173,15 @@ class ParameterFormula final : public Formula {
   private:
     Parameters* _parameters;
     std::string _parameter_name;
+    Index _parameter_idx{-1};
     double* _parameter_data{nullptr};
+    std::uint64_t _compiled_structure_version{0U};
     std::vector<double> _derivatives{1.0};
 };
 
 class ValueFormula final : public Formula {
   public:
-    explicit ValueFormula(ThermalEntity& entity)
-        : Formula(entity), _value(entity.get_value()) {}
-
-    explicit ValueFormula(std::shared_ptr<ThermalEntity> entity)
+    explicit ValueFormula(Entity entity)
         : Formula(std::move(entity)), _value(this->entity().get_value()) {}
 
     void compile_formula() override {
@@ -200,7 +193,11 @@ class ValueFormula final : public Formula {
         set_entity_data_ptr(entity_ptr);
     }
 
-    void apply_formula() override { entity().set_value(_value); }
+    void apply_formula() override {
+        if (!entity().set_value(_value)) {
+            throw std::runtime_error("ValueFormula could not assign entity");
+        }
+    }
 
     void apply_compiled_formula() override {
         if (entity_data_ptr() == nullptr) {
@@ -242,10 +239,8 @@ class ValueFormula final : public Formula {
 
 class ExpressionFormula final : public Formula {
   public:
-    ExpressionFormula(ThermalEntity& entity, Parameters& parameters,
+    ExpressionFormula(Entity entity, Parameters& parameters,
                       std::string expression);
-    ExpressionFormula(std::shared_ptr<ThermalEntity> entity,
-                      Parameters& parameters, std::string expression);
 
     void compile_formula() override;
     void apply_formula() override;
@@ -260,7 +255,7 @@ class ExpressionFormula final : public Formula {
   private:
     struct ParameterBinding {
         std::string dependency_name;
-        std::string parameter_name;
+        Index parameter_idx{-1};
     };
 
     void initialize_expression();
@@ -290,6 +285,7 @@ class ExpressionFormula final : public Formula {
     std::vector<double*> _param_ptrs;
     std::vector<bool> _compiled_derivs_ready;
     bool _compiled{false};
+    std::uint64_t _compiled_structure_version{0U};
 };
 
 }  // namespace pycanha

@@ -1,6 +1,10 @@
 #pragma once
 #include <Eigen/Dense>
+#include <cassert>
+#include <cstddef>
+#include <cstdint>
 #include <limits>
+#include <stdexcept>
 #include <vector>
 
 namespace pycanha {
@@ -27,16 +31,138 @@ using Vector2D = Eigen::Vector2d;
 using Vector3D = Eigen::Vector3d;
 
 using Index = Eigen::Index;
-using VectorIndex = std::vector<double>::size_type;
+using NodeNum = std::int32_t;
+using MeshIndex = std::uint32_t;
+using IntAddress = std::uint64_t;  // Unsigned 64 bit integer to pass memory
+                                   // addresses
 
-using SizeType = size_t;
+[[nodiscard]] constexpr Index to_idx(Index index) noexcept { return index; }
 
-using MeshIndex = uint32_t;
-using Index64 = uint64_t;
-using SizeType32 = uint32_t;
-using SizeType64 = uint64_t;
+[[nodiscard]] constexpr Index to_idx(std::size_t size) noexcept {
+    assert(size <= static_cast<std::size_t>(std::numeric_limits<Index>::max()));
+    return static_cast<Index>(size);
+}
 
-using IntAddress = uint64_t;  // Unsigned 64 bit integer to pass memory
-                              // addresses
+[[nodiscard]] constexpr Index to_idx(MeshIndex mesh_index) noexcept {
+    return static_cast<Index>(mesh_index);
+}
+
+[[nodiscard]] constexpr Index to_idx(int value) noexcept {
+    return static_cast<Index>(value);
+}
+
+[[nodiscard]] constexpr std::size_t to_sizet(std::size_t size) noexcept {
+    return size;
+}
+
+[[nodiscard]] constexpr std::size_t to_sizet(Index index) noexcept {
+    assert(index >= 0);
+    return static_cast<std::size_t>(index);
+}
+
+[[nodiscard]] constexpr std::size_t to_sizet(MeshIndex mesh_index) noexcept {
+    return static_cast<std::size_t>(mesh_index);
+}
+
+[[nodiscard]] constexpr std::size_t to_sizet(int value) noexcept {
+    assert(value >= 0);
+    return static_cast<std::size_t>(value);
+}
+
+[[nodiscard]] constexpr MeshIndex to_meshidx(MeshIndex mesh_index) noexcept {
+    return mesh_index;
+}
+
+[[nodiscard]] constexpr MeshIndex to_meshidx(Index index) noexcept {
+    assert(index >= 0 &&
+           index <= static_cast<Index>(std::numeric_limits<MeshIndex>::max()));
+    return static_cast<MeshIndex>(index);
+}
+
+[[nodiscard]] constexpr MeshIndex to_meshidx(std::size_t size) noexcept {
+    assert(size <=
+           static_cast<std::size_t>(std::numeric_limits<MeshIndex>::max()));
+    return static_cast<MeshIndex>(size);
+}
+
+[[nodiscard]] constexpr MeshIndex to_meshidx(int value) noexcept {
+    assert(value >= 0);
+    return static_cast<MeshIndex>(value);
+}
+
+[[nodiscard]] constexpr Index to_idx_safe(Index index) noexcept {
+    return index;
+}
+
+[[nodiscard]] constexpr Index to_idx_safe(std::size_t size) {
+    if (size > static_cast<std::size_t>(std::numeric_limits<Index>::max())) {
+        throw std::out_of_range(
+            "to_idx_safe: size_t value exceeds Index range");
+    }
+    return static_cast<Index>(size);
+}
+
+[[nodiscard]] constexpr Index to_idx_safe(MeshIndex mesh_index) noexcept {
+    return static_cast<Index>(mesh_index);
+}
+
+[[nodiscard]] constexpr Index to_idx_safe(int value) noexcept {
+    return static_cast<Index>(value);
+}
+
+[[nodiscard]] constexpr std::size_t to_sizet_safe(std::size_t size) noexcept {
+    return size;
+}
+
+[[nodiscard]] constexpr std::size_t to_sizet_safe(Index index) {
+    if (index < 0) {
+        throw std::out_of_range("to_sizet_safe: negative Index");
+    }
+    return static_cast<std::size_t>(index);
+}
+
+[[nodiscard]] constexpr std::size_t to_sizet_safe(
+    MeshIndex mesh_index) noexcept {
+    return static_cast<std::size_t>(mesh_index);
+}
+
+[[nodiscard]] constexpr std::size_t to_sizet_safe(int value) {
+    if (value < 0) {
+        throw std::out_of_range("to_sizet_safe: negative int");
+    }
+    return static_cast<std::size_t>(value);
+}
+
+[[nodiscard]] constexpr MeshIndex to_meshidx_safe(
+    MeshIndex mesh_index) noexcept {
+    return mesh_index;
+}
+
+[[nodiscard]] constexpr MeshIndex to_meshidx_safe(Index index) {
+    if (index < 0 ||
+        index > static_cast<Index>(std::numeric_limits<MeshIndex>::max())) {
+        throw std::out_of_range(
+            "to_meshidx_safe: Index out of MeshIndex range");
+    }
+    return static_cast<MeshIndex>(index);
+}
+
+[[nodiscard]] constexpr MeshIndex to_meshidx_safe(std::size_t size) {
+    if (size >
+        static_cast<std::size_t>(std::numeric_limits<MeshIndex>::max())) {
+        throw std::out_of_range(
+            "to_meshidx_safe: size_t out of MeshIndex range");
+    }
+    return static_cast<MeshIndex>(size);
+}
+
+[[nodiscard]] constexpr MeshIndex to_meshidx_safe(int value) {
+    if (value < 0) {
+        throw std::out_of_range("to_meshidx_safe: negative int");
+    }
+    return static_cast<MeshIndex>(value);
+}
+
+constexpr MeshIndex INVALID_MESH_INDEX = std::numeric_limits<MeshIndex>::max();
 
 }  // namespace pycanha

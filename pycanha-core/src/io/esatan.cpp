@@ -154,12 +154,11 @@ std::vector<int> map_index_links_to_node_numbers(
     out.reserve(link_idx.size());
 
     for (const int idx_base1 : link_idx) {
-        if (idx_base1 <= 0 ||
-            static_cast<std::size_t>(idx_base1) > node_nums.size()) {
+        if (idx_base1 <= 0 || to_sizet(idx_base1) > node_nums.size()) {
             throw std::runtime_error("Invalid node index in link dataset '" +
                                      link_name + "'.");
         }
-        out.push_back(node_nums[static_cast<std::size_t>(idx_base1 - 1)]);
+        out.push_back(node_nums[to_sizet(idx_base1 - 1)]);
     }
 
     return out;

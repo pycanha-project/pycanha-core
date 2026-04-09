@@ -1,6 +1,8 @@
 #pragma once
 
+#include <cstdint>
 #include <memory>
+#include <optional>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -33,14 +35,21 @@ class Formulas {
         return _parameters;
     }
 
-    ParameterFormula create_parameter_formula(ThermalEntity& entity,
+    ParameterFormula create_parameter_formula(Entity entity,
                                               const std::string& parameter);
 
     void add_formula(const Formula& formula);
     void add_formula(const std::shared_ptr<Formula>& formula);
 
+    void validate_for_execution();
+    void compile_formulas();
     void apply_formulas();
+    void apply_compiled_formulas();
     void calculate_derivatives();
+    void lock_parameters_for_execution();
+    void unlock_parameters() noexcept;
+    [[nodiscard]] bool is_validation_current() const noexcept;
+    [[nodiscard]] bool is_compiled_current() const noexcept;
 
     [[nodiscard]] const std::vector<std::shared_ptr<Formula>>& formulas()
         const noexcept {
@@ -59,6 +68,8 @@ class Formulas {
     std::vector<std::shared_ptr<Formula>> _formulas;
     std::unordered_map<std::string, std::vector<std::shared_ptr<Formula>>>
         _parameter_dependencies;
+    std::optional<std::uint64_t> _validated_structure_version;
+    std::optional<std::uint64_t> _compiled_structure_version;
 };
 
 }  // namespace pycanha
