@@ -6,6 +6,7 @@
 #include <memory>
 
 #include "pycanha-core/solvers/tscnrlds.hpp"
+#include "pycanha-core/thermaldata/dense_time_series.hpp"
 #include "pycanha-core/thermaldata/thermaldata.hpp"
 #include "pycanha-core/tmm/node.hpp"
 #include "pycanha-core/tmm/nodes.hpp"
@@ -42,20 +43,21 @@ constexpr std::array<std::array<double, num_nodes>, num_time_steps + 1>
 
 constexpr std::array<int, num_nodes> node_ids = {10, 15, 20, 25, 99};
 
-template <typename OutputTable>
-[[nodiscard]] bool has_expected_output_shape(const OutputTable& output_table,
-                                             bool print_diffs) {
-    const auto output_rows = static_cast<std::size_t>(output_table.rows());
-    const auto output_cols = static_cast<std::size_t>(output_table.cols());
+[[nodiscard]] bool has_expected_output_shape(
+    const pycanha::DenseTimeSeries& output_table, bool print_diffs) {
+    const auto output_rows =
+        static_cast<std::size_t>(output_table.num_timesteps());
+    const auto output_cols =
+        static_cast<std::size_t>(output_table.num_columns());
 
-    if (output_rows == times.size() && output_cols == num_nodes + 1) {
+    if (output_rows == times.size() && output_cols == num_nodes) {
         return true;
     }
 
     if (print_diffs) {
         std::cout << "Unexpected output table shape: " << output_rows << "x"
                   << output_cols << " (expected " << times.size() << "x"
-                  << (num_nodes + 1) << ")\n";
+                  << num_nodes << ")\n";
     }
     return false;
 }
@@ -74,19 +76,18 @@ template <typename OutputTable>
             return false;
         }
 
-        node_column_indices.at(i) = *node_index + 1;
+        node_column_indices.at(i) = *node_index;
     }
 
     return true;
 }
 
-template <typename OutputTable>
 [[nodiscard]] bool compare_output_row(
-    const OutputTable& output_table, std::size_t time_idx,
+    const pycanha::DenseTimeSeries& output_table, std::size_t time_idx,
     const std::array<Eigen::Index, num_nodes>& node_column_indices,
     bool print_diffs) {
     const auto row = static_cast<Eigen::Index>(time_idx);
-    const double computed_time = output_table(row, 0);
+    const double computed_time = output_table.times()(row);
     const double expected_time = times.at(time_idx);
     bool row_within_tol = true;
 
@@ -101,7 +102,7 @@ template <typename OutputTable>
 
     for (std::size_t node_idx = 0; node_idx < node_ids.size(); ++node_idx) {
         const auto column = node_column_indices.at(node_idx);
-        const double computed_temp = output_table(row, column);
+        const double computed_temp = output_table.values()(row, column);
         const double expected_temp = expected_temps.at(time_idx).at(node_idx);
         const double temp_diff = std::fabs(computed_temp - expected_temp);
 
@@ -176,15 +177,16 @@ std::shared_ptr<pycanha::ThermalMathematicalModel> make_model() {
 bool compare_temps(pycanha::ThermalMathematicalModel& model,
                    bool print_diffs = false) {
     const auto& thermal_data = model.thermal_data;
-    if (!thermal_data.has_table("TSCNRLDS_OUTPUT")) {
+    if (!thermal_data.has_dense_time_series("TSCNRLDS_OUTPUT")) {
         if (print_diffs) {
-            std::cout << "Thermal data table 'TSCNRLDS_OUTPUT' not found."
+            std::cout << "Thermal data series 'TSCNRLDS_OUTPUT' not found."
                       << '\n';
         }
         return false;
     }
 
-    const auto& output_table = thermal_data.get_table("TSCNRLDS_OUTPUT");
+    const auto& output_table =
+        thermal_data.get_dense_time_series("TSCNRLDS_OUTPUT");
     if (!has_expected_output_shape(output_table, print_diffs)) {
         return false;
     }

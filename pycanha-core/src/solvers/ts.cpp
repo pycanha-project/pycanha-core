@@ -5,9 +5,6 @@
 #include <Eigen/Dense>
 #include <algorithm>
 #include <cmath>
-#include <cstddef>
-#include <cstring>
-#include <iterator>
 #include <memory>
 #include <stdexcept>
 #include <utility>
@@ -71,29 +68,17 @@ void TransientSolver::initialize_common() {
     num_outputs = ((num_time_steps - 1) / wait_n_dtimes) + 2;
     num_outputs = std::max(num_outputs, 2);
 
-    tmm.thermal_data.create_new_table(output_table_name, num_outputs, N + 1);
-    output_data = tmm.thermal_data.get_table(output_table_name).data();
+    tmm.thermal_data.add_dense_time_series(output_table_name, num_outputs, N);
 }
 
 void TransientSolver::save_temp_data() {
-    if (output_data == nullptr) {
-        return;
-    }
-
-    const auto row_offset = to_sizet(N + 1) * to_sizet(idata_out);
-    double* data_ptr_row =
-        std::next(output_data, static_cast<std::ptrdiff_t>(row_offset));
-    Eigen::Map<Eigen::VectorXd> row_map(data_ptr_row, N + 1);
-    row_map[0] = time;
-    row_map.tail(N) = T;
+    auto& output_series =
+        tmm.thermal_data.get_dense_time_series(output_table_name);
+    output_series.set_row(idata_out, time, T);
 }
 
 void TransientSolver::outputs_first_last() {
     PYCANHA_PROFILE_SCOPE("Outputs");
-    if (output_data == nullptr) {
-        return;
-    }
-
     if (idata_out == 0) {
         save_temp_data();
     } else if (idata_out < num_outputs - 1) {
@@ -104,10 +89,6 @@ void TransientSolver::outputs_first_last() {
 
 void TransientSolver::outputs() {
     PYCANHA_PROFILE_SCOPE("Outputs");
-    if (output_data == nullptr) {
-        return;
-    }
-
     if (((time_iter + 1) % wait_n_dtimes) == 0) {
         ++idata_out;
         save_temp_data();
