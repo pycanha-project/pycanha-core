@@ -43,7 +43,6 @@ class TransientSolver : public Solver {
     int wait_n_dtimes = 0;
     int idata_out = 0;
 
-    double* output_data = nullptr;
     std::string output_table_name;
 };
 
