@@ -9,7 +9,6 @@
 #include <stdexcept>
 #include <utility>
 
-#include "pycanha-core/globals.hpp"
 #include "pycanha-core/solvers/solver.hpp"
 #include "pycanha-core/thermaldata/thermaldata.hpp"
 #include "pycanha-core/tmm/thermalmathematicalmodel.hpp"

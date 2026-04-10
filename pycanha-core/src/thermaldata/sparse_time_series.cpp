@@ -1,13 +1,24 @@
 #include "pycanha-core/thermaldata/sparse_time_series.hpp"
 
-#include <algorithm>
+#include <cstddef>
 #include <stdexcept>
+#include <string>
+#include <string_view>
+#include <utility>
+#include <vector>
 
+#include "pycanha-core/globals.hpp"
 #include "pycanha-core/thermaldata/interpolation_utils.hpp"
 
 namespace pycanha {
 
 namespace {
+
+template <typename Scalar>
+using DynamicVector = Eigen::Matrix<Scalar, Eigen::Dynamic, 1>;
+
+constexpr std::string_view k_pattern_error_message =
+    "SparseTimeSeries matrices must share the same sparsity pattern";
 
 void validate_same_pattern(
     const SparseTimeSeries::SparseMatrixType& matrix,
@@ -17,17 +28,27 @@ void validate_same_pattern(
         ref_inner) {
     using StorageIndex = SparseTimeSeries::SparseMatrixType::StorageIndex;
 
-    const auto* outer_ptr = matrix.outerIndexPtr();
-    const auto* inner_ptr = matrix.innerIndexPtr();
     const auto outer_size = static_cast<std::size_t>(matrix.outerSize()) + 1U;
     const auto inner_size = static_cast<std::size_t>(matrix.nonZeros());
+    const Eigen::Map<const DynamicVector<StorageIndex>> outer_map(
+        matrix.outerIndexPtr(), to_idx(outer_size));
+    const Eigen::Map<const DynamicVector<StorageIndex>> inner_map(
+        matrix.innerIndexPtr(), to_idx(inner_size));
 
-    const std::vector<StorageIndex> outer(outer_ptr, outer_ptr + outer_size);
-    const std::vector<StorageIndex> inner(inner_ptr, inner_ptr + inner_size);
+    if ((ref_outer.size() != outer_size) || (ref_inner.size() != inner_size)) {
+        throw std::invalid_argument(std::string(k_pattern_error_message));
+    }
 
-    if ((outer != ref_outer) || (inner != ref_inner)) {
-        throw std::invalid_argument(
-            "SparseTimeSeries matrices must share the same sparsity pattern");
+    for (Index index = 0; index < outer_map.size(); ++index) {
+        if (ref_outer.at(to_sizet(index)) != outer_map(index)) {
+            throw std::invalid_argument(std::string(k_pattern_error_message));
+        }
+    }
+
+    for (Index index = 0; index < inner_map.size(); ++index) {
+        if (ref_inner.at(to_sizet(index)) != inner_map(index)) {
+            throw std::invalid_argument(std::string(k_pattern_error_message));
+        }
     }
 }
 
@@ -45,16 +66,27 @@ void SparseTimeSeries::push_back(double time, SparseMatrixType matrix) {
         }
     }
 
-    matrix.makeCompressed();
-
     if (_matrices.empty()) {
-        const auto* outer_ptr = matrix.outerIndexPtr();
-        const auto* inner_ptr = matrix.innerIndexPtr();
+        using StorageIndex = SparseMatrixType::StorageIndex;
+
         const auto outer_size =
             static_cast<std::size_t>(matrix.outerSize()) + 1U;
         const auto inner_size = static_cast<std::size_t>(matrix.nonZeros());
-        _ref_outer.assign(outer_ptr, outer_ptr + outer_size);
-        _ref_inner.assign(inner_ptr, inner_ptr + inner_size);
+        const Eigen::Map<const DynamicVector<StorageIndex>> outer_map(
+            matrix.outerIndexPtr(), to_idx(outer_size));
+        const Eigen::Map<const DynamicVector<StorageIndex>> inner_map(
+            matrix.innerIndexPtr(), to_idx(inner_size));
+
+        _ref_outer.resize(outer_size);
+        _ref_inner.resize(inner_size);
+
+        for (Index index = 0; index < outer_map.size(); ++index) {
+            _ref_outer[to_sizet(index)] = outer_map(index);
+        }
+
+        for (Index index = 0; index < inner_map.size(); ++index) {
+            _ref_inner[to_sizet(index)] = inner_map(index);
+        }
     } else {
         validate_same_pattern(matrix, _ref_outer, _ref_inner);
     }
@@ -95,16 +127,15 @@ SparseTimeSeries::SparseMatrixType SparseTimeSeries::interpolate(
     const Index upper_index = lower_index + 1;
 
     SparseMatrixType result = _matrices.at(to_sizet(lower_index));
-    double* result_values = result.valuePtr();
-    const double* lower_values = _matrices.at(to_sizet(lower_index)).valuePtr();
-    const double* upper_values = _matrices.at(to_sizet(upper_index)).valuePtr();
+    Eigen::Map<Eigen::VectorXd> result_values(result.valuePtr(),
+                                              result.nonZeros());
+    const Eigen::Map<const Eigen::VectorXd> lower_values(
+        _matrices.at(to_sizet(lower_index)).valuePtr(), result.nonZeros());
+    const Eigen::Map<const Eigen::VectorXd> upper_values(
+        _matrices.at(to_sizet(upper_index)).valuePtr(), result.nonZeros());
 
-    for (Index value_index = 0; value_index < result.nonZeros();
-         ++value_index) {
-        result_values[value_index] =
-            ((1.0 - location.fraction) * lower_values[value_index]) +
-            (location.fraction * upper_values[value_index]);
-    }
+    result_values = ((1.0 - location.fraction) * lower_values) +
+                    (location.fraction * upper_values);
 
     return result;
 }

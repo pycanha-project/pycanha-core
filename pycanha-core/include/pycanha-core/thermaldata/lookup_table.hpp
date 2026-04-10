@@ -27,8 +27,8 @@ class LookupTable1D {
                   InterpolationMethod interp = InterpolationMethod::Linear,
                   ExtrapolationMethod extrap = ExtrapolationMethod::Constant);
 
-    [[nodiscard]] double operator()(double x) const;
-    [[nodiscard]] double evaluate(double x) const;
+    [[nodiscard]] double operator()(double x_value) const;
+    [[nodiscard]] double evaluate(double x_value) const;
     [[nodiscard]] Eigen::VectorXd evaluate(
         const Eigen::VectorXd& x_query) const;
 
@@ -61,7 +61,7 @@ class LookupTableVec1D {
         InterpolationMethod interp = InterpolationMethod::Linear,
         ExtrapolationMethod extrap = ExtrapolationMethod::Constant);
 
-    [[nodiscard]] Eigen::VectorXd evaluate(double x) const;
+    [[nodiscard]] Eigen::VectorXd evaluate(double x_value) const;
     [[nodiscard]] MatrixType evaluate(const Eigen::VectorXd& x_query) const;
 
     [[nodiscard]] const Eigen::VectorXd& x() const noexcept;

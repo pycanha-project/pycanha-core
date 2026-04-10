@@ -2,6 +2,7 @@
 
 #include <stdexcept>
 
+#include "pycanha-core/globals.hpp"
 #include "pycanha-core/thermaldata/interpolation_utils.hpp"
 
 namespace pycanha {

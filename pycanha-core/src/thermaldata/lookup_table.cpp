@@ -1,7 +1,9 @@
 #include "pycanha-core/thermaldata/lookup_table.hpp"
 
 #include <stdexcept>
+#include <utility>
 
+#include "pycanha-core/globals.hpp"
 #include "pycanha-core/thermaldata/interpolation_utils.hpp"
 
 namespace pycanha {
