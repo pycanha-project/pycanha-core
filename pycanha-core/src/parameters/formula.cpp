@@ -1,5 +1,6 @@
 #include "pycanha-core/parameters/formula.hpp"
 
+#include <spdlog/spdlog.h>
 #include <symengine/basic.h>
 #include <symengine/derivative.h>
 #include <symengine/dict.h>
@@ -23,6 +24,8 @@
 
 #include "pycanha-core/parameters/entity.hpp"
 #include "pycanha-core/parameters/parameters.hpp"
+#include "pycanha-core/tmm/thermalnetwork.hpp"
+#include "pycanha-core/utils/logger.hpp"
 
 namespace pycanha {
 
@@ -75,9 +78,11 @@ void collect_symbols(const ExpressionNode& expr, SymbolMap& symbols) {
 }  // namespace
 
 ExpressionFormula::ExpressionFormula(Entity entity, Parameters& parameters,
-                                     std::string expression)
+                                     std::string expression,
+                                     ThermalNetwork* network)
     : Formula(entity),
       _parameters(&parameters),
+      _network(network),
       _expression(std::move(expression)) {
     initialize_expression();
 }
@@ -88,7 +93,8 @@ void ExpressionFormula::initialize_expression() {
             "ExpressionFormula requires parameter storage");
     }
 
-    _normalized_expression = preprocess_expression(_expression);
+    _normalized_expression =
+        preprocess_expression(detail::preprocess_formula_symbols(_expression));
 
     try {
         _parsed_expr = SymEngine::parse(_normalized_expression);
@@ -103,41 +109,72 @@ void ExpressionFormula::initialize_expression() {
     _symbols.clear();
     _bindings.clear();
     Formula::DependencyList dependencies;
+    _has_entity_dependencies = false;
 
     for (const auto& [symbol_name, symbol] : symbols) {
-        ParameterBinding binding;
-        binding.dependency_name = symbol_name;
+        SymbolBinding binding;
+        binding.symbol_name = symbol_name;
 
-        const auto parameter_idx = _parameters->get_idx(symbol_name);
-        if (!parameter_idx.has_value()) {
+        if (_parameters->contains(symbol_name)) {
+            const auto parameter_idx = _parameters->get_idx(symbol_name);
+            if (!parameter_idx.has_value()) {
+                throw std::invalid_argument(
+                    "ExpressionFormula could not bind parameter '" +
+                    symbol_name + "'");
+            }
+
+            binding.kind = BindingKind::Parameter;
+            binding.parameter_idx = *parameter_idx;
+            if (_parameters->get_double_ptr(binding.parameter_idx) == nullptr) {
+                throw std::invalid_argument(
+                    "ExpressionFormula expects parameter '" + symbol_name +
+                    "' to store a double");
+            }
+        } else if (_network != nullptr) {
+            const auto entity_binding =
+                Entity::from_internal_symbol(*_network, symbol_name);
+            if (!entity_binding.has_value() || !entity_binding->exists()) {
+                throw std::invalid_argument(
+                    "ExpressionFormula references unknown symbol '" +
+                    symbol_name + "'");
+            }
+
+            binding.kind = BindingKind::Entity;
+            binding.entity = *entity_binding;
+            _has_entity_dependencies = true;
+
+            if (binding.entity.is_same_as(entity())) {
+                SPDLOG_LOGGER_WARN(get_logger(),
+                                   "ExpressionFormula for '{}' references "
+                                   "itself on the right-hand side",
+                                   entity().string_representation());
+            }
+        } else {
             throw std::invalid_argument(
                 "ExpressionFormula references unknown parameter '" +
                 symbol_name + "'");
         }
 
-        binding.parameter_idx = *parameter_idx;
-        if (_parameters->get_double_ptr(binding.parameter_idx) == nullptr) {
-            throw std::invalid_argument(
-                "ExpressionFormula expects parameter '" + symbol_name +
-                "' to store a double");
-        }
-
         _symbols.emplace_back(symbol);
-        dependencies.emplace_back(binding.dependency_name);
+        dependencies.emplace_back(binding.symbol_name);
         _bindings.emplace_back(std::move(binding));
     }
 
     set_parameter_dependencies(std::move(dependencies));
 
     _derivative_exprs.clear();
-    _derivative_exprs.reserve(_symbols.size());
-    std::transform(_symbols.begin(), _symbols.end(),
-                   std::back_inserter(_derivative_exprs),
-                   [this](const auto& symbol) {
-                       return SymEngine::diff(_parsed_expr, symbol);
-                   });
+    if (!_has_entity_dependencies) {
+        _derivative_exprs.reserve(_symbols.size());
+        std::transform(_symbols.begin(), _symbols.end(),
+                       std::back_inserter(_derivative_exprs),
+                       [this](const auto& symbol) {
+                           return SymEngine::diff(_parsed_expr, symbol);
+                       });
+        _derivatives.assign(_symbols.size(), 0.0);
+    } else {
+        _derivatives.clear();
+    }
 
-    _derivatives.assign(_symbols.size(), 0.0);
     _param_ptrs.clear();
     _compiled_derivs.clear();
     _compiled_derivs_ready.clear();
@@ -152,7 +189,16 @@ SymEngine::vec_basic ExpressionFormula::lambda_inputs() const {
 }
 
 double ExpressionFormula::evaluate_symbol_value(
-    const ParameterBinding& binding) const {
+    const SymbolBinding& binding) const {
+    if (binding.kind == BindingKind::Entity) {
+        if (!binding.entity.exists()) {
+            throw std::runtime_error("ExpressionFormula lost entity '" +
+                                     binding.symbol_name + "'");
+        }
+
+        return binding.entity.get_value();
+    }
+
     if (_parameters == nullptr) {
         throw std::runtime_error("ExpressionFormula lost parameter storage");
     }
@@ -161,14 +207,25 @@ double ExpressionFormula::evaluate_symbol_value(
         _parameters->get_double_ptr(binding.parameter_idx);
     if (parameter_value == nullptr) {
         throw std::runtime_error("ExpressionFormula lost parameter '" +
-                                 binding.dependency_name + "'");
+                                 binding.symbol_name + "'");
     }
 
     return *parameter_value;
 }
 
 double* ExpressionFormula::resolve_symbol_ptr(
-    const ParameterBinding& binding) const {
+    const SymbolBinding& binding) const {
+    if (binding.kind == BindingKind::Entity) {
+        auto* entity_ptr = binding.entity.get_value_ref();
+        if (entity_ptr == nullptr) {
+            throw std::runtime_error(
+                "ExpressionFormula could not obtain entity pointer for '" +
+                binding.symbol_name + "'");
+        }
+
+        return entity_ptr;
+    }
+
     if (_parameters == nullptr) {
         throw std::runtime_error("ExpressionFormula lost parameter storage");
     }
@@ -177,7 +234,7 @@ double* ExpressionFormula::resolve_symbol_ptr(
     if (parameter_ptr == nullptr) {
         throw std::runtime_error(
             "ExpressionFormula could not obtain parameter pointer for '" +
-            binding.dependency_name + "'");
+            binding.symbol_name + "'");
     }
 
     return parameter_ptr;
@@ -278,6 +335,12 @@ void ExpressionFormula::apply_compiled_formula() {
 }
 
 void ExpressionFormula::calculate_derivatives() {
+    if (_has_entity_dependencies) {
+        throw std::runtime_error(
+            "ExpressionFormula derivatives are not available for "
+            "entity-dependent expressions");
+    }
+
     _derivatives.assign(_derivative_exprs.size(), 0.0);
 
     if (!_compiled) {
@@ -325,7 +388,7 @@ std::vector<double>* ExpressionFormula::get_derivative_values() {
 
 std::unique_ptr<Formula> ExpressionFormula::clone() const {
     auto clone = std::make_unique<ExpressionFormula>(entity(), *_parameters,
-                                                     _expression);
+                                                     _expression, _network);
     clone->_cached_value = _cached_value;
     clone->_derivatives = _derivatives;
     if (_compiled) {

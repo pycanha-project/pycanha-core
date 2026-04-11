@@ -3,12 +3,15 @@
 #include <spdlog/spdlog.h>
 
 #include <memory>
+#include <stdexcept>
 #include <string>
 #include <utility>
 
 #include "pycanha-core/globals.hpp"
 #include "pycanha-core/parameters/formulas.hpp"
 #include "pycanha-core/parameters/parameters.hpp"
+#include "pycanha-core/parameters/variable.hpp"
+#include "pycanha-core/thermaldata/lookup_table.hpp"
 #include "pycanha-core/thermaldata/thermaldata.hpp"
 #include "pycanha-core/tmm/conductivecouplings.hpp"
 #include "pycanha-core/tmm/coupling.hpp"
@@ -28,6 +31,7 @@ ThermalMathematicalModel::ThermalMathematicalModel(std::string model_name)
       formulas(*_formulas_shptr),
       thermal_data(*_thermal_data_shptr) {
     associate_resources();
+    initialize_internal_time_parameter();
     const auto logger = get_logger();
 
     SPDLOG_LOGGER_TRACE(logger,
@@ -48,6 +52,7 @@ ThermalMathematicalModel::ThermalMathematicalModel(
       formulas(*_formulas_shptr),
       thermal_data(*_thermal_data_shptr) {
     associate_resources();
+    initialize_internal_time_parameter();
     const auto logger = get_logger();
 
     SPDLOG_LOGGER_TRACE(
@@ -74,6 +79,7 @@ ThermalMathematicalModel::ThermalMathematicalModel(
       formulas(*_formulas_shptr),
       thermal_data(*_thermal_data_shptr) {
     associate_resources();
+    initialize_internal_time_parameter();
     const auto logger = get_logger();
 
     SPDLOG_LOGGER_TRACE(
@@ -163,6 +169,89 @@ void ThermalMathematicalModel::add_radiative_coupling(Coupling coupling) {
     radiative_couplings().add_coupling(coupling);
 }
 
+void ThermalMathematicalModel::add_time_variable(const std::string& name,
+                                                 Eigen::VectorXd x_data,
+                                                 Eigen::VectorXd y_data,
+                                                 InterpolationMethod interp,
+                                                 ExtrapolationMethod extrap) {
+    if (_temperature_variable_names.contains(name)) {
+        throw std::invalid_argument("Variable name '" + name +
+                                    "' is already used by a "
+                                    "TemperatureVariable");
+    }
+
+    const auto [iterator, inserted] = _time_variables.try_emplace(
+        name, name,
+        LookupTable1D(std::move(x_data), std::move(y_data), interp, extrap),
+        parameters, thermal_data, std::addressof(time));
+    if (!inserted) {
+        throw std::invalid_argument("TimeVariable '" + name +
+                                    "' already exists");
+    }
+
+    (void)iterator;
+}
+
+void ThermalMathematicalModel::remove_time_variable(const std::string& name) {
+    _time_variables.erase(name);
+}
+
+bool ThermalMathematicalModel::has_time_variable(
+    const std::string& name) const noexcept {
+    return _time_variables.contains(name);
+}
+
+const TimeVariable& ThermalMathematicalModel::get_time_variable(
+    const std::string& name) const {
+    const auto iterator = _time_variables.find(name);
+    if (iterator == _time_variables.end()) {
+        throw std::out_of_range("TimeVariable '" + name + "' does not exist");
+    }
+
+    return iterator->second;
+}
+
+void ThermalMathematicalModel::add_temperature_variable(
+    const std::string& name, Eigen::VectorXd x_data, Eigen::VectorXd y_data,
+    InterpolationMethod interp, ExtrapolationMethod extrap) {
+    if (parameters.contains(name) || _time_variables.contains(name)) {
+        throw std::invalid_argument("Variable name '" + name +
+                                    "' is already in use");
+    }
+
+    const auto [iterator, inserted] = _temperature_variables.try_emplace(
+        name, name,
+        LookupTable1D(std::move(x_data), std::move(y_data), interp, extrap));
+    if (!inserted) {
+        throw std::invalid_argument("TemperatureVariable '" + name +
+                                    "' already exists");
+    }
+
+    _temperature_variable_names.insert(iterator->first);
+}
+
+void ThermalMathematicalModel::remove_temperature_variable(
+    const std::string& name) {
+    _temperature_variables.erase(name);
+    _temperature_variable_names.erase(name);
+}
+
+bool ThermalMathematicalModel::has_temperature_variable(
+    const std::string& name) const noexcept {
+    return _temperature_variables.contains(name);
+}
+
+const TemperatureVariable& ThermalMathematicalModel::get_temperature_variable(
+    const std::string& name) const {
+    const auto iterator = _temperature_variables.find(name);
+    if (iterator == _temperature_variables.end()) {
+        throw std::out_of_range("TemperatureVariable '" + name +
+                                "' does not exist");
+    }
+
+    return iterator->second;
+}
+
 void ThermalMathematicalModel::callback_solver_loop() {
     const auto logger = get_logger();
     SPDLOG_LOGGER_DEBUG(logger,
@@ -224,6 +313,15 @@ void ThermalMathematicalModel::callback_transient_after_timestep() {
 }
 
 void ThermalMathematicalModel::internal_callback_common() {
+    if (_time_parameter_ptr != nullptr) {
+        *_time_parameter_ptr = time;
+    }
+
+    for (auto& [name, variable] : _time_variables) {
+        (void)name;
+        variable.update();
+    }
+
     if (parameters.is_structure_locked() && formulas.is_compiled_current()) {
         formulas.apply_compiled_formulas();
     } else {
@@ -257,7 +355,32 @@ void ThermalMathematicalModel::internal_callback_transient_after_timestep() {
 
 void ThermalMathematicalModel::associate_resources() {
     _formulas_shptr->associate(_network, _parameters_shptr);
+    _formulas_shptr->set_temperature_variable_names(
+        std::addressof(_temperature_variable_names));
     _thermal_data_shptr->associate(_network);
+}
+
+void ThermalMathematicalModel::initialize_internal_time_parameter() {
+    if (!_parameters_shptr->contains("time")) {
+        _parameters_shptr->add_internal_parameter("time", 0.0);
+    }
+
+    if (!_parameters_shptr->is_internal_parameter("time")) {
+        SPDLOG_LOGGER_WARN(get_logger(),
+                           "Parameter 'time' already exists and is not an "
+                           "internal parameter; runtime time synchronization "
+                           "is disabled");
+        _time_parameter_ptr = nullptr;
+        return;
+    }
+
+    const auto time_idx = _parameters_shptr->get_idx("time");
+    if (!time_idx.has_value()) {
+        _time_parameter_ptr = nullptr;
+        return;
+    }
+
+    _time_parameter_ptr = _parameters_shptr->get_double_ptr(*time_idx);
 }
 
 }  // namespace pycanha

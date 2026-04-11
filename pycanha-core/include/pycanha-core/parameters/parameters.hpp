@@ -57,7 +57,9 @@ class Parameters {
     Parameters& operator=(Parameters&&) noexcept = default;
 
     void add_parameter(std::string name, ThermalValue value);
+    void add_internal_parameter(std::string name, ThermalValue value);
     void remove_parameter(const std::string& name);
+    void remove_internal_parameter(const std::string& name);
     void rename_parameter(const std::string& current_name,
                           std::string new_name);
     [[nodiscard]] Parameter get_parameter_handle(
@@ -69,6 +71,7 @@ class Parameters {
     [[nodiscard]] std::optional<ThermalValue> get_parameter_optional(
         Index idx) const;
     void set_parameter(const std::string& name, ThermalValue value);
+    void set_internal_parameter(const std::string& name, ThermalValue value);
 
     void print_memory_address(const std::string& name) const;
     void print_parameter(const std::string& name) const;
@@ -83,6 +86,8 @@ class Parameters {
         const std::string& name) const;
 
     [[nodiscard]] std::optional<Index> get_idx(const std::string& name) const;
+    [[nodiscard]] bool is_internal_parameter(
+        const std::string& name) const noexcept;
     [[nodiscard]] bool is_parameter_valid(Index idx) const noexcept;
     [[nodiscard]] std::optional<std::string> get_parameter_name(
         Index idx) const;
@@ -103,6 +108,7 @@ class Parameters {
         std::string name;
         ThermalValue value;
         bool active{true};
+        bool is_internal{false};
     };
 
     struct DataMemoryAddress;

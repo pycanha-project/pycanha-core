@@ -240,7 +240,8 @@ class ValueFormula final : public Formula {
 class ExpressionFormula final : public Formula {
   public:
     ExpressionFormula(Entity entity, Parameters& parameters,
-                      std::string expression);
+                      std::string expression,
+                      ThermalNetwork* network = nullptr);
 
     void compile_formula() override;
     void apply_formula() override;
@@ -253,9 +254,13 @@ class ExpressionFormula final : public Formula {
     [[nodiscard]] const std::string& expression() const noexcept;
 
   private:
-    struct ParameterBinding {
-        std::string dependency_name;
+    enum class BindingKind : std::uint8_t { Parameter, Entity };
+
+    struct SymbolBinding {
+        std::string symbol_name;
+        BindingKind kind{BindingKind::Parameter};
         Index parameter_idx{-1};
+        Entity entity;
     };
 
     void initialize_expression();
@@ -264,16 +269,17 @@ class ExpressionFormula final : public Formula {
     [[nodiscard]] double evaluate_expression(
         const SymEngine::RCP<const SymEngine::Basic>& expr) const;
     [[nodiscard]] double evaluate_symbol_value(
-        const ParameterBinding& binding) const;
+        const SymbolBinding& binding) const;
     [[nodiscard]] double* resolve_symbol_ptr(
-        const ParameterBinding& binding) const;
+        const SymbolBinding& binding) const;
 
     Parameters* _parameters;
+    ThermalNetwork* _network{nullptr};
     std::string _expression;
     std::string _normalized_expression;
     double _cached_value{0.0};
     std::vector<double> _derivatives;
-    std::vector<ParameterBinding> _bindings;
+    std::vector<SymbolBinding> _bindings;
 
     SymEngine::RCP<const SymEngine::Basic> _parsed_expr;
     std::vector<SymEngine::RCP<const SymEngine::Symbol>> _symbols;
@@ -284,6 +290,7 @@ class ExpressionFormula final : public Formula {
 
     std::vector<double*> _param_ptrs;
     std::vector<bool> _compiled_derivs_ready;
+    bool _has_entity_dependencies{false};
     bool _compiled{false};
     std::uint64_t _compiled_structure_version{0U};
 };

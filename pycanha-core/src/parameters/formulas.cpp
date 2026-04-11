@@ -1,18 +1,31 @@
 #include "pycanha-core/parameters/formulas.hpp"
 
+#include <spdlog/spdlog.h>
+#include <symengine/basic.h>
+#include <symengine/eval_double.h>
+#include <symengine/parser.h>
+#include <symengine/symbol.h>
+#include <symengine/symengine_rcp.h>
+
+#include <algorithm>
+#include <cstddef>
+#include <exception>
+#include <iterator>
+#include <map>
 #include <memory>
 #include <stdexcept>
 #include <string>
+#include <unordered_set>
 #include <utility>
+#include <vector>
 
 #include "pycanha-core/parameters/entity.hpp"
 #include "pycanha-core/parameters/formula.hpp"
 #include "pycanha-core/parameters/parameters.hpp"
 #include "pycanha-core/tmm/thermalnetwork.hpp"
+#include "pycanha-core/utils/logger.hpp"
 
 namespace pycanha {
-
-namespace {
 
 [[nodiscard]] std::shared_ptr<ThermalNetwork> ensure_network(
     const std::shared_ptr<ThermalNetwork>& network) {
@@ -30,6 +43,52 @@ namespace {
     return parameters;
 }
 
+namespace {
+
+using ExpressionNode = SymEngine::RCP<const SymEngine::Basic>;
+using SymbolMap =
+    std::map<std::string, SymEngine::RCP<const SymEngine::Symbol>>;
+
+[[nodiscard]] std::string replace_python_power(std::string expression) {
+    std::size_t position = 0U;
+    while ((position = expression.find("**", position)) != std::string::npos) {
+        expression.replace(position, 2U, "^");
+        position += 1U;
+    }
+    return expression;
+}
+
+[[nodiscard]] std::string preprocess_expression(const std::string& expression) {
+    if ((expression.find('[') != std::string::npos) ||
+        (expression.find(']') != std::string::npos)) {
+        throw std::invalid_argument(
+            "ExpressionFormula does not support matrix or array access yet");
+    }
+
+    return replace_python_power(expression);
+}
+
+void collect_symbols(const ExpressionNode& expr, SymbolMap& symbols) {
+    std::vector<ExpressionNode> pending{expr};
+
+    while (!pending.empty()) {
+        const ExpressionNode current = pending.back();
+        pending.pop_back();
+
+        if (const auto* symbol =
+                dynamic_cast<const SymEngine::Symbol*>(current.get());
+            symbol != nullptr) {
+            symbols.emplace(symbol->get_name(),
+                            SymEngine::symbol(symbol->get_name()));
+            continue;
+        }
+
+        const auto arguments = current->get_args();
+        std::copy(arguments.rbegin(), arguments.rend(),
+                  std::back_inserter(pending));
+    }
+}
+
 }  // namespace
 
 Formulas::Formulas() : _network(nullptr), _parameters(nullptr) {}
@@ -44,6 +103,85 @@ void Formulas::associate(std::shared_ptr<ThermalNetwork> network,
     _parameters = std::move(parameters);
     _validated_structure_version.reset();
     _compiled_structure_version.reset();
+}
+
+std::shared_ptr<Formula> Formulas::create_formula(
+    Entity entity, const std::string& formula_string) {
+    [[maybe_unused]] auto validated_network = ensure_network(_network);
+    auto parameter_storage = ensure_parameters(_parameters);
+
+    const auto normalized = preprocess_expression(
+        detail::preprocess_formula_symbols(formula_string));
+
+    ExpressionNode parsed_expression;
+    try {
+        parsed_expression = SymEngine::parse(normalized);
+    } catch (const std::exception& exception) {
+        throw std::invalid_argument("Formula could not parse '" +
+                                    formula_string + "': " + exception.what());
+    }
+
+    SymbolMap symbols;
+    collect_symbols(parsed_expression, symbols);
+    if (symbols.empty()) {
+        auto formula = std::make_shared<ValueFormula>(entity);
+        formula->set_value(SymEngine::eval_double(*parsed_expression));
+        return formula;
+    }
+
+    bool has_entity_symbols = false;
+    bool all_parameter_symbols = true;
+
+    for (const auto& [symbol_name, symbol] : symbols) {
+        (void)symbol;
+
+        if (parameter_storage->contains(symbol_name)) {
+            continue;
+        }
+
+        all_parameter_symbols = false;
+
+        if ((_temperature_variable_names != nullptr) &&
+            _temperature_variable_names->contains(symbol_name)) {
+            throw std::invalid_argument("TemperatureVariable '" + symbol_name +
+                                        "' in formulas is not implemented yet");
+        }
+
+        const auto referenced_entity =
+            Entity::from_internal_symbol(*_network, symbol_name);
+        if (!referenced_entity.has_value() || !referenced_entity->exists()) {
+            throw std::invalid_argument("Unknown symbol '" + symbol_name +
+                                        "' in formula");
+        }
+
+        has_entity_symbols = true;
+        if (referenced_entity->is_same_as(entity)) {
+            SPDLOG_LOGGER_WARN(get_logger(),
+                               "Formula for '{}' references itself on the "
+                               "right-hand side",
+                               entity.string_representation());
+        }
+    }
+
+    if (all_parameter_symbols && (symbols.size() == 1U) &&
+        (dynamic_cast<const SymEngine::Symbol*>(parsed_expression.get()) !=
+         nullptr)) {
+        return std::make_shared<ParameterFormula>(entity, *parameter_storage,
+                                                  symbols.begin()->first);
+    }
+
+    if (has_entity_symbols) {
+        return std::make_shared<ExpressionFormula>(
+            entity, *parameter_storage, formula_string, _network.get());
+    }
+
+    return std::make_shared<ExpressionFormula>(entity, *parameter_storage,
+                                               formula_string);
+}
+
+void Formulas::set_temperature_variable_names(
+    const std::unordered_set<std::string>* names) noexcept {
+    _temperature_variable_names = names;
 }
 
 ParameterFormula Formulas::create_parameter_formula(
@@ -96,8 +234,19 @@ void Formulas::compile_formulas() {
 }
 
 void Formulas::apply_formulas() {
+    if (!debug_formulas) {
+        for (const auto& formula : _formulas) {
+            formula->apply_formula();
+        }
+        return;
+    }
+
+    const auto logger = get_logger();
     for (const auto& formula : _formulas) {
         formula->apply_formula();
+        SPDLOG_LOGGER_INFO(logger, "[Formula Debug] {} = {}",
+                           formula->entity().string_representation(),
+                           formula->get_value());
     }
 }
 
@@ -107,8 +256,19 @@ void Formulas::apply_compiled_formulas() {
             "Compiled formulas are stale or unavailable for execution");
     }
 
+    if (!debug_formulas) {
+        for (const auto& formula : _formulas) {
+            formula->apply_compiled_formula();
+        }
+        return;
+    }
+
+    const auto logger = get_logger();
     for (const auto& formula : _formulas) {
         formula->apply_compiled_formula();
+        SPDLOG_LOGGER_INFO(logger, "[Formula Debug] {} = {}",
+                           formula->entity().string_representation(),
+                           formula->get_value());
     }
 }
 

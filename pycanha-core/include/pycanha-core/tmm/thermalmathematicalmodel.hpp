@@ -1,10 +1,14 @@
 #pragma once
 
+#include <Eigen/Core>
 #include <functional>
 #include <memory>
 #include <string>
+#include <unordered_map>
+#include <unordered_set>
 
 #include "pycanha-core/globals.hpp"
+#include "pycanha-core/parameters/variable.hpp"
 
 namespace pycanha {
 
@@ -68,6 +72,24 @@ class ThermalMathematicalModel {
                                 double value);
     void add_conductive_coupling(Coupling coupling);
     void add_radiative_coupling(Coupling coupling);
+    void add_time_variable(
+        const std::string& name, Eigen::VectorXd x_data, Eigen::VectorXd y_data,
+        InterpolationMethod interp = InterpolationMethod::Linear,
+        ExtrapolationMethod extrap = ExtrapolationMethod::Constant);
+    void remove_time_variable(const std::string& name);
+    [[nodiscard]] bool has_time_variable(
+        const std::string& name) const noexcept;
+    [[nodiscard]] const TimeVariable& get_time_variable(
+        const std::string& name) const;
+    void add_temperature_variable(
+        const std::string& name, Eigen::VectorXd x_data, Eigen::VectorXd y_data,
+        InterpolationMethod interp = InterpolationMethod::Linear,
+        ExtrapolationMethod extrap = ExtrapolationMethod::Constant);
+    void remove_temperature_variable(const std::string& name);
+    [[nodiscard]] bool has_temperature_variable(
+        const std::string& name) const noexcept;
+    [[nodiscard]] const TemperatureVariable& get_temperature_variable(
+        const std::string& name) const;
 
     bool callbacks_active = true;
     bool internal_callbacks_active = true;
@@ -102,8 +124,13 @@ class ThermalMathematicalModel {
     std::shared_ptr<Parameters> _parameters_shptr;
     std::shared_ptr<Formulas> _formulas_shptr;
     std::shared_ptr<ThermalData> _thermal_data_shptr;
+    double* _time_parameter_ptr{nullptr};
+    std::unordered_map<std::string, TimeVariable> _time_variables;
+    std::unordered_map<std::string, TemperatureVariable> _temperature_variables;
+    std::unordered_set<std::string> _temperature_variable_names;
 
     void associate_resources();
+    void initialize_internal_time_parameter();
     inline void internal_callback_common();
 
   public:
