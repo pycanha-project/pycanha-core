@@ -317,8 +317,8 @@ void ThermalMathematicalModel::internal_callback_common() {
         *_time_parameter_ptr = time;
     }
 
-    for (auto& [name, variable] : _time_variables) {
-        (void)name;
+    for (auto& [variable_name, variable] : _time_variables) {
+        (void)variable_name;
         variable.update();
     }
 

@@ -50,9 +50,9 @@ TEST_CASE("TimeVariable cleans up owned resources on destruction",
           "[variables][time]") {
     Parameters parameters;
     ThermalData thermal_data;
-    double time = 0.5;
 
     {
+        double time = 0.5;
         const TimeVariable variable(
             "load",
             LookupTable1D((Eigen::Vector2d{} << 0.0, 1.0).finished(),

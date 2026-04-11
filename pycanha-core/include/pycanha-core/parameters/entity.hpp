@@ -624,17 +624,17 @@ class Entity {
                 return std::nullopt;
             }
 
-            const auto node_1 =
+            const auto parsed_node_1 =
                 detail::parse_node_num(middle.substr(0U, separator));
-            const auto node_2 =
+            const auto parsed_node_2 =
                 detail::parse_node_num(middle.substr(separator + 1U));
-            if (!node_1.has_value() || !node_2.has_value()) {
+            if (!parsed_node_1.has_value() || !parsed_node_2.has_value()) {
                 return std::nullopt;
             }
 
-            const auto type =
+            const auto parsed_type =
                 symbol_name[1] == 'L' ? EntityType::gl : EntityType::gr;
-            return make(network, type, *node_1, *node_2);
+            return make(network, parsed_type, *parsed_node_1, *parsed_node_2);
         }
 
         return from_string(network, symbol_name);
