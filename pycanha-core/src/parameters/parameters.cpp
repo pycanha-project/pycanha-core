@@ -226,11 +226,29 @@ void Parameters::add_parameter(std::string name, ThermalValue value) {
     }
 
     _name_to_slot.emplace(name, _slots.size());
-    _slots.push_back(ParameterSlot{std::move(name), std::move(value), true});
+    _slots.push_back(
+        ParameterSlot{std::move(name), std::move(value), true, false});
     ++_active_size;
     mark_structural_change();
 
     SPDLOG_LOGGER_INFO(pycanha::get_logger(), "Parameter '{}' added",
+                       _slots.back().name);
+}
+
+void Parameters::add_internal_parameter(std::string name, ThermalValue value) {
+    if (_name_to_slot.contains(name)) {
+        SPDLOG_LOGGER_INFO(pycanha::get_logger(),
+                           "Internal parameter '{}' already exists", name);
+        return;
+    }
+
+    _name_to_slot.emplace(name, _slots.size());
+    _slots.push_back(
+        ParameterSlot{std::move(name), std::move(value), true, true});
+    ++_active_size;
+    mark_structural_change();
+
+    SPDLOG_LOGGER_INFO(pycanha::get_logger(), "Internal parameter '{}' added",
                        _slots.back().name);
 }
 
@@ -250,6 +268,14 @@ void Parameters::remove_parameter(const std::string& name) {
         return;
     }
 
+    if (slot->is_internal) {
+        SPDLOG_LOGGER_INFO(pycanha::get_logger(),
+                           "Internal parameter '{}' cannot be removed with "
+                           "remove_parameter",
+                           name);
+        return;
+    }
+
     _name_to_slot.erase(name);
     slot->active = false;
     slot->value = missing_parameter_value();
@@ -257,6 +283,39 @@ void Parameters::remove_parameter(const std::string& name) {
     mark_structural_change();
 
     SPDLOG_LOGGER_INFO(pycanha::get_logger(), "Parameter '{}' removed", name);
+}
+
+void Parameters::remove_internal_parameter(const std::string& name) {
+    if (_structure_locked) {
+        SPDLOG_LOGGER_INFO(pycanha::get_logger(),
+                           "Internal parameter '{}' cannot be removed while "
+                           "parameters are structurally locked",
+                           name);
+        return;
+    }
+
+    auto* slot = find_slot(name);
+    if (slot == nullptr) {
+        SPDLOG_LOGGER_INFO(pycanha::get_logger(),
+                           "Internal parameter '{}' doesn't exist", name);
+        return;
+    }
+
+    if (!slot->is_internal) {
+        SPDLOG_LOGGER_INFO(pycanha::get_logger(),
+                           "Parameter '{}' is not internal", name);
+        return;
+    }
+
+    _name_to_slot.erase(name);
+    slot->active = false;
+    slot->value = missing_parameter_value();
+    slot->is_internal = false;
+    --_active_size;
+    mark_structural_change();
+
+    SPDLOG_LOGGER_INFO(pycanha::get_logger(), "Internal parameter '{}' removed",
+                       name);
 }
 
 void Parameters::rename_parameter(const std::string& current_name,
@@ -273,6 +332,13 @@ void Parameters::rename_parameter(const std::string& current_name,
     if (slot == nullptr) {
         SPDLOG_LOGGER_INFO(pycanha::get_logger(),
                            "Parameter '{}' doesn't exist", current_name);
+        return;
+    }
+
+    if (slot->is_internal) {
+        SPDLOG_LOGGER_INFO(pycanha::get_logger(),
+                           "Internal parameter '{}' cannot be renamed",
+                           current_name);
         return;
     }
 
@@ -343,6 +409,14 @@ void Parameters::set_parameter(const std::string& name, ThermalValue value) {
         return;
     }
 
+    if (slot->is_internal) {
+        SPDLOG_LOGGER_INFO(pycanha::get_logger(),
+                           "Internal parameter '{}' cannot be modified with "
+                           "set_parameter",
+                           name);
+        return;
+    }
+
     if (slot->value.index() != value.index()) {
         SPDLOG_LOGGER_INFO(pycanha::get_logger(),
                            "Parameter '{}' type mismatch", name);
@@ -362,6 +436,53 @@ void Parameters::set_parameter(const std::string& name, ThermalValue value) {
                     (existing.cols() != incoming->cols())) {
                     SPDLOG_LOGGER_INFO(pycanha::get_logger(),
                                        "Parameter '{}' shape mismatch", name);
+                    return;
+                }
+            }
+
+            existing = std::move(*incoming);
+        },
+        slot->value);
+
+    invalidate_data_cache();
+}
+
+void Parameters::set_internal_parameter(const std::string& name,
+                                        ThermalValue value) {
+    auto* slot = find_slot(name);
+    if (slot == nullptr) {
+        SPDLOG_LOGGER_INFO(pycanha::get_logger(),
+                           "Internal parameter '{}' doesn't exist", name);
+        return;
+    }
+
+    if (!slot->is_internal) {
+        SPDLOG_LOGGER_INFO(pycanha::get_logger(),
+                           "Parameter '{}' is not internal", name);
+        return;
+    }
+
+    if (slot->value.index() != value.index()) {
+        SPDLOG_LOGGER_INFO(pycanha::get_logger(),
+                           "Internal parameter '{}' type mismatch", name);
+        return;
+    }
+
+    std::visit(
+        [&](auto& existing) {
+            using ExistingType = std::decay_t<decltype(existing)>;
+            auto* incoming = std::get_if<ExistingType>(&value);
+            if (incoming == nullptr) {
+                return;
+            }
+
+            if constexpr (is_matrix_type_v<ExistingType>) {
+                if ((existing.rows() != incoming->rows()) ||
+                    (existing.cols() != incoming->cols())) {
+                    SPDLOG_LOGGER_INFO(pycanha::get_logger(),
+                                       "Internal parameter '{}' shape "
+                                       "mismatch",
+                                       name);
                     return;
                 }
             }
@@ -493,6 +614,11 @@ std::optional<Index> Parameters::get_idx(const std::string& name) const {
     }
 
     return to_idx(iterator->second);
+}
+
+bool Parameters::is_internal_parameter(const std::string& name) const noexcept {
+    const auto* slot = find_slot(name);
+    return (slot != nullptr) && slot->is_internal;
 }
 
 bool Parameters::is_parameter_valid(Index idx) const noexcept {

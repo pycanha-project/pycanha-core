@@ -5,6 +5,7 @@
 #include <optional>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 #include "pycanha-core/parameters/formula.hpp"
@@ -35,8 +36,14 @@ class Formulas {
         return _parameters;
     }
 
+    bool debug_formulas{false};
+
     ParameterFormula create_parameter_formula(Entity entity,
                                               const std::string& parameter);
+    [[nodiscard]] std::shared_ptr<Formula> create_formula(
+        Entity entity, const std::string& formula_string);
+    void set_temperature_variable_names(
+        const std::unordered_set<std::string>* names) noexcept;
 
     void add_formula(const Formula& formula);
     void add_formula(const std::shared_ptr<Formula>& formula);
@@ -68,6 +75,7 @@ class Formulas {
     std::vector<std::shared_ptr<Formula>> _formulas;
     std::unordered_map<std::string, std::vector<std::shared_ptr<Formula>>>
         _parameter_dependencies;
+    const std::unordered_set<std::string>* _temperature_variable_names{nullptr};
     std::optional<std::uint64_t> _validated_structure_version;
     std::optional<std::uint64_t> _compiled_structure_version;
 };

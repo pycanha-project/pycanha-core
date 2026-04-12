@@ -225,6 +225,122 @@ constexpr std::array<EntityOps, 9> entity_ops_table{{
     return value;
 }
 
+[[nodiscard]] inline bool is_symbol_char(char ch) {
+    return std::isalnum(static_cast<unsigned char>(ch)) != 0 || ch == '_';
+}
+
+[[nodiscard]] inline std::optional<std::pair<std::string, std::size_t>>
+parse_internal_coupling_symbol(std::string_view input, std::size_t position) {
+    if ((position > 0U) && is_symbol_char(input[position - 1U])) {
+        return std::nullopt;
+    }
+    if ((position + 1U) >= input.size()) {
+        return std::nullopt;
+    }
+
+    const char first = static_cast<char>(
+        std::toupper(static_cast<unsigned char>(input[position])));
+    const char second = static_cast<char>(
+        std::toupper(static_cast<unsigned char>(input[position + 1U])));
+    if (first != 'G' || ((second != 'L') && (second != 'R'))) {
+        return std::nullopt;
+    }
+
+    std::size_t cursor = position + 2U;
+    while ((cursor < input.size()) &&
+           (std::isspace(static_cast<unsigned char>(input[cursor])) != 0)) {
+        ++cursor;
+    }
+    if ((cursor >= input.size()) || input[cursor] != '(') {
+        return std::nullopt;
+    }
+    ++cursor;
+
+    while ((cursor < input.size()) &&
+           (std::isspace(static_cast<unsigned char>(input[cursor])) != 0)) {
+        ++cursor;
+    }
+
+    const auto node_1_begin = cursor;
+    while ((cursor < input.size()) &&
+           (std::isdigit(static_cast<unsigned char>(input[cursor])) != 0)) {
+        ++cursor;
+    }
+    if (node_1_begin == cursor) {
+        return std::nullopt;
+    }
+    const auto node_1_end = cursor;
+
+    while ((cursor < input.size()) &&
+           (std::isspace(static_cast<unsigned char>(input[cursor])) != 0)) {
+        ++cursor;
+    }
+    if ((cursor >= input.size()) || input[cursor] != ',') {
+        return std::nullopt;
+    }
+    ++cursor;
+
+    while ((cursor < input.size()) &&
+           (std::isspace(static_cast<unsigned char>(input[cursor])) != 0)) {
+        ++cursor;
+    }
+
+    const auto node_2_begin = cursor;
+    while ((cursor < input.size()) &&
+           (std::isdigit(static_cast<unsigned char>(input[cursor])) != 0)) {
+        ++cursor;
+    }
+    if (node_2_begin == cursor) {
+        return std::nullopt;
+    }
+    const auto node_2_end = cursor;
+
+    while ((cursor < input.size()) &&
+           (std::isspace(static_cast<unsigned char>(input[cursor])) != 0)) {
+        ++cursor;
+    }
+    if ((cursor >= input.size()) || input[cursor] != ')') {
+        return std::nullopt;
+    }
+
+    const auto node_1 =
+        parse_node_num(input.substr(node_1_begin, node_1_end - node_1_begin));
+    const auto node_2 =
+        parse_node_num(input.substr(node_2_begin, node_2_end - node_2_begin));
+    if (!node_1.has_value() || !node_2.has_value()) {
+        return std::nullopt;
+    }
+
+    ++cursor;
+
+    return std::make_pair(std::string{} + first + second + "_" +
+                              std::to_string(*node_1) + "_" +
+                              std::to_string(*node_2) + "_",
+                          cursor - position);
+}
+
+[[nodiscard]] inline std::string preprocess_formula_symbols(
+    const std::string& input) {
+    std::string output;
+    output.reserve(input.size());
+
+    std::size_t position = 0U;
+    while (position < input.size()) {
+        const auto parsed =
+            parse_internal_coupling_symbol(std::string_view(input), position);
+        if (parsed.has_value()) {
+            output += parsed->first;
+            position += parsed->second;
+            continue;
+        }
+
+        output.push_back(input[position]);
+        ++position;
+    }
+
+    return output;
+}
+
 }  // namespace detail
 
 class Entity {
@@ -481,6 +597,47 @@ class Entity {
 
         return std::string(_ops->token) + "(" + std::to_string(_node_1) + "," +
                std::to_string(_node_2) + ")";
+    }
+
+    [[nodiscard]] std::string internal_symbol_name() const {
+        if (_ops == nullptr) {
+            return {};
+        }
+
+        if (_ops->node_count == 2U) {
+            return std::string(_ops->token) + "_" + std::to_string(_node_1) +
+                   "_" + std::to_string(_node_2) + "_";
+        }
+
+        return string_representation();
+    }
+
+    [[nodiscard]] static std::optional<Entity> from_internal_symbol(
+        ThermalNetwork& network, const std::string& symbol_name) {
+        if ((symbol_name.size() > 4U) &&
+            ((symbol_name.rfind("GL_", 0U) == 0U) ||
+             (symbol_name.rfind("GR_", 0U) == 0U)) &&
+            (symbol_name.back() == '_')) {
+            const auto middle = symbol_name.substr(3U, symbol_name.size() - 4U);
+            const auto separator = middle.find('_');
+            if (separator == std::string::npos) {
+                return std::nullopt;
+            }
+
+            const auto parsed_node_1 =
+                detail::parse_node_num(middle.substr(0U, separator));
+            const auto parsed_node_2 =
+                detail::parse_node_num(middle.substr(separator + 1U));
+            if (!parsed_node_1.has_value() || !parsed_node_2.has_value()) {
+                return std::nullopt;
+            }
+
+            const auto parsed_type =
+                symbol_name[1] == 'L' ? EntityType::gl : EntityType::gr;
+            return make(network, parsed_type, *parsed_node_1, *parsed_node_2);
+        }
+
+        return from_string(network, symbol_name);
     }
 
     struct Hash {
