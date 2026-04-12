@@ -5,14 +5,17 @@
 #include <H5Cpp.h>
 #include <spdlog/spdlog.h>
 
+#include <Eigen/Core>
 #include <array>
 #include <cstddef>
 #include <cstdint>
 #include <stdexcept>
 #include <string>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
+#include "pycanha-core/thermaldata/thermaldata.hpp"
 #include "pycanha-core/tmm/node.hpp"
 #include "pycanha-core/tmm/thermalmathematicalmodel.hpp"
 #include "pycanha-core/utils/logger.hpp"
@@ -37,6 +40,72 @@ enum class RealNodeAttrIndex : std::uint8_t {
     FY = 14,
     FZ = 15,
 };
+
+struct TMDNodeAttributeInfo {
+    RealNodeAttrIndex attr_index;
+    const char* suffix;
+    bool convert_to_kelvin;
+};
+
+TMDNodeAttributeInfo get_tmd_node_attribute_info(TMDNodeAttribute attribute) {
+    switch (attribute) {
+        case TMDNodeAttribute::T:
+            return {RealNodeAttrIndex::T, "T", true};
+        case TMDNodeAttribute::C:
+            return {RealNodeAttrIndex::C, "C", false};
+        case TMDNodeAttribute::QA:
+            return {RealNodeAttrIndex::QA, "QA", false};
+        case TMDNodeAttribute::QE:
+            return {RealNodeAttrIndex::QE, "QE", false};
+        case TMDNodeAttribute::QI:
+            return {RealNodeAttrIndex::QI, "QI", false};
+        case TMDNodeAttribute::QR:
+            return {RealNodeAttrIndex::QR, "QR", false};
+        case TMDNodeAttribute::QS:
+            return {RealNodeAttrIndex::QS, "QS", false};
+        case TMDNodeAttribute::A:
+            return {RealNodeAttrIndex::A, "A", false};
+        case TMDNodeAttribute::APH:
+            return {RealNodeAttrIndex::APH, "APH", false};
+        case TMDNodeAttribute::EPS:
+            return {RealNodeAttrIndex::EPS, "EPS", false};
+        case TMDNodeAttribute::FX:
+            return {RealNodeAttrIndex::FX, "FX", false};
+        case TMDNodeAttribute::FY:
+            return {RealNodeAttrIndex::FY, "FY", false};
+        case TMDNodeAttribute::FZ:
+            return {RealNodeAttrIndex::FZ, "FZ", false};
+    }
+
+    throw std::invalid_argument("Unsupported TMD node attribute.");
+}
+
+std::string make_transient_series_name(const std::string& table_prefix,
+                                       const char* suffix) {
+    return table_prefix + "_" + suffix;
+}
+
+void validate_transient_series_names(
+    const ThermalData& thermal_data, const std::string& table_prefix,
+    bool overwrite, const std::vector<TMDNodeAttribute>& attributes) {
+    std::unordered_set<std::string> target_names;
+    target_names.reserve(attributes.size());
+
+    for (const auto attribute : attributes) {
+        const auto info = get_tmd_node_attribute_info(attribute);
+        const std::string target_name =
+            make_transient_series_name(table_prefix, info.suffix);
+
+        if (!target_names.insert(target_name).second) {
+            throw std::invalid_argument(
+                "Duplicate TMD node attribute requested.");
+        }
+        if (!overwrite && thermal_data.has_dense_time_series(target_name)) {
+            throw std::runtime_error("Dense time series '" + target_name +
+                                     "' already exists.");
+        }
+    }
+}
 
 void require_rank(const H5::DataSet& dataset, int expected_rank,
                   const std::string& dataset_name) {
@@ -105,6 +174,56 @@ std::vector<double> read_double_attr_3d(H5::DataSet& dataset,
     return out;
 }
 
+std::vector<double> read_times(H5::DataSet& dataset,
+                               const std::string& dataset_name) {
+    require_rank(dataset, 1, dataset_name);
+
+    const H5::DataSpace file_space = dataset.getSpace();
+    hsize_t num_timesteps = 0;
+    file_space.getSimpleExtentDims(&num_timesteps, nullptr);
+
+    std::vector<double> out(num_timesteps);
+    if (num_timesteps == 0) {
+        return out;
+    }
+
+    const H5::DataSpace mem_space(1, &num_timesteps);
+    dataset.read(out.data(), H5::PredType::NATIVE_DOUBLE, mem_space,
+                 file_space);
+    return out;
+}
+
+std::vector<double> read_double_attr_3d_all_timesteps(
+    H5::DataSet& dataset, hsize_t attr_index, const std::string& dataset_name) {
+    require_rank(dataset, 3, dataset_name);
+
+    const H5::DataSpace file_space = dataset.getSpace();
+    std::array<hsize_t, 3> dims{0, 0, 0};
+    file_space.getSimpleExtentDims(dims.data(), nullptr);
+
+    const hsize_t num_timesteps = dims[0];
+    const hsize_t num_nodes = dims[1];
+    if (attr_index >= dims[2]) {
+        throw std::runtime_error("Attribute index out of bounds in dataset '" +
+                                 dataset_name + "'.");
+    }
+
+    const hsize_t total_values = num_timesteps * num_nodes;
+    std::vector<double> out(total_values);
+    if (total_values == 0) {
+        return out;
+    }
+
+    const std::array<hsize_t, 3> count{num_timesteps, num_nodes, 1};
+    const std::array<hsize_t, 3> offset{0, 0, attr_index};
+    file_space.selectHyperslab(H5S_SELECT_SET, count.data(), offset.data());
+
+    const H5::DataSpace mem_space(1, &total_values);
+    dataset.read(out.data(), H5::PredType::NATIVE_DOUBLE, mem_space,
+                 file_space);
+    return out;
+}
+
 std::vector<char> read_node_types(H5::DataSet& dataset,
                                   const std::string& dataset_name) {
     require_rank(dataset, 3, dataset_name);
@@ -165,6 +284,68 @@ std::vector<int> map_index_links_to_node_numbers(
 }
 
 }  // namespace
+
+std::vector<int> read_tmd_transient(
+    const std::string& filepath, ThermalData& thermal_data,
+    const std::string& table_prefix, bool overwrite,
+    const std::vector<TMDNodeAttribute>& attributes) {
+    validate_transient_series_names(thermal_data, table_prefix, overwrite,
+                                    attributes);
+
+    const H5::H5File tmd_file(filepath, H5F_ACC_RDONLY);
+
+    const H5::Group analysis_group = tmd_file.openGroup("AnalysisSet1");
+    const H5::Group data_group = analysis_group.openGroup("DataGroup1");
+
+    H5::DataSet nodes_dataset = analysis_group.openDataSet("thermalNodes");
+    H5::DataSet node_real_data_dataset =
+        data_group.openDataSet("thermalNodesRealData");
+    H5::DataSet node_string_data_dataset =
+        data_group.openDataSet("thermalNodesStringData");
+    H5::DataSet times_dataset = data_group.openDataSet("times");
+
+    const std::vector<int> node_numbers =
+        read_int_column_2d(nodes_dataset, 0, "thermalNodes");
+    const std::vector<char> node_types =
+        read_node_types(node_string_data_dataset, "thermalNodesStringData");
+
+    if (node_numbers.size() != node_types.size()) {
+        throw std::runtime_error(
+            "Mismatch between thermalNodes and thermalNodesStringData sizes.");
+    }
+
+    const std::vector<double> time_values = read_times(times_dataset, "times");
+    const auto num_timesteps = static_cast<Index>(time_values.size());
+    const auto num_nodes = static_cast<Index>(node_numbers.size());
+
+    for (const auto attribute : attributes) {
+        const auto info = get_tmd_node_attribute_info(attribute);
+        const auto values = read_double_attr_3d_all_timesteps(
+            node_real_data_dataset,
+            static_cast<hsize_t>(static_cast<std::uint8_t>(info.attr_index)),
+            "thermalNodesRealData");
+
+        DenseTimeSeries series(num_timesteps, num_nodes);
+        if (num_timesteps > 0) {
+            series.times() = Eigen::Map<const Eigen::VectorXd>(
+                time_values.data(), num_timesteps);
+        }
+        if ((num_timesteps > 0) && (num_nodes > 0)) {
+            const Eigen::Map<const DenseTimeSeries::MatrixType> values_map(
+                values.data(), num_timesteps, num_nodes);
+            series.values() = values_map;
+        }
+        if (info.convert_to_kelvin) {
+            series.values().array() += 273.15;
+        }
+
+        thermal_data.add_dense_time_series(
+            make_transient_series_name(table_prefix, info.suffix),
+            std::move(series));
+    }
+
+    return node_numbers;
+}
 
 ESATANReader::ESATANReader(ThermalMathematicalModel& model) : _model(model) {}
 
