@@ -165,7 +165,7 @@
 <!-- Node17 -->
 <g id="Node000017" class="node">
 <title>Node17</title>
-<g id="a_Node000017"><a xlink:href="classpycanha_1_1Node.html#a31d790ab1c03fb481434cebdef5e6017" target="_top" xlink:title="User node number getter.">
+<g id="a_Node000017"><a xlink:href="classpycanha_1_1Node.html#ab36caedf2446704d68357c396cf5da9c" target="_top" xlink:title="User node number getter.">
 <polygon fill="white" stroke="#666666" points="279.5,-386 168.5,-386 168.5,-356 279.5,-356 279.5,-386"/>
 <text text-anchor="start" x="176.5" y="-374" font-family="Helvetica,sans-Serif" font-size="10.00">pycanha::Node::get</text>
 <text text-anchor="middle" x="224" y="-363" font-family="Helvetica,sans-Serif" font-size="10.00">_node_num</text>
@@ -348,7 +348,7 @@
 <!-- Node3 -->
 <g id="Node000003" class="node">
 <title>Node3</title>
-<g id="a_Node000003"><a xlink:href="classpycanha_1_1Nodes.html#a77196970cfb979acc7b67f8b99c9f634" target="_top" xlink:title="Area [m^2] getter.">
+<g id="a_Node000003"><a xlink:href="classpycanha_1_1Nodes.html#ab82156d7252c29b5498f99db2766d02e" target="_top" xlink:title="Area [m^2] getter.">
 <polygon fill="white" stroke="#666666" points="463,-683.5 335,-683.5 335,-664.5 463,-664.5 463,-683.5"/>
 <text text-anchor="middle" x="399" y="-671.5" font-family="Helvetica,sans-Serif" font-size="10.00">pycanha::Nodes::get_a</text>
 </a>
@@ -366,7 +366,7 @@
 <!-- Node5 -->
 <g id="Node000005" class="node">
 <title>Node5</title>
-<g id="a_Node000005"><a xlink:href="classpycanha_1_1Nodes.html#ad61fdb5f6c5d4a13dd351715818f930a" target="_top" xlink:title="Solar absortivity getter.">
+<g id="a_Node000005"><a xlink:href="classpycanha_1_1Nodes.html#af7a7bb9b2ce3080e447b7da1bdf5356d" target="_top" xlink:title="Solar absortivity getter.">
 <polygon fill="white" stroke="#666666" points="469,-646.5 329,-646.5 329,-627.5 469,-627.5 469,-646.5"/>
 <text text-anchor="middle" x="399" y="-634.5" font-family="Helvetica,sans-Serif" font-size="10.00">pycanha::Nodes::get_aph</text>
 </a>
@@ -384,7 +384,7 @@
 <!-- Node7 -->
 <g id="Node000007" class="node">
 <title>Node7</title>
-<g id="a_Node000007"><a xlink:href="classpycanha_1_1Nodes.html#ab1c554b7523ca26126896ac0df536594" target="_top" xlink:title="Thermal capacity [J/K] getter.">
+<g id="a_Node000007"><a xlink:href="classpycanha_1_1Nodes.html#a5e79301fe2f9a84b00b8d7e3192d0c18" target="_top" xlink:title="Thermal capacity [J/K] getter.">
 <polygon fill="white" stroke="#666666" points="463,-609.5 335,-609.5 335,-590.5 463,-590.5 463,-609.5"/>
 <text text-anchor="middle" x="399" y="-597.5" font-family="Helvetica,sans-Serif" font-size="10.00">pycanha::Nodes::get_C</text>
 </a>
@@ -402,7 +402,7 @@
 <!-- Node9 -->
 <g id="Node000009" class="node">
 <title>Node9</title>
-<g id="a_Node000009"><a xlink:href="classpycanha_1_1Nodes.html#a8802742ebd0f9ccdd0182b600fe7eff1" target="_top" xlink:title="IR emissivity getter.">
+<g id="a_Node000009"><a xlink:href="classpycanha_1_1Nodes.html#a531d05e7782bb7f07e8df951346cb07d" target="_top" xlink:title="IR emissivity getter.">
 <polygon fill="white" stroke="#666666" points="468.5,-572.5 329.5,-572.5 329.5,-553.5 468.5,-553.5 468.5,-572.5"/>
 <text text-anchor="middle" x="399" y="-560.5" font-family="Helvetica,sans-Serif" font-size="10.00">pycanha::Nodes::get_eps</text>
 </a>
@@ -420,7 +420,7 @@
 <!-- Node11 -->
 <g id="Node000011" class="node">
 <title>Node11</title>
-<g id="a_Node000011"><a xlink:href="classpycanha_1_1Nodes.html#a4cf1319c964a09c43c8b7d727c08e4ec" target="_top" xlink:title="X coordinate [m] getter.">
+<g id="a_Node000011"><a xlink:href="classpycanha_1_1Nodes.html#ade1dbf803c8d20e1b2d9ae23ce17db55" target="_top" xlink:title="X coordinate [m] getter.">
 <polygon fill="white" stroke="#666666" points="464.5,-535.5 333.5,-535.5 333.5,-516.5 464.5,-516.5 464.5,-535.5"/>
 <text text-anchor="middle" x="399" y="-523.5" font-family="Helvetica,sans-Serif" font-size="10.00">pycanha::Nodes::get_fx</text>
 </a>
@@ -438,7 +438,7 @@
 <!-- Node13 -->
 <g id="Node000013" class="node">
 <title>Node13</title>
-<g id="a_Node000013"><a xlink:href="classpycanha_1_1Nodes.html#a64c3c26707b3116db6928646261954b2" target="_top" xlink:title="Y coordinate [m] getter.">
+<g id="a_Node000013"><a xlink:href="classpycanha_1_1Nodes.html#ad9f977fc439adaee3bbb109a7aafba7c" target="_top" xlink:title="Y coordinate [m] getter.">
 <polygon fill="white" stroke="#666666" points="464.5,-498.5 333.5,-498.5 333.5,-479.5 464.5,-479.5 464.5,-498.5"/>
 <text text-anchor="middle" x="399" y="-486.5" font-family="Helvetica,sans-Serif" font-size="10.00">pycanha::Nodes::get_fy</text>
 </a>
@@ -456,7 +456,7 @@
 <!-- Node15 -->
 <g id="Node000015" class="node">
 <title>Node15</title>
-<g id="a_Node000015"><a xlink:href="classpycanha_1_1Nodes.html#a698ac07f5879b7ec5b81fd0a90f525ce" target="_top" xlink:title="Z coordinate [m] getter.">
+<g id="a_Node000015"><a xlink:href="classpycanha_1_1Nodes.html#a6e62ce9ae684aa26ae0af9559fd38278" target="_top" xlink:title="Z coordinate [m] getter.">
 <polygon fill="white" stroke="#666666" points="464.5,-461.5 333.5,-461.5 333.5,-442.5 464.5,-442.5 464.5,-461.5"/>
 <text text-anchor="middle" x="399" y="-449.5" font-family="Helvetica,sans-Serif" font-size="10.00">pycanha::Nodes::get_fz</text>
 </a>
@@ -474,7 +474,7 @@
 <!-- Node19 -->
 <g id="Node000019" class="node">
 <title>Node19</title>
-<g id="a_Node000019"><a xlink:href="classpycanha_1_1Nodes.html#a521272051bce035b77e810f8f2e16b7b" target="_top" xlink:title="Albedo load [W] getter.">
+<g id="a_Node000019"><a xlink:href="classpycanha_1_1Nodes.html#addc9af809210100179ec50692fa9358e" target="_top" xlink:title="Albedo load [W] getter.">
 <polygon fill="white" stroke="#666666" points="466,-300.5 332,-300.5 332,-281.5 466,-281.5 466,-300.5"/>
 <text text-anchor="middle" x="399" y="-288.5" font-family="Helvetica,sans-Serif" font-size="10.00">pycanha::Nodes::get_qa</text>
 </a>
@@ -492,7 +492,7 @@
 <!-- Node21 -->
 <g id="Node000021" class="node">
 <title>Node21</title>
-<g id="a_Node000021"><a xlink:href="classpycanha_1_1Nodes.html#a3004cfb5c89e1c32f565eca56433e836" target="_top" xlink:title="Earth IR load [W] getter.">
+<g id="a_Node000021"><a xlink:href="classpycanha_1_1Nodes.html#aa4f2a4ef10430906a8834730b27ae7e0" target="_top" xlink:title="Earth IR load [W] getter.">
 <polygon fill="white" stroke="#666666" points="466,-263.5 332,-263.5 332,-244.5 466,-244.5 466,-263.5"/>
 <text text-anchor="middle" x="399" y="-251.5" font-family="Helvetica,sans-Serif" font-size="10.00">pycanha::Nodes::get_qe</text>
 </a>
@@ -510,7 +510,7 @@
 <!-- Node23 -->
 <g id="Node000023" class="node">
 <title>Node23</title>
-<g id="a_Node000023"><a xlink:href="classpycanha_1_1Nodes.html#a7281e1dc78824a8a1c151c4bb5f0ac9c" target="_top" xlink:title="Internal load [W] getter.">
+<g id="a_Node000023"><a xlink:href="classpycanha_1_1Nodes.html#a97cf792bfa0bf86bdfb3260ceee6a997" target="_top" xlink:title="Internal load [W] getter.">
 <polygon fill="white" stroke="#666666" points="464.5,-226.5 333.5,-226.5 333.5,-207.5 464.5,-207.5 464.5,-226.5"/>
 <text text-anchor="middle" x="399" y="-214.5" font-family="Helvetica,sans-Serif" font-size="10.00">pycanha::Nodes::get_qi</text>
 </a>
@@ -528,7 +528,7 @@
 <!-- Node25 -->
 <g id="Node000025" class="node">
 <title>Node25</title>
-<g id="a_Node000025"><a xlink:href="classpycanha_1_1Nodes.html#a044abae6432fcf073ec1bbd2e2faba98" target="_top" xlink:title="Other load [W] getter.">
+<g id="a_Node000025"><a xlink:href="classpycanha_1_1Nodes.html#a956e7683c050ed612380aa9f17824ce4" target="_top" xlink:title="Other load [W] getter.">
 <polygon fill="white" stroke="#666666" points="464.5,-189.5 333.5,-189.5 333.5,-170.5 464.5,-170.5 464.5,-189.5"/>
 <text text-anchor="middle" x="399" y="-177.5" font-family="Helvetica,sans-Serif" font-size="10.00">pycanha::Nodes::get_qr</text>
 </a>
@@ -546,7 +546,7 @@
 <!-- Node27 -->
 <g id="Node000027" class="node">
 <title>Node27</title>
-<g id="a_Node000027"><a xlink:href="classpycanha_1_1Nodes.html#a69b8286c1d8f94103a25d32f1ed155b5" target="_top" xlink:title="Solar load [W] getter.">
+<g id="a_Node000027"><a xlink:href="classpycanha_1_1Nodes.html#a08f2c7c25b0430a8649bfd87952649cb" target="_top" xlink:title="Solar load [W] getter.">
 <polygon fill="white" stroke="#666666" points="465.5,-152.5 332.5,-152.5 332.5,-133.5 465.5,-133.5 465.5,-152.5"/>
 <text text-anchor="middle" x="399" y="-140.5" font-family="Helvetica,sans-Serif" font-size="10.00">pycanha::Nodes::get_qs</text>
 </a>
@@ -564,7 +564,7 @@
 <!-- Node29 -->
 <g id="Node000029" class="node">
 <title>Node29</title>
-<g id="a_Node000029"><a xlink:href="classpycanha_1_1Nodes.html#a2241f25d67aaa234fe0f73b1245560d6" target="_top" xlink:title="Temperature [K] getter.">
+<g id="a_Node000029"><a xlink:href="classpycanha_1_1Nodes.html#a10ec85737e6be55ce7a96b448bbe29f3" target="_top" xlink:title="Temperature [K] getter.">
 <polygon fill="white" stroke="#666666" points="463,-115.5 335,-115.5 335,-96.5 463,-96.5 463,-115.5"/>
 <text text-anchor="middle" x="399" y="-103.5" font-family="Helvetica,sans-Serif" font-size="10.00">pycanha::Nodes::get_T</text>
 </a>

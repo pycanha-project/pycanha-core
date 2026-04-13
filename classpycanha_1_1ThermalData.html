@@ -27,7 +27,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.11</span>
+   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.12</span>
    </div>
    <div id="projectbrief">The C++ core of pycanha</div>
   </td>
@@ -103,12 +103,18 @@ $(document).ready(function(){initNavTree('classpycanha_1_1ThermalData.html','');
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-types" name="pub-types"></a>
 Public Types</h2></td></tr>
-<tr class="memitem:a5626fff62f1158ef772380f71a77a1ee" id="r_a5626fff62f1158ef772380f71a77a1ee"><td class="memItemLeft" align="right" valign="top"><a id="a5626fff62f1158ef772380f71a77a1ee" name="a5626fff62f1158ef772380f71a77a1ee"></a>
-using&#160;</td><td class="memItemRight" valign="bottom"><b>MatrixDataType</b> = Eigen::Matrix&lt; double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor &gt;</td></tr>
-<tr class="separator:a5626fff62f1158ef772380f71a77a1ee"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a325f39195b837cf9486ab04280d9adbc" id="r_a325f39195b837cf9486ab04280d9adbc"><td class="memItemLeft" align="right" valign="top"><a id="a325f39195b837cf9486ab04280d9adbc" name="a325f39195b837cf9486ab04280d9adbc"></a>
-using&#160;</td><td class="memItemRight" valign="bottom"><b>TableDict</b> = std::unordered_map&lt; std::string, MatrixDataType &gt;</td></tr>
-<tr class="separator:a325f39195b837cf9486ab04280d9adbc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0796a9f52ba6e1b72df92ae4a27f87ba" id="r_a0796a9f52ba6e1b72df92ae4a27f87ba"><td class="memItemLeft" align="right" valign="top"><a id="a0796a9f52ba6e1b72df92ae4a27f87ba" name="a0796a9f52ba6e1b72df92ae4a27f87ba"></a>
+using&#160;</td><td class="memItemRight" valign="bottom"><b>DenseSeriesDict</b> = std::unordered_map&lt; std::string, <a class="el" href="classpycanha_1_1DenseTimeSeries.html">DenseTimeSeries</a> &gt;</td></tr>
+<tr class="separator:a0796a9f52ba6e1b72df92ae4a27f87ba"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a418b115e20f9f1e6ae62a739e0527041" id="r_a418b115e20f9f1e6ae62a739e0527041"><td class="memItemLeft" align="right" valign="top"><a id="a418b115e20f9f1e6ae62a739e0527041" name="a418b115e20f9f1e6ae62a739e0527041"></a>
+using&#160;</td><td class="memItemRight" valign="bottom"><b>SparseSeriesDict</b> = std::unordered_map&lt; std::string, <a class="el" href="classpycanha_1_1SparseTimeSeries.html">SparseTimeSeries</a> &gt;</td></tr>
+<tr class="separator:a418b115e20f9f1e6ae62a739e0527041"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9d7d77d42f40913a4964bcb07833105f" id="r_a9d7d77d42f40913a4964bcb07833105f"><td class="memItemLeft" align="right" valign="top"><a id="a9d7d77d42f40913a4964bcb07833105f" name="a9d7d77d42f40913a4964bcb07833105f"></a>
+using&#160;</td><td class="memItemRight" valign="bottom"><b>LookupTableDict</b> = std::unordered_map&lt; std::string, <a class="el" href="classpycanha_1_1LookupTable1D.html">LookupTable1D</a> &gt;</td></tr>
+<tr class="separator:a9d7d77d42f40913a4964bcb07833105f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a94a9f63c3ec277eb26507bfa70e42925" id="r_a94a9f63c3ec277eb26507bfa70e42925"><td class="memItemLeft" align="right" valign="top"><a id="a94a9f63c3ec277eb26507bfa70e42925" name="a94a9f63c3ec277eb26507bfa70e42925"></a>
+using&#160;</td><td class="memItemRight" valign="bottom"><b>LookupTableVecDict</b> = std::unordered_map&lt; std::string, <a class="el" href="classpycanha_1_1LookupTableVec1D.html">LookupTableVec1D</a> &gt;</td></tr>
+<tr class="separator:a94a9f63c3ec277eb26507bfa70e42925"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
@@ -127,24 +133,72 @@ std::shared_ptr&lt; <a class="el" href="classpycanha_1_1ThermalNetwork.html">The
 <tr class="memitem:a7fa723b4ecfd9169a7f328a70e07c6fc" id="r_a7fa723b4ecfd9169a7f328a70e07c6fc"><td class="memItemLeft" align="right" valign="top"><a id="a7fa723b4ecfd9169a7f328a70e07c6fc" name="a7fa723b4ecfd9169a7f328a70e07c6fc"></a>
 const <a class="el" href="classpycanha_1_1ThermalNetwork.html">ThermalNetwork</a> *&#160;</td><td class="memItemRight" valign="bottom"><b>network</b> () const noexcept</td></tr>
 <tr class="separator:a7fa723b4ecfd9169a7f328a70e07c6fc"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a16485ad5db89116381caeae09f318cbf" id="r_a16485ad5db89116381caeae09f318cbf"><td class="memItemLeft" align="right" valign="top"><a id="a16485ad5db89116381caeae09f318cbf" name="a16485ad5db89116381caeae09f318cbf"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>create_new_table</b> (const std::string &amp;name, Eigen::Index rows, Eigen::Index cols)</td></tr>
-<tr class="separator:a16485ad5db89116381caeae09f318cbf"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af439ee093ca835bc7f26d762ee324745" id="r_af439ee093ca835bc7f26d762ee324745"><td class="memItemLeft" align="right" valign="top"><a id="af439ee093ca835bc7f26d762ee324745" name="af439ee093ca835bc7f26d762ee324745"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>create_reset_table</b> (const std::string &amp;name, Eigen::Index rows, Eigen::Index cols)</td></tr>
-<tr class="separator:af439ee093ca835bc7f26d762ee324745"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a60d198cdb7dbdbd2477bf099ed23ffc7" id="r_a60d198cdb7dbdbd2477bf099ed23ffc7"><td class="memItemLeft" align="right" valign="top"><a id="a60d198cdb7dbdbd2477bf099ed23ffc7" name="a60d198cdb7dbdbd2477bf099ed23ffc7"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>remove_table</b> (const std::string &amp;name)</td></tr>
-<tr class="separator:a60d198cdb7dbdbd2477bf099ed23ffc7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aaf26fdedb58c403f379a9dd8a510897f" id="r_aaf26fdedb58c403f379a9dd8a510897f"><td class="memItemLeft" align="right" valign="top"><a id="aaf26fdedb58c403f379a9dd8a510897f" name="aaf26fdedb58c403f379a9dd8a510897f"></a>
-MatrixDataType &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_table</b> (const std::string &amp;name)</td></tr>
-<tr class="separator:aaf26fdedb58c403f379a9dd8a510897f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a11bde7eeb53a053503f1be6e462d5efd" id="r_a11bde7eeb53a053503f1be6e462d5efd"><td class="memItemLeft" align="right" valign="top"><a id="a11bde7eeb53a053503f1be6e462d5efd" name="a11bde7eeb53a053503f1be6e462d5efd"></a>
-const MatrixDataType &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_table</b> (const std::string &amp;name) const</td></tr>
-<tr class="separator:a11bde7eeb53a053503f1be6e462d5efd"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a32d1dd87379c4f9d698f1e54c794ef6a" id="r_a32d1dd87379c4f9d698f1e54c794ef6a"><td class="memItemLeft" align="right" valign="top"><a id="a32d1dd87379c4f9d698f1e54c794ef6a" name="a32d1dd87379c4f9d698f1e54c794ef6a"></a>
-bool&#160;</td><td class="memItemRight" valign="bottom"><b>has_table</b> (const std::string &amp;name) const noexcept</td></tr>
-<tr class="separator:a32d1dd87379c4f9d698f1e54c794ef6a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad62d17281cd62bff9c0e69402aef76f1" id="r_ad62d17281cd62bff9c0e69402aef76f1"><td class="memItemLeft" align="right" valign="top"><a id="ad62d17281cd62bff9c0e69402aef76f1" name="ad62d17281cd62bff9c0e69402aef76f1"></a>
+<a class="el" href="classpycanha_1_1DenseTimeSeries.html">DenseTimeSeries</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>add_dense_time_series</b> (const std::string &amp;name, <a class="el" href="classpycanha_1_1DenseTimeSeries.html">DenseTimeSeries</a> series)</td></tr>
+<tr class="separator:ad62d17281cd62bff9c0e69402aef76f1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9001f977d1ea7a361998e2e935bbcfac" id="r_a9001f977d1ea7a361998e2e935bbcfac"><td class="memItemLeft" align="right" valign="top"><a id="a9001f977d1ea7a361998e2e935bbcfac" name="a9001f977d1ea7a361998e2e935bbcfac"></a>
+<a class="el" href="classpycanha_1_1DenseTimeSeries.html">DenseTimeSeries</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>add_dense_time_series</b> (const std::string &amp;name, Index num_timesteps, Index num_columns)</td></tr>
+<tr class="separator:a9001f977d1ea7a361998e2e935bbcfac"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad8250b0b45154b1d02d284625864c83d" id="r_ad8250b0b45154b1d02d284625864c83d"><td class="memItemLeft" align="right" valign="top"><a id="ad8250b0b45154b1d02d284625864c83d" name="ad8250b0b45154b1d02d284625864c83d"></a>
+<a class="el" href="classpycanha_1_1DenseTimeSeries.html">DenseTimeSeries</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_dense_time_series</b> (const std::string &amp;name)</td></tr>
+<tr class="separator:ad8250b0b45154b1d02d284625864c83d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3f389f2001634c015d905682c003a0b6" id="r_a3f389f2001634c015d905682c003a0b6"><td class="memItemLeft" align="right" valign="top"><a id="a3f389f2001634c015d905682c003a0b6" name="a3f389f2001634c015d905682c003a0b6"></a>
+const <a class="el" href="classpycanha_1_1DenseTimeSeries.html">DenseTimeSeries</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_dense_time_series</b> (const std::string &amp;name) const</td></tr>
+<tr class="separator:a3f389f2001634c015d905682c003a0b6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af79231fc1408b5214efa00e6ce1519cb" id="r_af79231fc1408b5214efa00e6ce1519cb"><td class="memItemLeft" align="right" valign="top"><a id="af79231fc1408b5214efa00e6ce1519cb" name="af79231fc1408b5214efa00e6ce1519cb"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>has_dense_time_series</b> (const std::string &amp;name) const noexcept</td></tr>
+<tr class="separator:af79231fc1408b5214efa00e6ce1519cb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab345a58cb227687b767b6b42f57d71ab" id="r_ab345a58cb227687b767b6b42f57d71ab"><td class="memItemLeft" align="right" valign="top"><a id="ab345a58cb227687b767b6b42f57d71ab" name="ab345a58cb227687b767b6b42f57d71ab"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>remove_dense_time_series</b> (const std::string &amp;name)</td></tr>
+<tr class="separator:ab345a58cb227687b767b6b42f57d71ab"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a54ae9b5288bf7e332c3b1c3528075de2" id="r_a54ae9b5288bf7e332c3b1c3528075de2"><td class="memItemLeft" align="right" valign="top"><a id="a54ae9b5288bf7e332c3b1c3528075de2" name="a54ae9b5288bf7e332c3b1c3528075de2"></a>
+<a class="el" href="classpycanha_1_1SparseTimeSeries.html">SparseTimeSeries</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>add_sparse_time_series</b> (const std::string &amp;name, <a class="el" href="classpycanha_1_1SparseTimeSeries.html">SparseTimeSeries</a> series)</td></tr>
+<tr class="separator:a54ae9b5288bf7e332c3b1c3528075de2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8a43d624d6069e3f04e82115d5e5d802" id="r_a8a43d624d6069e3f04e82115d5e5d802"><td class="memItemLeft" align="right" valign="top"><a id="a8a43d624d6069e3f04e82115d5e5d802" name="a8a43d624d6069e3f04e82115d5e5d802"></a>
+<a class="el" href="classpycanha_1_1SparseTimeSeries.html">SparseTimeSeries</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>add_sparse_time_series</b> (const std::string &amp;name)</td></tr>
+<tr class="separator:a8a43d624d6069e3f04e82115d5e5d802"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab5241bb24e819655b822e7c74e268bc6" id="r_ab5241bb24e819655b822e7c74e268bc6"><td class="memItemLeft" align="right" valign="top"><a id="ab5241bb24e819655b822e7c74e268bc6" name="ab5241bb24e819655b822e7c74e268bc6"></a>
+<a class="el" href="classpycanha_1_1SparseTimeSeries.html">SparseTimeSeries</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_sparse_time_series</b> (const std::string &amp;name)</td></tr>
+<tr class="separator:ab5241bb24e819655b822e7c74e268bc6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1a088e426ae2a703cffbd2d7e9bc9944" id="r_a1a088e426ae2a703cffbd2d7e9bc9944"><td class="memItemLeft" align="right" valign="top"><a id="a1a088e426ae2a703cffbd2d7e9bc9944" name="a1a088e426ae2a703cffbd2d7e9bc9944"></a>
+const <a class="el" href="classpycanha_1_1SparseTimeSeries.html">SparseTimeSeries</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_sparse_time_series</b> (const std::string &amp;name) const</td></tr>
+<tr class="separator:a1a088e426ae2a703cffbd2d7e9bc9944"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3f51a3db1773e652a29b435e6338d2ee" id="r_a3f51a3db1773e652a29b435e6338d2ee"><td class="memItemLeft" align="right" valign="top"><a id="a3f51a3db1773e652a29b435e6338d2ee" name="a3f51a3db1773e652a29b435e6338d2ee"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>has_sparse_time_series</b> (const std::string &amp;name) const noexcept</td></tr>
+<tr class="separator:a3f51a3db1773e652a29b435e6338d2ee"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa146425a6465903fea924e65933b22bd" id="r_aa146425a6465903fea924e65933b22bd"><td class="memItemLeft" align="right" valign="top"><a id="aa146425a6465903fea924e65933b22bd" name="aa146425a6465903fea924e65933b22bd"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>remove_sparse_time_series</b> (const std::string &amp;name)</td></tr>
+<tr class="separator:aa146425a6465903fea924e65933b22bd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9aa7a9dce602ebc09e73f8b2b3892ccf" id="r_a9aa7a9dce602ebc09e73f8b2b3892ccf"><td class="memItemLeft" align="right" valign="top"><a id="a9aa7a9dce602ebc09e73f8b2b3892ccf" name="a9aa7a9dce602ebc09e73f8b2b3892ccf"></a>
+<a class="el" href="classpycanha_1_1LookupTable1D.html">LookupTable1D</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>add_lookup_table</b> (const std::string &amp;name, <a class="el" href="classpycanha_1_1LookupTable1D.html">LookupTable1D</a> table)</td></tr>
+<tr class="separator:a9aa7a9dce602ebc09e73f8b2b3892ccf"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afb357bc87d8fbda8d6d401fe3a267e39" id="r_afb357bc87d8fbda8d6d401fe3a267e39"><td class="memItemLeft" align="right" valign="top"><a id="afb357bc87d8fbda8d6d401fe3a267e39" name="afb357bc87d8fbda8d6d401fe3a267e39"></a>
+<a class="el" href="classpycanha_1_1LookupTable1D.html">LookupTable1D</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_lookup_table</b> (const std::string &amp;name)</td></tr>
+<tr class="separator:afb357bc87d8fbda8d6d401fe3a267e39"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aafc626cf9bfbefcf117755c0eb6c83a1" id="r_aafc626cf9bfbefcf117755c0eb6c83a1"><td class="memItemLeft" align="right" valign="top"><a id="aafc626cf9bfbefcf117755c0eb6c83a1" name="aafc626cf9bfbefcf117755c0eb6c83a1"></a>
+const <a class="el" href="classpycanha_1_1LookupTable1D.html">LookupTable1D</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_lookup_table</b> (const std::string &amp;name) const</td></tr>
+<tr class="separator:aafc626cf9bfbefcf117755c0eb6c83a1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1b54fed029e1f05d85e05484f3d0be69" id="r_a1b54fed029e1f05d85e05484f3d0be69"><td class="memItemLeft" align="right" valign="top"><a id="a1b54fed029e1f05d85e05484f3d0be69" name="a1b54fed029e1f05d85e05484f3d0be69"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>has_lookup_table</b> (const std::string &amp;name) const noexcept</td></tr>
+<tr class="separator:a1b54fed029e1f05d85e05484f3d0be69"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aef3f38b7ac28fa49729b380aca75fc75" id="r_aef3f38b7ac28fa49729b380aca75fc75"><td class="memItemLeft" align="right" valign="top"><a id="aef3f38b7ac28fa49729b380aca75fc75" name="aef3f38b7ac28fa49729b380aca75fc75"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>remove_lookup_table</b> (const std::string &amp;name)</td></tr>
+<tr class="separator:aef3f38b7ac28fa49729b380aca75fc75"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a72bd69bf821a4f3ac050c57d8e16bf67" id="r_a72bd69bf821a4f3ac050c57d8e16bf67"><td class="memItemLeft" align="right" valign="top"><a id="a72bd69bf821a4f3ac050c57d8e16bf67" name="a72bd69bf821a4f3ac050c57d8e16bf67"></a>
+<a class="el" href="classpycanha_1_1LookupTableVec1D.html">LookupTableVec1D</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>add_lookup_table_vec</b> (const std::string &amp;name, <a class="el" href="classpycanha_1_1LookupTableVec1D.html">LookupTableVec1D</a> table)</td></tr>
+<tr class="separator:a72bd69bf821a4f3ac050c57d8e16bf67"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa085ea340c99abeacbb343886145ac1b" id="r_aa085ea340c99abeacbb343886145ac1b"><td class="memItemLeft" align="right" valign="top"><a id="aa085ea340c99abeacbb343886145ac1b" name="aa085ea340c99abeacbb343886145ac1b"></a>
+<a class="el" href="classpycanha_1_1LookupTableVec1D.html">LookupTableVec1D</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_lookup_table_vec</b> (const std::string &amp;name)</td></tr>
+<tr class="separator:aa085ea340c99abeacbb343886145ac1b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8c7ed8bceaa4dc557ccbec0f216713fd" id="r_a8c7ed8bceaa4dc557ccbec0f216713fd"><td class="memItemLeft" align="right" valign="top"><a id="a8c7ed8bceaa4dc557ccbec0f216713fd" name="a8c7ed8bceaa4dc557ccbec0f216713fd"></a>
+const <a class="el" href="classpycanha_1_1LookupTableVec1D.html">LookupTableVec1D</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_lookup_table_vec</b> (const std::string &amp;name) const</td></tr>
+<tr class="separator:a8c7ed8bceaa4dc557ccbec0f216713fd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3c6c611af08ee7c996cb25993f978ad8" id="r_a3c6c611af08ee7c996cb25993f978ad8"><td class="memItemLeft" align="right" valign="top"><a id="a3c6c611af08ee7c996cb25993f978ad8" name="a3c6c611af08ee7c996cb25993f978ad8"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>has_lookup_table_vec</b> (const std::string &amp;name) const noexcept</td></tr>
+<tr class="separator:a3c6c611af08ee7c996cb25993f978ad8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3f6ee55fb573bd6cb1b6c5ef2ba6dd42" id="r_a3f6ee55fb573bd6cb1b6c5ef2ba6dd42"><td class="memItemLeft" align="right" valign="top"><a id="a3f6ee55fb573bd6cb1b6c5ef2ba6dd42" name="a3f6ee55fb573bd6cb1b6c5ef2ba6dd42"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>remove_lookup_table_vec</b> (const std::string &amp;name)</td></tr>
+<tr class="separator:a3f6ee55fb573bd6cb1b6c5ef2ba6dd42"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a857646224ea64fe75469f42c6abf73f9" id="r_a857646224ea64fe75469f42c6abf73f9"><td class="memItemLeft" align="right" valign="top"><a id="a857646224ea64fe75469f42c6abf73f9" name="a857646224ea64fe75469f42c6abf73f9"></a>
 std::size_t&#160;</td><td class="memItemRight" valign="bottom"><b>size</b> () const noexcept</td></tr>
 <tr class="separator:a857646224ea64fe75469f42c6abf73f9"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -154,9 +208,18 @@ Private Attributes</h2></td></tr>
 <tr class="memitem:aa4e2ad58483d51b9988fa41d5652041a" id="r_aa4e2ad58483d51b9988fa41d5652041a"><td class="memItemLeft" align="right" valign="top"><a id="aa4e2ad58483d51b9988fa41d5652041a" name="aa4e2ad58483d51b9988fa41d5652041a"></a>
 std::shared_ptr&lt; <a class="el" href="classpycanha_1_1ThermalNetwork.html">ThermalNetwork</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>_network</b></td></tr>
 <tr class="separator:aa4e2ad58483d51b9988fa41d5652041a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a62ebf119e6909ff047d5933508b71bab" id="r_a62ebf119e6909ff047d5933508b71bab"><td class="memItemLeft" align="right" valign="top"><a id="a62ebf119e6909ff047d5933508b71bab" name="a62ebf119e6909ff047d5933508b71bab"></a>
-TableDict&#160;</td><td class="memItemRight" valign="bottom"><b>_tables</b></td></tr>
-<tr class="separator:a62ebf119e6909ff047d5933508b71bab"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a273e1abf6adccfb6ea9fea8227331b85" id="r_a273e1abf6adccfb6ea9fea8227331b85"><td class="memItemLeft" align="right" valign="top"><a id="a273e1abf6adccfb6ea9fea8227331b85" name="a273e1abf6adccfb6ea9fea8227331b85"></a>
+DenseSeriesDict&#160;</td><td class="memItemRight" valign="bottom"><b>_dense_series</b></td></tr>
+<tr class="separator:a273e1abf6adccfb6ea9fea8227331b85"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7291b3a73f7cc3248d30a03022559f14" id="r_a7291b3a73f7cc3248d30a03022559f14"><td class="memItemLeft" align="right" valign="top"><a id="a7291b3a73f7cc3248d30a03022559f14" name="a7291b3a73f7cc3248d30a03022559f14"></a>
+SparseSeriesDict&#160;</td><td class="memItemRight" valign="bottom"><b>_sparse_series</b></td></tr>
+<tr class="separator:a7291b3a73f7cc3248d30a03022559f14"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad2ec7b657cea506261032f3c58542ccf" id="r_ad2ec7b657cea506261032f3c58542ccf"><td class="memItemLeft" align="right" valign="top"><a id="ad2ec7b657cea506261032f3c58542ccf" name="ad2ec7b657cea506261032f3c58542ccf"></a>
+LookupTableDict&#160;</td><td class="memItemRight" valign="bottom"><b>_lookup_tables</b></td></tr>
+<tr class="separator:ad2ec7b657cea506261032f3c58542ccf"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2e858f2a6b6718244186e8785a7a0acc" id="r_a2e858f2a6b6718244186e8785a7a0acc"><td class="memItemLeft" align="right" valign="top"><a id="a2e858f2a6b6718244186e8785a7a0acc" name="a2e858f2a6b6718244186e8785a7a0acc"></a>
+LookupTableVecDict&#160;</td><td class="memItemRight" valign="bottom"><b>_lookup_tables_vec</b></td></tr>
+<tr class="separator:a2e858f2a6b6718244186e8785a7a0acc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <hr/>The documentation for this class was generated from the following file:<ul>
 <li>pycanha-core/include/pycanha-core/thermaldata/<a class="el" href="thermaldata_8hpp_source.html">thermaldata.hpp</a></li>

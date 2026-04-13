@@ -27,7 +27,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.11</span>
+   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.12</span>
    </div>
    <div id="projectbrief">The C++ core of pycanha</div>
   </td>
@@ -184,6 +184,30 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>add_conductive_coupli
 <tr class="memitem:aad855bf7efa3bba932da439f89462578" id="r_aad855bf7efa3bba932da439f89462578"><td class="memItemLeft" align="right" valign="top"><a id="aad855bf7efa3bba932da439f89462578" name="aad855bf7efa3bba932da439f89462578"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>add_radiative_coupling</b> (<a class="el" href="classpycanha_1_1Coupling.html">Coupling</a> coupling)</td></tr>
 <tr class="separator:aad855bf7efa3bba932da439f89462578"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5d83864990fe8f3b4eec4bfb73834fd2" id="r_a5d83864990fe8f3b4eec4bfb73834fd2"><td class="memItemLeft" align="right" valign="top"><a id="a5d83864990fe8f3b4eec4bfb73834fd2" name="a5d83864990fe8f3b4eec4bfb73834fd2"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>add_time_variable</b> (const std::string &amp;name, Eigen::VectorXd x_data, Eigen::VectorXd y_data, InterpolationMethod interp=InterpolationMethod::Linear, ExtrapolationMethod extrap=ExtrapolationMethod::Constant)</td></tr>
+<tr class="separator:a5d83864990fe8f3b4eec4bfb73834fd2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a143a83572d5e3568ac1689d90e90f94b" id="r_a143a83572d5e3568ac1689d90e90f94b"><td class="memItemLeft" align="right" valign="top"><a id="a143a83572d5e3568ac1689d90e90f94b" name="a143a83572d5e3568ac1689d90e90f94b"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>remove_time_variable</b> (const std::string &amp;name)</td></tr>
+<tr class="separator:a143a83572d5e3568ac1689d90e90f94b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af1e3ffa8d5b3bda72424045c343b3c5e" id="r_af1e3ffa8d5b3bda72424045c343b3c5e"><td class="memItemLeft" align="right" valign="top"><a id="af1e3ffa8d5b3bda72424045c343b3c5e" name="af1e3ffa8d5b3bda72424045c343b3c5e"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>has_time_variable</b> (const std::string &amp;name) const noexcept</td></tr>
+<tr class="separator:af1e3ffa8d5b3bda72424045c343b3c5e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac8489da1cf9c43951ceb1c659a411171" id="r_ac8489da1cf9c43951ceb1c659a411171"><td class="memItemLeft" align="right" valign="top"><a id="ac8489da1cf9c43951ceb1c659a411171" name="ac8489da1cf9c43951ceb1c659a411171"></a>
+const <a class="el" href="classpycanha_1_1TimeVariable.html">TimeVariable</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_time_variable</b> (const std::string &amp;name) const</td></tr>
+<tr class="separator:ac8489da1cf9c43951ceb1c659a411171"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab3fc6e9cc3fc6639911528a593fadb2f" id="r_ab3fc6e9cc3fc6639911528a593fadb2f"><td class="memItemLeft" align="right" valign="top"><a id="ab3fc6e9cc3fc6639911528a593fadb2f" name="ab3fc6e9cc3fc6639911528a593fadb2f"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>add_temperature_variable</b> (const std::string &amp;name, Eigen::VectorXd x_data, Eigen::VectorXd y_data, InterpolationMethod interp=InterpolationMethod::Linear, ExtrapolationMethod extrap=ExtrapolationMethod::Constant)</td></tr>
+<tr class="separator:ab3fc6e9cc3fc6639911528a593fadb2f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a777b1922714ab5ebc09946a8efc30c8f" id="r_a777b1922714ab5ebc09946a8efc30c8f"><td class="memItemLeft" align="right" valign="top"><a id="a777b1922714ab5ebc09946a8efc30c8f" name="a777b1922714ab5ebc09946a8efc30c8f"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>remove_temperature_variable</b> (const std::string &amp;name)</td></tr>
+<tr class="separator:a777b1922714ab5ebc09946a8efc30c8f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3c18a65dac1cd0f9ba6ba708a21953c9" id="r_a3c18a65dac1cd0f9ba6ba708a21953c9"><td class="memItemLeft" align="right" valign="top"><a id="a3c18a65dac1cd0f9ba6ba708a21953c9" name="a3c18a65dac1cd0f9ba6ba708a21953c9"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>has_temperature_variable</b> (const std::string &amp;name) const noexcept</td></tr>
+<tr class="separator:a3c18a65dac1cd0f9ba6ba708a21953c9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6b7d2e256027a5b79c7efb97c04a71f8" id="r_a6b7d2e256027a5b79c7efb97c04a71f8"><td class="memItemLeft" align="right" valign="top"><a id="a6b7d2e256027a5b79c7efb97c04a71f8" name="a6b7d2e256027a5b79c7efb97c04a71f8"></a>
+const <a class="el" href="classpycanha_1_1TemperatureVariable.html">TemperatureVariable</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_temperature_variable</b> (const std::string &amp;name) const</td></tr>
+<tr class="separator:a6b7d2e256027a5b79c7efb97c04a71f8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1a181bdcb37c14950ca0fb9d59abdcea" id="r_a1a181bdcb37c14950ca0fb9d59abdcea"><td class="memItemLeft" align="right" valign="top"><a id="a1a181bdcb37c14950ca0fb9d59abdcea" name="a1a181bdcb37c14950ca0fb9d59abdcea"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>callback_solver_loop</b> ()</td></tr>
 <tr class="separator:a1a181bdcb37c14950ca0fb9d59abdcea"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -258,6 +282,9 @@ Private Member Functions</h2></td></tr>
 <tr class="memitem:a5b7c885abcb2d660486002d95663716a" id="r_a5b7c885abcb2d660486002d95663716a"><td class="memItemLeft" align="right" valign="top"><a id="a5b7c885abcb2d660486002d95663716a" name="a5b7c885abcb2d660486002d95663716a"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>associate_resources</b> ()</td></tr>
 <tr class="separator:a5b7c885abcb2d660486002d95663716a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7a3522ebf2bd708b23187fca57b8855a" id="r_a7a3522ebf2bd708b23187fca57b8855a"><td class="memItemLeft" align="right" valign="top"><a id="a7a3522ebf2bd708b23187fca57b8855a" name="a7a3522ebf2bd708b23187fca57b8855a"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize_internal_time_parameter</b> ()</td></tr>
+<tr class="separator:a7a3522ebf2bd708b23187fca57b8855a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5952104f81265049616ec2daf79288fc" id="r_a5952104f81265049616ec2daf79288fc"><td class="memItemLeft" align="right" valign="top"><a id="a5952104f81265049616ec2daf79288fc" name="a5952104f81265049616ec2daf79288fc"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>internal_callback_common</b> ()</td></tr>
 <tr class="separator:a5952104f81265049616ec2daf79288fc"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -276,6 +303,18 @@ std::shared_ptr&lt; <a class="el" href="classpycanha_1_1Formulas.html">Formulas<
 <tr class="memitem:a04550e7b679732eaefab19c05692e723" id="r_a04550e7b679732eaefab19c05692e723"><td class="memItemLeft" align="right" valign="top"><a id="a04550e7b679732eaefab19c05692e723" name="a04550e7b679732eaefab19c05692e723"></a>
 std::shared_ptr&lt; <a class="el" href="classpycanha_1_1ThermalData.html">ThermalData</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>_thermal_data_shptr</b></td></tr>
 <tr class="separator:a04550e7b679732eaefab19c05692e723"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3d18a71a4b03142a555dddcc83d5be93" id="r_a3d18a71a4b03142a555dddcc83d5be93"><td class="memItemLeft" align="right" valign="top"><a id="a3d18a71a4b03142a555dddcc83d5be93" name="a3d18a71a4b03142a555dddcc83d5be93"></a>
+double *&#160;</td><td class="memItemRight" valign="bottom"><b>_time_parameter_ptr</b> {nullptr}</td></tr>
+<tr class="separator:a3d18a71a4b03142a555dddcc83d5be93"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a19e77c3eea5d5bf9ef7453859c8fcd4e" id="r_a19e77c3eea5d5bf9ef7453859c8fcd4e"><td class="memItemLeft" align="right" valign="top"><a id="a19e77c3eea5d5bf9ef7453859c8fcd4e" name="a19e77c3eea5d5bf9ef7453859c8fcd4e"></a>
+std::unordered_map&lt; std::string, <a class="el" href="classpycanha_1_1TimeVariable.html">TimeVariable</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>_time_variables</b></td></tr>
+<tr class="separator:a19e77c3eea5d5bf9ef7453859c8fcd4e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1fd764ba5bb3f599b791c49d567ec52c" id="r_a1fd764ba5bb3f599b791c49d567ec52c"><td class="memItemLeft" align="right" valign="top"><a id="a1fd764ba5bb3f599b791c49d567ec52c" name="a1fd764ba5bb3f599b791c49d567ec52c"></a>
+std::unordered_map&lt; std::string, <a class="el" href="classpycanha_1_1TemperatureVariable.html">TemperatureVariable</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>_temperature_variables</b></td></tr>
+<tr class="separator:a1fd764ba5bb3f599b791c49d567ec52c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af964eb367e7ff0805428ece78cf4b560" id="r_af964eb367e7ff0805428ece78cf4b560"><td class="memItemLeft" align="right" valign="top"><a id="af964eb367e7ff0805428ece78cf4b560" name="af964eb367e7ff0805428ece78cf4b560"></a>
+std::unordered_set&lt; std::string &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>_temperature_variable_names</b></td></tr>
+<tr class="separator:af964eb367e7ff0805428ece78cf4b560"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Data Documentation</h2>
 <a id="af45d3a8fb1b8cd099f76e3af4bdc594f" name="af45d3a8fb1b8cd099f76e3af4bdc594f"></a>

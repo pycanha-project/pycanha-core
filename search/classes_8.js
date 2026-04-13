@@ -1,8 +1,7 @@
 var searchData=
 [
-  ['instrumentationsession_0',['InstrumentationSession',['../structpycanha_1_1InstrumentationSession.html',1,'pycanha']]],
-  ['instrumentationtimer_1',['InstrumentationTimer',['../classpycanha_1_1InstrumentationTimer.html',1,'pycanha']]],
-  ['instrumentor_2',['Instrumentor',['../classpycanha_1_1Instrumentor.html',1,'pycanha']]],
-  ['intgenerator_3',['IntGenerator',['../classpycanha_1_1random__generators_1_1IntGenerator.html',1,'pycanha::random_generators']]],
-  ['intpairhash_4',['IntPairHash',['../structpycanha_1_1IntPairHash.html',1,'pycanha']]]
+  ['literalstring_0',['LiteralString',['../classpycanha_1_1LiteralString.html',1,'pycanha']]],
+  ['localstorage_1',['LocalStorage',['../structpycanha_1_1Node_1_1LocalStorage.html',1,'pycanha::Node']]],
+  ['lookuptable1d_2',['LookupTable1D',['../classpycanha_1_1LookupTable1D.html',1,'pycanha']]],
+  ['lookuptablevec1d_3',['LookupTableVec1D',['../classpycanha_1_1LookupTableVec1D.html',1,'pycanha']]]
 ];

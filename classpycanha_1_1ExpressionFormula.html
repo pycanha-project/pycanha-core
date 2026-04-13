@@ -27,7 +27,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.11</span>
+   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.12</span>
    </div>
    <div id="projectbrief">The C++ core of pycanha</div>
   </td>
@@ -95,6 +95,7 @@ $(document).ready(function(){initNavTree('classpycanha_1_1ExpressionFormula.html
   <div class="summary">
 <a href="#nested-classes">Classes</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="#pri-types">Private Types</a> &#124;
 <a href="#pri-methods">Private Member Functions</a> &#124;
 <a href="#pri-attribs">Private Attributes</a> &#124;
 <a href="classpycanha_1_1ExpressionFormula-members.html">List of all members</a>  </div>
@@ -109,22 +110,19 @@ Inheritance diagram for pycanha::ExpressionFormula:</div>
 <div class="dynheader">
 Collaboration diagram for pycanha::ExpressionFormula:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="classpycanha_1_1ExpressionFormula__coll__graph.svg" width="334" height="124"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" frameborder="0" src="classpycanha_1_1ExpressionFormula__coll__graph.svg" width="428" height="432"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 <center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="nested-classes" name="nested-classes"></a>
 Classes</h2></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structpycanha_1_1ExpressionFormula_1_1ParameterBinding.html">ParameterBinding</a></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structpycanha_1_1ExpressionFormula_1_1SymbolBinding.html">SymbolBinding</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a897a31e047437a84abf1eec6ff1bb9e6" id="r_a897a31e047437a84abf1eec6ff1bb9e6"><td class="memItemLeft" align="right" valign="top"><a id="a897a31e047437a84abf1eec6ff1bb9e6" name="a897a31e047437a84abf1eec6ff1bb9e6"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>ExpressionFormula</b> (<a class="el" href="classpycanha_1_1ThermalEntity.html">ThermalEntity</a> &amp;entity, <a class="el" href="classpycanha_1_1Parameters.html">Parameters</a> &amp;parameters, std::string expression)</td></tr>
-<tr class="separator:a897a31e047437a84abf1eec6ff1bb9e6"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a354102a1ed05fa9f1a7ace440956c5b7" id="r_a354102a1ed05fa9f1a7ace440956c5b7"><td class="memItemLeft" align="right" valign="top"><a id="a354102a1ed05fa9f1a7ace440956c5b7" name="a354102a1ed05fa9f1a7ace440956c5b7"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>ExpressionFormula</b> (std::shared_ptr&lt; <a class="el" href="classpycanha_1_1ThermalEntity.html">ThermalEntity</a> &gt; entity, <a class="el" href="classpycanha_1_1Parameters.html">Parameters</a> &amp;parameters, std::string expression)</td></tr>
-<tr class="separator:a354102a1ed05fa9f1a7ace440956c5b7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2c389420da841214f5626e6234f2c57e" id="r_a2c389420da841214f5626e6234f2c57e"><td class="memItemLeft" align="right" valign="top"><a id="a2c389420da841214f5626e6234f2c57e" name="a2c389420da841214f5626e6234f2c57e"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>ExpressionFormula</b> (<a class="el" href="classpycanha_1_1Entity.html">Entity</a> entity, <a class="el" href="classpycanha_1_1Parameters.html">Parameters</a> &amp;parameters, std::string expression, <a class="el" href="classpycanha_1_1ThermalNetwork.html">ThermalNetwork</a> *network=nullptr)</td></tr>
+<tr class="separator:a2c389420da841214f5626e6234f2c57e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1e360add1dc6a4c7fe1dda87a989a92e" id="r_a1e360add1dc6a4c7fe1dda87a989a92e"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classpycanha_1_1ExpressionFormula.html#a1e360add1dc6a4c7fe1dda87a989a92e">compile_formula</a> () override</td></tr>
 <tr class="separator:a1e360add1dc6a4c7fe1dda87a989a92e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa18692944276080d6ee751e8f2ccf1e5" id="r_aa18692944276080d6ee751e8f2ccf1e5"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classpycanha_1_1ExpressionFormula.html#aa18692944276080d6ee751e8f2ccf1e5">apply_formula</a> () override</td></tr>
@@ -155,21 +153,18 @@ const std::string &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>ex
 <tr class="memitem:a8d85d9bd4f588047df0a20f86c29cd97 inherit pub_methods_classpycanha_1_1Formula" id="r_a8d85d9bd4f588047df0a20f86c29cd97"><td class="memItemLeft" align="right" valign="top">
 <a class="el" href="classpycanha_1_1Formula.html">Formula</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>operator=</b> (<a class="el" href="classpycanha_1_1Formula.html">Formula</a> &amp;&amp;) noexcept=default</td></tr>
 <tr class="separator:a8d85d9bd4f588047df0a20f86c29cd97 inherit pub_methods_classpycanha_1_1Formula"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9a9007002ed72b71ec9da5dbc5f546e7 inherit pub_methods_classpycanha_1_1Formula" id="r_a9a9007002ed72b71ec9da5dbc5f546e7"><td class="memItemLeft" align="right" valign="top">
-&#160;</td><td class="memItemRight" valign="bottom"><b>Formula</b> (<a class="el" href="classpycanha_1_1ThermalEntity.html">ThermalEntity</a> &amp;entity)</td></tr>
-<tr class="separator:a9a9007002ed72b71ec9da5dbc5f546e7 inherit pub_methods_classpycanha_1_1Formula"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af52854476c36c8882a0bafa89d81c3e8 inherit pub_methods_classpycanha_1_1Formula" id="r_af52854476c36c8882a0bafa89d81c3e8"><td class="memItemLeft" align="right" valign="top">
-&#160;</td><td class="memItemRight" valign="bottom"><b>Formula</b> (std::shared_ptr&lt; <a class="el" href="classpycanha_1_1ThermalEntity.html">ThermalEntity</a> &gt; entity)</td></tr>
-<tr class="separator:af52854476c36c8882a0bafa89d81c3e8 inherit pub_methods_classpycanha_1_1Formula"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad7490fc65ca17ad94d0b4c03364a0704 inherit pub_methods_classpycanha_1_1Formula" id="r_ad7490fc65ca17ad94d0b4c03364a0704"><td class="memItemLeft" align="right" valign="top">
+&#160;</td><td class="memItemRight" valign="bottom"><b>Formula</b> (<a class="el" href="classpycanha_1_1Entity.html">Entity</a> entity)</td></tr>
+<tr class="separator:ad7490fc65ca17ad94d0b4c03364a0704 inherit pub_methods_classpycanha_1_1Formula"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ade0ea99482054212ccffdf7b7b49e689 inherit pub_methods_classpycanha_1_1Formula" id="r_ade0ea99482054212ccffdf7b7b49e689"><td class="memItemLeft" align="right" valign="top">
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>operator==</b> (const <a class="el" href="classpycanha_1_1Formula.html">Formula</a> &amp;other) const</td></tr>
 <tr class="separator:ade0ea99482054212ccffdf7b7b49e689 inherit pub_methods_classpycanha_1_1Formula"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a450ea982d361aee0dce03e12c854d999 inherit pub_methods_classpycanha_1_1Formula" id="r_a450ea982d361aee0dce03e12c854d999"><td class="memItemLeft" align="right" valign="top">
-<a class="el" href="classpycanha_1_1ThermalEntity.html">ThermalEntity</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>entity</b> () noexcept</td></tr>
-<tr class="separator:a450ea982d361aee0dce03e12c854d999 inherit pub_methods_classpycanha_1_1Formula"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa2b8bac27a40d58f3af5849e0f119b3f inherit pub_methods_classpycanha_1_1Formula" id="r_aa2b8bac27a40d58f3af5849e0f119b3f"><td class="memItemLeft" align="right" valign="top">
-const <a class="el" href="classpycanha_1_1ThermalEntity.html">ThermalEntity</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>entity</b> () const noexcept</td></tr>
-<tr class="separator:aa2b8bac27a40d58f3af5849e0f119b3f inherit pub_methods_classpycanha_1_1Formula"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a395ee42d622fd950db859e40734b03af inherit pub_methods_classpycanha_1_1Formula" id="r_a395ee42d622fd950db859e40734b03af"><td class="memItemLeft" align="right" valign="top">
+<a class="el" href="classpycanha_1_1Entity.html">Entity</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>entity</b> () noexcept</td></tr>
+<tr class="separator:a395ee42d622fd950db859e40734b03af inherit pub_methods_classpycanha_1_1Formula"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a49e60a6f319ca4be405ab3bc5574d896 inherit pub_methods_classpycanha_1_1Formula" id="r_a49e60a6f319ca4be405ab3bc5574d896"><td class="memItemLeft" align="right" valign="top">
+const <a class="el" href="classpycanha_1_1Entity.html">Entity</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>entity</b> () const noexcept</td></tr>
+<tr class="separator:a49e60a6f319ca4be405ab3bc5574d896 inherit pub_methods_classpycanha_1_1Formula"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a664dd609dd4280141e432cf56d1d9a3d inherit pub_methods_classpycanha_1_1Formula" id="r_a664dd609dd4280141e432cf56d1d9a3d"><td class="memItemLeft" align="right" valign="top">
 const DependencyList &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>parameter_dependencies</b> () const noexcept</td></tr>
 <tr class="separator:a664dd609dd4280141e432cf56d1d9a3d inherit pub_methods_classpycanha_1_1Formula"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -183,6 +178,13 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>set_parameter_depende
 void&#160;</td><td class="memItemRight" valign="bottom"><b>clear_parameter_dependencies</b> () noexcept</td></tr>
 <tr class="separator:acd5b5f42a4d046b0b91cfa7a28c78241 inherit pub_methods_classpycanha_1_1Formula"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pri-types" name="pri-types"></a>
+Private Types</h2></td></tr>
+<tr class="memitem:aefc2b62b481933eb5d1e4ec9c02c0fb0" id="r_aefc2b62b481933eb5d1e4ec9c02c0fb0"><td class="memItemLeft" align="right" valign="top"><a id="aefc2b62b481933eb5d1e4ec9c02c0fb0" name="aefc2b62b481933eb5d1e4ec9c02c0fb0"></a>enum class &#160;</td><td class="memItemRight" valign="bottom"><b>BindingKind</b> : std::uint8_t { <b>Parameter</b>
+, <b>Entity</b>
+ }</td></tr>
+<tr class="separator:aefc2b62b481933eb5d1e4ec9c02c0fb0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pri-methods" name="pri-methods"></a>
 Private Member Functions</h2></td></tr>
 <tr class="memitem:a3dfbc8e04fcd183d63125816cfb2893c" id="r_a3dfbc8e04fcd183d63125816cfb2893c"><td class="memItemLeft" align="right" valign="top"><a id="a3dfbc8e04fcd183d63125816cfb2893c" name="a3dfbc8e04fcd183d63125816cfb2893c"></a>
@@ -194,18 +196,21 @@ SymEngine::vec_basic&#160;</td><td class="memItemRight" valign="bottom"><b>lambd
 <tr class="memitem:a00dafec54f35608bca381d4f524e5b2e" id="r_a00dafec54f35608bca381d4f524e5b2e"><td class="memItemLeft" align="right" valign="top"><a id="a00dafec54f35608bca381d4f524e5b2e" name="a00dafec54f35608bca381d4f524e5b2e"></a>
 double&#160;</td><td class="memItemRight" valign="bottom"><b>evaluate_expression</b> (const SymEngine::RCP&lt; const SymEngine::Basic &gt; &amp;expr) const</td></tr>
 <tr class="separator:a00dafec54f35608bca381d4f524e5b2e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1930547b38162683e233de3d025f4039" id="r_a1930547b38162683e233de3d025f4039"><td class="memItemLeft" align="right" valign="top"><a id="a1930547b38162683e233de3d025f4039" name="a1930547b38162683e233de3d025f4039"></a>
-double&#160;</td><td class="memItemRight" valign="bottom"><b>evaluate_symbol_value</b> (const <a class="el" href="structpycanha_1_1ExpressionFormula_1_1ParameterBinding.html">ParameterBinding</a> &amp;binding) const</td></tr>
-<tr class="separator:a1930547b38162683e233de3d025f4039"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac8b61a31ad11c3a9300695c63acf5be8" id="r_ac8b61a31ad11c3a9300695c63acf5be8"><td class="memItemLeft" align="right" valign="top"><a id="ac8b61a31ad11c3a9300695c63acf5be8" name="ac8b61a31ad11c3a9300695c63acf5be8"></a>
-double *&#160;</td><td class="memItemRight" valign="bottom"><b>resolve_symbol_ptr</b> (const <a class="el" href="structpycanha_1_1ExpressionFormula_1_1ParameterBinding.html">ParameterBinding</a> &amp;binding) const</td></tr>
-<tr class="separator:ac8b61a31ad11c3a9300695c63acf5be8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a68d5b2a5d94508d2636dfc6dda134753" id="r_a68d5b2a5d94508d2636dfc6dda134753"><td class="memItemLeft" align="right" valign="top"><a id="a68d5b2a5d94508d2636dfc6dda134753" name="a68d5b2a5d94508d2636dfc6dda134753"></a>
+double&#160;</td><td class="memItemRight" valign="bottom"><b>evaluate_symbol_value</b> (const <a class="el" href="structpycanha_1_1ExpressionFormula_1_1SymbolBinding.html">SymbolBinding</a> &amp;binding) const</td></tr>
+<tr class="separator:a68d5b2a5d94508d2636dfc6dda134753"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa7b2b3cde51aa93165678aa36d28d758" id="r_aa7b2b3cde51aa93165678aa36d28d758"><td class="memItemLeft" align="right" valign="top"><a id="aa7b2b3cde51aa93165678aa36d28d758" name="aa7b2b3cde51aa93165678aa36d28d758"></a>
+double *&#160;</td><td class="memItemRight" valign="bottom"><b>resolve_symbol_ptr</b> (const <a class="el" href="structpycanha_1_1ExpressionFormula_1_1SymbolBinding.html">SymbolBinding</a> &amp;binding) const</td></tr>
+<tr class="separator:aa7b2b3cde51aa93165678aa36d28d758"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pri-attribs" name="pri-attribs"></a>
 Private Attributes</h2></td></tr>
 <tr class="memitem:ad67b3f9986ae1f4973d0957576d4e9aa" id="r_ad67b3f9986ae1f4973d0957576d4e9aa"><td class="memItemLeft" align="right" valign="top"><a id="ad67b3f9986ae1f4973d0957576d4e9aa" name="ad67b3f9986ae1f4973d0957576d4e9aa"></a>
 <a class="el" href="classpycanha_1_1Parameters.html">Parameters</a> *&#160;</td><td class="memItemRight" valign="bottom"><b>_parameters</b></td></tr>
 <tr class="separator:ad67b3f9986ae1f4973d0957576d4e9aa"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7953bcbc8c3f324b4f9d4a54bb67c71a" id="r_a7953bcbc8c3f324b4f9d4a54bb67c71a"><td class="memItemLeft" align="right" valign="top"><a id="a7953bcbc8c3f324b4f9d4a54bb67c71a" name="a7953bcbc8c3f324b4f9d4a54bb67c71a"></a>
+<a class="el" href="classpycanha_1_1ThermalNetwork.html">ThermalNetwork</a> *&#160;</td><td class="memItemRight" valign="bottom"><b>_network</b> {nullptr}</td></tr>
+<tr class="separator:a7953bcbc8c3f324b4f9d4a54bb67c71a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a35263193e5159a32b7072f65fadaf5ec" id="r_a35263193e5159a32b7072f65fadaf5ec"><td class="memItemLeft" align="right" valign="top"><a id="a35263193e5159a32b7072f65fadaf5ec" name="a35263193e5159a32b7072f65fadaf5ec"></a>
 std::string&#160;</td><td class="memItemRight" valign="bottom"><b>_expression</b></td></tr>
 <tr class="separator:a35263193e5159a32b7072f65fadaf5ec"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -218,9 +223,9 @@ double&#160;</td><td class="memItemRight" valign="bottom"><b>_cached_value</b> {
 <tr class="memitem:a93841260d6f0364d46a55fe9b66cd25e" id="r_a93841260d6f0364d46a55fe9b66cd25e"><td class="memItemLeft" align="right" valign="top"><a id="a93841260d6f0364d46a55fe9b66cd25e" name="a93841260d6f0364d46a55fe9b66cd25e"></a>
 std::vector&lt; double &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>_derivatives</b></td></tr>
 <tr class="separator:a93841260d6f0364d46a55fe9b66cd25e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5cdec3499b95bbbb14919a162f7fcd5d" id="r_a5cdec3499b95bbbb14919a162f7fcd5d"><td class="memItemLeft" align="right" valign="top"><a id="a5cdec3499b95bbbb14919a162f7fcd5d" name="a5cdec3499b95bbbb14919a162f7fcd5d"></a>
-std::vector&lt; <a class="el" href="structpycanha_1_1ExpressionFormula_1_1ParameterBinding.html">ParameterBinding</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>_bindings</b></td></tr>
-<tr class="separator:a5cdec3499b95bbbb14919a162f7fcd5d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae21d0d8f2bdb9cbab0f16d1263a448e7" id="r_ae21d0d8f2bdb9cbab0f16d1263a448e7"><td class="memItemLeft" align="right" valign="top"><a id="ae21d0d8f2bdb9cbab0f16d1263a448e7" name="ae21d0d8f2bdb9cbab0f16d1263a448e7"></a>
+std::vector&lt; <a class="el" href="structpycanha_1_1ExpressionFormula_1_1SymbolBinding.html">SymbolBinding</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>_bindings</b></td></tr>
+<tr class="separator:ae21d0d8f2bdb9cbab0f16d1263a448e7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2d1596e573d98ca801fd2f55bc25d84c" id="r_a2d1596e573d98ca801fd2f55bc25d84c"><td class="memItemLeft" align="right" valign="top"><a id="a2d1596e573d98ca801fd2f55bc25d84c" name="a2d1596e573d98ca801fd2f55bc25d84c"></a>
 SymEngine::RCP&lt; const SymEngine::Basic &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>_parsed_expr</b></td></tr>
 <tr class="separator:a2d1596e573d98ca801fd2f55bc25d84c"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -242,9 +247,15 @@ std::vector&lt; double * &gt;&#160;</td><td class="memItemRight" valign="bottom"
 <tr class="memitem:afd9a8655f2d51a28109f4bf4ef8fc5b5" id="r_afd9a8655f2d51a28109f4bf4ef8fc5b5"><td class="memItemLeft" align="right" valign="top"><a id="afd9a8655f2d51a28109f4bf4ef8fc5b5" name="afd9a8655f2d51a28109f4bf4ef8fc5b5"></a>
 std::vector&lt; bool &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>_compiled_derivs_ready</b></td></tr>
 <tr class="separator:afd9a8655f2d51a28109f4bf4ef8fc5b5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acd062fd2c53a9f3a6f1225bba4c174db" id="r_acd062fd2c53a9f3a6f1225bba4c174db"><td class="memItemLeft" align="right" valign="top"><a id="acd062fd2c53a9f3a6f1225bba4c174db" name="acd062fd2c53a9f3a6f1225bba4c174db"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>_has_entity_dependencies</b> {false}</td></tr>
+<tr class="separator:acd062fd2c53a9f3a6f1225bba4c174db"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aaa3548af2702f8267f34c3f0740cb3e3" id="r_aaa3548af2702f8267f34c3f0740cb3e3"><td class="memItemLeft" align="right" valign="top"><a id="aaa3548af2702f8267f34c3f0740cb3e3" name="aaa3548af2702f8267f34c3f0740cb3e3"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>_compiled</b> {false}</td></tr>
 <tr class="separator:aaa3548af2702f8267f34c3f0740cb3e3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a600d5d48da79d9ac316fa1334ab421a0" id="r_a600d5d48da79d9ac316fa1334ab421a0"><td class="memItemLeft" align="right" valign="top"><a id="a600d5d48da79d9ac316fa1334ab421a0" name="a600d5d48da79d9ac316fa1334ab421a0"></a>
+std::uint64_t&#160;</td><td class="memItemRight" valign="bottom"><b>_compiled_structure_version</b> {0U}</td></tr>
+<tr class="separator:a600d5d48da79d9ac316fa1334ab421a0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="inherited" name="inherited"></a>
 Additional Inherited Members</h2></td></tr>

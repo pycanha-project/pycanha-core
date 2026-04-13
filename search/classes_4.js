@@ -1,6 +1,6 @@
 var searchData=
 [
-  ['entitymap_0',['EntityMap',['../structpycanha_1_1detail_1_1EntityMap.html',1,'pycanha::detail']]],
-  ['esatanreader_1',['ESATANReader',['../classpycanha_1_1ESATANReader.html',1,'pycanha']]],
-  ['expressionformula_2',['ExpressionFormula',['../classpycanha_1_1ExpressionFormula.html',1,'pycanha']]]
+  ['formula_0',['Formula',['../classpycanha_1_1Formula.html',1,'pycanha']]],
+  ['formulaexecutionguard_1',['FormulaExecutionGuard',['../classpycanha_1_1Solver_1_1FormulaExecutionGuard.html',1,'pycanha::Solver']]],
+  ['formulas_2',['Formulas',['../classpycanha_1_1Formulas.html',1,'pycanha']]]
 ];

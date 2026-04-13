@@ -18,5 +18,7 @@ var searchData=
   ['literalstring_15',['LiteralString',['../classpycanha_1_1LiteralString.html',1,'pycanha']]],
   ['local_5fstorage_5fdestructor_16',['local_storage_destructor',['../classpycanha_1_1Node.html#a6b3e48a500d2f713fc7ee37e26693749',1,'pycanha::Node']]],
   ['localstorage_17',['LocalStorage',['../structpycanha_1_1Node_1_1LocalStorage.html',1,'pycanha::Node']]],
-  ['logging_20and_20profiling_18',['Logging and profiling',['../index.html#autotoc_md1',1,'']]]
+  ['logging_20and_20profiling_18',['Logging and profiling',['../index.html#autotoc_md1',1,'']]],
+  ['lookuptable1d_19',['LookupTable1D',['../classpycanha_1_1LookupTable1D.html',1,'pycanha']]],
+  ['lookuptablevec1d_20',['LookupTableVec1D',['../classpycanha_1_1LookupTableVec1D.html',1,'pycanha']]]
 ];

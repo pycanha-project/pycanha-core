@@ -1,5 +1,12 @@
 <map id="pycanha::ValueFormula" name="pycanha::ValueFormula">
-<area shape="rect" id="Node000001" title=" " alt="" coords="5,79,180,104"/>
-<area shape="rect" id="Node000002" href="$classpycanha_1_1Formula.html" title=" " alt="" coords="23,5,162,31"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="95,44,95,79,90,79,90,44"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="15,388,190,413"/>
+<area shape="rect" id="Node000002" href="$classpycanha_1_1Formula.html" title=" " alt="" coords="33,313,172,339"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="105,353,105,388,100,388,100,353"/>
+<area shape="rect" id="Node000003" href="$classpycanha_1_1Entity.html" title=" " alt="" coords="41,225,164,251"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="105,265,105,313,100,313,100,265"/>
+<area shape="rect" id="Node000004" href="$classpycanha_1_1ThermalNetwork.html" title=" " alt="" coords="5,5,200,31"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="102,44,98,99,97,163,104,225,98,225,92,163,92,98,97,44"/>
+<area shape="rect" id="Node000005" href="$structpycanha_1_1detail_1_1EntityOps.html" title=" " alt="" coords="171,137,365,163"/>
+<area shape="poly" id="edge5_Node000005_Node000004" title=" " alt="" coords="130,37,255,135,251,139,126,41"/>
+<area shape="poly" id="edge4_Node000003_Node000005" title=" " alt="" coords="235,171,126,227,124,223,232,167"/>
 </map>

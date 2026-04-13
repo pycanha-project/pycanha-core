@@ -27,7 +27,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.11</span>
+   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.12</span>
    </div>
    <div id="projectbrief">The C++ core of pycanha</div>
   </td>
@@ -186,7 +186,7 @@ $(document).ready(function(){initNavTree('thermalmesh_8hpp_source.html',''); ini
 <div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>    }</div>
 <div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span> </div>
 <div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>    [[nodiscard]] MeshIndex get_dir1_mesh_size()<span class="keyword"> const </span>{</div>
-<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>        <span class="keywordflow">return</span> <span class="keyword">static_cast&lt;</span>MeshIndex<span class="keyword">&gt;</span>(_dir1_mesh.size());</div>
+<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>        <span class="keywordflow">return</span> to_meshidx(_dir1_mesh.size());</div>
 <div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span>    }</div>
 <div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span> </div>
 <div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>    [[nodiscard]] std::vector&lt;double&gt; get_dir2_mesh()<span class="keyword"> const </span>{</div>
@@ -198,7 +198,7 @@ $(document).ready(function(){initNavTree('thermalmesh_8hpp_source.html',''); ini
 <div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>    }</div>
 <div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span> </div>
 <div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>    [[nodiscard]] MeshIndex get_dir2_mesh_size()<span class="keyword"> const </span>{</div>
-<div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>        <span class="keywordflow">return</span> <span class="keyword">static_cast&lt;</span>MeshIndex<span class="keyword">&gt;</span>(_dir2_mesh.size());</div>
+<div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>        <span class="keywordflow">return</span> to_meshidx(_dir2_mesh.size());</div>
 <div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span>    }</div>
 <div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span>    <span class="comment">// Setters</span></div>
 <div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>    <span class="keywordtype">void</span> set_side1_activity(<span class="keywordtype">bool</span> side1_activity) {</div>
@@ -283,13 +283,12 @@ $(document).ready(function(){initNavTree('thermalmesh_8hpp_source.html',''); ini
 <div class="line"><a id="l00183" name="l00183"></a><span class="lineno">  183</span> </div>
 <div class="foldopen" id="foldopen00188" data-start="{" data-end="}">
 <div class="line"><a id="l00188" name="l00188"></a><span class="lineno"><a class="line" href="classpycanha_1_1gmm_1_1ThermalMesh.html#aa4f95a1ff0a29ef63939fff7fb0e0480">  188</a></span>    [[nodiscard]] MeshIndex <a class="code hl_function" href="classpycanha_1_1gmm_1_1ThermalMesh.html#aa4f95a1ff0a29ef63939fff7fb0e0480">get_number_of_pair_faces</a>()<span class="keyword"> const </span>{</div>
-<div class="line"><a id="l00189" name="l00189"></a><span class="lineno">  189</span>        <span class="keywordflow">return</span> <span class="keyword">static_cast&lt;</span>MeshIndex<span class="keyword">&gt;</span>((_dir1_mesh.size() - 1) *</div>
-<div class="line"><a id="l00190" name="l00190"></a><span class="lineno">  190</span>                                      (_dir2_mesh.size() - 1));</div>
-<div class="line"><a id="l00191" name="l00191"></a><span class="lineno">  191</span>    }</div>
+<div class="line"><a id="l00189" name="l00189"></a><span class="lineno">  189</span>        <span class="keywordflow">return</span> to_meshidx((_dir1_mesh.size() - 1) * (_dir2_mesh.size() - 1));</div>
+<div class="line"><a id="l00190" name="l00190"></a><span class="lineno">  190</span>    }</div>
 </div>
-<div class="line"><a id="l00192" name="l00192"></a><span class="lineno">  192</span>};</div>
+<div class="line"><a id="l00191" name="l00191"></a><span class="lineno">  191</span>};</div>
 </div>
-<div class="line"><a id="l00193" name="l00193"></a><span class="lineno">  193</span>}  <span class="comment">// namespace pycanha::gmm</span></div>
+<div class="line"><a id="l00192" name="l00192"></a><span class="lineno">  192</span>}  <span class="comment">// namespace pycanha::gmm</span></div>
 <div class="ttc" id="aclasspycanha_1_1gmm_1_1Color_html"><div class="ttname"><a href="classpycanha_1_1gmm_1_1Color.html">pycanha::gmm::Color</a></div><div class="ttdef"><b>Definition</b> materials.hpp:91</div></div>
 <div class="ttc" id="aclasspycanha_1_1gmm_1_1ThermalMesh_html"><div class="ttname"><a href="classpycanha_1_1gmm_1_1ThermalMesh.html">pycanha::gmm::ThermalMesh</a></div><div class="ttdef"><b>Definition</b> thermalmesh.hpp:18</div></div>
 <div class="ttc" id="aclasspycanha_1_1gmm_1_1ThermalMesh_html_a1cd584b5e4a506ecef48c4fef8d8bde2"><div class="ttname"><a href="classpycanha_1_1gmm_1_1ThermalMesh.html#a1cd584b5e4a506ecef48c4fef8d8bde2">pycanha::gmm::ThermalMesh::is_valid</a></div><div class="ttdeci">bool is_valid() const</div><div class="ttdoc">Check if the mesh is valid.</div><div class="ttdef"><b>Definition</b> thermalmesh.hpp:165</div></div>

@@ -4,7 +4,7 @@
 <area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="133,591,270,530,272,535,135,596"/>
 <area shape="rect" id="Node000017" href="$namespacepycanha.html#af116674b7649af0e33b3d7e78ecb1b1b" title=" " alt="" coords="705,891,860,917"/>
 <area shape="poly" id="edge35_Node000001_Node000017" title=" " alt="" coords="112,619,129,661,158,722,200,787,225,818,252,845,301,882,345,908,388,925,431,934,476,938,525,937,641,927,711,917,711,922,642,932,525,942,476,943,430,940,386,930,343,913,298,886,249,849,221,821,195,790,154,724,124,663,107,621"/>
-<area shape="rect" id="Node000018" href="$classpycanha_1_1Node.html#a31d790ab1c03fb481434cebdef5e6017" title="User node number getter." alt="" coords="475,5,623,45"/>
+<area shape="rect" id="Node000018" href="$classpycanha_1_1Node.html#ab36caedf2446704d68357c396cf5da9c" title="User node number getter." alt="" coords="475,5,623,45"/>
 <area shape="poly" id="edge36_Node000001_Node000018" title=" " alt="" coords="107,593,144,503,175,436,215,359,263,278,319,198,383,122,456,55,463,50,466,54,459,59,387,125,323,201,267,281,219,362,180,438,149,505,112,595"/>
 <area shape="rect" id="Node000031" href="$classpycanha_1_1Node.html#a55a4679e85533618ff220014344cc15b" title="Type getter." alt="" coords="457,891,641,917"/>
 <area shape="poly" id="edge37_Node000001_Node000031" title=" " alt="" coords="121,618,172,664,253,730,351,804,459,870,492,884,490,889,456,874,348,808,249,734,169,668,117,621"/>
@@ -41,31 +41,31 @@
 <area shape="poly" id="edge32_Node000002_Node000032" title=" " alt="" coords="334,485,384,328,419,241,437,207,455,184,460,179,464,183,459,187,442,210,424,243,389,329,339,487"/>
 <area shape="rect" id="Node000033" href="$classpycanha_1_1Node.html#aa6ed2994d3acaf711d8f0c12145a7983" title="Set the parent instance." alt="" coords="462,69,637,109"/>
 <area shape="poly" id="edge33_Node000002_Node000033" title=" " alt="" coords="335,486,402,276,455,120,459,116,463,120,460,123,407,278,340,487"/>
-<area shape="rect" id="Node000004" href="$classpycanha_1_1Nodes.html#a77196970cfb979acc7b67f8b99c9f634" title="Area [m^2] getter." alt="" coords="697,198,868,223"/>
+<area shape="rect" id="Node000004" href="$classpycanha_1_1Nodes.html#ab82156d7252c29b5498f99db2766d02e" title="Area [m^2] getter." alt="" coords="697,198,868,223"/>
 <area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="631,208,684,208,684,213,631,213"/>
-<area shape="rect" id="Node000006" href="$classpycanha_1_1Nodes.html#ad61fdb5f6c5d4a13dd351715818f930a" title="Solar absortivity getter." alt="" coords="689,247,876,273"/>
+<area shape="rect" id="Node000006" href="$classpycanha_1_1Nodes.html#af7a7bb9b2ce3080e447b7da1bdf5356d" title="Solar absortivity getter." alt="" coords="689,247,876,273"/>
 <area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="639,257,676,257,676,263,639,263"/>
-<area shape="rect" id="Node000008" href="$classpycanha_1_1Nodes.html#ab1c554b7523ca26126896ac0df536594" title="Thermal capacity [J/K] getter." alt="" coords="697,297,868,322"/>
+<area shape="rect" id="Node000008" href="$classpycanha_1_1Nodes.html#a5e79301fe2f9a84b00b8d7e3192d0c18" title="Thermal capacity [J/K] getter." alt="" coords="697,297,868,322"/>
 <area shape="poly" id="edge7_Node000007_Node000008" title=" " alt="" coords="631,307,683,307,683,312,631,312"/>
-<area shape="rect" id="Node000010" href="$classpycanha_1_1Nodes.html#a8802742ebd0f9ccdd0182b600fe7eff1" title="IR emissivity getter." alt="" coords="690,346,875,371"/>
+<area shape="rect" id="Node000010" href="$classpycanha_1_1Nodes.html#a531d05e7782bb7f07e8df951346cb07d" title="IR emissivity getter." alt="" coords="690,346,875,371"/>
 <area shape="poly" id="edge9_Node000009_Node000010" title=" " alt="" coords="639,356,677,356,677,361,639,361"/>
-<area shape="rect" id="Node000012" href="$classpycanha_1_1Nodes.html#a4cf1319c964a09c43c8b7d727c08e4ec" title="X coordinate [m] getter." alt="" coords="695,395,870,421"/>
+<area shape="rect" id="Node000012" href="$classpycanha_1_1Nodes.html#ade1dbf803c8d20e1b2d9ae23ce17db55" title="X coordinate [m] getter." alt="" coords="695,395,870,421"/>
 <area shape="poly" id="edge11_Node000011_Node000012" title=" " alt="" coords="634,405,681,405,681,411,634,411"/>
-<area shape="rect" id="Node000014" href="$classpycanha_1_1Nodes.html#a64c3c26707b3116db6928646261954b2" title="Y coordinate [m] getter." alt="" coords="695,445,870,470"/>
+<area shape="rect" id="Node000014" href="$classpycanha_1_1Nodes.html#ad9f977fc439adaee3bbb109a7aafba7c" title="Y coordinate [m] getter." alt="" coords="695,445,870,470"/>
 <area shape="poly" id="edge13_Node000013_Node000014" title=" " alt="" coords="633,455,682,455,682,460,633,460"/>
-<area shape="rect" id="Node000016" href="$classpycanha_1_1Nodes.html#a698ac07f5879b7ec5b81fd0a90f525ce" title="Z coordinate [m] getter." alt="" coords="695,494,870,519"/>
+<area shape="rect" id="Node000016" href="$classpycanha_1_1Nodes.html#a6e62ce9ae684aa26ae0af9559fd38278" title="Z coordinate [m] getter." alt="" coords="695,494,870,519"/>
 <area shape="poly" id="edge15_Node000015_Node000016" title=" " alt="" coords="633,504,682,504,682,509,633,509"/>
-<area shape="rect" id="Node000020" href="$classpycanha_1_1Nodes.html#a521272051bce035b77e810f8f2e16b7b" title="Albedo load [W] getter." alt="" coords="693,543,872,569"/>
+<area shape="rect" id="Node000020" href="$classpycanha_1_1Nodes.html#addc9af809210100179ec50692fa9358e" title="Albedo load [W] getter." alt="" coords="693,543,872,569"/>
 <area shape="poly" id="edge19_Node000019_Node000020" title=" " alt="" coords="635,553,680,553,680,559,635,559"/>
-<area shape="rect" id="Node000022" href="$classpycanha_1_1Nodes.html#a3004cfb5c89e1c32f565eca56433e836" title="Earth IR load [W] getter." alt="" coords="693,593,872,618"/>
+<area shape="rect" id="Node000022" href="$classpycanha_1_1Nodes.html#aa4f2a4ef10430906a8834730b27ae7e0" title="Earth IR load [W] getter." alt="" coords="693,593,872,618"/>
 <area shape="poly" id="edge21_Node000021_Node000022" title=" " alt="" coords="635,603,680,603,680,608,635,608"/>
-<area shape="rect" id="Node000024" href="$classpycanha_1_1Nodes.html#a7281e1dc78824a8a1c151c4bb5f0ac9c" title="Internal load [W] getter." alt="" coords="695,642,870,667"/>
+<area shape="rect" id="Node000024" href="$classpycanha_1_1Nodes.html#a97cf792bfa0bf86bdfb3260ceee6a997" title="Internal load [W] getter." alt="" coords="695,642,870,667"/>
 <area shape="poly" id="edge23_Node000023_Node000024" title=" " alt="" coords="633,652,682,652,682,657,633,657"/>
-<area shape="rect" id="Node000026" href="$classpycanha_1_1Nodes.html#a044abae6432fcf073ec1bbd2e2faba98" title="Other load [W] getter." alt="" coords="695,691,870,717"/>
+<area shape="rect" id="Node000026" href="$classpycanha_1_1Nodes.html#a956e7683c050ed612380aa9f17824ce4" title="Other load [W] getter." alt="" coords="695,691,870,717"/>
 <area shape="poly" id="edge25_Node000025_Node000026" title=" " alt="" coords="634,701,681,701,681,707,634,707"/>
-<area shape="rect" id="Node000028" href="$classpycanha_1_1Nodes.html#a69b8286c1d8f94103a25d32f1ed155b5" title="Solar load [W] getter." alt="" coords="694,741,871,766"/>
+<area shape="rect" id="Node000028" href="$classpycanha_1_1Nodes.html#a08f2c7c25b0430a8649bfd87952649cb" title="Solar load [W] getter." alt="" coords="694,741,871,766"/>
 <area shape="poly" id="edge27_Node000027_Node000028" title=" " alt="" coords="635,751,680,751,680,756,635,756"/>
-<area shape="rect" id="Node000030" href="$classpycanha_1_1Nodes.html#a2241f25d67aaa234fe0f73b1245560d6" title="Temperature [K] getter." alt="" coords="697,790,868,815"/>
+<area shape="rect" id="Node000030" href="$classpycanha_1_1Nodes.html#a10ec85737e6be55ce7a96b448bbe29f3" title="Temperature [K] getter." alt="" coords="697,790,868,815"/>
 <area shape="poly" id="edge29_Node000029_Node000030" title=" " alt="" coords="631,800,684,800,684,805,631,805"/>
 <area shape="poly" id="edge31_Node000031_Node000017" title=" " alt="" coords="642,901,692,901,692,907,642,907"/>
 <area shape="rect" id="Node000034" href="$classpycanha_1_1Node.html#a6b3e48a500d2f713fc7ee37e26693749" title=" " alt="" coords="703,69,862,109"/>

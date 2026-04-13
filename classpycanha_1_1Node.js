@@ -1,8 +1,8 @@
 var classpycanha_1_1Node =
 [
     [ "LocalStorage", "structpycanha_1_1Node_1_1LocalStorage.html", null ],
-    [ "Node", "classpycanha_1_1Node.html#abbd6e2986a578eda277d020f11f70e47", null ],
-    [ "Node", "classpycanha_1_1Node.html#a1bbcc530cee5ea6191bb194919b1addf", null ],
+    [ "Node", "classpycanha_1_1Node.html#a1a03ae20add186d6c3641a6f3bc74a87", null ],
+    [ "Node", "classpycanha_1_1Node.html#a00dbc2185ad3bc9c730c6b6a08b1433b", null ],
     [ "get_a", "classpycanha_1_1Node.html#a876558b19fd24813e3ad240d7bcc6b47", null ],
     [ "get_aph", "classpycanha_1_1Node.html#ad4784620cf111949d455951f408a8ff1", null ],
     [ "get_C", "classpycanha_1_1Node.html#aa0530593dd3c33b50051fd5630583a9a", null ],
@@ -10,10 +10,10 @@ var classpycanha_1_1Node =
     [ "get_fx", "classpycanha_1_1Node.html#af99429c4bbd433a67325730ed5517252", null ],
     [ "get_fy", "classpycanha_1_1Node.html#a75a1e382bb8d0fab4ffc116191f099f5", null ],
     [ "get_fz", "classpycanha_1_1Node.html#a1c12438baa7975c31b59b4b8d8cbfee9", null ],
-    [ "get_int_node_num", "classpycanha_1_1Node.html#aa7d8c255b55931913af6efa30980dff7", null ],
+    [ "get_int_node_num", "classpycanha_1_1Node.html#a2ba9443724bd6d3664937490c8b8bda2", null ],
     [ "get_int_parent_pointer", "classpycanha_1_1Node.html#a6b43e83d081fa3b957079ba891cdd732", null ],
     [ "get_literal_C", "classpycanha_1_1Node.html#ab89ccfc78d445a591c07697ac038e0fc", null ],
-    [ "get_node_num", "classpycanha_1_1Node.html#a31d790ab1c03fb481434cebdef5e6017", null ],
+    [ "get_node_num", "classpycanha_1_1Node.html#ab36caedf2446704d68357c396cf5da9c", null ],
     [ "get_parent_pointer", "classpycanha_1_1Node.html#aa16e42de556d0a7e6831850b1aa441d0", null ],
     [ "get_qa", "classpycanha_1_1Node.html#a716082814c425fc97d24196193216ab7", null ],
     [ "get_qe", "classpycanha_1_1Node.html#a3f8d98cc232bfb86459eeb1e15803a29", null ],
@@ -31,7 +31,7 @@ var classpycanha_1_1Node =
     [ "set_fy", "classpycanha_1_1Node.html#a83600da5a12417b58740998f640a06d1", null ],
     [ "set_fz", "classpycanha_1_1Node.html#a182e9ddadc89409b61045db38a45e7ad", null ],
     [ "set_literal_C", "classpycanha_1_1Node.html#a338614f932dfc2da03556418983d537b", null ],
-    [ "set_node_num", "classpycanha_1_1Node.html#aad47e192991742e6a50684aadb0a9d81", null ],
+    [ "set_node_num", "classpycanha_1_1Node.html#a51fd35ae29d5bceab2547f81a8075282", null ],
     [ "set_qa", "classpycanha_1_1Node.html#a1259de95545d29ea866e10b45469607c", null ],
     [ "set_qe", "classpycanha_1_1Node.html#ab25463b4dc1be843362646e6e1dcd2b1", null ],
     [ "set_qi", "classpycanha_1_1Node.html#a40ac285f684a0300075c5aeaba317e58", null ],
@@ -41,6 +41,6 @@ var classpycanha_1_1Node =
     [ "set_thermal_nodes_parent", "classpycanha_1_1Node.html#aa6ed2994d3acaf711d8f0c12145a7983", null ],
     [ "set_type", "classpycanha_1_1Node.html#ae63b3c12229048934496f9d19a058aab", null ],
     [ "_local_storage_ptr", "classpycanha_1_1Node.html#a52a2ac4bdf42a762f9ea1aaaa7a16bc3", null ],
-    [ "_node_num", "classpycanha_1_1Node.html#a21e3ed09aa20dc6ce81545929064ef44", null ],
+    [ "_node_num", "classpycanha_1_1Node.html#addc61da57356e26468dfc61a43a7e4b0", null ],
     [ "_parent_pointer", "classpycanha_1_1Node.html#a553a88c3902616e1845ca3cd17fda6cd", null ]
 ];

@@ -2,11 +2,12 @@ var searchData=
 [
   ['e_20extra_20configuration_0',['E. Extra configuration',['../md_docs_2configuring.html#autotoc_md38',1,'']]],
   ['eigen3_20not_20found_20after_20conan_20install_1',['Eigen3 not found after conan install',['../md_docs_2faq.html#autotoc_md50',1,'']]],
-  ['entitymap_2',['EntityMap',['../structpycanha_1_1detail_1_1EntityMap.html',1,'pycanha::detail']]],
-  ['environment_20and_20activate_20it_20in_20vs_20code_3',['3.2. Create a Python virtual environment and activate it in VS Code',['../md_docs_2configuring.html#autotoc_md34',1,'']]],
-  ['eps_5fvector_4',['eps_vector',['../classpycanha_1_1Nodes.html#a40f2dd0b0c26104bd4520bb05513be10',1,'pycanha::Nodes']]],
-  ['esatanreader_5',['ESATANReader',['../classpycanha_1_1ESATANReader.html',1,'pycanha']]],
-  ['every_20commit_20pull_20request_20to_20main_6',['Workflows for every commit/pull request to main',['../md_docs_2cicd.html#autotoc_md40',1,'']]],
-  ['expressionformula_7',['ExpressionFormula',['../classpycanha_1_1ExpressionFormula.html',1,'pycanha']]],
-  ['extra_20configuration_8',['E. Extra configuration',['../md_docs_2configuring.html#autotoc_md38',1,'']]]
+  ['entity_2',['Entity',['../classpycanha_1_1Entity.html',1,'pycanha']]],
+  ['entityops_3',['EntityOps',['../structpycanha_1_1detail_1_1EntityOps.html',1,'pycanha::detail']]],
+  ['environment_20and_20activate_20it_20in_20vs_20code_4',['3.2. Create a Python virtual environment and activate it in VS Code',['../md_docs_2configuring.html#autotoc_md34',1,'']]],
+  ['eps_5fvector_5',['eps_vector',['../classpycanha_1_1Nodes.html#a40f2dd0b0c26104bd4520bb05513be10',1,'pycanha::Nodes']]],
+  ['esatanreader_6',['ESATANReader',['../classpycanha_1_1ESATANReader.html',1,'pycanha']]],
+  ['every_20commit_20pull_20request_20to_20main_7',['Workflows for every commit/pull request to main',['../md_docs_2cicd.html#autotoc_md40',1,'']]],
+  ['expressionformula_8',['ExpressionFormula',['../classpycanha_1_1ExpressionFormula.html',1,'pycanha']]],
+  ['extra_20configuration_9',['E. Extra configuration',['../md_docs_2configuring.html#autotoc_md38',1,'']]]
 ];

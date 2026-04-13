@@ -2,7 +2,7 @@ var searchData=
 [
   ['b_20manual_20configuration_0',['2.b Manual configuration',['../md_docs_2configuring.html#autotoc_md31',1,'']]],
   ['b_20manually_1',['1.b. Manually',['../md_docs_2configuring.html#autotoc_md27',1,'']]],
-  ['boundary_5fto_5fdiffusive_2',['boundary_to_diffusive',['../classpycanha_1_1Nodes.html#ace163a8ac50c46771c21ab11efa704cf',1,'pycanha::Nodes']]],
+  ['boundary_5fto_5fdiffusive_2',['boundary_to_diffusive',['../classpycanha_1_1Nodes.html#a8950054692801b40ae073d18f8d01ed7',1,'pycanha::Nodes']]],
   ['build_3',['3.4. Configure conan build',['../md_docs_2configuring.html#autotoc_md36',1,'']]],
   ['build_20the_20library_4',['3. Build the library',['../md_docs_2configuring.html#autotoc_md32',1,'']]],
   ['build_20the_20library_20with_20conan_20and_20start_20the_20development_5',['3.5. Build the library with conan and start the development',['../md_docs_2configuring.html#autotoc_md37',1,'']]],

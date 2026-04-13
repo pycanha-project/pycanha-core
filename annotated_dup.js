@@ -2,7 +2,8 @@ var annotated_dup =
 [
     [ "pycanha", "namespacepycanha.html", [
       [ "detail", null, [
-        [ "EntityMap", "structpycanha_1_1detail_1_1EntityMap.html", null ]
+        [ "EntityOps", "structpycanha_1_1detail_1_1EntityOps.html", null ],
+        [ "InterpLocation", "structpycanha_1_1detail_1_1InterpLocation.html", null ]
       ] ],
       [ "gmm", null, [
         [ "BulkMaterial", "classpycanha_1_1gmm_1_1BulkMaterial.html", "classpycanha_1_1gmm_1_1BulkMaterial" ],
@@ -34,13 +35,12 @@ var annotated_dup =
         [ "IntGenerator", "classpycanha_1_1random__generators_1_1IntGenerator.html", null ],
         [ "RealGenerator", "classpycanha_1_1random__generators_1_1RealGenerator.html", null ]
       ] ],
-      [ "AttributeEntity", "classpycanha_1_1AttributeEntity.html", null ],
-      [ "ConductiveCouplingEntity", "classpycanha_1_1ConductiveCouplingEntity.html", null ],
       [ "ConductiveCouplings", "classpycanha_1_1ConductiveCouplings.html", null ],
       [ "Coupling", "classpycanha_1_1Coupling.html", "classpycanha_1_1Coupling" ],
-      [ "CouplingEntity", "classpycanha_1_1CouplingEntity.html", null ],
       [ "CouplingMatrices", "classpycanha_1_1CouplingMatrices.html", "classpycanha_1_1CouplingMatrices" ],
       [ "Couplings", "classpycanha_1_1Couplings.html", null ],
+      [ "DenseTimeSeries", "classpycanha_1_1DenseTimeSeries.html", null ],
+      [ "Entity", "classpycanha_1_1Entity.html", "classpycanha_1_1Entity" ],
       [ "ESATANReader", "classpycanha_1_1ESATANReader.html", null ],
       [ "ExpressionFormula", "classpycanha_1_1ExpressionFormula.html", "classpycanha_1_1ExpressionFormula" ],
       [ "Formula", "classpycanha_1_1Formula.html", "classpycanha_1_1Formula" ],
@@ -50,20 +50,23 @@ var annotated_dup =
       [ "Instrumentor", "classpycanha_1_1Instrumentor.html", null ],
       [ "IntPairHash", "structpycanha_1_1IntPairHash.html", null ],
       [ "LiteralString", "classpycanha_1_1LiteralString.html", null ],
+      [ "LookupTable1D", "classpycanha_1_1LookupTable1D.html", null ],
+      [ "LookupTableVec1D", "classpycanha_1_1LookupTableVec1D.html", null ],
       [ "Node", "classpycanha_1_1Node.html", "classpycanha_1_1Node" ],
       [ "Nodes", "classpycanha_1_1Nodes.html", "classpycanha_1_1Nodes" ],
       [ "ParameterFormula", "classpycanha_1_1ParameterFormula.html", null ],
       [ "Parameters", "classpycanha_1_1Parameters.html", "classpycanha_1_1Parameters" ],
       [ "ProfileResult", "structpycanha_1_1ProfileResult.html", null ],
-      [ "RadiativeCouplingEntity", "classpycanha_1_1RadiativeCouplingEntity.html", null ],
       [ "RadiativeCouplings", "classpycanha_1_1RadiativeCouplings.html", null ],
-      [ "Solver", "classpycanha_1_1Solver.html", null ],
+      [ "Solver", "classpycanha_1_1Solver.html", "classpycanha_1_1Solver" ],
+      [ "SparseTimeSeries", "classpycanha_1_1SparseTimeSeries.html", null ],
       [ "SSLU", "classpycanha_1_1SSLU.html", null ],
       [ "SteadyStateSolver", "classpycanha_1_1SteadyStateSolver.html", null ],
+      [ "TemperatureVariable", "classpycanha_1_1TemperatureVariable.html", null ],
       [ "ThermalData", "classpycanha_1_1ThermalData.html", null ],
-      [ "ThermalEntity", "classpycanha_1_1ThermalEntity.html", null ],
       [ "ThermalMathematicalModel", "classpycanha_1_1ThermalMathematicalModel.html", null ],
       [ "ThermalNetwork", "classpycanha_1_1ThermalNetwork.html", null ],
+      [ "TimeVariable", "classpycanha_1_1TimeVariable.html", null ],
       [ "TransientSolver", "classpycanha_1_1TransientSolver.html", null ],
       [ "TSCN", "classpycanha_1_1TSCN.html", null ],
       [ "TSCNRL", "classpycanha_1_1TSCNRL.html", null ],

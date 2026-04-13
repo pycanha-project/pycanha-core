@@ -27,7 +27,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.11</span>
+   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.12</span>
    </div>
    <div id="projectbrief">The C++ core of pycanha</div>
   </td>
@@ -96,6 +96,8 @@ $(document).ready(function(){initNavTree('classpycanha_1_1Parameters.html',''); 
 <a href="#nested-classes">Classes</a> &#124;
 <a href="#pub-types">Public Types</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="#pri-methods">Private Member Functions</a> &#124;
+<a href="#pri-static-methods">Static Private Member Functions</a> &#124;
 <a href="#pri-attribs">Private Attributes</a> &#124;
 <a href="classpycanha_1_1Parameters-members.html">List of all members</a>  </div>
   <div class="headertitle"><div class="title">pycanha::Parameters Class Reference</div></div>
@@ -108,7 +110,11 @@ Classes</h2></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structpycanha_1_1Parameters_1_1DataMemoryAddress.html">DataMemoryAddress</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classpycanha_1_1Parameters_1_1Parameter.html">Parameter</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structpycanha_1_1Parameters_1_1ParameterSize.html">ParameterSize</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structpycanha_1_1Parameters_1_1ParameterSlot.html">ParameterSlot</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-types" name="pub-types"></a>
@@ -146,15 +152,36 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a9badefe2d4a9d72124887c113104d93e" id="r_a9badefe2d4a9d72124887c113104d93e"><td class="memItemLeft" align="right" valign="top"><a id="a9badefe2d4a9d72124887c113104d93e" name="a9badefe2d4a9d72124887c113104d93e"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>add_parameter</b> (std::string name, ThermalValue value)</td></tr>
 <tr class="separator:a9badefe2d4a9d72124887c113104d93e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a038f9dd02eab6c68a61780ef1452b336" id="r_a038f9dd02eab6c68a61780ef1452b336"><td class="memItemLeft" align="right" valign="top"><a id="a038f9dd02eab6c68a61780ef1452b336" name="a038f9dd02eab6c68a61780ef1452b336"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>add_internal_parameter</b> (std::string name, ThermalValue value)</td></tr>
+<tr class="separator:a038f9dd02eab6c68a61780ef1452b336"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af5cc92633734a9b2a762a0af466aca39" id="r_af5cc92633734a9b2a762a0af466aca39"><td class="memItemLeft" align="right" valign="top"><a id="af5cc92633734a9b2a762a0af466aca39" name="af5cc92633734a9b2a762a0af466aca39"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>remove_parameter</b> (const std::string &amp;name)</td></tr>
 <tr class="separator:af5cc92633734a9b2a762a0af466aca39"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8bb980dbe3b015b598973434c19b19e5" id="r_a8bb980dbe3b015b598973434c19b19e5"><td class="memItemLeft" align="right" valign="top"><a id="a8bb980dbe3b015b598973434c19b19e5" name="a8bb980dbe3b015b598973434c19b19e5"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>remove_internal_parameter</b> (const std::string &amp;name)</td></tr>
+<tr class="separator:a8bb980dbe3b015b598973434c19b19e5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a90d5231937a0a204465760aa200a4f53" id="r_a90d5231937a0a204465760aa200a4f53"><td class="memItemLeft" align="right" valign="top"><a id="a90d5231937a0a204465760aa200a4f53" name="a90d5231937a0a204465760aa200a4f53"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>rename_parameter</b> (const std::string &amp;current_name, std::string new_name)</td></tr>
+<tr class="separator:a90d5231937a0a204465760aa200a4f53"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acd92211cc16c1e0f48f1eab6841a7a63" id="r_acd92211cc16c1e0f48f1eab6841a7a63"><td class="memItemLeft" align="right" valign="top"><a id="acd92211cc16c1e0f48f1eab6841a7a63" name="acd92211cc16c1e0f48f1eab6841a7a63"></a>
+<a class="el" href="classpycanha_1_1Parameters_1_1Parameter.html">Parameter</a>&#160;</td><td class="memItemRight" valign="bottom"><b>get_parameter_handle</b> (const std::string &amp;name) noexcept</td></tr>
+<tr class="separator:acd92211cc16c1e0f48f1eab6841a7a63"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7efe24401aeaeebc51b910f31ac83b05" id="r_a7efe24401aeaeebc51b910f31ac83b05"><td class="memItemLeft" align="right" valign="top"><a id="a7efe24401aeaeebc51b910f31ac83b05" name="a7efe24401aeaeebc51b910f31ac83b05"></a>
 ThermalValue&#160;</td><td class="memItemRight" valign="bottom"><b>get_parameter</b> (const std::string &amp;name) const</td></tr>
 <tr class="separator:a7efe24401aeaeebc51b910f31ac83b05"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aefebe7a8232889718acec0fe511fc07b" id="r_aefebe7a8232889718acec0fe511fc07b"><td class="memItemLeft" align="right" valign="top"><a id="aefebe7a8232889718acec0fe511fc07b" name="aefebe7a8232889718acec0fe511fc07b"></a>
+std::optional&lt; ThermalValue &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>get_parameter_optional</b> (const std::string &amp;name) const</td></tr>
+<tr class="separator:aefebe7a8232889718acec0fe511fc07b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4595773d1c8f7ed3e181dac50c4d2ac7" id="r_a4595773d1c8f7ed3e181dac50c4d2ac7"><td class="memItemLeft" align="right" valign="top"><a id="a4595773d1c8f7ed3e181dac50c4d2ac7" name="a4595773d1c8f7ed3e181dac50c4d2ac7"></a>
+std::optional&lt; ThermalValue &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>get_parameter_optional</b> (Index idx) const</td></tr>
+<tr class="separator:a4595773d1c8f7ed3e181dac50c4d2ac7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1d55855162018692ee1f9b687d143972" id="r_a1d55855162018692ee1f9b687d143972"><td class="memItemLeft" align="right" valign="top"><a id="a1d55855162018692ee1f9b687d143972" name="a1d55855162018692ee1f9b687d143972"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>set_parameter</b> (const std::string &amp;name, ThermalValue value)</td></tr>
 <tr class="separator:a1d55855162018692ee1f9b687d143972"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a85df44c786ec927a01bd31d4029828f0" id="r_a85df44c786ec927a01bd31d4029828f0"><td class="memItemLeft" align="right" valign="top"><a id="a85df44c786ec927a01bd31d4029828f0" name="a85df44c786ec927a01bd31d4029828f0"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>set_internal_parameter</b> (const std::string &amp;name, ThermalValue value)</td></tr>
+<tr class="separator:a85df44c786ec927a01bd31d4029828f0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a200985810d555cfa6705663c4bfab044" id="r_a200985810d555cfa6705663c4bfab044"><td class="memItemLeft" align="right" valign="top"><a id="a200985810d555cfa6705663c4bfab044" name="a200985810d555cfa6705663c4bfab044"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>print_memory_address</b> (const std::string &amp;name) const</td></tr>
 <tr class="separator:a200985810d555cfa6705663c4bfab044"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -164,33 +191,111 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>print_parameter</b> (
 <tr class="memitem:aa2a682976a4cb59aea817b17ab5226ea" id="r_aa2a682976a4cb59aea817b17ab5226ea"><td class="memItemLeft" align="right" valign="top"><a id="aa2a682976a4cb59aea817b17ab5226ea" name="aa2a682976a4cb59aea817b17ab5226ea"></a>
 void *&#160;</td><td class="memItemRight" valign="bottom"><b>get_value_ptr</b> (const std::string &amp;name)</td></tr>
 <tr class="separator:aa2a682976a4cb59aea817b17ab5226ea"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2d2487fe1d67779371d96adb5075f7ea" id="r_a2d2487fe1d67779371d96adb5075f7ea"><td class="memItemLeft" align="right" valign="top"><a id="a2d2487fe1d67779371d96adb5075f7ea" name="a2d2487fe1d67779371d96adb5075f7ea"></a>
+void *&#160;</td><td class="memItemRight" valign="bottom"><b>get_value_ptr</b> (Index idx)</td></tr>
+<tr class="separator:a2d2487fe1d67779371d96adb5075f7ea"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aab67b8e4004815e2f0ef7846933a2666" id="r_aab67b8e4004815e2f0ef7846933a2666"><td class="memItemLeft" align="right" valign="top"><a id="aab67b8e4004815e2f0ef7846933a2666" name="aab67b8e4004815e2f0ef7846933a2666"></a>
 const void *&#160;</td><td class="memItemRight" valign="bottom"><b>get_value_ptr</b> (const std::string &amp;name) const</td></tr>
 <tr class="separator:aab67b8e4004815e2f0ef7846933a2666"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac745f46c800eecc9a4bcf6673025e38c" id="r_ac745f46c800eecc9a4bcf6673025e38c"><td class="memItemLeft" align="right" valign="top"><a id="ac745f46c800eecc9a4bcf6673025e38c" name="ac745f46c800eecc9a4bcf6673025e38c"></a>
+const void *&#160;</td><td class="memItemRight" valign="bottom"><b>get_value_ptr</b> (Index idx) const</td></tr>
+<tr class="separator:ac745f46c800eecc9a4bcf6673025e38c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a44abaac8a39f8e189f69b6af4f300a2b" id="r_a44abaac8a39f8e189f69b6af4f300a2b"><td class="memItemLeft" align="right" valign="top"><a id="a44abaac8a39f8e189f69b6af4f300a2b" name="a44abaac8a39f8e189f69b6af4f300a2b"></a>
+double *&#160;</td><td class="memItemRight" valign="bottom"><b>get_double_ptr</b> (Index idx)</td></tr>
+<tr class="separator:a44abaac8a39f8e189f69b6af4f300a2b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7bf8d02c80cf29c897291dafbd009ae0" id="r_a7bf8d02c80cf29c897291dafbd009ae0"><td class="memItemLeft" align="right" valign="top"><a id="a7bf8d02c80cf29c897291dafbd009ae0" name="a7bf8d02c80cf29c897291dafbd009ae0"></a>
+const double *&#160;</td><td class="memItemRight" valign="bottom"><b>get_double_ptr</b> (Index idx) const</td></tr>
+<tr class="separator:a7bf8d02c80cf29c897291dafbd009ae0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0e66b9a6268a3841cf9865720c143d56" id="r_a0e66b9a6268a3841cf9865720c143d56"><td class="memItemLeft" align="right" valign="top"><a id="a0e66b9a6268a3841cf9865720c143d56" name="a0e66b9a6268a3841cf9865720c143d56"></a>
 std::uint64_t&#160;</td><td class="memItemRight" valign="bottom"><b>get_memory_address</b> (const std::string &amp;name) const</td></tr>
 <tr class="separator:a0e66b9a6268a3841cf9865720c143d56"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a14c5b89599bc9f8f20261214c53ef27f" id="r_a14c5b89599bc9f8f20261214c53ef27f"><td class="memItemLeft" align="right" valign="top"><a id="a14c5b89599bc9f8f20261214c53ef27f" name="a14c5b89599bc9f8f20261214c53ef27f"></a>
-int&#160;</td><td class="memItemRight" valign="bottom"><b>get_idx</b> (const std::string &amp;name) const</td></tr>
-<tr class="separator:a14c5b89599bc9f8f20261214c53ef27f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a82b292c05940a3c52d4e3f01f7b7d0c1" id="r_a82b292c05940a3c52d4e3f01f7b7d0c1"><td class="memItemLeft" align="right" valign="top"><a id="a82b292c05940a3c52d4e3f01f7b7d0c1" name="a82b292c05940a3c52d4e3f01f7b7d0c1"></a>
+std::optional&lt; Index &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>get_idx</b> (const std::string &amp;name) const</td></tr>
+<tr class="separator:a82b292c05940a3c52d4e3f01f7b7d0c1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4d5eda778d37a5ddc68ff600cabb47aa" id="r_a4d5eda778d37a5ddc68ff600cabb47aa"><td class="memItemLeft" align="right" valign="top"><a id="a4d5eda778d37a5ddc68ff600cabb47aa" name="a4d5eda778d37a5ddc68ff600cabb47aa"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>is_internal_parameter</b> (const std::string &amp;name) const noexcept</td></tr>
+<tr class="separator:a4d5eda778d37a5ddc68ff600cabb47aa"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abe7c9dfa7bd56cc3febd7d79f0219fab" id="r_abe7c9dfa7bd56cc3febd7d79f0219fab"><td class="memItemLeft" align="right" valign="top"><a id="abe7c9dfa7bd56cc3febd7d79f0219fab" name="abe7c9dfa7bd56cc3febd7d79f0219fab"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>is_parameter_valid</b> (Index idx) const noexcept</td></tr>
+<tr class="separator:abe7c9dfa7bd56cc3febd7d79f0219fab"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a456b1cdb3cf9766c5a05961daa6dc721" id="r_a456b1cdb3cf9766c5a05961daa6dc721"><td class="memItemLeft" align="right" valign="top"><a id="a456b1cdb3cf9766c5a05961daa6dc721" name="a456b1cdb3cf9766c5a05961daa6dc721"></a>
+std::optional&lt; std::string &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>get_parameter_name</b> (Index idx) const</td></tr>
+<tr class="separator:a456b1cdb3cf9766c5a05961daa6dc721"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a179b8199d1b0b389cb23707e11149d8e" id="r_a179b8199d1b0b389cb23707e11149d8e"><td class="memItemLeft" align="right" valign="top"><a id="a179b8199d1b0b389cb23707e11149d8e" name="a179b8199d1b0b389cb23707e11149d8e"></a>
 std::size_t&#160;</td><td class="memItemRight" valign="bottom"><b>get_size_of_parameter</b> (const std::string &amp;name) const</td></tr>
 <tr class="separator:a179b8199d1b0b389cb23707e11149d8e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3f143d68e16a4e330140173986db8266" id="r_a3f143d68e16a4e330140173986db8266"><td class="memItemLeft" align="right" valign="top"><a id="a3f143d68e16a4e330140173986db8266" name="a3f143d68e16a4e330140173986db8266"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>lock_structure</b> () noexcept</td></tr>
+<tr class="separator:a3f143d68e16a4e330140173986db8266"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aafbd01de6c1aece82edd490f79dd5086" id="r_aafbd01de6c1aece82edd490f79dd5086"><td class="memItemLeft" align="right" valign="top"><a id="aafbd01de6c1aece82edd490f79dd5086" name="aafbd01de6c1aece82edd490f79dd5086"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>unlock_structure</b> () noexcept</td></tr>
+<tr class="separator:aafbd01de6c1aece82edd490f79dd5086"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a310c1c886c7383aee7132aaab5f66c77" id="r_a310c1c886c7383aee7132aaab5f66c77"><td class="memItemLeft" align="right" valign="top"><a id="a310c1c886c7383aee7132aaab5f66c77" name="a310c1c886c7383aee7132aaab5f66c77"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>is_structure_locked</b> () const noexcept</td></tr>
+<tr class="separator:a310c1c886c7383aee7132aaab5f66c77"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2a886181fe64738aa1a223ef1de872ff" id="r_a2a886181fe64738aa1a223ef1de872ff"><td class="memItemLeft" align="right" valign="top"><a id="a2a886181fe64738aa1a223ef1de872ff" name="a2a886181fe64738aa1a223ef1de872ff"></a>
+std::uint64_t&#160;</td><td class="memItemRight" valign="bottom"><b>get_structure_version</b> () const noexcept</td></tr>
+<tr class="separator:a2a886181fe64738aa1a223ef1de872ff"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:afd646dcf50091b2b5eff33b56c5b3a69" id="r_afd646dcf50091b2b5eff33b56c5b3a69"><td class="memItemLeft" align="right" valign="top"><a id="afd646dcf50091b2b5eff33b56c5b3a69" name="afd646dcf50091b2b5eff33b56c5b3a69"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>contains</b> (const std::string &amp;name) const noexcept</td></tr>
 <tr class="separator:afd646dcf50091b2b5eff33b56c5b3a69"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7123a008b25630e95127b237b56ed194" id="r_a7123a008b25630e95127b237b56ed194"><td class="memItemLeft" align="right" valign="top"><a id="a7123a008b25630e95127b237b56ed194" name="a7123a008b25630e95127b237b56ed194"></a>
 std::size_t&#160;</td><td class="memItemRight" valign="bottom"><b>size</b> () const noexcept</td></tr>
 <tr class="separator:a7123a008b25630e95127b237b56ed194"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a21cafe79f0ec37cc6902714f5b84ad1a" id="r_a21cafe79f0ec37cc6902714f5b84ad1a"><td class="memItemLeft" align="right" valign="top"><a id="a21cafe79f0ec37cc6902714f5b84ad1a" name="a21cafe79f0ec37cc6902714f5b84ad1a"></a>
-const ParametersDict &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>data</b> () const noexcept</td></tr>
-<tr class="separator:a21cafe79f0ec37cc6902714f5b84ad1a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5c2ad1b31b69d899af96d65a4ae3c92d" id="r_a5c2ad1b31b69d899af96d65a4ae3c92d"><td class="memItemLeft" align="right" valign="top"><a id="a5c2ad1b31b69d899af96d65a4ae3c92d" name="a5c2ad1b31b69d899af96d65a4ae3c92d"></a>
+const ParametersDict &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>data</b> () const</td></tr>
+<tr class="separator:a5c2ad1b31b69d899af96d65a4ae3c92d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pri-methods" name="pri-methods"></a>
+Private Member Functions</h2></td></tr>
+<tr class="memitem:a98b298a6f4b3e2e87e5581fdfc326f53" id="r_a98b298a6f4b3e2e87e5581fdfc326f53"><td class="memItemLeft" align="right" valign="top"><a id="a98b298a6f4b3e2e87e5581fdfc326f53" name="a98b298a6f4b3e2e87e5581fdfc326f53"></a>
+<a class="el" href="structpycanha_1_1Parameters_1_1ParameterSlot.html">ParameterSlot</a> *&#160;</td><td class="memItemRight" valign="bottom"><b>find_slot</b> (const std::string &amp;name) noexcept</td></tr>
+<tr class="separator:a98b298a6f4b3e2e87e5581fdfc326f53"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a13bb87993d90799072032409e7d60aa5" id="r_a13bb87993d90799072032409e7d60aa5"><td class="memItemLeft" align="right" valign="top"><a id="a13bb87993d90799072032409e7d60aa5" name="a13bb87993d90799072032409e7d60aa5"></a>
+const <a class="el" href="structpycanha_1_1Parameters_1_1ParameterSlot.html">ParameterSlot</a> *&#160;</td><td class="memItemRight" valign="bottom"><b>find_slot</b> (const std::string &amp;name) const noexcept</td></tr>
+<tr class="separator:a13bb87993d90799072032409e7d60aa5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af48737e607788b5ad33e68442e1ba49c" id="r_af48737e607788b5ad33e68442e1ba49c"><td class="memItemLeft" align="right" valign="top"><a id="af48737e607788b5ad33e68442e1ba49c" name="af48737e607788b5ad33e68442e1ba49c"></a>
+<a class="el" href="structpycanha_1_1Parameters_1_1ParameterSlot.html">ParameterSlot</a> *&#160;</td><td class="memItemRight" valign="bottom"><b>find_slot</b> (Index idx) noexcept</td></tr>
+<tr class="separator:af48737e607788b5ad33e68442e1ba49c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7124009c46e8ac766827d3244e49f8e5" id="r_a7124009c46e8ac766827d3244e49f8e5"><td class="memItemLeft" align="right" valign="top"><a id="a7124009c46e8ac766827d3244e49f8e5" name="a7124009c46e8ac766827d3244e49f8e5"></a>
+const <a class="el" href="structpycanha_1_1Parameters_1_1ParameterSlot.html">ParameterSlot</a> *&#160;</td><td class="memItemRight" valign="bottom"><b>find_slot</b> (Index idx) const noexcept</td></tr>
+<tr class="separator:a7124009c46e8ac766827d3244e49f8e5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a77875f8095cabd66ad8cea00aa45ca6a" id="r_a77875f8095cabd66ad8cea00aa45ca6a"><td class="memItemLeft" align="right" valign="top"><a id="a77875f8095cabd66ad8cea00aa45ca6a" name="a77875f8095cabd66ad8cea00aa45ca6a"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>invalidate_data_cache</b> () const noexcept</td></tr>
+<tr class="separator:a77875f8095cabd66ad8cea00aa45ca6a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5a0b290ed0366e23fb44cf2bca4473ca" id="r_a5a0b290ed0366e23fb44cf2bca4473ca"><td class="memItemLeft" align="right" valign="top"><a id="a5a0b290ed0366e23fb44cf2bca4473ca" name="a5a0b290ed0366e23fb44cf2bca4473ca"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>mark_structural_change</b> () noexcept</td></tr>
+<tr class="separator:a5a0b290ed0366e23fb44cf2bca4473ca"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pri-static-methods" name="pri-static-methods"></a>
+Static Private Member Functions</h2></td></tr>
+<tr class="memitem:ad4d54e40740961d829ce4ca777841166" id="r_ad4d54e40740961d829ce4ca777841166"><td class="memItemLeft" align="right" valign="top"><a id="ad4d54e40740961d829ce4ca777841166" name="ad4d54e40740961d829ce4ca777841166"></a>
+static ThermalValue&#160;</td><td class="memItemRight" valign="bottom"><b>missing_parameter_value</b> ()</td></tr>
+<tr class="separator:ad4d54e40740961d829ce4ca777841166"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pri-attribs" name="pri-attribs"></a>
 Private Attributes</h2></td></tr>
-<tr class="memitem:a3cf4cee92e30385f5d10ce210e573c5c" id="r_a3cf4cee92e30385f5d10ce210e573c5c"><td class="memItemLeft" align="right" valign="top"><a id="a3cf4cee92e30385f5d10ce210e573c5c" name="a3cf4cee92e30385f5d10ce210e573c5c"></a>
-ParametersDict&#160;</td><td class="memItemRight" valign="bottom"><b>_parameters</b></td></tr>
-<tr class="separator:a3cf4cee92e30385f5d10ce210e573c5c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab93257d53e08f69a9a2ca09d0bd5f9b0" id="r_ab93257d53e08f69a9a2ca09d0bd5f9b0"><td class="memItemLeft" align="right" valign="top"><a id="ab93257d53e08f69a9a2ca09d0bd5f9b0" name="ab93257d53e08f69a9a2ca09d0bd5f9b0"></a>
+std::unordered_map&lt; std::string, std::size_t &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>_name_to_slot</b></td></tr>
+<tr class="separator:ab93257d53e08f69a9a2ca09d0bd5f9b0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af2ed6aaae328c5e36d4b6d5325f141bc" id="r_af2ed6aaae328c5e36d4b6d5325f141bc"><td class="memItemLeft" align="right" valign="top"><a id="af2ed6aaae328c5e36d4b6d5325f141bc" name="af2ed6aaae328c5e36d4b6d5325f141bc"></a>
+std::deque&lt; <a class="el" href="structpycanha_1_1Parameters_1_1ParameterSlot.html">ParameterSlot</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>_slots</b></td></tr>
+<tr class="separator:af2ed6aaae328c5e36d4b6d5325f141bc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a345d9bc681137f7728ee89a0b3ece8bf" id="r_a345d9bc681137f7728ee89a0b3ece8bf"><td class="memItemLeft" align="right" valign="top"><a id="a345d9bc681137f7728ee89a0b3ece8bf" name="a345d9bc681137f7728ee89a0b3ece8bf"></a>
+std::size_t&#160;</td><td class="memItemRight" valign="bottom"><b>_active_size</b> {0U}</td></tr>
+<tr class="separator:a345d9bc681137f7728ee89a0b3ece8bf"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acba9ebc130be07df2cca61e9cfb8066b" id="r_acba9ebc130be07df2cca61e9cfb8066b"><td class="memItemLeft" align="right" valign="top"><a id="acba9ebc130be07df2cca61e9cfb8066b" name="acba9ebc130be07df2cca61e9cfb8066b"></a>
+ParametersDict&#160;</td><td class="memItemRight" valign="bottom"><b>_data_cache</b></td></tr>
+<tr class="separator:acba9ebc130be07df2cca61e9cfb8066b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a68cde768aa0c97fcc332b84d5c88fef9" id="r_a68cde768aa0c97fcc332b84d5c88fef9"><td class="memItemLeft" align="right" valign="top"><a id="a68cde768aa0c97fcc332b84d5c88fef9" name="a68cde768aa0c97fcc332b84d5c88fef9"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>_data_cache_dirty</b> {true}</td></tr>
+<tr class="separator:a68cde768aa0c97fcc332b84d5c88fef9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7b650a6306401b1784f6811c729ac4a7" id="r_a7b650a6306401b1784f6811c729ac4a7"><td class="memItemLeft" align="right" valign="top"><a id="a7b650a6306401b1784f6811c729ac4a7" name="a7b650a6306401b1784f6811c729ac4a7"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>_structure_locked</b> {false}</td></tr>
+<tr class="separator:a7b650a6306401b1784f6811c729ac4a7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa8533e5bfeb79af48df5e902b8e2f67e" id="r_aa8533e5bfeb79af48df5e902b8e2f67e"><td class="memItemLeft" align="right" valign="top"><a id="aa8533e5bfeb79af48df5e902b8e2f67e" name="aa8533e5bfeb79af48df5e902b8e2f67e"></a>
+std::uint64_t&#160;</td><td class="memItemRight" valign="bottom"><b>_structure_version</b> {0U}</td></tr>
+<tr class="separator:aa8533e5bfeb79af48df5e902b8e2f67e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <hr/>The documentation for this class was generated from the following files:<ul>
 <li>pycanha-core/include/pycanha-core/parameters/<a class="el" href="parameters_8hpp_source.html">parameters.hpp</a></li>

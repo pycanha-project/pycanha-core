@@ -27,7 +27,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.11</span>
+   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.12</span>
    </div>
    <div id="projectbrief">The C++ core of pycanha</div>
   </td>
@@ -229,9 +229,9 @@ Private Member Functions</h2></td></tr>
 <tr class="memitem:aa558e9d6ff382d083ab0931230726f22" id="r_aa558e9d6ff382d083ab0931230726f22"><td class="memItemLeft" align="right" valign="top"><a id="aa558e9d6ff382d083ab0931230726f22" name="aa558e9d6ff382d083ab0931230726f22"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>collect_parameter_names</b> ()</td></tr>
 <tr class="separator:aa558e9d6ff382d083ab0931230726f22"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2b893e476bdd47fb31a9c6cba0ec6722" id="r_a2b893e476bdd47fb31a9c6cba0ec6722"><td class="memItemLeft" align="right" valign="top"><a id="a2b893e476bdd47fb31a9c6cba0ec6722" name="a2b893e476bdd47fb31a9c6cba0ec6722"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>fill_matrices</b> (<a class="el" href="classpycanha_1_1ThermalEntity.html">ThermalEntity</a> &amp;entity, Index parameter_index, double derivative_value)</td></tr>
-<tr class="separator:a2b893e476bdd47fb31a9c6cba0ec6722"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5f02f1bde43eb5edafada08e908f38e7" id="r_a5f02f1bde43eb5edafada08e908f38e7"><td class="memItemLeft" align="right" valign="top"><a id="a5f02f1bde43eb5edafada08e908f38e7" name="a5f02f1bde43eb5edafada08e908f38e7"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>fill_matrices</b> (const <a class="el" href="classpycanha_1_1Entity.html">Entity</a> &amp;entity, Index parameter_index, double derivative_value)</td></tr>
+<tr class="separator:a5f02f1bde43eb5edafada08e908f38e7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a62dfbe49018849f0e338e45af0a40354" id="r_a62dfbe49018849f0e338e45af0a40354"><td class="memItemLeft" align="right" valign="top"><a id="a62dfbe49018849f0e338e45af0a40354" name="a62dfbe49018849f0e338e45af0a40354"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>build_mk</b> ()</td></tr>
 <tr class="separator:a62dfbe49018849f0e338e45af0a40354"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -325,6 +325,12 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>callback_transient_ti
 <tr class="memitem:ae533dff363bcc38fa54a1a6633059ab9 inherit pro_methods_classpycanha_1_1Solver" id="r_ae533dff363bcc38fa54a1a6633059ab9"><td class="memItemLeft" align="right" valign="top">
 void&#160;</td><td class="memItemRight" valign="bottom"><b>callback_transient_after_timestep</b> ()</td></tr>
 <tr class="separator:ae533dff363bcc38fa54a1a6633059ab9 inherit pro_methods_classpycanha_1_1Solver"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae5c9aa81d1a24dd37d59e4d6a3f29064 inherit pro_methods_classpycanha_1_1Solver" id="r_ae5c9aa81d1a24dd37d59e4d6a3f29064"><td class="memItemLeft" align="right" valign="top">
+void&#160;</td><td class="memItemRight" valign="bottom"><b>prepare_formulas_for_execution</b> ()</td></tr>
+<tr class="separator:ae5c9aa81d1a24dd37d59e4d6a3f29064 inherit pro_methods_classpycanha_1_1Solver"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9c0ab96ed621b3cedfbcaa8677692ec3 inherit pro_methods_classpycanha_1_1Solver" id="r_a9c0ab96ed621b3cedfbcaa8677692ec3"><td class="memItemLeft" align="right" valign="top">
+void&#160;</td><td class="memItemRight" valign="bottom"><b>release_formulas_after_execution</b> () noexcept</td></tr>
+<tr class="separator:a9c0ab96ed621b3cedfbcaa8677692ec3 inherit pro_methods_classpycanha_1_1Solver"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ade9cef12ff469684b8f2434fb271f47e inherit pro_methods_classpycanha_1_1Solver" id="r_ade9cef12ff469684b8f2434fb271f47e"><td class="memItemLeft" align="right" valign="top">
 void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize_common</b> ()</td></tr>
 <tr class="separator:ade9cef12ff469684b8f2434fb271f47e inherit pro_methods_classpycanha_1_1Solver"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -390,9 +396,6 @@ int&#160;</td><td class="memItemRight" valign="bottom"><b>wait_n_dtimes</b> = 0<
 <tr class="memitem:a6fdd8708134e3d1f82b93b4e13442bbd inherit pro_attribs_classpycanha_1_1TransientSolver" id="r_a6fdd8708134e3d1f82b93b4e13442bbd"><td class="memItemLeft" align="right" valign="top">
 int&#160;</td><td class="memItemRight" valign="bottom"><b>idata_out</b> = 0</td></tr>
 <tr class="separator:a6fdd8708134e3d1f82b93b4e13442bbd inherit pro_attribs_classpycanha_1_1TransientSolver"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad80cbba8e4483691ff5f0c2871c90d83 inherit pro_attribs_classpycanha_1_1TransientSolver" id="r_ad80cbba8e4483691ff5f0c2871c90d83"><td class="memItemLeft" align="right" valign="top">
-double *&#160;</td><td class="memItemRight" valign="bottom"><b>output_data</b> = nullptr</td></tr>
-<tr class="separator:ad80cbba8e4483691ff5f0c2871c90d83 inherit pro_attribs_classpycanha_1_1TransientSolver"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac80e285845989a55185a701058de9a69 inherit pro_attribs_classpycanha_1_1TransientSolver" id="r_ac80e285845989a55185a701058de9a69"><td class="memItemLeft" align="right" valign="top">
 std::string&#160;</td><td class="memItemRight" valign="bottom"><b>output_table_name</b></td></tr>
 <tr class="separator:ac80e285845989a55185a701058de9a69 inherit pro_attribs_classpycanha_1_1TransientSolver"><td class="memSeparator" colspan="2">&#160;</td></tr>
