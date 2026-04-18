@@ -45,37 +45,36 @@ enum class RealNodeAttrIndex : std::uint8_t {
 
 struct TMDNodeAttributeInfo {
     RealNodeAttrIndex attr_index;
-    bool convert_to_kelvin;
 };
 
 TMDNodeAttributeInfo get_tmd_node_attribute_info(DataModelAttribute attribute) {
     switch (attribute) {
         case DataModelAttribute::T:
-            return {RealNodeAttrIndex::T, true};
+            return {RealNodeAttrIndex::T};
         case DataModelAttribute::C:
-            return {RealNodeAttrIndex::C, false};
+            return {RealNodeAttrIndex::C};
         case DataModelAttribute::QA:
-            return {RealNodeAttrIndex::QA, false};
+            return {RealNodeAttrIndex::QA};
         case DataModelAttribute::QE:
-            return {RealNodeAttrIndex::QE, false};
+            return {RealNodeAttrIndex::QE};
         case DataModelAttribute::QI:
-            return {RealNodeAttrIndex::QI, false};
+            return {RealNodeAttrIndex::QI};
         case DataModelAttribute::QR:
-            return {RealNodeAttrIndex::QR, false};
+            return {RealNodeAttrIndex::QR};
         case DataModelAttribute::QS:
-            return {RealNodeAttrIndex::QS, false};
+            return {RealNodeAttrIndex::QS};
         case DataModelAttribute::A:
-            return {RealNodeAttrIndex::A, false};
+            return {RealNodeAttrIndex::A};
         case DataModelAttribute::APH:
-            return {RealNodeAttrIndex::APH, false};
+            return {RealNodeAttrIndex::APH};
         case DataModelAttribute::EPS:
-            return {RealNodeAttrIndex::EPS, false};
+            return {RealNodeAttrIndex::EPS};
         case DataModelAttribute::FX:
-            return {RealNodeAttrIndex::FX, false};
+            return {RealNodeAttrIndex::FX};
         case DataModelAttribute::FY:
-            return {RealNodeAttrIndex::FY, false};
+            return {RealNodeAttrIndex::FY};
         case DataModelAttribute::FZ:
-            return {RealNodeAttrIndex::FZ, false};
+            return {RealNodeAttrIndex::FZ};
         case DataModelAttribute::KL:
         case DataModelAttribute::KR:
         case DataModelAttribute::JAC:
@@ -83,6 +82,17 @@ TMDNodeAttributeInfo get_tmd_node_attribute_info(DataModelAttribute attribute) {
     }
 
     throw std::invalid_argument("Unsupported TMD node attribute.");
+}
+
+double read_tabs(const H5::Group& analysis_group) {
+    if (!analysis_group.attrExists("TAbs")) {
+        throw std::runtime_error("AnalysisSet1 is missing the TAbs attribute.");
+    }
+
+    H5::Attribute tabs_attribute = analysis_group.openAttribute("TAbs");
+    double tabs = 0.0;
+    tabs_attribute.read(H5::PredType::NATIVE_DOUBLE, &tabs);
+    return tabs;
 }
 
 void validate_transient_model_request(
@@ -301,6 +311,7 @@ std::vector<Index> read_tmd_transient(
     H5::DataSet node_string_data_dataset =
         data_group.openDataSet("thermalNodesStringData");
     H5::DataSet times_dataset = data_group.openDataSet("times");
+    const double tabs = read_tabs(analysis_group);
 
     const std::vector<int> node_numbers =
         read_int_column_2d(nodes_dataset, 0, "thermalNodes");
@@ -342,8 +353,8 @@ std::vector<Index> read_tmd_transient(
                 values.data(), num_timesteps, num_nodes);
             series.values() = values_map;
         }
-        if (info.convert_to_kelvin) {
-            series.values().array() += 273.15;
+        if (attribute == DataModelAttribute::T) {
+            series.values().array() += tabs;
         }
     }
 
@@ -370,6 +381,7 @@ void ESATANReader::read_tmd(const std::string& filepath) {
         data_group.openDataSet("thermalNodesStringData");
     H5::DataSet gl_data_dataset = data_group.openDataSet("conductorDataGL");
     H5::DataSet gr_data_dataset = data_group.openDataSet("conductorDataGR");
+    const double tabs = read_tabs(analysis_group);
 
     const std::vector<int> node_numbers =
         read_int_column_2d(nodes_dataset, 0, "thermalNodes");
@@ -407,7 +419,7 @@ void ESATANReader::read_tmd(const std::string& filepath) {
 
         node.set_T(
             node_attrs[static_cast<std::size_t>(RealNodeAttrIndex::T)][i] +
-            273.15);
+            tabs);
         node.set_C(
             node_attrs[static_cast<std::size_t>(RealNodeAttrIndex::C)][i]);
         node.set_qa(
