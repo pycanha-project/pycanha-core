@@ -88,6 +88,46 @@ class DataModel {
 
     [[nodiscard]] std::vector<DataModelAttribute> populated_attributes() const;
 
+    [[nodiscard]] Eigen::MatrixXd flow_conductive(Index node_num_1,
+                                                  Index node_num_2) const;
+    [[nodiscard]] Eigen::MatrixXd flow_conductive(
+        const std::vector<Index>& node_nums_1,
+        const std::vector<Index>& node_nums_2) const;
+    [[nodiscard]] Eigen::MatrixXd flow_conductive(Index node_num_1,
+                                                  Index node_num_2,
+                                                  double time) const;
+    [[nodiscard]] Eigen::MatrixXd flow_conductive(
+        const std::vector<Index>& node_nums_1,
+        const std::vector<Index>& node_nums_2, double time) const;
+    [[nodiscard]] Eigen::MatrixXd flow_conductive(Index node_num_1,
+                                                  Index node_num_2,
+                                                  double start_time,
+                                                  double end_time) const;
+    [[nodiscard]] Eigen::MatrixXd flow_conductive(
+        const std::vector<Index>& node_nums_1,
+        const std::vector<Index>& node_nums_2, double start_time,
+        double end_time) const;
+
+    [[nodiscard]] Eigen::MatrixXd flow_radiative(Index node_num_1,
+                                                 Index node_num_2) const;
+    [[nodiscard]] Eigen::MatrixXd flow_radiative(
+        const std::vector<Index>& node_nums_1,
+        const std::vector<Index>& node_nums_2) const;
+    [[nodiscard]] Eigen::MatrixXd flow_radiative(Index node_num_1,
+                                                 Index node_num_2,
+                                                 double time) const;
+    [[nodiscard]] Eigen::MatrixXd flow_radiative(
+        const std::vector<Index>& node_nums_1,
+        const std::vector<Index>& node_nums_2, double time) const;
+    [[nodiscard]] Eigen::MatrixXd flow_radiative(Index node_num_1,
+                                                 Index node_num_2,
+                                                 double start_time,
+                                                 double end_time) const;
+    [[nodiscard]] Eigen::MatrixXd flow_radiative(
+        const std::vector<Index>& node_nums_1,
+        const std::vector<Index>& node_nums_2, double start_time,
+        double end_time) const;
+
   private:
     DenseTimeSeries _T;
     DenseTimeSeries _C;

@@ -1,7 +1,10 @@
 #include "pycanha-core/thermaldata/data_model.hpp"
 
+#include <algorithm>
 #include <array>
+#include <cmath>
 #include <stdexcept>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -13,6 +16,8 @@
 namespace pycanha {
 namespace {
 
+using SparseMatrixType = SparseTimeSeries::SparseMatrixType;
+
 constexpr std::array<DataModelAttribute, 16> k_all_attributes = {
     DataModelAttribute::T,   DataModelAttribute::C,  DataModelAttribute::QS,
     DataModelAttribute::QA,  DataModelAttribute::QE, DataModelAttribute::QI,
@@ -21,6 +26,258 @@ constexpr std::array<DataModelAttribute, 16> k_all_attributes = {
     DataModelAttribute::FZ,  DataModelAttribute::KL, DataModelAttribute::KR,
     DataModelAttribute::JAC,
 };
+
+Index find_node_column(const std::vector<Index>& node_numbers, Index node_num) {
+    const auto iterator =
+        std::find(node_numbers.begin(), node_numbers.end(), node_num);
+    if (iterator == node_numbers.end()) {
+        throw std::invalid_argument(
+            "Requested node is not present in DataModel");
+    }
+
+    return static_cast<Index>(std::distance(node_numbers.begin(), iterator));
+}
+
+void validate_flow_inputs(const DataModel& model,
+                          const SparseTimeSeries& coupling_series,
+                          const char* coupling_name) {
+    if (model.T().num_timesteps() == 0) {
+        throw std::runtime_error("Temperature series has no data");
+    }
+    if (coupling_series.num_timesteps() == 0) {
+        throw std::runtime_error(std::string(coupling_name) +
+                                 " series has no data");
+    }
+    if (model.T().num_columns() != to_idx(model.node_numbers().size())) {
+        throw std::runtime_error(
+            "Temperature column count does not match DataModel node mapping");
+    }
+    if ((coupling_series.rows() != model.T().num_columns()) ||
+        (coupling_series.cols() != model.T().num_columns())) {
+        throw std::runtime_error(std::string(coupling_name) +
+                                 " matrix dimensions do not match "
+                                 "temperature series columns");
+    }
+}
+
+Index find_floor_time_index(const Eigen::VectorXd& times, double time) {
+    if (times.size() == 0) {
+        throw std::runtime_error("Time series has no samples");
+    }
+
+    const double* begin = times.data();
+    const double* end = begin + times.size();
+    const double* upper_bound = std::upper_bound(begin, end, time + TOL);
+    if (upper_bound == begin) {
+        throw std::out_of_range("Requested time is before the first sample");
+    }
+
+    return static_cast<Index>(std::distance(begin, upper_bound) - 1);
+}
+
+Index find_ceil_time_index(const Eigen::VectorXd& times, double time) {
+    if (times.size() == 0) {
+        throw std::runtime_error("Time series has no samples");
+    }
+
+    const double* begin = times.data();
+    const double* end = begin + times.size();
+    const double* lower_bound = std::lower_bound(begin, end, time - TOL);
+    if (lower_bound == end) {
+        throw std::out_of_range("Requested time is after the last sample");
+    }
+
+    return static_cast<Index>(std::distance(begin, lower_bound));
+}
+
+std::vector<Index> build_time_row_selection(const DenseTimeSeries& temperature,
+                                            double start_time,
+                                            double end_time) {
+    if (end_time < start_time) {
+        throw std::invalid_argument("end_time must be greater than start_time");
+    }
+
+    const Index start_row =
+        find_floor_time_index(temperature.times(), start_time);
+    const Index end_row = find_ceil_time_index(temperature.times(), end_time);
+    std::vector<Index> rows;
+    rows.reserve(to_sizet(end_row - start_row + 1));
+
+    for (Index row = start_row; row <= end_row; ++row) {
+        rows.push_back(row);
+    }
+
+    return rows;
+}
+
+Index find_matching_sparse_time_index(const SparseTimeSeries& series,
+                                      double time, const char* series_name) {
+    const Eigen::VectorXd& times = series.times();
+    if (times.size() == 0) {
+        throw std::runtime_error(std::string(series_name) +
+                                 " series has no samples");
+    }
+
+    const double* begin = times.data();
+    const double* end = begin + times.size();
+    const double* lower_bound = std::lower_bound(begin, end, time);
+
+    if ((lower_bound != end) && (std::abs(*lower_bound - time) <= TOL)) {
+        return static_cast<Index>(std::distance(begin, lower_bound));
+    }
+    if ((lower_bound != begin) &&
+        (std::abs(*(lower_bound - 1) - time) <= TOL)) {
+        return static_cast<Index>(std::distance(begin, lower_bound) - 1);
+    }
+
+    throw std::runtime_error(std::string(series_name) +
+                             " times do not match the resolved "
+                             "temperature times");
+}
+
+std::vector<Index> build_sparse_row_selection(
+    const DenseTimeSeries& temperature, const SparseTimeSeries& coupling,
+    const std::vector<Index>& rows, const char* series_name) {
+    std::vector<Index> sparse_rows;
+    sparse_rows.reserve(rows.size());
+
+    for (const Index row : rows) {
+        sparse_rows.push_back(find_matching_sparse_time_index(
+            coupling, temperature.times()(row), series_name));
+    }
+
+    return sparse_rows;
+}
+
+template <typename FlowFunction>
+double sum_group_flow(const std::vector<Index>& node_columns_1,
+                      const std::vector<Index>& node_columns_2,
+                      const FlowFunction& flow_function) {
+    double total_flow = 0.0;
+    for (const Index node_column_1 : node_columns_1) {
+        for (const Index node_column_2 : node_columns_2) {
+            total_flow += flow_function(node_column_1, node_column_2);
+        }
+    }
+
+    return total_flow;
+}
+
+double conductive_pair_flow(const DenseTimeSeries& temperature,
+                            const SparseMatrixType& conductance,
+                            Index temperature_row, Index node_column_1,
+                            Index node_column_2) {
+    if (node_column_1 == node_column_2) {
+        return 0.0;
+    }
+
+    const double temperature_1 =
+        temperature.values()(temperature_row, node_column_1);
+    const double temperature_2 =
+        temperature.values()(temperature_row, node_column_2);
+    const double coupling_value =
+        conductance.coeff(node_column_1, node_column_2);
+
+    return coupling_value * (temperature_2 - temperature_1);
+}
+
+double radiative_pair_flow(const DenseTimeSeries& temperature,
+                           const SparseMatrixType& conductance,
+                           Index temperature_row, Index node_column_1,
+                           Index node_column_2) {
+    if (node_column_1 == node_column_2) {
+        return 0.0;
+    }
+
+    const double temperature_1 =
+        temperature.values()(temperature_row, node_column_1);
+    const double temperature_2 =
+        temperature.values()(temperature_row, node_column_2);
+    const double coupling_value =
+        conductance.coeff(node_column_1, node_column_2);
+
+    return coupling_value * STF_BOLTZ *
+           (std::pow(temperature_2, 4) - std::pow(temperature_1, 4));
+}
+
+template <typename FlowFunction>
+Eigen::MatrixXd compute_flow_matrix(const DenseTimeSeries& temperature,
+                                    const SparseTimeSeries& coupling,
+                                    const std::vector<Index>& temperature_rows,
+                                    const std::vector<Index>& sparse_rows,
+                                    const std::vector<Index>& node_columns_1,
+                                    const std::vector<Index>& node_columns_2,
+                                    const FlowFunction& flow_function) {
+    Eigen::MatrixXd output(static_cast<Index>(temperature_rows.size()), 2);
+
+    for (Index output_row = 0;
+         output_row < static_cast<Index>(temperature_rows.size());
+         ++output_row) {
+        const Index temperature_row = temperature_rows.at(to_sizet(output_row));
+        const Index sparse_row = sparse_rows.at(to_sizet(output_row));
+        const auto& matrix = coupling.at(sparse_row);
+        output(output_row, 0) = temperature.times()(temperature_row);
+        output(output_row, 1) = sum_group_flow(
+            node_columns_1, node_columns_2,
+            [&](Index node_column_1, Index node_column_2) {
+                return flow_function(temperature, matrix, temperature_row,
+                                     node_column_1, node_column_2);
+            });
+    }
+
+    return output;
+}
+
+std::vector<Index> resolve_node_columns(
+    const DataModel& model, const std::vector<Index>& node_numbers) {
+    std::vector<Index> node_columns;
+    node_columns.reserve(node_numbers.size());
+    for (const Index node_num : node_numbers) {
+        node_columns.push_back(
+            find_node_column(model.node_numbers(), node_num));
+    }
+
+    return node_columns;
+}
+
+template <typename FlowFunction>
+Eigen::MatrixXd compute_single_time_flow(const DataModel& model,
+                                         const SparseTimeSeries& coupling,
+                                         const std::vector<Index>& node_nums_1,
+                                         const std::vector<Index>& node_nums_2,
+                                         Index temperature_row,
+                                         const char* series_name,
+                                         const FlowFunction& flow_function) {
+    validate_flow_inputs(model, coupling, series_name);
+    const std::vector<Index> temperature_rows{temperature_row};
+    const std::vector<Index> sparse_rows = build_sparse_row_selection(
+        model.T(), coupling, temperature_rows, series_name);
+
+    return compute_flow_matrix(
+        model.T(), coupling, temperature_rows, sparse_rows,
+        resolve_node_columns(model, node_nums_1),
+        resolve_node_columns(model, node_nums_2), flow_function);
+}
+
+template <typename FlowFunction>
+Eigen::MatrixXd compute_range_flow(const DataModel& model,
+                                   const SparseTimeSeries& coupling,
+                                   const std::vector<Index>& node_nums_1,
+                                   const std::vector<Index>& node_nums_2,
+                                   double start_time, double end_time,
+                                   const char* series_name,
+                                   const FlowFunction& flow_function) {
+    validate_flow_inputs(model, coupling, series_name);
+    const std::vector<Index> temperature_rows =
+        build_time_row_selection(model.T(), start_time, end_time);
+    const std::vector<Index> sparse_rows = build_sparse_row_selection(
+        model.T(), coupling, temperature_rows, series_name);
+
+    return compute_flow_matrix(
+        model.T(), coupling, temperature_rows, sparse_rows,
+        resolve_node_columns(model, node_nums_1),
+        resolve_node_columns(model, node_nums_2), flow_function);
+}
 
 }  // namespace
 
@@ -283,6 +540,99 @@ std::vector<DataModelAttribute> DataModel::populated_attributes() const {
     }
 
     return attributes;
+}
+
+Eigen::MatrixXd DataModel::flow_conductive(Index node_num_1,
+                                           Index node_num_2) const {
+    return flow_conductive(std::vector<Index>{node_num_1},
+                           std::vector<Index>{node_num_2});
+}
+
+Eigen::MatrixXd DataModel::flow_conductive(
+    const std::vector<Index>& node_nums_1,
+    const std::vector<Index>& node_nums_2) const {
+    return compute_single_time_flow(*this, conductive_couplings(), node_nums_1,
+                                    node_nums_2, 0, "Conductive coupling",
+                                    conductive_pair_flow);
+}
+
+Eigen::MatrixXd DataModel::flow_conductive(Index node_num_1, Index node_num_2,
+                                           double time) const {
+    return flow_conductive(std::vector<Index>{node_num_1},
+                           std::vector<Index>{node_num_2}, time);
+}
+
+Eigen::MatrixXd DataModel::flow_conductive(
+    const std::vector<Index>& node_nums_1,
+    const std::vector<Index>& node_nums_2, double time) const {
+    validate_flow_inputs(*this, conductive_couplings(), "Conductive coupling");
+    return compute_single_time_flow(
+        *this, conductive_couplings(), node_nums_1, node_nums_2,
+        find_floor_time_index(T().times(), time), "Conductive coupling",
+        conductive_pair_flow);
+}
+
+Eigen::MatrixXd DataModel::flow_conductive(Index node_num_1, Index node_num_2,
+                                           double start_time,
+                                           double end_time) const {
+    return flow_conductive(std::vector<Index>{node_num_1},
+                           std::vector<Index>{node_num_2}, start_time,
+                           end_time);
+}
+
+Eigen::MatrixXd DataModel::flow_conductive(
+    const std::vector<Index>& node_nums_1,
+    const std::vector<Index>& node_nums_2, double start_time,
+    double end_time) const {
+    return compute_range_flow(*this, conductive_couplings(), node_nums_1,
+                              node_nums_2, start_time, end_time,
+                              "Conductive coupling", conductive_pair_flow);
+}
+
+Eigen::MatrixXd DataModel::flow_radiative(Index node_num_1,
+                                          Index node_num_2) const {
+    return flow_radiative(std::vector<Index>{node_num_1},
+                          std::vector<Index>{node_num_2});
+}
+
+Eigen::MatrixXd DataModel::flow_radiative(
+    const std::vector<Index>& node_nums_1,
+    const std::vector<Index>& node_nums_2) const {
+    return compute_single_time_flow(*this, radiative_couplings(), node_nums_1,
+                                    node_nums_2, 0, "Radiative coupling",
+                                    radiative_pair_flow);
+}
+
+Eigen::MatrixXd DataModel::flow_radiative(Index node_num_1, Index node_num_2,
+                                          double time) const {
+    return flow_radiative(std::vector<Index>{node_num_1},
+                          std::vector<Index>{node_num_2}, time);
+}
+
+Eigen::MatrixXd DataModel::flow_radiative(const std::vector<Index>& node_nums_1,
+                                          const std::vector<Index>& node_nums_2,
+                                          double time) const {
+    validate_flow_inputs(*this, radiative_couplings(), "Radiative coupling");
+    return compute_single_time_flow(*this, radiative_couplings(), node_nums_1,
+                                    node_nums_2,
+                                    find_floor_time_index(T().times(), time),
+                                    "Radiative coupling", radiative_pair_flow);
+}
+
+Eigen::MatrixXd DataModel::flow_radiative(Index node_num_1, Index node_num_2,
+                                          double start_time,
+                                          double end_time) const {
+    return flow_radiative(std::vector<Index>{node_num_1},
+                          std::vector<Index>{node_num_2}, start_time, end_time);
+}
+
+Eigen::MatrixXd DataModel::flow_radiative(const std::vector<Index>& node_nums_1,
+                                          const std::vector<Index>& node_nums_2,
+                                          double start_time,
+                                          double end_time) const {
+    return compute_range_flow(*this, radiative_couplings(), node_nums_1,
+                              node_nums_2, start_time, end_time,
+                              "Radiative coupling", radiative_pair_flow);
 }
 
 }  // namespace pycanha
