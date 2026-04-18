@@ -11,6 +11,7 @@
 #include "pycanha-core/parameters/formulas.hpp"
 #include "pycanha-core/solvers/tscnrlds.hpp"
 #include "pycanha-core/solvers/tscnrlds_jacobian.hpp"
+#include "pycanha-core/thermaldata/dense_matrix_time_series.hpp"
 #include "pycanha-core/thermaldata/dense_time_series.hpp"
 #include "pycanha-core/thermaldata/thermaldata.hpp"
 #include "pycanha-core/tmm/node.hpp"
@@ -110,6 +111,18 @@ Eigen::Index find_time_row(const pycanha::DenseTimeSeries& table,
         "Requested sample time not found in solver output");
 }
 
+Eigen::Index find_time_row(const pycanha::DenseMatrixTimeSeries& table,
+                           double time_value) {
+    for (Eigen::Index row = 0; row < table.num_timesteps(); ++row) {
+        if (std::abs(table.time_at(row) - time_value) < 1.0e-12) {
+            return row;
+        }
+    }
+
+    throw std::runtime_error(
+        "Requested sample time not found in solver output");
+}
+
 void require_temperature_sample(
     const pycanha::DenseTimeSeries& temperature_output, Eigen::Index row,
     const std::array<double, 2>& expected_temperature) {
@@ -121,21 +134,21 @@ void require_temperature_sample(
         Catch::Approx(expected_temperature.at(1)).margin(comparison_tolerance));
 }
 
-void require_jacobian_sample(const pycanha::DenseTimeSeries& jacobian_output,
-                             Eigen::Index row,
-                             const std::array<double, 2>& expected_dk,
-                             const std::array<double, 2>& expected_dc) {
-    REQUIRE(jacobian_output.times()(row) ==
+void require_jacobian_sample(
+    const pycanha::DenseMatrixTimeSeries& jacobian_output, Eigen::Index row,
+    const std::array<double, 2>& expected_dk,
+    const std::array<double, 2>& expected_dc) {
+    REQUIRE(jacobian_output.time_at(row) ==
             Catch::Approx(expected_dk.at(0)).margin(comparison_tolerance));
-    REQUIRE(jacobian_output.values()(row, 0) ==
+    REQUIRE(jacobian_output.at(row)(0, 0) ==
             Catch::Approx(expected_dk.at(1)).margin(comparison_tolerance));
-    REQUIRE(jacobian_output.values()(row, 1) ==
+    REQUIRE(jacobian_output.at(row)(0, 1) ==
             Catch::Approx(expected_dc.at(1)).margin(comparison_tolerance));
 }
 
 void require_python_example_samples(
     const pycanha::DenseTimeSeries& temperature_output,
-    const pycanha::DenseTimeSeries& jacobian_output) {
+    const pycanha::DenseMatrixTimeSeries& jacobian_output) {
     for (std::size_t sample_index = 0; sample_index < sample_times.size();
          ++sample_index) {
         const auto& expected_temperature =
@@ -167,14 +180,14 @@ TEST_CASE("TSCNRLDS_JACOBIAN reproduces the Python example",
     solver.initialize();
     solver.solve();
 
-    REQUIRE(
-        model->thermal_data.has_dense_time_series("TSCNRLDS_JACOBIAN_OUTPUT"));
+    REQUIRE(model->thermal_data.models().has_model("TSCNRLDS"));
 
-    const auto& temperature_output =
-        model->thermal_data.get_dense_time_series("TSCNRLDS_OUTPUT");
-    const auto& jacobian_output =
-        model->thermal_data.get_dense_time_series("TSCNRLDS_JACOBIAN_OUTPUT");
-    REQUIRE(jacobian_output.num_columns() == 2);
+    const auto& output_model =
+        model->thermal_data.models().get_model("TSCNRLDS");
+    const auto& temperature_output = output_model.T();
+    const auto& jacobian_output = output_model.jacobian();
+    REQUIRE(jacobian_output.rows() == 1);
+    REQUIRE(jacobian_output.cols() == 2);
     REQUIRE(jacobian_output.num_timesteps() >= 2);
     REQUIRE(solver.parameter_names().size() == 2);
     REQUIRE(solver.parameter_names().at(0) == "k");

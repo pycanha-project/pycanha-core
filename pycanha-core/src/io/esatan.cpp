@@ -9,12 +9,14 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <iterator>
 #include <stdexcept>
 #include <string>
 #include <unordered_set>
 #include <utility>
 #include <vector>
 
+#include "pycanha-core/thermaldata/data_model.hpp"
 #include "pycanha-core/thermaldata/thermaldata.hpp"
 #include "pycanha-core/tmm/node.hpp"
 #include "pycanha-core/tmm/thermalmathematicalmodel.hpp"
@@ -43,67 +45,63 @@ enum class RealNodeAttrIndex : std::uint8_t {
 
 struct TMDNodeAttributeInfo {
     RealNodeAttrIndex attr_index;
-    const char* suffix;
     bool convert_to_kelvin;
 };
 
-TMDNodeAttributeInfo get_tmd_node_attribute_info(TMDNodeAttribute attribute) {
+TMDNodeAttributeInfo get_tmd_node_attribute_info(DataModelAttribute attribute) {
     switch (attribute) {
-        case TMDNodeAttribute::T:
-            return {RealNodeAttrIndex::T, "T", true};
-        case TMDNodeAttribute::C:
-            return {RealNodeAttrIndex::C, "C", false};
-        case TMDNodeAttribute::QA:
-            return {RealNodeAttrIndex::QA, "QA", false};
-        case TMDNodeAttribute::QE:
-            return {RealNodeAttrIndex::QE, "QE", false};
-        case TMDNodeAttribute::QI:
-            return {RealNodeAttrIndex::QI, "QI", false};
-        case TMDNodeAttribute::QR:
-            return {RealNodeAttrIndex::QR, "QR", false};
-        case TMDNodeAttribute::QS:
-            return {RealNodeAttrIndex::QS, "QS", false};
-        case TMDNodeAttribute::A:
-            return {RealNodeAttrIndex::A, "A", false};
-        case TMDNodeAttribute::APH:
-            return {RealNodeAttrIndex::APH, "APH", false};
-        case TMDNodeAttribute::EPS:
-            return {RealNodeAttrIndex::EPS, "EPS", false};
-        case TMDNodeAttribute::FX:
-            return {RealNodeAttrIndex::FX, "FX", false};
-        case TMDNodeAttribute::FY:
-            return {RealNodeAttrIndex::FY, "FY", false};
-        case TMDNodeAttribute::FZ:
-            return {RealNodeAttrIndex::FZ, "FZ", false};
+        case DataModelAttribute::T:
+            return {RealNodeAttrIndex::T, true};
+        case DataModelAttribute::C:
+            return {RealNodeAttrIndex::C, false};
+        case DataModelAttribute::QA:
+            return {RealNodeAttrIndex::QA, false};
+        case DataModelAttribute::QE:
+            return {RealNodeAttrIndex::QE, false};
+        case DataModelAttribute::QI:
+            return {RealNodeAttrIndex::QI, false};
+        case DataModelAttribute::QR:
+            return {RealNodeAttrIndex::QR, false};
+        case DataModelAttribute::QS:
+            return {RealNodeAttrIndex::QS, false};
+        case DataModelAttribute::A:
+            return {RealNodeAttrIndex::A, false};
+        case DataModelAttribute::APH:
+            return {RealNodeAttrIndex::APH, false};
+        case DataModelAttribute::EPS:
+            return {RealNodeAttrIndex::EPS, false};
+        case DataModelAttribute::FX:
+            return {RealNodeAttrIndex::FX, false};
+        case DataModelAttribute::FY:
+            return {RealNodeAttrIndex::FY, false};
+        case DataModelAttribute::FZ:
+            return {RealNodeAttrIndex::FZ, false};
+        case DataModelAttribute::KL:
+        case DataModelAttribute::KR:
+        case DataModelAttribute::JAC:
+            break;
     }
 
     throw std::invalid_argument("Unsupported TMD node attribute.");
 }
 
-std::string make_transient_series_name(const std::string& table_prefix,
-                                       const char* suffix) {
-    return table_prefix + "_" + suffix;
-}
+void validate_transient_model_request(
+    const ThermalData& thermal_data, const std::string& model_name,
+    bool overwrite, const std::vector<DataModelAttribute>& attributes) {
+    std::unordered_set<DataModelAttribute> requested_attributes;
+    requested_attributes.reserve(attributes.size());
 
-void validate_transient_series_names(
-    const ThermalData& thermal_data, const std::string& table_prefix,
-    bool overwrite, const std::vector<TMDNodeAttribute>& attributes) {
-    std::unordered_set<std::string> target_names;
-    target_names.reserve(attributes.size());
+    const auto has_duplicates = std::ranges::any_of(
+        attributes, [&requested_attributes](const auto attribute) {
+            return !requested_attributes.insert(attribute).second;
+        });
+    if (has_duplicates) {
+        throw std::invalid_argument("Duplicate TMD node attribute requested.");
+    }
 
-    for (const auto attribute : attributes) {
-        const auto info = get_tmd_node_attribute_info(attribute);
-        const std::string target_name =
-            make_transient_series_name(table_prefix, info.suffix);
-
-        if (!target_names.insert(target_name).second) {
-            throw std::invalid_argument(
-                "Duplicate TMD node attribute requested.");
-        }
-        if (!overwrite && thermal_data.has_dense_time_series(target_name)) {
-            throw std::runtime_error("Dense time series '" + target_name +
-                                     "' already exists.");
-        }
+    if (!overwrite && thermal_data.models().has_model(model_name)) {
+        throw std::runtime_error("Data model '" + model_name +
+                                 "' already exists.");
     }
 }
 
@@ -285,12 +283,12 @@ std::vector<int> map_index_links_to_node_numbers(
 
 }  // namespace
 
-std::vector<int> read_tmd_transient(
+std::vector<Index> read_tmd_transient(
     const std::string& filepath, ThermalData& thermal_data,
-    const std::string& table_prefix, bool overwrite,
-    const std::vector<TMDNodeAttribute>& attributes) {
-    validate_transient_series_names(thermal_data, table_prefix, overwrite,
-                                    attributes);
+    const std::string& model_name, bool overwrite,
+    const std::vector<DataModelAttribute>& attributes) {
+    validate_transient_model_request(thermal_data, model_name, overwrite,
+                                     attributes);
 
     const H5::H5File tmd_file(filepath, H5F_ACC_RDONLY);
 
@@ -318,6 +316,14 @@ std::vector<int> read_tmd_transient(
     const auto num_timesteps = static_cast<Index>(time_values.size());
     const auto num_nodes = static_cast<Index>(node_numbers.size());
 
+    std::vector<Index> model_node_numbers;
+    model_node_numbers.reserve(node_numbers.size());
+    std::transform(node_numbers.begin(), node_numbers.end(),
+                   std::back_inserter(model_node_numbers),
+                   [](const auto node_number) { return to_idx(node_number); });
+
+    DataModel model(std::move(model_node_numbers));
+
     for (const auto attribute : attributes) {
         const auto info = get_tmd_node_attribute_info(attribute);
         const auto values = read_double_attr_3d_all_timesteps(
@@ -325,7 +331,8 @@ std::vector<int> read_tmd_transient(
             static_cast<hsize_t>(static_cast<std::uint8_t>(info.attr_index)),
             "thermalNodesRealData");
 
-        DenseTimeSeries series(num_timesteps, num_nodes);
+        auto& series = model.get_dense_attribute(attribute);
+        series.resize(num_timesteps, num_nodes);
         if (num_timesteps > 0) {
             series.times() = Eigen::Map<const Eigen::VectorXd>(
                 time_values.data(), num_timesteps);
@@ -338,13 +345,11 @@ std::vector<int> read_tmd_transient(
         if (info.convert_to_kelvin) {
             series.values().array() += 273.15;
         }
-
-        thermal_data.add_dense_time_series(
-            make_transient_series_name(table_prefix, info.suffix),
-            std::move(series));
     }
 
-    return node_numbers;
+    thermal_data.models().add_model(model_name, std::move(model));
+
+    return thermal_data.models().get_model(model_name).node_numbers();
 }
 
 ESATANReader::ESATANReader(ThermalMathematicalModel& model) : _model(model) {}

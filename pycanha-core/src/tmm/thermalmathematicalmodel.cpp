@@ -183,7 +183,7 @@ void ThermalMathematicalModel::add_time_variable(const std::string& name,
     const auto [iterator, inserted] = _time_variables.try_emplace(
         name, name,
         LookupTable1D(std::move(x_data), std::move(y_data), interp, extrap),
-        parameters, thermal_data, std::addressof(time));
+        parameters, std::addressof(time));
     if (!inserted) {
         throw std::invalid_argument("TimeVariable '" + name +
                                     "' already exists");

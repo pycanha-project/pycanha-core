@@ -6,11 +6,13 @@
 #include <stdexcept>
 #include <string>  // NOLINT(misc-include-cleaner)
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include "pycanha-core/globals.hpp"
 #include "pycanha-core/io/esatan.hpp"
 #include "pycanha-core/solvers/sslu.hpp"
+#include "pycanha-core/thermaldata/data_model.hpp"
 #include "pycanha-core/thermaldata/dense_time_series.hpp"
 #include "pycanha-core/thermaldata/thermaldata.hpp"
 #include "pycanha-core/tmm/node.hpp"
@@ -25,9 +27,9 @@ std::filesystem::path get_reference_tmd_path() {
     return test_root / "data" / "esatan" / "DISCTR_TRANSIENT.TMD";
 }
 
-std::unordered_map<int, pycanha::Index> build_column_lookup(
-    const std::vector<int>& node_numbers) {
-    std::unordered_map<int, pycanha::Index> lookup;
+std::unordered_map<pycanha::Index, pycanha::Index> build_column_lookup(
+    const std::vector<pycanha::Index>& node_numbers) {
+    std::unordered_map<pycanha::Index, pycanha::Index> lookup;
     lookup.reserve(node_numbers.size());
 
     for (std::size_t i = 0; i < node_numbers.size(); ++i) {
@@ -43,13 +45,15 @@ void require_monotonic_times(const pycanha::DenseTimeSeries& series) {
     }
 }
 
-void require_default_transient_series(const pycanha::ThermalData& thermal_data,
-                                      const std::vector<int>& node_numbers) {
-    for (const auto* suffix : {"T", "C", "QA", "QE", "QI", "QR", "QS"}) {
-        const std::string series_name = std::string("transient_") + suffix;
-        REQUIRE(thermal_data.has_dense_time_series(series_name));
-
-        const auto& series = thermal_data.get_dense_time_series(series_name);
+void require_default_transient_series(
+    const pycanha::DataModel& model,
+    const std::vector<pycanha::Index>& node_numbers) {
+    for (const auto attribute :
+         {pycanha::DataModelAttribute::T, pycanha::DataModelAttribute::C,
+          pycanha::DataModelAttribute::QA, pycanha::DataModelAttribute::QE,
+          pycanha::DataModelAttribute::QI, pycanha::DataModelAttribute::QR,
+          pycanha::DataModelAttribute::QS}) {
+        const auto& series = model.get_dense_attribute(attribute);
         REQUIRE(series.num_timesteps() > 1);
         REQUIRE(series.num_columns() ==
                 static_cast<pycanha::Index>(node_numbers.size()));
@@ -89,7 +93,9 @@ TEST_CASE("read_tmd_transient imports default transient node attributes",
         reference_tmd_path.string(), thermal_data, "transient");
 
     REQUIRE(!node_numbers.empty());
-    require_default_transient_series(thermal_data, node_numbers);
+    REQUIRE(thermal_data.models().has_model("transient"));
+    require_default_transient_series(
+        thermal_data.models().get_model("transient"), node_numbers);
 }
 
 TEST_CASE(
@@ -109,7 +115,7 @@ TEST_CASE(
         reference_tmd_path.string(), thermal_data, "transient");
     const auto column_lookup = build_column_lookup(node_numbers);
     const auto& temperature_series =
-        thermal_data.get_dense_time_series("transient_T");
+        thermal_data.models().get_model("transient").T();
 
     for (pycanha::Index i = 0; i < model->nodes().get_num_nodes(); ++i) {
         pycanha::Node node = model->nodes().get_node_from_idx(i);
@@ -138,7 +144,7 @@ TEST_CASE("read_tmd_transient preserves inactive nodes in returned columns",
     REQUIRE(model->nodes().get_num_nodes() == 102);
 
     const auto& temperature_series =
-        thermal_data.get_dense_time_series("transient_T");
+        thermal_data.models().get_model("transient").T();
     REQUIRE(temperature_series.num_columns() ==
             static_cast<pycanha::Index>(node_numbers.size()));
 }
@@ -151,16 +157,17 @@ TEST_CASE("read_tmd_transient can load only requested attributes",
     pycanha::ThermalData thermal_data;
     const auto node_numbers = pycanha::read_tmd_transient(
         reference_tmd_path.string(), thermal_data, "single",
-        /*overwrite=*/false, {pycanha::TMDNodeAttribute::T});
+        /*overwrite=*/false, {pycanha::DataModelAttribute::T});
 
     REQUIRE(!node_numbers.empty());
-    REQUIRE(thermal_data.has_dense_time_series("single_T"));
-    REQUIRE(!thermal_data.has_dense_time_series("single_C"));
-    REQUIRE(!thermal_data.has_dense_time_series("single_QA"));
-    REQUIRE(!thermal_data.has_dense_time_series("single_QE"));
-    REQUIRE(!thermal_data.has_dense_time_series("single_QI"));
-    REQUIRE(!thermal_data.has_dense_time_series("single_QR"));
-    REQUIRE(!thermal_data.has_dense_time_series("single_QS"));
+    const auto& model_data = thermal_data.models().get_model("single");
+    REQUIRE(model_data.T().num_timesteps() > 0);
+    REQUIRE(model_data.C().num_timesteps() == 0);
+    REQUIRE(model_data.QA().num_timesteps() == 0);
+    REQUIRE(model_data.QE().num_timesteps() == 0);
+    REQUIRE(model_data.QI().num_timesteps() == 0);
+    REQUIRE(model_data.QR().num_timesteps() == 0);
+    REQUIRE(model_data.QS().num_timesteps() == 0);
 }
 
 TEST_CASE("read_tmd_transient throws before writing when overwrite is disabled",
@@ -169,22 +176,23 @@ TEST_CASE("read_tmd_transient throws before writing when overwrite is disabled",
     REQUIRE(std::filesystem::exists(reference_tmd_path));
 
     pycanha::ThermalData thermal_data;
-    auto& existing_series = thermal_data.add_dense_time_series("case_QS", 1, 1);
-    existing_series.times()(0) = 42.0;
-    existing_series.values()(0, 0) = 99.0;
+    pycanha::DataModel existing_model({1});
+    existing_model.QS().resize(1, 1);
+    existing_model.QS().times()(0) = 42.0;
+    existing_model.QS().values()(0, 0) = 99.0;
+    thermal_data.models().add_model("case", std::move(existing_model));
 
     REQUIRE_THROWS_AS(pycanha::read_tmd_transient(reference_tmd_path.string(),
                                                   thermal_data, "case"),
                       std::runtime_error);
 
-    REQUIRE_FALSE(thermal_data.has_dense_time_series("case_T"));
-    REQUIRE_FALSE(thermal_data.has_dense_time_series("case_C"));
-    REQUIRE(thermal_data.get_dense_time_series("case_QS").num_timesteps() == 1);
-    REQUIRE(thermal_data.get_dense_time_series("case_QS").num_columns() == 1);
-    REQUIRE(thermal_data.get_dense_time_series("case_QS").times()(0) ==
-            Catch::Approx(42.0));
-    REQUIRE(thermal_data.get_dense_time_series("case_QS").values()(0, 0) ==
-            Catch::Approx(99.0));
+    const auto& model_data = thermal_data.models().get_model("case");
+    REQUIRE(model_data.T().num_timesteps() == 0);
+    REQUIRE(model_data.C().num_timesteps() == 0);
+    REQUIRE(model_data.QS().num_timesteps() == 1);
+    REQUIRE(model_data.QS().num_columns() == 1);
+    REQUIRE(model_data.QS().times()(0) == Catch::Approx(42.0));
+    REQUIRE(model_data.QS().values()(0, 0) == Catch::Approx(99.0));
 }
 
 TEST_CASE("read_tmd_transient overwrites existing series when requested",
@@ -193,17 +201,18 @@ TEST_CASE("read_tmd_transient overwrites existing series when requested",
     REQUIRE(std::filesystem::exists(reference_tmd_path));
 
     pycanha::ThermalData thermal_data;
-    thermal_data.add_dense_time_series("case_QS", 1, 1);
+    pycanha::DataModel existing_model({1});
+    existing_model.QS().resize(1, 1);
+    thermal_data.models().add_model("case", std::move(existing_model));
 
     const auto node_numbers = pycanha::read_tmd_transient(
         reference_tmd_path.string(), thermal_data, "case",
         /*overwrite=*/true);
 
-    REQUIRE(thermal_data.has_dense_time_series("case_T"));
-    REQUIRE(thermal_data.has_dense_time_series("case_QS"));
+    REQUIRE(thermal_data.models().has_model("case"));
 
     const auto& overwritten_series =
-        thermal_data.get_dense_time_series("case_QS");
+        thermal_data.models().get_model("case").QS();
     REQUIRE(overwritten_series.num_timesteps() > 1);
     REQUIRE(overwritten_series.num_columns() ==
             static_cast<pycanha::Index>(node_numbers.size()));

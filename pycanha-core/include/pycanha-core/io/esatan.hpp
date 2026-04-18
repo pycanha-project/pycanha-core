@@ -4,34 +4,20 @@
 #include <string>
 #include <vector>
 
+#include "pycanha-core/thermaldata/data_model.hpp"
+
 namespace pycanha {
 
 class ThermalData;
 class ThermalMathematicalModel;
 
-enum class TMDNodeAttribute : std::uint8_t {
-    T = 0,
-    C = 1,
-    QA = 2,
-    QE = 3,
-    QI = 4,
-    QR = 5,
-    QS = 6,
-    A = 7,
-    APH = 8,
-    EPS = 9,
-    FX = 13,
-    FY = 14,
-    FZ = 15,
-};
-
-std::vector<int> read_tmd_transient(
+std::vector<Index> read_tmd_transient(
     const std::string& filepath, ThermalData& thermal_data,
-    const std::string& table_prefix, bool overwrite = false,
-    const std::vector<TMDNodeAttribute>& attributes = {
-        TMDNodeAttribute::T, TMDNodeAttribute::C, TMDNodeAttribute::QA,
-        TMDNodeAttribute::QE, TMDNodeAttribute::QI, TMDNodeAttribute::QR,
-        TMDNodeAttribute::QS});
+    const std::string& model_name, bool overwrite = false,
+    const std::vector<DataModelAttribute>& attributes = {
+        DataModelAttribute::T, DataModelAttribute::C, DataModelAttribute::QA,
+        DataModelAttribute::QE, DataModelAttribute::QI, DataModelAttribute::QR,
+        DataModelAttribute::QS});
 
 class ESATANReader {
   public:

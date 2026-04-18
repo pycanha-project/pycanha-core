@@ -12,8 +12,7 @@ class ThermalData;
 class TimeVariable {
   public:
     TimeVariable(std::string name, LookupTable1D lookup_table,
-                 Parameters& parameters, ThermalData& thermal_data,
-                 const double* time_ptr);
+                 Parameters& parameters, const double* time_ptr);
     ~TimeVariable();
 
     TimeVariable(const TimeVariable&) = delete;
@@ -31,11 +30,9 @@ class TimeVariable {
     void cleanup() noexcept;
 
     std::string _name;
-    std::string _lookup_table_key;
     Parameters* _parameters{nullptr};
-    ThermalData* _thermal_data{nullptr};
     const double* _time_ptr{nullptr};
-    const LookupTable1D* _lookup_table_ptr{nullptr};
+    LookupTable1D _lookup_table;
     double* _parameter_data_ptr{nullptr};
     double _current_value{0.0};
 };

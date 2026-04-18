@@ -25,8 +25,6 @@ class TSCNRLDS_JACOBIAN : public TSCNRLDS {
         return _parameter_names;
     }
 
-    std::string output_jacobian_table_name;
-
   private:
     using DenseJacobian = Eigen::MatrixXd;
 

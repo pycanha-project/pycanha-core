@@ -3,6 +3,7 @@
 #include <spdlog/spdlog.h>
 
 #include <algorithm>
+#include <cmath>
 #include <cstddef>
 #include <iterator>
 #include <memory>
@@ -17,6 +18,8 @@
 #include "pycanha-core/parameters/formulas.hpp"
 #include "pycanha-core/solvers/solver.hpp"
 #include "pycanha-core/solvers/tscnrlds.hpp"
+#include "pycanha-core/thermaldata/data_model.hpp"
+#include "pycanha-core/thermaldata/dense_matrix_time_series.hpp"
 #include "pycanha-core/thermaldata/thermaldata.hpp"
 #include "pycanha-core/tmm/thermalmathematicalmodel.hpp"
 #include "pycanha-core/utils/SparseUtils.hpp"
@@ -50,15 +53,12 @@ namespace {
 
 TSCNRLDS_JACOBIAN::TSCNRLDS_JACOBIAN(
     std::shared_ptr<ThermalMathematicalModel> tmm_shptr)
-    : TSCNRLDS(std::move(tmm_shptr)),
-      output_jacobian_table_name("TSCNRLDS_JACOBIAN_OUTPUT") {
+    : TSCNRLDS(std::move(tmm_shptr)) {
     solver_name = "TSCNRLDS_JACOBIAN";
-    output_table_name = "TSCNRLDS_OUTPUT";
+    output_config.add(DataModelAttribute::JAC);
 }
 
 void TSCNRLDS_JACOBIAN::initialize() {
-    TSCNRLDS::initialize();
-
     collect_parameter_names();
     if (_parameter_names.empty()) {
         throw std::invalid_argument(
@@ -66,9 +66,13 @@ void TSCNRLDS_JACOBIAN::initialize() {
             "metadata");
     }
 
-    tmm.thermal_data.add_dense_time_series(
-        output_jacobian_table_name, num_outputs,
-        nd * to_idx(_parameter_names.size()));
+    TSCNRLDS::initialize();
+
+    auto& output_model = tmm.thermal_data.models().get_model(output_model_name);
+    output_model.get_matrix_attribute(DataModelAttribute::JAC) =
+        DenseMatrixTimeSeries(nd, to_idx(_parameter_names.size()));
+    output_model.get_matrix_attribute(DataModelAttribute::JAC)
+        .reserve(to_sizet(num_outputs));
 
     _d_kl_dd_matrices.clear();
     _d_kl_db_matrices.clear();
@@ -298,7 +302,11 @@ void TSCNRLDS_JACOBIAN::solve() {
     }
 
     restart_solve();
-    tmm.thermal_data.get_dense_time_series(output_jacobian_table_name).reset();
+    auto& output_model = tmm.thermal_data.models().get_model(output_model_name);
+    output_model.get_matrix_attribute(DataModelAttribute::JAC) =
+        DenseMatrixTimeSeries(nd, to_idx(_parameter_names.size()));
+    output_model.get_matrix_attribute(DataModelAttribute::JAC)
+        .reserve(to_sizet(num_outputs));
     _mt.setZero();
     _mb.setZero();
 
@@ -389,19 +397,17 @@ void TSCNRLDS_JACOBIAN::solve() {
 }
 
 void TSCNRLDS_JACOBIAN::save_jacobian_data() {
-    const auto parameter_count = to_idx(_parameter_names.size());
-    auto& output_series =
-        tmm.thermal_data.get_dense_time_series(output_jacobian_table_name);
-    output_series.times()(idata_out) = time;
-    std::size_t output_index = 0U;
-    for (Index node_index = 0; node_index < nd; ++node_index) {
-        for (Index parameter_index = 0; parameter_index < parameter_count;
-             ++parameter_index) {
-            output_series.values()(idata_out, to_idx(output_index)) =
-                _mt(node_index, parameter_index);
-            ++output_index;
-        }
+    auto& output_series = tmm.thermal_data.models()
+                              .get_model(output_model_name)
+                              .get_matrix_attribute(DataModelAttribute::JAC);
+    if ((output_series.num_timesteps() > 0) &&
+        (std::abs(output_series.time_at(output_series.num_timesteps() - 1) -
+                  time) <= eps_time)) {
+        output_series.at(output_series.num_timesteps() - 1) = _mt;
+        return;
     }
+
+    output_series.push_back(time, _mt);
 }
 
 }  // namespace pycanha
