@@ -4,6 +4,7 @@
 #include <array>
 #include <cmath>
 #include <iterator>
+#include <numeric>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -101,12 +102,8 @@ std::vector<Index> build_time_row_selection(const DenseTimeSeries& temperature,
     const Index start_row =
         find_floor_time_index(temperature.times(), start_time);
     const Index end_row = find_ceil_time_index(temperature.times(), end_time);
-    std::vector<Index> rows;
-    rows.reserve(to_sizet(end_row - start_row + 1));
-
-    for (Index row = start_row; row <= end_row; ++row) {
-        rows.push_back(row);
-    }
+    std::vector<Index> rows(to_sizet(end_row - start_row + 1));
+    std::iota(rows.begin(), rows.end(), start_row);
 
     return rows;
 }
@@ -142,10 +139,11 @@ std::vector<Index> build_sparse_row_selection(
     std::vector<Index> sparse_rows;
     sparse_rows.reserve(rows.size());
 
-    for (const Index row : rows) {
-        sparse_rows.push_back(find_matching_sparse_time_index(
-            coupling, temperature.times()(row), series_name));
-    }
+    std::transform(rows.begin(), rows.end(), std::back_inserter(sparse_rows),
+                   [&](const Index row) {
+                       return find_matching_sparse_time_index(
+                           coupling, temperature.times()(row), series_name);
+                   });
 
     return sparse_rows;
 }
@@ -154,14 +152,18 @@ template <typename FlowFunction>
 double sum_group_flow(const std::vector<Index>& node_columns_1,
                       const std::vector<Index>& node_columns_2,
                       const FlowFunction& flow_function) {
-    double total_flow = 0.0;
-    for (const Index node_column_1 : node_columns_1) {
-        for (const Index node_column_2 : node_columns_2) {
-            total_flow += flow_function(node_column_1, node_column_2);
-        }
-    }
-
-    return total_flow;
+    return std::accumulate(
+        node_columns_1.begin(), node_columns_1.end(), 0.0,
+        [&](const double total_flow, const Index node_column_1) {
+            return total_flow +
+                   std::accumulate(
+                       node_columns_2.begin(), node_columns_2.end(), 0.0,
+                       [&](const double group_total,
+                           const Index node_column_2) {
+                           return group_total +
+                                  flow_function(node_column_1, node_column_2);
+                       });
+        });
 }
 
 double conductive_pair_flow(const DenseTimeSeries& temperature,
@@ -233,10 +235,11 @@ std::vector<Index> resolve_node_columns(
     const DataModel& model, const std::vector<Index>& node_numbers) {
     std::vector<Index> node_columns;
     node_columns.reserve(node_numbers.size());
-    for (const Index node_num : node_numbers) {
-        node_columns.push_back(
-            find_node_column(model.node_numbers(), node_num));
-    }
+
+    std::transform(node_numbers.begin(), node_numbers.end(),
+                   std::back_inserter(node_columns), [&](const Index node_num) {
+                       return find_node_column(model.node_numbers(), node_num);
+                   });
 
     return node_columns;
 }
