@@ -1,0 +1,9 @@
+<map id="pycanha::DataModel" name="pycanha::DataModel">
+<area shape="rect" id="Node000001" title=" " alt="" coords="252,255,408,280"/>
+<area shape="rect" id="Node000002" href="$classpycanha_1_1DenseTimeSeries.html" title=" " alt="" coords="5,13,204,38"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="125,47,197,128,292,229,318,253,315,257,288,233,193,132,121,50"/>
+<area shape="rect" id="Node000003" href="$classpycanha_1_1SparseTimeSeries.html" title=" " alt="" coords="229,13,431,38"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="333,52,333,255,327,255,327,52"/>
+<area shape="rect" id="Node000004" href="$classpycanha_1_1DenseMatrixTimeSeries.html" title=" " alt="" coords="456,5,657,45"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="558,59,552,99,541,146,521,193,506,214,489,233,456,248,409,258,407,253,455,243,486,229,502,211,516,190,536,144,547,98,552,59"/>
+</map>

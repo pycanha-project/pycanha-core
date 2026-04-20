@@ -1,11 +1,15 @@
 <map id="pycanha::ESATANReader" name="pycanha::ESATANReader">
-<area shape="rect" id="Node000001" title=" " alt="" coords="169,196,352,221"/>
-<area shape="rect" id="Node000002" href="$classpycanha_1_1ThermalMathematicalModel.html" title=" " alt="" coords="146,93,375,133"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="263,147,263,196,258,196,258,147"/>
-<area shape="rect" id="Node000003" href="$classpycanha_1_1Parameters.html" title=" " alt="" coords="5,5,164,31"/>
-<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="118,35,177,67,223,91,221,96,174,72,115,40"/>
-<area shape="rect" id="Node000004" href="$classpycanha_1_1Formulas.html" title=" " alt="" coords="188,5,333,31"/>
-<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="263,44,263,93,258,93,258,44"/>
-<area shape="rect" id="Node000005" href="$classpycanha_1_1ThermalData.html" title=" " alt="" coords="358,5,529,31"/>
-<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="410,39,299,96,296,91,408,35"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="169,284,352,309"/>
+<area shape="rect" id="Node000002" href="$classpycanha_1_1ThermalMathematicalModel.html" title=" " alt="" coords="146,181,375,221"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="263,235,263,284,258,284,258,235"/>
+<area shape="rect" id="Node000003" href="$classpycanha_1_1Parameters.html" title=" " alt="" coords="5,93,164,119"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="118,123,177,155,223,179,221,184,174,160,115,128"/>
+<area shape="rect" id="Node000004" href="$classpycanha_1_1Formulas.html" title=" " alt="" coords="188,93,333,119"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="263,132,263,181,258,181,258,132"/>
+<area shape="rect" id="Node000005" href="$classpycanha_1_1ThermalData.html" title=" " alt="" coords="358,93,529,119"/>
+<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="410,127,299,184,296,179,408,123"/>
+<area shape="rect" id="Node000006" href="$classpycanha_1_1DataTableStore.html" title=" " alt="" coords="246,5,430,31"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="364,37,431,91,427,95,361,41"/>
+<area shape="rect" id="Node000007" href="$classpycanha_1_1DataModelStore.html" title=" " alt="" coords="455,5,645,31"/>
+<area shape="poly" id="edge6_Node000005_Node000007" title=" " alt="" coords="527,41,459,95,456,91,523,37"/>
 </map>

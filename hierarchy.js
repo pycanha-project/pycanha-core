@@ -7,6 +7,10 @@ var hierarchy =
     [ "pycanha::CouplingMatrices", "classpycanha_1_1CouplingMatrices.html", null ],
     [ "pycanha::Couplings", "classpycanha_1_1Couplings.html", null ],
     [ "pycanha::Parameters::DataMemoryAddress", "structpycanha_1_1Parameters_1_1DataMemoryAddress.html", null ],
+    [ "pycanha::DataModel", "classpycanha_1_1DataModel.html", null ],
+    [ "pycanha::DataModelStore", "classpycanha_1_1DataModelStore.html", null ],
+    [ "pycanha::DataTableStore", "classpycanha_1_1DataTableStore.html", null ],
+    [ "pycanha::DenseMatrixTimeSeries", "classpycanha_1_1DenseMatrixTimeSeries.html", null ],
     [ "pycanha::DenseTimeSeries", "classpycanha_1_1DenseTimeSeries.html", null ],
     [ "std::enable_shared_from_this", null, [
       [ "pycanha::gmm::GeometryModel", "classpycanha_1_1gmm_1_1GeometryModel.html", null ]
@@ -67,6 +71,7 @@ var hierarchy =
         ] ]
       ] ]
     ] ],
+    [ "pycanha::SolverOutputConfig", "structpycanha_1_1SolverOutputConfig.html", null ],
     [ "pycanha::SparseTimeSeries", "classpycanha_1_1SparseTimeSeries.html", null ],
     [ "pycanha::ExpressionFormula::SymbolBinding", "structpycanha_1_1ExpressionFormula_1_1SymbolBinding.html", null ],
     [ "pycanha::TemperatureVariable", "classpycanha_1_1TemperatureVariable.html", null ],

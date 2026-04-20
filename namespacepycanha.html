@@ -116,6 +116,14 @@ Classes</h2></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classpycanha_1_1Couplings.html">Couplings</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classpycanha_1_1DataModel.html">DataModel</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classpycanha_1_1DataModelStore.html">DataModelStore</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classpycanha_1_1DataTableStore.html">DataTableStore</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classpycanha_1_1DenseMatrixTimeSeries.html">DenseMatrixTimeSeries</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classpycanha_1_1DenseTimeSeries.html">DenseTimeSeries</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classpycanha_1_1Entity.html">Entity</a></td></tr>
@@ -155,6 +163,8 @@ Classes</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classpycanha_1_1RadiativeCouplings.html">RadiativeCouplings</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classpycanha_1_1Solver.html">Solver</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structpycanha_1_1SolverOutputConfig.html">SolverOutputConfig</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classpycanha_1_1SparseTimeSeries.html">SparseTimeSeries</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -226,26 +236,6 @@ using&#160;</td><td class="memItemRight" valign="bottom"><b>WrappVectorXd</b> = 
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="enum-members" name="enum-members"></a>
 Enumerations</h2></td></tr>
-<tr class="memitem:ac4b1c45292c72dacbf46655cb6737f65" id="r_ac4b1c45292c72dacbf46655cb6737f65"><td class="memItemLeft" align="right" valign="top"><a id="ac4b1c45292c72dacbf46655cb6737f65" name="ac4b1c45292c72dacbf46655cb6737f65"></a>enum class &#160;</td><td class="memItemRight" valign="bottom"><b>TMDNodeAttribute</b> : std::uint8_t { <br />
-&#160;&#160;<b>T</b> = 0
-, <b>C</b> = 1
-, <b>QA</b> = 2
-, <b>QE</b> = 3
-, <br />
-&#160;&#160;<b>QI</b> = 4
-, <b>QR</b> = 5
-, <b>QS</b> = 6
-, <b>A</b> = 7
-, <br />
-&#160;&#160;<b>APH</b> = 8
-, <b>EPS</b> = 9
-, <b>FX</b> = 13
-, <b>FY</b> = 14
-, <br />
-&#160;&#160;<b>FZ</b> = 15
-<br />
- }</td></tr>
-<tr class="separator:ac4b1c45292c72dacbf46655cb6737f65"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad80b737d6b4dfa72c73eb1fd7ee16597" id="r_ad80b737d6b4dfa72c73eb1fd7ee16597"><td class="memItemLeft" align="right" valign="top"><a id="ad80b737d6b4dfa72c73eb1fd7ee16597" name="ad80b737d6b4dfa72c73eb1fd7ee16597"></a>enum class &#160;</td><td class="memItemRight" valign="bottom"><b>EntityType</b> : std::uint8_t { <br />
 &#160;&#160;<b>t</b>
 , <b>c</b>
@@ -261,6 +251,29 @@ Enumerations</h2></td></tr>
 <br />
  }</td></tr>
 <tr class="separator:ad80b737d6b4dfa72c73eb1fd7ee16597"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa99a9d71174c3b89b924b0c927b6bcad" id="r_aa99a9d71174c3b89b924b0c927b6bcad"><td class="memItemLeft" align="right" valign="top"><a id="aa99a9d71174c3b89b924b0c927b6bcad" name="aa99a9d71174c3b89b924b0c927b6bcad"></a>enum class &#160;</td><td class="memItemRight" valign="bottom"><b>DataModelAttribute</b> : std::uint8_t { <br />
+&#160;&#160;<b>T</b> = 0
+, <b>C</b> = 1
+, <b>QS</b> = 2
+, <b>QA</b> = 3
+, <br />
+&#160;&#160;<b>QE</b> = 4
+, <b>QI</b> = 5
+, <b>QR</b> = 6
+, <b>A</b> = 7
+, <br />
+&#160;&#160;<b>APH</b> = 8
+, <b>EPS</b> = 9
+, <b>FX</b> = 10
+, <b>FY</b> = 11
+, <br />
+&#160;&#160;<b>FZ</b> = 12
+, <b>KL</b> = 13
+, <b>KR</b> = 14
+, <b>JAC</b> = 15
+<br />
+ }</td></tr>
+<tr class="separator:aa99a9d71174c3b89b924b0c927b6bcad"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a29080a6eeff91a0034f5e44abdd84ea6" id="r_a29080a6eeff91a0034f5e44abdd84ea6"><td class="memItemLeft" align="right" valign="top"><a id="a29080a6eeff91a0034f5e44abdd84ea6" name="a29080a6eeff91a0034f5e44abdd84ea6"></a>enum class &#160;</td><td class="memItemRight" valign="bottom"><b>InterpolationMethod</b> : std::uint8_t { <b>Linear</b>
 , <b>NearestLower</b>
 , <b>NearestUpper</b>
@@ -351,9 +364,9 @@ constexpr MeshIndex&#160;</td><td class="memItemRight" valign="bottom"><b>to_mes
 <tr class="memitem:a72f1ee9bcf38a7e607b9d9b0552b4253" id="r_a72f1ee9bcf38a7e607b9d9b0552b4253"><td class="memItemLeft" align="right" valign="top"><a id="a72f1ee9bcf38a7e607b9d9b0552b4253" name="a72f1ee9bcf38a7e607b9d9b0552b4253"></a>
 constexpr MeshIndex&#160;</td><td class="memItemRight" valign="bottom"><b>to_meshidx_safe</b> (int value)</td></tr>
 <tr class="separator:a72f1ee9bcf38a7e607b9d9b0552b4253"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a16161826bc3dcb804e4dfe48531d747d" id="r_a16161826bc3dcb804e4dfe48531d747d"><td class="memItemLeft" align="right" valign="top"><a id="a16161826bc3dcb804e4dfe48531d747d" name="a16161826bc3dcb804e4dfe48531d747d"></a>
-std::vector&lt; int &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>read_tmd_transient</b> (const std::string &amp;filepath, <a class="el" href="classpycanha_1_1ThermalData.html">ThermalData</a> &amp;thermal_data, const std::string &amp;table_prefix, bool overwrite=false, const std::vector&lt; TMDNodeAttribute &gt; &amp;attributes={ TMDNodeAttribute::T, TMDNodeAttribute::C, TMDNodeAttribute::QA, TMDNodeAttribute::QE, TMDNodeAttribute::QI, TMDNodeAttribute::QR, TMDNodeAttribute::QS})</td></tr>
-<tr class="separator:a16161826bc3dcb804e4dfe48531d747d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9b4adaecac211cbfa98b9f9512fb7a14" id="r_a9b4adaecac211cbfa98b9f9512fb7a14"><td class="memItemLeft" align="right" valign="top"><a id="a9b4adaecac211cbfa98b9f9512fb7a14" name="a9b4adaecac211cbfa98b9f9512fb7a14"></a>
+std::vector&lt; Index &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>read_tmd_transient</b> (const std::string &amp;filepath, <a class="el" href="classpycanha_1_1ThermalData.html">ThermalData</a> &amp;thermal_data, const std::string &amp;model_name, bool overwrite=false, const std::vector&lt; DataModelAttribute &gt; &amp;attributes={ DataModelAttribute::T, DataModelAttribute::C, DataModelAttribute::QA, DataModelAttribute::QE, DataModelAttribute::QI, DataModelAttribute::QR, DataModelAttribute::QS})</td></tr>
+<tr class="separator:a9b4adaecac211cbfa98b9f9512fb7a14"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af116674b7649af0e33b3d7e78ecb1b1b" id="r_af116674b7649af0e33b3d7e78ecb1b1b"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; spdlog::logger &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacepycanha.html#af116674b7649af0e33b3d7e78ecb1b1b">get_logger</a> ()</td></tr>
 <tr class="separator:af116674b7649af0e33b3d7e78ecb1b1b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa10488c2ff5bd88e91d25b92af8f7733" id="r_aa10488c2ff5bd88e91d25b92af8f7733"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; spdlog::logger &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacepycanha.html#aa10488c2ff5bd88e91d25b92af8f7733">get_profiling_logger</a> ()</td></tr>

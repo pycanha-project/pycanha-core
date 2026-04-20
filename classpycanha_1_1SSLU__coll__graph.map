@@ -1,19 +1,23 @@
 <map id="pycanha::SSLU" name="pycanha::SSLU">
-<area shape="rect" id="Node000001" title=" " alt="" coords="1060,112,1179,137"/>
-<area shape="rect" id="Node000002" href="$classpycanha_1_1SteadyStateSolver.html" title=" " alt="" coords="805,112,1011,137"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="1025,122,1059,122,1059,127,1025,127"/>
-<area shape="rect" id="Node000003" href="$classpycanha_1_1Solver.html" title=" " alt="" coords="629,112,756,137"/>
-<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="769,122,805,122,805,127,769,127"/>
-<area shape="rect" id="Node000004" href="$classpycanha_1_1ThermalMathematicalModel.html" title=" " alt="" coords="316,47,545,87"/>
-<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="540,88,606,102,638,109,637,115,605,107,539,93"/>
-<area shape="rect" id="Node000005" href="$classpycanha_1_1Parameters.html" title=" " alt="" coords="11,5,170,31"/>
-<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="184,29,316,48,315,53,183,34"/>
-<area shape="rect" id="Node000006" href="$classpycanha_1_1Formulas.html" title=" " alt="" coords="18,55,163,80"/>
-<area shape="poly" id="edge5_Node000004_Node000006" title=" " alt="" coords="177,65,315,65,315,70,177,70"/>
-<area shape="rect" id="Node000007" href="$classpycanha_1_1ThermalData.html" title=" " alt="" coords="5,104,176,129"/>
-<area shape="poly" id="edge6_Node000004_Node000007" title=" " alt="" coords="190,100,315,81,316,87,190,105"/>
-<area shape="rect" id="Node000008" href="$classpycanha_1_1ThermalNetwork.html" title=" " alt="" coords="333,112,528,137"/>
-<area shape="poly" id="edge7_Node000003_Node000008" title=" " alt="" coords="542,122,629,122,629,127,542,127"/>
-<area shape="rect" id="Node000009" href="$classpycanha_1_1CouplingMatrices.html" title=" " alt="" coords="331,172,530,197"/>
-<area shape="poly" id="edge8_Node000003_Node000009" title=" " alt="" coords="543,170,605,157,663,135,665,140,606,162,544,175"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="1359,112,1477,137"/>
+<area shape="rect" id="Node000002" href="$classpycanha_1_1SteadyStateSolver.html" title=" " alt="" coords="1104,112,1309,137"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="1323,122,1358,122,1358,127,1323,127"/>
+<area shape="rect" id="Node000003" href="$classpycanha_1_1Solver.html" title=" " alt="" coords="928,112,1055,137"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="1068,122,1104,122,1104,127,1068,127"/>
+<area shape="rect" id="Node000004" href="$classpycanha_1_1ThermalMathematicalModel.html" title=" " alt="" coords="615,47,844,87"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="839,88,905,102,936,109,935,115,903,107,838,93"/>
+<area shape="rect" id="Node000005" href="$classpycanha_1_1Parameters.html" title=" " alt="" coords="310,5,469,31"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="483,29,615,48,614,53,482,34"/>
+<area shape="rect" id="Node000006" href="$classpycanha_1_1Formulas.html" title=" " alt="" coords="317,55,462,80"/>
+<area shape="poly" id="edge5_Node000004_Node000006" title=" " alt="" coords="476,65,614,65,614,70,476,70"/>
+<area shape="rect" id="Node000007" href="$classpycanha_1_1ThermalData.html" title=" " alt="" coords="304,104,475,129"/>
+<area shape="poly" id="edge6_Node000004_Node000007" title=" " alt="" coords="488,100,614,81,615,87,489,105"/>
+<area shape="rect" id="Node000008" href="$classpycanha_1_1DataTableStore.html" title=" " alt="" coords="9,79,193,104"/>
+<area shape="poly" id="edge7_Node000007_Node000008" title=" " alt="" coords="207,98,304,107,303,112,206,103"/>
+<area shape="rect" id="Node000009" href="$classpycanha_1_1DataModelStore.html" title=" " alt="" coords="5,128,196,153"/>
+<area shape="poly" id="edge8_Node000007_Node000009" title=" " alt="" coords="210,137,280,133,323,127,323,132,280,138,210,143"/>
+<area shape="rect" id="Node000010" href="$classpycanha_1_1ThermalNetwork.html" title=" " alt="" coords="632,112,827,137"/>
+<area shape="poly" id="edge9_Node000003_Node000010" title=" " alt="" coords="840,122,928,122,928,127,840,127"/>
+<area shape="rect" id="Node000011" href="$classpycanha_1_1CouplingMatrices.html" title=" " alt="" coords="630,172,829,197"/>
+<area shape="poly" id="edge10_Node000003_Node000011" title=" " alt="" coords="842,170,903,157,962,135,964,140,905,162,843,175"/>
 </map>
