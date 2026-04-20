@@ -6,6 +6,7 @@
 #include <spdlog/spdlog.h>
 
 #include <Eigen/Core>
+#include <algorithm>
 #include <array>
 #include <cstddef>
 #include <cstdint>
@@ -89,7 +90,7 @@ double read_tabs(const H5::Group& analysis_group) {
         throw std::runtime_error("AnalysisSet1 is missing the TAbs attribute.");
     }
 
-    H5::Attribute tabs_attribute = analysis_group.openAttribute("TAbs");
+    const H5::Attribute tabs_attribute = analysis_group.openAttribute("TAbs");
     double tabs = 0.0;
     tabs_attribute.read(H5::PredType::NATIVE_DOUBLE, &tabs);
     return tabs;

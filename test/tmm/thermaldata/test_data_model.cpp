@@ -3,10 +3,12 @@
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
 #include <cmath>
+#include <stdexcept>
 
 #include "pycanha-core/globals.hpp"
 #include "pycanha-core/thermaldata/data_model.hpp"
 #include "pycanha-core/thermaldata/dense_matrix_time_series.hpp"
+#include "pycanha-core/thermaldata/sparse_time_series.hpp"
 
 using namespace pycanha;  // NOLINT(build/namespaces)
 

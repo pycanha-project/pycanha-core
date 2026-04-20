@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <iterator>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -66,7 +67,7 @@ Index find_floor_time_index(const Eigen::VectorXd& times, double time) {
     }
 
     const double* begin = times.data();
-    const double* end = begin + times.size();
+    const double* end = std::next(begin, times.size());
     const double* upper_bound = std::upper_bound(begin, end, time + TOL);
     if (upper_bound == begin) {
         throw std::out_of_range("Requested time is before the first sample");
@@ -81,7 +82,7 @@ Index find_ceil_time_index(const Eigen::VectorXd& times, double time) {
     }
 
     const double* begin = times.data();
-    const double* end = begin + times.size();
+    const double* end = std::next(begin, times.size());
     const double* lower_bound = std::lower_bound(begin, end, time - TOL);
     if (lower_bound == end) {
         throw std::out_of_range("Requested time is after the last sample");
@@ -119,14 +120,14 @@ Index find_matching_sparse_time_index(const SparseTimeSeries& series,
     }
 
     const double* begin = times.data();
-    const double* end = begin + times.size();
+    const double* end = std::next(begin, times.size());
     const double* lower_bound = std::lower_bound(begin, end, time);
 
     if ((lower_bound != end) && (std::abs(*lower_bound - time) <= TOL)) {
         return static_cast<Index>(std::distance(begin, lower_bound));
     }
     if ((lower_bound != begin) &&
-        (std::abs(*(lower_bound - 1) - time) <= TOL)) {
+        (std::abs(*std::prev(lower_bound) - time) <= TOL)) {
         return static_cast<Index>(std::distance(begin, lower_bound) - 1);
     }
 

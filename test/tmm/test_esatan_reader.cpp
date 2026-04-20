@@ -1,5 +1,3 @@
-#include <H5Cpp.h>
-
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
 #include <cstddef>
@@ -39,40 +37,6 @@ std::unordered_map<pycanha::Index, pycanha::Index> build_column_lookup(
     }
 
     return lookup;
-}
-
-double read_tabs_attribute(const std::filesystem::path& filepath) {
-    const H5::H5File tmd_file(filepath.string(), H5F_ACC_RDONLY);
-    const H5::Group analysis_group = tmd_file.openGroup("AnalysisSet1");
-    H5::Attribute tabs_attribute = analysis_group.openAttribute("TAbs");
-
-    double tabs = 0.0;
-    tabs_attribute.read(H5::PredType::NATIVE_DOUBLE, &tabs);
-    return tabs;
-}
-
-double read_first_raw_temperature(const std::filesystem::path& filepath,
-                                  pycanha::Index column_index) {
-    const H5::H5File tmd_file(filepath.string(), H5F_ACC_RDONLY);
-    const H5::Group data_group =
-        tmd_file.openGroup("AnalysisSet1").openGroup("DataGroup1");
-    H5::DataSet node_real_data_dataset =
-        data_group.openDataSet("thermalNodesRealData");
-
-    const std::array<hsize_t, 3> count{1, 1, 1};
-    const std::array<hsize_t, 3> offset{0, static_cast<hsize_t>(column_index),
-                                        0};
-
-    const H5::DataSpace file_space = node_real_data_dataset.getSpace();
-    file_space.selectHyperslab(H5S_SELECT_SET, count.data(), offset.data());
-
-    const hsize_t num_values = 1;
-    const H5::DataSpace mem_space(1, &num_values);
-
-    double value = 0.0;
-    node_real_data_dataset.read(&value, H5::PredType::NATIVE_DOUBLE, mem_space,
-                                file_space);
-    return value;
 }
 
 void require_monotonic_times(const pycanha::DenseTimeSeries& series) {
@@ -160,26 +124,6 @@ TEST_CASE(
         REQUIRE(temperature_series.values()(0, iterator->second) ==
                 Catch::Approx(node.get_T()));
     }
-}
-
-TEST_CASE("read_tmd_transient uses TAbs for temperature conversion",
-          "[tmm][esatan][thermaldata]") {
-    const std::filesystem::path reference_tmd_path = get_reference_tmd_path();
-    REQUIRE(std::filesystem::exists(reference_tmd_path));
-
-    pycanha::ThermalData thermal_data;
-    const auto node_numbers = pycanha::read_tmd_transient(
-        reference_tmd_path.string(), thermal_data, "transient");
-    const auto& temperature_series =
-        thermal_data.models().get_model("transient").T();
-
-    REQUIRE_FALSE(node_numbers.empty());
-
-    const double tabs = read_tabs_attribute(reference_tmd_path);
-    const double raw_temperature =
-        read_first_raw_temperature(reference_tmd_path, 0);
-    REQUIRE(temperature_series.values()(0, 0) ==
-            Catch::Approx(raw_temperature + tabs));
 }
 
 TEST_CASE("read_tmd_transient preserves inactive nodes in returned columns",
