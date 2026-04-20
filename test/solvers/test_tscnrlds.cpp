@@ -1,15 +1,17 @@
+#include <algorithm>
 #include <array>
 #include <catch2/catch_test_macros.hpp>
 #include <cmath>
 #include <cstddef>
 #include <iostream>
+#include <iterator>
 #include <memory>
 
 #include "pycanha-core/solvers/tscnrlds.hpp"
+#include "pycanha-core/thermaldata/data_model.hpp"
 #include "pycanha-core/thermaldata/dense_time_series.hpp"
 #include "pycanha-core/thermaldata/thermaldata.hpp"
 #include "pycanha-core/tmm/node.hpp"
-#include "pycanha-core/tmm/nodes.hpp"
 #include "pycanha-core/tmm/thermalmathematicalmodel.hpp"
 
 namespace {
@@ -63,12 +65,14 @@ constexpr std::array<int, num_nodes> node_ids = {10, 15, 20, 25, 99};
 }
 
 [[nodiscard]] bool resolve_node_column_indices(
-    const pycanha::Nodes& nodes,
+    const pycanha::DataModel& output_model,
     std::array<Eigen::Index, num_nodes>& node_column_indices,
     bool print_diffs) {
     for (std::size_t i = 0; i < node_ids.size(); ++i) {
-        const auto node_index = nodes.get_idx_from_node_num(node_ids.at(i));
-        if (!node_index.has_value()) {
+        const auto iterator =
+            std::find(output_model.node_numbers().begin(),
+                      output_model.node_numbers().end(), node_ids.at(i));
+        if (iterator == output_model.node_numbers().end()) {
             if (print_diffs) {
                 std::cout << "Node " << node_ids.at(i)
                           << " is missing from the model output.\n";
@@ -76,7 +80,8 @@ constexpr std::array<int, num_nodes> node_ids = {10, 15, 20, 25, 99};
             return false;
         }
 
-        node_column_indices.at(i) = *node_index;
+        node_column_indices.at(i) = static_cast<Eigen::Index>(
+            std::distance(output_model.node_numbers().begin(), iterator));
     }
 
     return true;
@@ -174,25 +179,24 @@ std::shared_ptr<pycanha::ThermalMathematicalModel> make_model() {
     return model;
 }
 
-bool compare_temps(pycanha::ThermalMathematicalModel& model,
+bool compare_temps(const pycanha::ThermalMathematicalModel& model,
                    bool print_diffs = false) {
     const auto& thermal_data = model.thermal_data;
-    if (!thermal_data.has_dense_time_series("TSCNRLDS_OUTPUT")) {
+    if (!thermal_data.models().has_model("TSCNRLDS")) {
         if (print_diffs) {
-            std::cout << "Thermal data series 'TSCNRLDS_OUTPUT' not found."
-                      << '\n';
+            std::cout << "Thermal data model 'TSCNRLDS' not found.\n";
         }
         return false;
     }
 
-    const auto& output_table =
-        thermal_data.get_dense_time_series("TSCNRLDS_OUTPUT");
+    const auto& output_model = thermal_data.models().get_model("TSCNRLDS");
+    const auto& output_table = output_model.T();
     if (!has_expected_output_shape(output_table, print_diffs)) {
         return false;
     }
 
     std::array<Eigen::Index, num_nodes> node_column_indices{};
-    if (!resolve_node_column_indices(model.nodes(), node_column_indices,
+    if (!resolve_node_column_indices(output_model, node_column_indices,
                                      print_diffs)) {
         return false;
     }

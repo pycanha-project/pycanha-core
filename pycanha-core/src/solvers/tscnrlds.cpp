@@ -31,7 +31,7 @@ namespace pycanha {
 TSCNRLDS::TSCNRLDS(std::shared_ptr<ThermalMathematicalModel> tmm_shptr)
     : TSCNRL(std::move(tmm_shptr)) {
     solver_name = "TSCNRLDS";
-    output_table_name = "TSCNRLDS_OUTPUT";
+    output_model_name = "TSCNRLDS";
 }
 
 TSCNRLDS::~TSCNRLDS() {

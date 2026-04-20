@@ -339,22 +339,22 @@ TEST_CASE("ExpressionFormula integrates with TSCNRLDS_JACOBIAN",
     solver.initialize();
     solver.solve();
 
-    REQUIRE(
-        model->thermal_data.has_dense_time_series("TSCNRLDS_JACOBIAN_OUTPUT"));
+    REQUIRE(model->thermal_data.models().has_model("TSCNRLDS"));
     REQUIRE(solver.parameter_names().size() == 2);
     REQUIRE(solver.parameter_names().at(0) == "k");
     REQUIRE(solver.parameter_names().at(1) == "C");
 
     const auto& jacobian_output =
-        model->thermal_data.get_dense_time_series("TSCNRLDS_JACOBIAN_OUTPUT");
+        model->thermal_data.models().get_model("TSCNRLDS").jacobian();
     REQUIRE(jacobian_output.num_timesteps() >= 2);
-    REQUIRE(jacobian_output.num_columns() == 2);
+    REQUIRE(jacobian_output.rows() == 1);
+    REQUIRE(jacobian_output.cols() == 2);
 
     const auto last_row = jacobian_output.num_timesteps() - 1;
-    REQUIRE(jacobian_output.times()(last_row) ==
+    REQUIRE(jacobian_output.time_at(last_row) ==
             Catch::Approx(5.0).margin(1.0e-9));
-    REQUIRE(jacobian_output.values()(last_row, 0) ==
+    REQUIRE(jacobian_output.at(last_row)(0, 0) ==
             Catch::Approx(-0.92588396).margin(5.0e-6));
-    REQUIRE(jacobian_output.values()(last_row, 1) ==
+    REQUIRE(jacobian_output.at(last_row)(0, 1) ==
             Catch::Approx(-0.06737837).margin(5.0e-6));
 }

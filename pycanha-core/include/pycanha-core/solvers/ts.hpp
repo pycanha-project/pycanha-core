@@ -4,6 +4,7 @@
 #include <string>
 
 #include "pycanha-core/solvers/solver.hpp"
+#include "pycanha-core/solvers/solver_output_config.hpp"
 
 namespace pycanha {
 
@@ -24,7 +25,7 @@ class TransientSolver : public Solver {
     // cppcheck-suppress duplInheritedMember
     void initialize_common();
 
-    void save_temp_data();
+    void save_output_data();
     void outputs();
     void outputs_first_last();
 
@@ -43,7 +44,8 @@ class TransientSolver : public Solver {
     int wait_n_dtimes = 0;
     int idata_out = 0;
 
-    std::string output_table_name;
+    SolverOutputConfig output_config;
+    std::string output_model_name;
 };
 
 }  // namespace pycanha

@@ -8,7 +8,6 @@
 #include "pycanha-core/parameters/formulas.hpp"
 #include "pycanha-core/parameters/parameters.hpp"
 #include "pycanha-core/parameters/variable.hpp"
-#include "pycanha-core/thermaldata/thermaldata.hpp"
 #include "pycanha-core/tmm/node.hpp"
 #include "pycanha-core/tmm/thermalmathematicalmodel.hpp"
 
@@ -16,19 +15,17 @@ using namespace pycanha;  // NOLINT(build/namespaces)
 
 TEST_CASE("TimeVariable updates an internal parameter", "[variables][time]") {
     Parameters parameters;
-    ThermalData thermal_data;
     double time = 0.5;
 
     TimeVariable variable(
         "load",
         LookupTable1D((Eigen::Vector2d{} << 0.0, 1.0).finished(),
                       (Eigen::Vector2d{} << 10.0, 30.0).finished()),
-        parameters, thermal_data, std::addressof(time));
+        parameters, std::addressof(time));
 
     const auto initial_value =
         std::get<double>(parameters.get_parameter("load"));
-    const bool resources_created = parameters.is_internal_parameter("load") &&
-                                   thermal_data.has_lookup_table("__tv_load");
+    const bool resources_created = parameters.is_internal_parameter("load");
 
     REQUIRE(resources_created);
     REQUIRE(variable.current_value() == Catch::Approx(20.0));
@@ -49,7 +46,6 @@ TEST_CASE("TimeVariable updates an internal parameter", "[variables][time]") {
 TEST_CASE("TimeVariable cleans up owned resources on destruction",
           "[variables][time]") {
     Parameters parameters;
-    ThermalData thermal_data;
 
     {
         double time = 0.5;
@@ -57,26 +53,23 @@ TEST_CASE("TimeVariable cleans up owned resources on destruction",
             "load",
             LookupTable1D((Eigen::Vector2d{} << 0.0, 1.0).finished(),
                           (Eigen::Vector2d{} << 10.0, 30.0).finished()),
-            parameters, thermal_data, std::addressof(time));
+            parameters, std::addressof(time));
 
         REQUIRE(parameters.contains("load"));
-        REQUIRE(thermal_data.has_lookup_table("__tv_load"));
     }
 
     REQUIRE_FALSE(parameters.contains("load"));
-    REQUIRE_FALSE(thermal_data.has_lookup_table("__tv_load"));
 }
 
 TEST_CASE("TimeVariable supports move semantics", "[variables][time]") {
     Parameters parameters;
-    ThermalData thermal_data;
     double time = 0.0;
 
     TimeVariable variable(
         "moved",
         LookupTable1D((Eigen::Vector2d{} << 0.0, 2.0).finished(),
                       (Eigen::Vector2d{} << 4.0, 8.0).finished()),
-        parameters, thermal_data, std::addressof(time));
+        parameters, std::addressof(time));
     TimeVariable moved = std::move(variable);
 
     const auto moved_value = [&moved, &time]() {
