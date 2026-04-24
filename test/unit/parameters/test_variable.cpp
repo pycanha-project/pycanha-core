@@ -2,6 +2,7 @@
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
 #include <memory>
+#include <stdexcept>
 #include <utility>
 
 #include "pycanha-core/parameters/formulas.hpp"
@@ -11,6 +12,16 @@
 #include "pycanha-core/tmm/thermalmathematicalmodel.hpp"
 
 using namespace pycanha;  // NOLINT(build/namespaces)
+
+namespace {
+
+LookupTable1D make_linear_time_table(double start_value, double end_value) {
+    return LookupTable1D(
+        (Eigen::Vector2d{} << 0.0, 1.0).finished(),
+        (Eigen::Vector2d{} << start_value, end_value).finished());
+}
+
+}  // namespace
 
 TEST_CASE("TimeVariable updates an internal parameter", "[variables][time]") {
     Parameters parameters;
@@ -82,6 +93,48 @@ TEST_CASE("TimeVariable supports move semantics", "[variables][time]") {
             Catch::Approx(8.0));
 }
 
+TEST_CASE("TimeVariable validates constructor preconditions",
+          "[variables][time]") {
+    Parameters parameters;
+    double time = 0.0;
+
+    REQUIRE_THROWS_AS(TimeVariable("", make_linear_time_table(1.0, 2.0),
+                                   parameters, std::addressof(time)),
+                      std::invalid_argument);
+    REQUIRE_THROWS_AS(TimeVariable("load", make_linear_time_table(1.0, 2.0),
+                                   parameters, nullptr),
+                      std::invalid_argument);
+
+    parameters.add_parameter("load", 1.0);
+    REQUIRE_THROWS_AS(TimeVariable("load", make_linear_time_table(1.0, 2.0),
+                                   parameters, std::addressof(time)),
+                      std::invalid_argument);
+}
+
+TEST_CASE("TimeVariable move assignment preserves live state",
+          "[variables][time]") {
+    Parameters parameters;
+    double time = 0.0;
+
+    TimeVariable first("first", make_linear_time_table(10.0, 20.0), parameters,
+                       std::addressof(time));
+    TimeVariable second("second", make_linear_time_table(1.0, 2.0), parameters,
+                        std::addressof(time));
+
+    second = std::move(first);
+
+    REQUIRE_FALSE(parameters.contains("second"));
+    REQUIRE(parameters.contains("first"));
+
+    time = 1.0;
+    second.update();
+
+    REQUIRE(second.current_value() == Catch::Approx(20.0));
+    REQUIRE(std::get<double>(parameters.get_parameter("first")) ==
+            Catch::Approx(20.0));
+    REQUIRE_THROWS_AS(first.update(), std::runtime_error);
+}
+
 TEST_CASE("TemperatureVariable evaluates its lookup table",
           "[variables][temperature]") {
     const TemperatureVariable variable(
@@ -92,6 +145,12 @@ TEST_CASE("TemperatureVariable evaluates its lookup table",
     REQUIRE(variable.name() == "kappa");
     REQUIRE(variable.evaluate(350.0) == Catch::Approx(3.5));
     REQUIRE(variable.lookup_table().size() == 3);
+}
+
+TEST_CASE("TemperatureVariable requires a non-empty name",
+          "[variables][temperature]") {
+    REQUIRE_THROWS_AS(TemperatureVariable("", make_linear_time_table(1.0, 2.0)),
+                      std::invalid_argument);
 }
 
 TEST_CASE(
