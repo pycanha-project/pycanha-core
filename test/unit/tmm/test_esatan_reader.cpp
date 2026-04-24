@@ -23,7 +23,7 @@ namespace {
 std::filesystem::path get_reference_tmd_path() {
     const std::filesystem::path this_file(__FILE__);
     const std::filesystem::path test_root =
-        this_file.parent_path().parent_path();
+        this_file.parent_path().parent_path().parent_path();
     return test_root / "data" / "esatan" / "DISCTR_TRANSIENT.TMD";
 }
 
