@@ -66,16 +66,10 @@ ThermalNetwork::ThermalNetwork(std::shared_ptr<Nodes> nodes,
     : _nodes(std::move(nodes)),
       _conductive_couplings(std::move(conductive)),
       _radiative_couplings(std::move(radiative)) {
-    if (_nodes == nullptr) {
-        _nodes = std::make_shared<Nodes>();
-    }
-
-    if (_conductive_couplings == nullptr) {
-        _conductive_couplings = std::make_shared<ConductiveCouplings>(_nodes);
-    }
-
-    if (_radiative_couplings == nullptr) {
-        _radiative_couplings = std::make_shared<RadiativeCouplings>(_nodes);
+    if (_nodes == nullptr || _conductive_couplings == nullptr ||
+        _radiative_couplings == nullptr) {
+        throw std::invalid_argument(
+            "ThermalNetwork requires nodes and both coupling containers");
     }
 
     SPDLOG_LOGGER_TRACE(pycanha::get_logger(),

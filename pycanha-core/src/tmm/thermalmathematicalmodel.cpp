@@ -23,6 +23,51 @@
 #include "pycanha-core/utils/logger.hpp"
 
 namespace pycanha {
+
+namespace {
+
+[[nodiscard]] std::shared_ptr<ThermalNetwork> require_network(
+    std::shared_ptr<ThermalNetwork> network) {
+    if (network == nullptr) {
+        throw std::invalid_argument(
+            "ThermalMathematicalModel requires a ThermalNetwork");
+    }
+
+    return network;
+}
+
+[[nodiscard]] std::shared_ptr<Parameters> require_parameters(
+    std::shared_ptr<Parameters> parameters) {
+    if (parameters == nullptr) {
+        throw std::invalid_argument(
+            "ThermalMathematicalModel requires Parameters");
+    }
+
+    return parameters;
+}
+
+[[nodiscard]] std::shared_ptr<Formulas> require_formulas(
+    std::shared_ptr<Formulas> formulas) {
+    if (formulas == nullptr) {
+        throw std::invalid_argument(
+            "ThermalMathematicalModel requires Formulas");
+    }
+
+    return formulas;
+}
+
+[[nodiscard]] std::shared_ptr<ThermalData> require_thermal_data(
+    std::shared_ptr<ThermalData> thermal_data) {
+    if (thermal_data == nullptr) {
+        throw std::invalid_argument(
+            "ThermalMathematicalModel requires ThermalData");
+    }
+
+    return thermal_data;
+}
+
+}  // namespace
+
 ThermalMathematicalModel::ThermalMathematicalModel(std::string model_name)
     : _network(std::make_shared<ThermalNetwork>()),
       _parameters_shptr(std::make_shared<Parameters>()),
@@ -38,38 +83,13 @@ ThermalMathematicalModel::ThermalMathematicalModel(std::string model_name)
 }
 
 ThermalMathematicalModel::ThermalMathematicalModel(
-    std::string model_name, std::shared_ptr<Nodes> nodes,
-    std::shared_ptr<ConductiveCouplings> conductive,
-    std::shared_ptr<RadiativeCouplings> radiative)
-    : _network(std::make_shared<ThermalNetwork>(
-          std::move(nodes), std::move(conductive), std::move(radiative))),
-      _parameters_shptr(std::make_shared<Parameters>()),
-      _formulas_shptr(std::make_shared<Formulas>()),
-      _thermal_data_shptr(std::make_shared<ThermalData>()),
-      name(std::move(model_name)) {
-    associate_resources();
-    initialize_internal_time_parameter();
-    const auto logger = get_logger();
-
-    SPDLOG_LOGGER_TRACE(
-        logger, "ThermalMathematicalModel: constructor with shared nodes");
-}
-
-ThermalMathematicalModel::ThermalMathematicalModel(
-    std::string model_name, std::shared_ptr<Nodes> nodes,
-    std::shared_ptr<ConductiveCouplings> conductive,
-    std::shared_ptr<RadiativeCouplings> radiative,
+    std::string model_name, std::shared_ptr<ThermalNetwork> network,
     std::shared_ptr<Parameters> parameters, std::shared_ptr<Formulas> formulas,
     std::shared_ptr<ThermalData> thermal_data)
-    : _network(std::make_shared<ThermalNetwork>(
-          std::move(nodes), std::move(conductive), std::move(radiative))),
-      _parameters_shptr(parameters != nullptr ? std::move(parameters)
-                                              : std::make_shared<Parameters>()),
-      _formulas_shptr(formulas != nullptr ? std::move(formulas)
-                                          : std::make_shared<Formulas>()),
-      _thermal_data_shptr(thermal_data != nullptr
-                              ? std::move(thermal_data)
-                              : std::make_shared<ThermalData>()),
+    : _network(require_network(std::move(network))),
+      _parameters_shptr(require_parameters(std::move(parameters))),
+      _formulas_shptr(require_formulas(std::move(formulas))),
+      _thermal_data_shptr(require_thermal_data(std::move(thermal_data))),
       name(std::move(model_name)) {
     associate_resources();
     initialize_internal_time_parameter();

@@ -63,13 +63,7 @@ class ThermalMathematicalModel {
 
     explicit ThermalMathematicalModel(std::string model_name);
     ThermalMathematicalModel(std::string model_name,
-                             std::shared_ptr<Nodes> nodes,
-                             std::shared_ptr<ConductiveCouplings> conductive,
-                             std::shared_ptr<RadiativeCouplings> radiative);
-    ThermalMathematicalModel(std::string model_name,
-                             std::shared_ptr<Nodes> nodes,
-                             std::shared_ptr<ConductiveCouplings> conductive,
-                             std::shared_ptr<RadiativeCouplings> radiative,
+                             std::shared_ptr<ThermalNetwork> network,
                              std::shared_ptr<Parameters> parameters,
                              std::shared_ptr<Formulas> formulas,
                              std::shared_ptr<ThermalData> thermal_data);

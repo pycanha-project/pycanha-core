@@ -19,11 +19,7 @@ class ThermalModel {
     explicit ThermalModel(const std::string& model_name);
     ThermalModel(std::string model_name,
                  std::shared_ptr<ThermalMathematicalModel> tmm,
-                 std::shared_ptr<gmm::GeometryModel> gmm,
-                 std::shared_ptr<Parameters> parameters,
-                 std::shared_ptr<Formulas> formulas,
-                 std::shared_ptr<ThermalData> thermal_data,
-                 std::shared_ptr<SolverRegistry> solvers = nullptr);
+                 std::shared_ptr<gmm::GeometryModel> gmm);
     ~ThermalModel() = default;
 
     ThermalModel(const ThermalModel&) = delete;

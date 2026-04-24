@@ -13,6 +13,29 @@
 
 namespace pycanha {
 
+namespace {
+
+[[nodiscard]] std::shared_ptr<ThermalMathematicalModel> require_tmm(
+    std::shared_ptr<ThermalMathematicalModel> tmm) {
+    if (tmm == nullptr) {
+        throw std::invalid_argument(
+            "ThermalModel requires a ThermalMathematicalModel");
+    }
+
+    return tmm;
+}
+
+[[nodiscard]] std::shared_ptr<gmm::GeometryModel> require_gmm(
+    std::shared_ptr<gmm::GeometryModel> gmm) {
+    if (gmm == nullptr) {
+        throw std::invalid_argument("ThermalModel requires a GeometryModel");
+    }
+
+    return gmm;
+}
+
+}  // namespace
+
 ThermalModel::ThermalModel(const std::string& model_name)
     : _name(model_name),
       _tmm(std::make_shared<ThermalMathematicalModel>(model_name)),
@@ -27,24 +50,16 @@ ThermalModel::ThermalModel(const std::string& model_name)
 
 ThermalModel::ThermalModel(std::string model_name,
                            std::shared_ptr<ThermalMathematicalModel> tmm,
-                           std::shared_ptr<gmm::GeometryModel> gmm,
-                           std::shared_ptr<Parameters> parameters,
-                           std::shared_ptr<Formulas> formulas,
-                           std::shared_ptr<ThermalData> thermal_data,
-                           std::shared_ptr<SolverRegistry> solvers)
+                           std::shared_ptr<gmm::GeometryModel> gmm)
     : _name(std::move(model_name)),
-      _tmm(tmm != nullptr ? std::move(tmm)
-                          : std::make_shared<ThermalMathematicalModel>(_name)),
-      _gmm(gmm != nullptr ? std::move(gmm)
-                          : std::make_shared<gmm::GeometryModel>(_name)),
-      _parameters(parameters != nullptr ? std::move(parameters)
-                                        : _tmm->parameters_ptr()),
-      _formulas(formulas != nullptr ? std::move(formulas)
-                                    : _tmm->formulas_ptr()),
-      _thermal_data(thermal_data != nullptr ? std::move(thermal_data)
-                                            : _tmm->thermal_data_ptr()),
-      _solvers(solvers != nullptr ? std::move(solvers)
-                                  : std::make_shared<SolverRegistry>(_tmm)) {
+      _tmm(require_tmm(std::move(tmm))),
+      _gmm(require_gmm(std::move(gmm))),
+      _parameters(_tmm->parameters_ptr()),
+      _formulas(_tmm->formulas_ptr()),
+      _thermal_data(_tmm->thermal_data_ptr()),
+      _solvers(std::make_shared<SolverRegistry>(_tmm)) {
+    // TODO: If GMM later depends on shared model resources, validate here
+    // that the injected GMM and TMM reference the same instances.
     _tmm->associate_solvers(*_solvers);
     _callbacks = std::make_shared<CallbackRegistry>(*this);
 }
