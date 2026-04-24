@@ -4,7 +4,6 @@
 #include <memory>
 #include <utility>
 
-#include "pycanha-core/parameters/entity.hpp"
 #include "pycanha-core/parameters/formulas.hpp"
 #include "pycanha-core/parameters/parameters.hpp"
 #include "pycanha-core/parameters/variable.hpp"
@@ -107,21 +106,21 @@ TEST_CASE(
         "load", (Eigen::Vector3d{} << 0.0, 5.0, 10.0).finished(),
         (Eigen::Vector3d{} << 0.0, 50.0, 100.0).finished());
 
-    const auto formula = model->formulas.create_formula(
-        Entity::qi(model->network(), 1), "load + time");
-    model->formulas.add_formula(formula);
-    model->formulas.validate_for_execution();
-    model->formulas.compile_formulas();
-    model->formulas.lock_parameters_for_execution();
+    const auto formula =
+        model->formulas().create_formula(model->entity("QI1"), "load + time");
+    model->formulas().add_formula(formula);
+    model->formulas().validate_for_execution();
+    model->formulas().compile_formulas();
+    model->formulas().lock_parameters_for_execution();
 
     model->time = 6.0;
     model->callback_solver_loop();
 
-    REQUIRE(std::get<double>(model->parameters.get_parameter("time")) ==
+    REQUIRE(std::get<double>(model->parameters().get_parameter("time")) ==
             Catch::Approx(6.0));
-    REQUIRE(std::get<double>(model->parameters.get_parameter("load")) ==
+    REQUIRE(std::get<double>(model->parameters().get_parameter("load")) ==
             Catch::Approx(60.0));
     REQUIRE(model->nodes().get_qi(1) == Catch::Approx(66.0));
 
-    model->formulas.unlock_parameters();
+    model->formulas().unlock_parameters();
 }

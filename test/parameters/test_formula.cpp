@@ -59,19 +59,14 @@ std::shared_ptr<pycanha::ThermalMathematicalModel> make_jacobian_model() {
     model->add_node(boundary_node);
     model->add_conductive_coupling(1, 2, 1.0);
 
-    model->parameters.add_parameter("k", 1.0);
-    model->parameters.add_parameter("C", 1.0);
+    model->parameters().add_parameter("k", 1.0);
+    model->parameters().add_parameter("C", 1.0);
 
-    const pycanha::Entity conductive =
-        pycanha::Entity::gl(model->network(), 1, 2);
-    const pycanha::Entity capacity = pycanha::Entity::c(model->network(), 1);
-
-    model->formulas.add_formula(std::make_shared<pycanha::ExpressionFormula>(
-        conductive, model->parameters, "k"));
-    model->formulas.add_formula(std::make_shared<pycanha::ExpressionFormula>(
-        capacity, model->parameters, "C"));
-    model->formulas.apply_formulas();
-    model->formulas.calculate_derivatives();
+    static_cast<void>(model->formulas().add_parameter_formula("GL(1,2)", "k"));
+    static_cast<void>(model->formulas().add_parameter_formula("C1", "C"));
+    model->formulas().apply_formulas();
+    model->formulas().parameters_with_derivatives().add_parameter("k");
+    model->formulas().parameters_with_derivatives().add_parameter("C");
     return model;
 }
 
@@ -333,19 +328,22 @@ TEST_CASE("ExpressionFormula integrates with TSCNRLDS_JACOBIAN",
     auto model = make_jacobian_model();
 
     pycanha::TSCNRLDS_JACOBIAN solver(model);
-    solver.MAX_ITERS = 50;
+    solver.max_iters = 50;
     solver.abstol_temp = 1.0e-9;
     solver.set_simulation_time(0.0, 5.0, 0.01, 0.1);
     solver.initialize();
     solver.solve();
 
-    REQUIRE(model->thermal_data.models().has_model("TSCNRLDS"));
+    REQUIRE(model->thermal_data().models().has_model("TSCNRLDS"));
     REQUIRE(solver.parameter_names().size() == 2);
     REQUIRE(solver.parameter_names().at(0) == "k");
     REQUIRE(solver.parameter_names().at(1) == "C");
+    REQUIRE(solver.derivative_parameter_names().size() == 2);
+    REQUIRE(solver.derivative_parameter_names().at(0) == "k");
+    REQUIRE(solver.derivative_parameter_names().at(1) == "C");
 
     const auto& jacobian_output =
-        model->thermal_data.models().get_model("TSCNRLDS").jacobian();
+        model->thermal_data().models().get_model("TSCNRLDS").jacobian();
     REQUIRE(jacobian_output.num_timesteps() >= 2);
     REQUIRE(jacobian_output.rows() == 1);
     REQUIRE(jacobian_output.cols() == 2);

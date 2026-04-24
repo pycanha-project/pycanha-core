@@ -34,6 +34,7 @@ set(TEST_SOURCES
       "${CMAKE_CURRENT_SOURCE_DIR}/tmm/thermaldata/test_sparse_time_series.cpp"
       "${CMAKE_CURRENT_SOURCE_DIR}/tmm/thermaldata/test_thermaldata.cpp"
       "${CMAKE_CURRENT_SOURCE_DIR}/solvers/test_sslu.cpp"
+      "${CMAKE_CURRENT_SOURCE_DIR}/solvers/test_callback_registry.cpp"
       "${CMAKE_CURRENT_SOURCE_DIR}/solvers/test_tscnrlds.cpp"
       "${CMAKE_CURRENT_SOURCE_DIR}/solvers/test_tscnrlds_jacobian.cpp"
 )

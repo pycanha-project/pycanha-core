@@ -75,7 +75,7 @@ TEST_CASE("ESATANReader can import real TMD and model is solvable",
     REQUIRE(model->nodes().get_num_nodes() > 0);
 
     pycanha::SSLU solver(model);
-    solver.MAX_ITERS = 2;
+    solver.max_iters = 2;
     solver.abstol_temp = 1.0;
 
     REQUIRE_NOTHROW(solver.initialize());

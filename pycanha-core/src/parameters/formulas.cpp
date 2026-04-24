@@ -15,6 +15,7 @@
 #include <memory>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <unordered_set>
 #include <utility>
 #include <vector>
@@ -26,6 +27,84 @@
 #include "pycanha-core/utils/logger.hpp"
 
 namespace pycanha {
+
+void DerivativeParameterRegistry::add_parameter(
+    const std::string& parameter_name) {
+    if (_parameters == nullptr) {
+        throw std::runtime_error(
+            "Derivative parameter registry requires parameter storage");
+    }
+    if (!_parameters->contains(parameter_name)) {
+        throw std::invalid_argument("Unknown parameter '" + parameter_name +
+                                    "' cannot be added to the derivative set");
+    }
+
+    const auto parameter_idx = _parameters->get_idx(parameter_name);
+    if (!parameter_idx.has_value()) {
+        throw std::invalid_argument("Unknown parameter '" + parameter_name +
+                                    "' cannot be added to the derivative set");
+    }
+
+    const auto resolved_name = _parameters->get_parameter_name(*parameter_idx);
+    if (!resolved_name.has_value()) {
+        throw std::invalid_argument("Unknown parameter '" + parameter_name +
+                                    "' cannot be added to the derivative set");
+    }
+
+    if (contains(*resolved_name)) {
+        return;
+    }
+
+    // TODO: validate that derivative-selected parameters are used only by
+    // ParameterFormula entries once the formula taxonomy migration is complete.
+    _parameter_names.push_back(*resolved_name);
+}
+
+bool DerivativeParameterRegistry::remove_parameter(
+    const std::string& parameter_name) noexcept {
+    if (_parameters == nullptr) {
+        return false;
+    }
+
+    const auto parameter_idx = _parameters->get_idx(parameter_name);
+    if (!parameter_idx.has_value()) {
+        return false;
+    }
+
+    const auto resolved_name = _parameters->get_parameter_name(*parameter_idx);
+    if (!resolved_name.has_value()) {
+        return false;
+    }
+
+    const auto iterator = std::find(_parameter_names.begin(),
+                                    _parameter_names.end(), *resolved_name);
+    if (iterator == _parameter_names.end()) {
+        return false;
+    }
+
+    _parameter_names.erase(iterator);
+    return true;
+}
+
+bool DerivativeParameterRegistry::contains(
+    const std::string& parameter_name) const noexcept {
+    if (_parameters == nullptr) {
+        return false;
+    }
+
+    const auto parameter_idx = _parameters->get_idx(parameter_name);
+    if (!parameter_idx.has_value()) {
+        return false;
+    }
+
+    const auto resolved_name = _parameters->get_parameter_name(*parameter_idx);
+    if (!resolved_name.has_value()) {
+        return false;
+    }
+
+    return std::find(_parameter_names.begin(), _parameter_names.end(),
+                     *resolved_name) != _parameter_names.end();
+}
 
 [[nodiscard]] std::shared_ptr<ThermalNetwork> ensure_network(
     const std::shared_ptr<ThermalNetwork>& network) {
@@ -95,14 +174,28 @@ Formulas::Formulas() : _network(nullptr), _parameters(nullptr) {}
 
 Formulas::Formulas(std::shared_ptr<ThermalNetwork> network,
                    std::shared_ptr<Parameters> parameters)
-    : _network(std::move(network)), _parameters(std::move(parameters)) {}
+    : _network(std::move(network)),
+      _parameters(std::move(parameters)),
+      _parameters_with_derivatives(_parameters) {}
 
 void Formulas::associate(std::shared_ptr<ThermalNetwork> network,
                          std::shared_ptr<Parameters> parameters) {
     _network = std::move(network);
     _parameters = std::move(parameters);
+    _parameters_with_derivatives.associate(_parameters);
     _validated_structure_version.reset();
     _compiled_structure_version.reset();
+}
+
+Entity Formulas::resolve_entity(std::string_view entity) const {
+    const auto network = ensure_network(_network);
+    const auto resolved = Entity::from_string(*network, entity);
+    if (!resolved.has_value()) {
+        throw std::invalid_argument("Unknown formula target '" +
+                                    std::string(entity) + "'");
+    }
+
+    return *resolved;
 }
 
 std::shared_ptr<Formula> Formulas::create_formula(
@@ -163,11 +256,9 @@ std::shared_ptr<Formula> Formulas::create_formula(
         }
     }
 
-    if (all_parameter_symbols && (symbols.size() == 1U) &&
-        (dynamic_cast<const SymEngine::Symbol*>(parsed_expression.get()) !=
-         nullptr)) {
+    if (all_parameter_symbols) {
         return std::make_shared<ParameterFormula>(entity, *parameter_storage,
-                                                  symbols.begin()->first);
+                                                  formula_string);
     }
 
     if (has_entity_symbols) {
@@ -191,6 +282,64 @@ ParameterFormula Formulas::create_parameter_formula(
     return {entity, *parameter_storage, parameter};
 }
 
+ValueFormula& Formulas::add_value_formula(Entity entity, double value) {
+    auto formula = std::make_shared<ValueFormula>(entity);
+    formula->set_value(value);
+    add_formula(formula);
+    return *formula;
+}
+
+ValueFormula& Formulas::add_value_formula(std::string_view entity,
+                                          double value) {
+    return add_value_formula(resolve_entity(entity), value);
+}
+
+ParameterFormula& Formulas::add_parameter_formula(
+    Entity entity, const std::string& expression) {
+    auto formula = std::make_shared<ParameterFormula>(
+        entity, *ensure_parameters(_parameters), expression);
+    add_formula(formula);
+    return *formula;
+}
+
+ParameterFormula& Formulas::add_parameter_formula(
+    std::string_view entity, const std::string& expression) {
+    return add_parameter_formula(resolve_entity(entity), expression);
+}
+
+ExpressionFormula& Formulas::add_expression_formula(
+    Entity entity, const std::string& expression) {
+    auto formula = std::make_shared<ExpressionFormula>(
+        entity, *ensure_parameters(_parameters), expression, _network.get());
+    add_formula(formula);
+    return *formula;
+}
+
+ExpressionFormula& Formulas::add_expression_formula(
+    std::string_view entity, const std::string& expression) {
+    return add_expression_formula(resolve_entity(entity), expression);
+}
+
+Formula& Formulas::add_formula(Entity entity, double value) {
+    return add_value_formula(entity, value);
+}
+
+Formula& Formulas::add_formula(std::string_view entity, double value) {
+    return add_value_formula(entity, value);
+}
+
+Formula& Formulas::add_formula(Entity entity,
+                               const std::string& formula_string) {
+    auto formula = create_formula(entity, formula_string);
+    add_formula(formula);
+    return *formula;
+}
+
+Formula& Formulas::add_formula(std::string_view entity,
+                               const std::string& formula_string) {
+    return add_formula(resolve_entity(entity), formula_string);
+}
+
 void Formulas::add_formula(const Formula& formula) {
     auto clone = formula.clone();
     auto shared = std::shared_ptr<Formula>(std::move(clone));
@@ -202,11 +351,56 @@ void Formulas::add_formula(const std::shared_ptr<Formula>& formula) {
         throw std::invalid_argument("Cannot add a null formula");
     }
 
+    const auto duplicate = std::find_if(
+        _formulas.begin(), _formulas.end(), [&formula](const auto& existing) {
+            return existing->entity().is_same_as(formula->entity());
+        });
+    if (duplicate != _formulas.end()) {
+        throw std::invalid_argument("A formula for entity '" +
+                                    formula->entity().string_representation() +
+                                    "' already exists");
+    }
+
     _formulas.push_back(formula);
     _validated_structure_version.reset();
     _compiled_structure_version.reset();
     for (const auto& dependency : formula->parameter_dependencies()) {
         _parameter_dependencies[dependency].push_back(formula);
+    }
+}
+
+bool Formulas::remove_formula(const Entity& entity) noexcept {
+    const auto iterator = std::find_if(
+        _formulas.begin(), _formulas.end(), [&entity](const auto& formula) {
+            return formula->entity().is_same_as(entity);
+        });
+    if (iterator == _formulas.end()) {
+        SPDLOG_LOGGER_INFO(get_logger(),
+                           "Formula '{}' was not present for removal",
+                           entity.string_representation());
+        return false;
+    }
+
+    _formulas.erase(iterator);
+    _parameter_dependencies.clear();
+    for (const auto& formula : _formulas) {
+        for (const auto& dependency : formula->parameter_dependencies()) {
+            _parameter_dependencies[dependency].push_back(formula);
+        }
+    }
+    _validated_structure_version.reset();
+    _compiled_structure_version.reset();
+    return true;
+}
+
+bool Formulas::remove_formula(std::string_view entity) noexcept {
+    try {
+        return remove_formula(resolve_entity(entity));
+    } catch (const std::exception&) {
+        SPDLOG_LOGGER_INFO(get_logger(),
+                           "Formula target '{}' was not present for removal",
+                           std::string(entity));
+        return false;
     }
 }
 

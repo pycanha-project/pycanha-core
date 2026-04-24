@@ -26,11 +26,11 @@ TEST_CASE("ThermalMathematicalModel composes a ThermalNetwork",
     const bool shares_nodes_storage = nodes_storage == network->nodes_ptr();
     REQUIRE(shares_nodes_storage);
 
-    const bool formulas_associated = model.formulas.network() == network;
+    const bool formulas_associated = model.formulas().network() == network;
     REQUIRE(formulas_associated);
 
     const bool thermal_data_associated =
-        model.thermal_data.network_ptr() == network;
+        model.thermal_data().network_ptr() == network;
     REQUIRE(thermal_data_associated);
 
     Node diffusive(1);

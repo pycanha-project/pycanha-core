@@ -181,7 +181,7 @@ std::shared_ptr<pycanha::ThermalMathematicalModel> make_model() {
 
 bool compare_temps(const pycanha::ThermalMathematicalModel& model,
                    bool print_diffs = false) {
-    const auto& thermal_data = model.thermal_data;
+    const auto& thermal_data = model.thermal_data();
     if (!thermal_data.models().has_model("TSCNRLDS")) {
         if (print_diffs) {
             std::cout << "Thermal data model 'TSCNRLDS' not found.\n";
@@ -225,7 +225,7 @@ TEST_CASE("TSCNRLDS solves a simple model", "[solver][tscnrlds]") {
     auto model = make_model();
 
     pycanha::TSCNRLDS solver(model);
-    solver.MAX_ITERS = 100;
+    solver.max_iters = 100;
     solver.abstol_temp = 1e-6;
     solver.set_simulation_time(0.0, 100000.0, 1000.0, 10000.0);
 
@@ -241,7 +241,7 @@ TEST_CASE("TSCNRLDS solves a simple model", "[solver][tscnrlds]") {
     // Re-run to verify no errors (like mem-leaks) on multiple initializations
     solver.deinitialize();
     reset_model_temps(*model);
-    solver.MAX_ITERS = 100;
+    solver.max_iters = 100;
     solver.abstol_temp = 1e-6;
     solver.set_simulation_time(0.0, 100000.0, 1000.0, 10000.0);
     solver.initialize();
@@ -252,7 +252,7 @@ TEST_CASE("TSCNRLDS solves a simple model", "[solver][tscnrlds]") {
     // same model
     auto solver2 = pycanha::TSCNRLDS(model);
     reset_model_temps(*model);
-    solver2.MAX_ITERS = 100;
+    solver2.max_iters = 100;
     solver2.abstol_temp = 1e-6;
     solver2.set_simulation_time(0.0, 100000.0, 1000.0, 10000.0);
     solver2.initialize();

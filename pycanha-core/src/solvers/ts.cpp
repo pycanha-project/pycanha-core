@@ -206,11 +206,11 @@ void TransientSolver::initialize_common() {
             .reserve(to_sizet(num_outputs));
     }
 
-    tmm.thermal_data.models().add_model(output_model_name, std::move(model));
+    tmm.thermal_data().models().add_model(output_model_name, std::move(model));
 }
 
 void TransientSolver::save_output_data() {
-    auto& model = tmm.thermal_data.models().get_model(output_model_name);
+    auto& model = tmm.thermal_data().models().get_model(output_model_name);
 
     if (output_config.has(DataModelAttribute::T)) {
         set_dense_output(model, DataModelAttribute::T, idata_out, time, T);
@@ -274,6 +274,14 @@ void TransientSolver::save_output_data() {
             model.get_sparse_attribute(DataModelAttribute::KR), time,
             build_full_coupling_matrix(rtcs), eps_time);
     }
+}
+
+DataModel& TransientSolver::output_model() {
+    return tmm.thermal_data().models().get_model(output_model_name);
+}
+
+const DataModel& TransientSolver::output_model() const {
+    return tmm.thermal_data().models().get_model(output_model_name);
 }
 
 void TransientSolver::outputs_first_last() {

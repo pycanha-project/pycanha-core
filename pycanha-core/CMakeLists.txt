@@ -86,10 +86,13 @@ add_library(${LIB_NAME} STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/tmm/node.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/tmm/nodes.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/tmm/thermalmathematicalmodel.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/tmm/thermalmodel.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/utils/logger.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/utils/SparseUtils.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/callback_registry.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/solver.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/solver_registry.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/ss.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/sslu.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/ts.cpp

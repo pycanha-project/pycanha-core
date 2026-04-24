@@ -179,18 +179,18 @@ TEST_CASE("ThermalMathematicalModel uses compiled formulas while locked",
     model->add_node(1);
     model->nodes().set_qi(1, 0.0);
 
-    model->parameters.add_parameter("P1", 10.0);
-    model->formulas.add_formula(pycanha::ParameterFormula(
-        pycanha::Entity::qi(model->network(), 1), model->parameters, "P1"));
+    model->parameters().add_parameter("P1", 10.0);
+    model->formulas().add_formula(pycanha::ParameterFormula(
+        model->entity("QI1"), model->parameters(), "P1"));
 
-    model->formulas.validate_for_execution();
-    model->formulas.compile_formulas();
-    model->formulas.lock_parameters_for_execution();
+    model->formulas().validate_for_execution();
+    model->formulas().compile_formulas();
+    model->formulas().lock_parameters_for_execution();
 
-    model->parameters.set_parameter("P1", 15.0);
+    model->parameters().set_parameter("P1", 15.0);
     model->callback_solver_loop();
 
     REQUIRE(model->nodes().get_qi(1) == Catch::Approx(15.0));
 
-    model->formulas.unlock_parameters();
+    model->formulas().unlock_parameters();
 }

@@ -35,14 +35,12 @@ TEST_CASE("Formulas create smart formula types", "[formulas][factory]") {
     REQUIRE(dynamic_cast<ParameterFormula*>(parameter_formula.get()) !=
             nullptr);
 
-    const auto expression_formula =
+    const auto parameter_expression_formula =
         formulas.create_formula(entity, "gain + offset");
-    REQUIRE(dynamic_cast<ExpressionFormula*>(expression_formula.get()) !=
-            nullptr);
+    REQUIRE(dynamic_cast<ParameterFormula*>(
+                parameter_expression_formula.get()) != nullptr);
 
-    formulas.add_formula(value_formula);
-    formulas.add_formula(parameter_formula);
-    formulas.add_formula(expression_formula);
+    formulas.add_formula(parameter_expression_formula);
 
     formulas.apply_formulas();
     REQUIRE(network->nodes().get_qi(1) == Catch::Approx(5.0));

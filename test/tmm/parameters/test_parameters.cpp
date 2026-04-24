@@ -150,6 +150,39 @@ TEST_CASE("Parameters rename entries and track structure version",
     REQUIRE(params.get_structure_version() == version_after_add + 1U);
 }
 
+TEST_CASE("Parameters are case-insensitive at the public boundary",
+          "[parameters]") {
+    Parameters params;
+
+    params.add_parameter("Gain", 12.0);
+
+    REQUIRE(params.contains("gain"));
+    REQUIRE(params.contains("GAIN"));
+    REQUIRE(std::get<double>(params.get_parameter("gAiN")) ==
+            Catch::Approx(12.0));
+
+    params.rename_parameter("GAIN", "Offset");
+
+    REQUIRE_FALSE(params.contains("gain"));
+    REQUIRE(params.contains("offset"));
+    REQUIRE(std::get<double>(params.get_parameter("OFFSET")) ==
+            Catch::Approx(12.0));
+}
+
+TEST_CASE("Parameters reject reserved and entity-like user names",
+          "[parameters]") {
+    Parameters params;
+
+    params.add_parameter("time", 1.0);
+    params.add_parameter("QI1", 2.0);
+    params.add_parameter("gl(1,2)", 3.0);
+
+    REQUIRE(params.size() == 0U);
+    REQUIRE_FALSE(params.contains("time"));
+    REQUIRE_FALSE(params.contains("QI1"));
+    REQUIRE_FALSE(params.contains("gl(1,2)"));
+}
+
 TEST_CASE("Parameters expose explicit handle getters and setters",
           "[parameters]") {
     Parameters params;
