@@ -188,8 +188,8 @@ void Formulas::associate(std::shared_ptr<ThermalNetwork> network,
 }
 
 Entity Formulas::resolve_entity(std::string_view entity) const {
-    const auto network = ensure_network(_network);
-    const auto resolved = Entity::from_string(*network, entity);
+    const auto associated_network = ensure_network(_network);
+    const auto resolved = Entity::from_string(*associated_network, entity);
     if (!resolved.has_value()) {
         throw std::invalid_argument("Unknown formula target '" +
                                     std::string(entity) + "'");

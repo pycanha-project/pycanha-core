@@ -4,6 +4,8 @@
 #include <catch2/catch_test_macros.hpp>
 #include <cmath>
 #include <cstdint>
+#include <optional>
+#include <stdexcept>
 #include <string>
 #include <utility>
 #include <variant>
@@ -14,6 +16,18 @@
 using namespace pycanha;  // NOLINT(build/namespaces)
 
 // NOLINTBEGIN(bugprone-chained-comparison)
+
+namespace {
+
+Index require_index(const std::optional<Index>& value) {
+    if (!value.has_value()) {
+        throw std::runtime_error("Expected parameter index to exist");
+    }
+
+    return value.value();
+}
+
+}  // namespace
 
 TEST_CASE("Parameters add and retrieve scalars", "[parameters]") {
     // NOLINTNEXTLINE(misc-const-correctness)
@@ -282,19 +296,21 @@ TEST_CASE("Parameters refresh cached data and expose index accessors",
     const auto time_idx = params.get_idx("time");
     REQUIRE(scalar_idx.has_value());
     REQUIRE(time_idx.has_value());
+    const auto scalar_idx_value = require_index(scalar_idx);
+    const auto time_idx_value = require_index(time_idx);
 
-    const auto scalar_value = params.get_parameter_optional(*scalar_idx);
+    const auto scalar_value = params.get_parameter_optional(scalar_idx_value);
     REQUIRE(scalar_value.has_value());
     REQUIRE(std::get<double>(scalar_value.value_or(
                 Parameters::ThermalValue{0.0})) == Catch::Approx(1.5));
-    REQUIRE(params.get_parameter_name(*time_idx) ==
+    REQUIRE(params.get_parameter_name(time_idx_value) ==
             std::optional<std::string>{"time"});
 
     const auto* scalar_ptr = static_cast<const double*>(
-        std::as_const(params).get_value_ptr(*scalar_idx));
+        std::as_const(params).get_value_ptr(scalar_idx_value));
     REQUIRE(scalar_ptr != nullptr);
     REQUIRE(*scalar_ptr == Catch::Approx(1.5));
-    REQUIRE(std::as_const(params).get_double_ptr(*scalar_idx) != nullptr);
+    REQUIRE(std::as_const(params).get_double_ptr(scalar_idx_value) != nullptr);
 
     const auto& snapshot = params.data();
     REQUIRE(snapshot.size() == 2U);

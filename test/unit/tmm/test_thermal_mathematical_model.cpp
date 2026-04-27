@@ -1,3 +1,4 @@
+#include <Eigen/Core>
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers.hpp>
@@ -5,6 +6,7 @@
 #include <memory>
 #include <stdexcept>
 #include <utility>
+#include <vector>
 
 #include "pycanha-core/globals.hpp"
 #include "pycanha-core/parameters/formulas.hpp"
@@ -21,17 +23,40 @@ using namespace pycanha;  // NOLINT(build/namespaces)
 
 namespace {
 
-int callback_solver_calls = 0;
-int callback_time_calls = 0;
-int callback_after_calls = 0;
+struct CallbackCountState {
+    int solver_calls = 0;
+    int time_calls = 0;
+    int after_calls = 0;
+};
 
-void count_solver_callback(ThermalMathematicalModel*) {
-    ++callback_solver_calls;
+CallbackCountState& c_callback_counts() {
+    static CallbackCountState counts;
+    return counts;
 }
 
-void count_time_callback(ThermalMathematicalModel*) { ++callback_time_calls; }
+void reset_c_callback_counts() { c_callback_counts() = {}; }
 
-void count_after_callback(ThermalMathematicalModel*) { ++callback_after_calls; }
+void count_solver_callback(ThermalMathematicalModel* model) {
+    static_cast<void>(model);
+    ++c_callback_counts().solver_calls;
+}
+
+void count_time_callback(ThermalMathematicalModel* model) {
+    static_cast<void>(model);
+    ++c_callback_counts().time_calls;
+}
+
+void count_after_callback(ThermalMathematicalModel* model) {
+    static_cast<void>(model);
+    ++c_callback_counts().after_calls;
+}
+
+void require_callback_counts(const CallbackCountState& actual_counts,
+                             const CallbackCountState& expected_counts) {
+    REQUIRE(actual_counts.solver_calls == expected_counts.solver_calls);
+    REQUIRE(actual_counts.time_calls == expected_counts.time_calls);
+    REQUIRE(actual_counts.after_calls == expected_counts.after_calls);
+}
 
 }  // namespace
 
@@ -84,247 +109,234 @@ TEST_CASE("ThermalMathematicalModel composes a ThermalNetwork",
     REQUIRE_THAT(radiative_value, Catch::Matchers::WithinAbs(5.0, 1e-12));
 }
 
-TEST_CASE("ThermalMathematicalModel validates injected resources and helpers",
+TEST_CASE("ThermalMathematicalModel rejects null injected resources",
           "[thermalmathematicalmodel]") {
-    SECTION("custom constructor rejects null shared resources") {
-        auto network = std::make_shared<ThermalNetwork>();
-        auto parameters = std::make_shared<Parameters>();
-        auto formulas = std::make_shared<Formulas>();
-        auto thermal_data = std::make_shared<ThermalData>();
+    auto network = std::make_shared<ThermalNetwork>();
+    auto parameters = std::make_shared<Parameters>();
+    auto formulas = std::make_shared<Formulas>();
+    auto thermal_data = std::make_shared<ThermalData>();
 
-        REQUIRE_THROWS_AS(
-            ThermalMathematicalModel("missing-network", nullptr, parameters,
-                                     formulas, thermal_data),
-            std::invalid_argument);
-        REQUIRE_THROWS_AS(
-            ThermalMathematicalModel("missing-parameters", network, nullptr,
-                                     formulas, thermal_data),
-            std::invalid_argument);
-        REQUIRE_THROWS_AS(
-            ThermalMathematicalModel("missing-formulas", network, parameters,
-                                     nullptr, thermal_data),
-            std::invalid_argument);
-        REQUIRE_THROWS_AS(
-            ThermalMathematicalModel("missing-data", network, parameters,
-                                     formulas, nullptr),
-            std::invalid_argument);
-    }
+    REQUIRE_THROWS_AS(
+        ThermalMathematicalModel("missing-network", nullptr, parameters,
+                                 formulas, thermal_data),
+        std::invalid_argument);
+    REQUIRE_THROWS_AS(ThermalMathematicalModel("missing-parameters", network,
+                                               nullptr, formulas, thermal_data),
+                      std::invalid_argument);
+    REQUIRE_THROWS_AS(
+        ThermalMathematicalModel("missing-formulas", network, parameters,
+                                 nullptr, thermal_data),
+        std::invalid_argument);
+    REQUIRE_THROWS_AS(ThermalMathematicalModel("missing-data", network,
+                                               parameters, formulas, nullptr),
+                      std::invalid_argument);
+}
 
-    SECTION("custom constructor associates injected resources") {
-        auto network = std::make_shared<ThermalNetwork>();
-        auto parameters = std::make_shared<Parameters>();
-        auto formulas = std::make_shared<Formulas>();
-        auto thermal_data = std::make_shared<ThermalData>();
+TEST_CASE("ThermalMathematicalModel associates injected resources",
+          "[thermalmathematicalmodel]") {
+    auto network = std::make_shared<ThermalNetwork>();
+    auto parameters = std::make_shared<Parameters>();
+    auto formulas = std::make_shared<Formulas>();
+    auto thermal_data = std::make_shared<ThermalData>();
 
-        ThermalMathematicalModel model("custom", network, parameters, formulas,
-                                       thermal_data);
+    ThermalMathematicalModel model("custom", network, parameters, formulas,
+                                   thermal_data);
 
-        REQUIRE(model.network_ptr() == network);
-        REQUIRE(model.parameters_ptr() == parameters);
-        REQUIRE(model.formulas_ptr() == formulas);
-        REQUIRE(model.thermal_data_ptr() == thermal_data);
-        REQUIRE(model.formulas().network() == network);
-        REQUIRE(model.thermal_data().network_ptr() == network);
-        REQUIRE(model.parameters().contains("time"));
-    }
+    REQUIRE(model.network_ptr() == network);
+    REQUIRE(model.parameters_ptr() == parameters);
+    REQUIRE(model.formulas_ptr() == formulas);
+    REQUIRE(model.thermal_data_ptr() == thermal_data);
+    REQUIRE(model.formulas().network() == network);
+    REQUIRE(model.thermal_data().network_ptr() == network);
+    REQUIRE(model.parameters().contains("time"));
+}
 
-    SECTION("reserved time parameter remains runtime synchronized") {
-        auto network = std::make_shared<ThermalNetwork>();
-        auto parameters = std::make_shared<Parameters>();
-        auto formulas = std::make_shared<Formulas>();
-        auto thermal_data = std::make_shared<ThermalData>();
+TEST_CASE("ThermalMathematicalModel keeps the reserved time parameter synced",
+          "[thermalmathematicalmodel]") {
+    auto network = std::make_shared<ThermalNetwork>();
+    auto parameters = std::make_shared<Parameters>();
+    auto formulas = std::make_shared<Formulas>();
+    auto thermal_data = std::make_shared<ThermalData>();
 
-        parameters->add_parameter("time", 5.0);
-        ThermalMathematicalModel model("manual-time", network, parameters,
-                                       formulas, thermal_data);
+    parameters->add_parameter("time", 5.0);
+    ThermalMathematicalModel model("manual-time", network, parameters, formulas,
+                                   thermal_data);
 
-        REQUIRE(model.parameters().is_internal_parameter("time"));
-        model.time = 9.0;
-        model.callback_solver_loop();
+    REQUIRE(model.parameters().is_internal_parameter("time"));
+    model.time = 9.0;
+    model.callback_solver_loop();
 
-        REQUIRE(std::get<double>(model.parameters().get_parameter("time")) ==
-                Catch::Approx(9.0));
-    }
+    REQUIRE(std::get<double>(model.parameters().get_parameter("time")) ==
+            Catch::Approx(9.0));
+}
 
-    SECTION("variable helpers enforce conflicts and lookup errors") {
-        ThermalMathematicalModel model("variable-helpers");
-        model.parameters().add_parameter("existing", 1.0);
+TEST_CASE("ThermalMathematicalModel variable helpers enforce conflicts",
+          "[thermalmathematicalmodel]") {
+    ThermalMathematicalModel model("variable-helpers");
+    model.parameters().add_parameter("existing", 1.0);
 
-        model.add_time_variable("load",
-                                (Eigen::Vector2d{} << 0.0, 1.0).finished(),
-                                (Eigen::Vector2d{} << 10.0, 20.0).finished());
-        REQUIRE(model.has_time_variable("load"));
-        REQUIRE(model.get_time_variable("load").name() == "load");
-        REQUIRE_THROWS_AS(model.get_time_variable("missing"),
-                          std::out_of_range);
+    model.add_time_variable("load", (Eigen::Vector2d{} << 0.0, 1.0).finished(),
+                            (Eigen::Vector2d{} << 10.0, 20.0).finished());
+    REQUIRE(model.has_time_variable("load"));
+    REQUIRE(model.get_time_variable("load").name() == "load");
+    REQUIRE_THROWS_AS(model.get_time_variable("missing"), std::out_of_range);
 
+    model.add_temperature_variable(
+        "kappa", (Eigen::Vector2d{} << 200.0, 300.0).finished(),
+        (Eigen::Vector2d{} << 1.0, 2.0).finished());
+    REQUIRE(model.has_temperature_variable("kappa"));
+    REQUIRE(model.get_temperature_variable("kappa").name() == "kappa");
+    REQUIRE_THROWS_AS(model.get_temperature_variable("missing"),
+                      std::out_of_range);
+
+    REQUIRE_THROWS_AS(model.add_time_variable(
+                          "kappa", (Eigen::Vector2d{} << 0.0, 1.0).finished(),
+                          (Eigen::Vector2d{} << 1.0, 2.0).finished()),
+                      std::invalid_argument);
+    REQUIRE_THROWS_AS(
         model.add_temperature_variable(
-            "kappa", (Eigen::Vector2d{} << 200.0, 300.0).finished(),
-            (Eigen::Vector2d{} << 1.0, 2.0).finished());
-        REQUIRE(model.has_temperature_variable("kappa"));
-        REQUIRE(model.get_temperature_variable("kappa").name() == "kappa");
-        REQUIRE_THROWS_AS(model.get_temperature_variable("missing"),
-                          std::out_of_range);
+            "existing", (Eigen::Vector2d{} << 0.0, 1.0).finished(),
+            (Eigen::Vector2d{} << 1.0, 2.0).finished()),
+        std::invalid_argument);
+    REQUIRE_THROWS_AS(model.add_temperature_variable(
+                          "load", (Eigen::Vector2d{} << 0.0, 1.0).finished(),
+                          (Eigen::Vector2d{} << 1.0, 2.0).finished()),
+                      std::invalid_argument);
 
-        REQUIRE_THROWS_AS(
-            model.add_time_variable("kappa",
-                                    (Eigen::Vector2d{} << 0.0, 1.0).finished(),
-                                    (Eigen::Vector2d{} << 1.0, 2.0).finished()),
-            std::invalid_argument);
-        REQUIRE_THROWS_AS(
-            model.add_temperature_variable(
-                "existing", (Eigen::Vector2d{} << 0.0, 1.0).finished(),
-                (Eigen::Vector2d{} << 1.0, 2.0).finished()),
-            std::invalid_argument);
-        REQUIRE_THROWS_AS(
-            model.add_temperature_variable(
-                "load", (Eigen::Vector2d{} << 0.0, 1.0).finished(),
-                (Eigen::Vector2d{} << 1.0, 2.0).finished()),
-            std::invalid_argument);
+    model.remove_time_variable("load");
+    model.remove_temperature_variable("kappa");
+    REQUIRE_FALSE(model.has_time_variable("load"));
+    REQUIRE_FALSE(model.has_temperature_variable("kappa"));
+}
 
-        model.remove_time_variable("load");
-        model.remove_temperature_variable("kappa");
-        REQUIRE_FALSE(model.has_time_variable("load"));
-        REQUIRE_FALSE(model.has_temperature_variable("kappa"));
-    }
+TEST_CASE("ThermalMathematicalModel rejects duplicate variable names",
+          "[thermalmathematicalmodel]") {
+    ThermalMathematicalModel model("duplicate-variables");
 
-    SECTION("variable helpers reject duplicate variable names") {
-        ThermalMathematicalModel model("duplicate-variables");
-
+    model.add_time_variable("schedule",
+                            (Eigen::Vector2d{} << 0.0, 1.0).finished(),
+                            (Eigen::Vector2d{} << 10.0, 20.0).finished());
+    REQUIRE_THROWS_AS(
         model.add_time_variable("schedule",
                                 (Eigen::Vector2d{} << 0.0, 1.0).finished(),
-                                (Eigen::Vector2d{} << 10.0, 20.0).finished());
-        REQUIRE_THROWS_AS(
-            model.add_time_variable(
-                "schedule", (Eigen::Vector2d{} << 0.0, 1.0).finished(),
-                (Eigen::Vector2d{} << 30.0, 40.0).finished()),
-            std::invalid_argument);
+                                (Eigen::Vector2d{} << 30.0, 40.0).finished()),
+        std::invalid_argument);
 
+    model.add_temperature_variable(
+        "ambient", (Eigen::Vector2d{} << 250.0, 300.0).finished(),
+        (Eigen::Vector2d{} << 1.0, 2.0).finished());
+    REQUIRE_THROWS_AS(
         model.add_temperature_variable(
-            "ambient", (Eigen::Vector2d{} << 250.0, 300.0).finished(),
-            (Eigen::Vector2d{} << 1.0, 2.0).finished());
-        REQUIRE_THROWS_AS(
-            model.add_temperature_variable(
-                "ambient", (Eigen::Vector2d{} << 260.0, 310.0).finished(),
-                (Eigen::Vector2d{} << 2.0, 3.0).finished()),
-            std::invalid_argument);
-    }
+            "ambient", (Eigen::Vector2d{} << 260.0, 310.0).finished(),
+            (Eigen::Vector2d{} << 2.0, 3.0).finished()),
+        std::invalid_argument);
+}
 
-    SECTION(
-        "const accessors and entity helpers preserve the same model state") {
-        ThermalMathematicalModel model("const-accessors");
+TEST_CASE(
+    "ThermalMathematicalModel const accessors preserve the same model state",
+    "[thermalmathematicalmodel]") {
+    ThermalMathematicalModel model("const-accessors");
 
-        Node node1(1);
-        node1.set_T(300.0);
-        node1.set_C(10.0);
-        node1.set_qs(1.0);
-        node1.set_qa(2.0);
-        node1.set_qe(3.0);
-        node1.set_qi(4.0);
-        node1.set_qr(5.0);
+    Node node1(1);
+    node1.set_T(300.0);
+    node1.set_C(10.0);
+    node1.set_qs(1.0);
+    node1.set_qa(2.0);
+    node1.set_qe(3.0);
+    node1.set_qi(4.0);
+    node1.set_qr(5.0);
 
-        Node node2(2);
-        node2.set_type(BOUNDARY_NODE);
-        node2.set_T(250.0);
+    Node node2(2);
+    node2.set_type(BOUNDARY_NODE);
+    node2.set_T(250.0);
 
-        model.add_node(node1);
-        model.add_node(node2);
-        model.add_conductive_coupling(1, 2, 5.0);
-        model.add_radiative_coupling(1, 2, 0.5);
+    model.add_node(node1);
+    model.add_node(node2);
+    model.add_conductive_coupling(1, 2, 5.0);
+    model.add_radiative_coupling(1, 2, 0.5);
 
-        const auto& const_model = std::as_const(model);
-        REQUIRE(const_model.parameters_ptr() == model.parameters_ptr());
-        REQUIRE(const_model.formulas_ptr() == model.formulas_ptr());
-        REQUIRE(const_model.thermal_data_ptr() == model.thermal_data_ptr());
-        REQUIRE(&const_model.parameters() == &model.parameters());
-        REQUIRE(&const_model.formulas() == &model.formulas());
-        REQUIRE(&const_model.thermal_data() == &model.thermal_data());
-        REQUIRE(&const_model.conductive_couplings() ==
-                &model.conductive_couplings());
-        REQUIRE(&const_model.radiative_couplings() ==
-                &model.radiative_couplings());
-        REQUIRE(model.flow_radiative(std::vector<Index>{1},
-                                     std::vector<Index>{2}) ==
-                Catch::Approx(model.flow_radiative(1, 2)));
+    const auto& const_model = std::as_const(model);
+    REQUIRE(const_model.parameters_ptr() == model.parameters_ptr());
+    REQUIRE(const_model.formulas_ptr() == model.formulas_ptr());
+    REQUIRE(const_model.thermal_data_ptr() == model.thermal_data_ptr());
+    REQUIRE(&const_model.parameters() == &model.parameters());
+    REQUIRE(&const_model.formulas() == &model.formulas());
+    REQUIRE(&const_model.thermal_data() == &model.thermal_data());
+    REQUIRE(&const_model.conductive_couplings() ==
+            &model.conductive_couplings());
+    REQUIRE(&const_model.radiative_couplings() == &model.radiative_couplings());
+    REQUIRE(
+        model.flow_radiative(std::vector<Index>{1}, std::vector<Index>{2}) ==
+        Catch::Approx(model.flow_radiative(1, 2)));
 
-        const auto& entities = const_model.entities();
-        REQUIRE(entities.temperature(1).string_representation() == "T1");
-        REQUIRE(entities.capacity(1).string_representation() == "C1");
-        REQUIRE(entities.solar_heat(1).string_representation() == "QS1");
-        REQUIRE(entities.albedo_heat(1).string_representation() == "QA1");
-        REQUIRE(entities.earth_ir(1).string_representation() == "QE1");
-        REQUIRE(entities.internal_heat(1).string_representation() == "QI1");
-        REQUIRE(entities.other_heat(1).string_representation() == "QR1");
-        REQUIRE(entities.conductive_coupling(1, 2).string_representation() ==
-                "GL(1,2)");
-        REQUIRE(entities.radiative_coupling(1, 2).string_representation() ==
-                "GR(1,2)");
-    }
+    const auto& entities = const_model.entities();
+    REQUIRE(entities.temperature(1).string_representation() == "T1");
+    REQUIRE(entities.capacity(1).string_representation() == "C1");
+    REQUIRE(entities.solar_heat(1).string_representation() == "QS1");
+    REQUIRE(entities.albedo_heat(1).string_representation() == "QA1");
+    REQUIRE(entities.earth_ir(1).string_representation() == "QE1");
+    REQUIRE(entities.internal_heat(1).string_representation() == "QI1");
+    REQUIRE(entities.other_heat(1).string_representation() == "QR1");
+    REQUIRE(entities.conductive_coupling(1, 2).string_representation() ==
+            "GL(1,2)");
+    REQUIRE(entities.radiative_coupling(1, 2).string_representation() ==
+            "GR(1,2)");
+}
 
-    SECTION(
-        "callback dispatch honors activation flags for each callback family") {
-        ThermalMathematicalModel model("callback-flags");
+TEST_CASE("ThermalMathematicalModel callback flags gate every callback family",
+          "[thermalmathematicalmodel]") {
+    ThermalMathematicalModel model("callback-flags");
 
-        int py_solver_calls = 0;
-        int py_time_calls = 0;
-        int py_after_calls = 0;
+    CallbackCountState py_callback_counts;
 
-        callback_solver_calls = 0;
-        callback_time_calls = 0;
-        callback_after_calls = 0;
+    reset_c_callback_counts();
 
-        model.internal_callbacks_active = false;
-        model.c_callbacks_active = true;
-        model.python_callbacks_active = true;
-        model.c_extern_callback_solver_loop = count_solver_callback;
-        model.python_extern_callback_solver_loop = [&]() { ++py_solver_calls; };
-        model.c_extern_callback_transient_time_change = count_time_callback;
-        model.python_extern_callback_transient_time_change = [&]() {
-            ++py_time_calls;
-        };
-        model.c_extern_callback_transient_after_timestep = count_after_callback;
-        model.python_extern_callback_transient_after_timestep = [&]() {
-            ++py_after_calls;
-        };
+    model.internal_callbacks_active = false;
+    model.c_callbacks_active = true;
+    model.python_callbacks_active = true;
+    model.c_extern_callback_solver_loop = count_solver_callback;
+    model.python_extern_callback_solver_loop = [&]() {
+        ++py_callback_counts.solver_calls;
+    };
+    model.c_extern_callback_transient_time_change = count_time_callback;
+    model.python_extern_callback_transient_time_change = [&]() {
+        ++py_callback_counts.time_calls;
+    };
+    model.c_extern_callback_transient_after_timestep = count_after_callback;
+    model.python_extern_callback_transient_after_timestep = [&]() {
+        ++py_callback_counts.after_calls;
+    };
 
-        model.callback_solver_loop();
-        model.callback_transient_time_change();
-        model.callback_transient_after_timestep();
+    model.callback_solver_loop();
+    model.callback_transient_time_change();
+    model.callback_transient_after_timestep();
 
-        REQUIRE(callback_solver_calls == 1);
-        REQUIRE(py_solver_calls == 1);
-        REQUIRE(callback_time_calls == 1);
-        REQUIRE(py_time_calls == 1);
-        REQUIRE(callback_after_calls == 1);
-        REQUIRE(py_after_calls == 1);
+    require_callback_counts(c_callback_counts(), CallbackCountState{1, 1, 1});
+    require_callback_counts(py_callback_counts, CallbackCountState{1, 1, 1});
 
-        model.callbacks_active = false;
-        model.callback_solver_loop();
-        model.callback_transient_time_change();
-        model.callback_transient_after_timestep();
+    model.callbacks_active = false;
+    model.callback_solver_loop();
+    model.callback_transient_time_change();
+    model.callback_transient_after_timestep();
 
-        REQUIRE(callback_solver_calls == 1);
-        REQUIRE(py_solver_calls == 1);
-        REQUIRE(callback_time_calls == 1);
-        REQUIRE(py_time_calls == 1);
-        REQUIRE(callback_after_calls == 1);
-        REQUIRE(py_after_calls == 1);
-    }
+    require_callback_counts(c_callback_counts(), CallbackCountState{1, 1, 1});
+    require_callback_counts(py_callback_counts, CallbackCountState{1, 1, 1});
+}
 
-    SECTION("solver and entity helpers surface missing associations clearly") {
-        ThermalMathematicalModel model("association-checks");
-        REQUIRE_THROWS_AS(model.solvers(), std::runtime_error);
-        REQUIRE_THROWS_AS(std::as_const(model).solvers(), std::runtime_error);
-        REQUIRE_FALSE(model.find_entity("missing").has_value());
-        REQUIRE_THROWS_AS(model.entity("missing"), std::invalid_argument);
+TEST_CASE("ThermalMathematicalModel surfaces missing solver associations",
+          "[thermalmathematicalmodel]") {
+    ThermalMathematicalModel model("association-checks");
+    REQUIRE_THROWS_AS(model.solvers(), std::runtime_error);
+    REQUIRE_THROWS_AS(std::as_const(model).solvers(), std::runtime_error);
+    REQUIRE_FALSE(model.find_entity("missing").has_value());
+    REQUIRE_THROWS_AS(model.entity("missing"), std::invalid_argument);
 
-        auto shared_model =
-            std::make_shared<ThermalMathematicalModel>("associated-model");
-        SolverRegistry registry(shared_model);
-        shared_model->associate_solvers(registry);
+    auto shared_model =
+        std::make_shared<ThermalMathematicalModel>("associated-model");
+    SolverRegistry registry(shared_model);
+    shared_model->associate_solvers(registry);
 
-        REQUIRE(&shared_model->solvers() == &registry);
-        REQUIRE(&std::as_const(*shared_model).solvers() == &registry);
-        REQUIRE(shared_model->current_callback_solver() == nullptr);
-    }
+    REQUIRE(&shared_model->solvers() == &registry);
+    REQUIRE(&std::as_const(*shared_model).solvers() == &registry);
+    REQUIRE(shared_model->current_callback_solver() == nullptr);
 }

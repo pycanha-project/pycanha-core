@@ -8,6 +8,7 @@
 
 #include "pycanha-core/globals.hpp"
 #include "pycanha-core/solvers/ts.hpp"
+#include "pycanha-core/thermaldata/data_model.hpp"
 #include "pycanha-core/tmm/node.hpp"
 #include "pycanha-core/tmm/thermalmathematicalmodel.hpp"
 
@@ -219,7 +220,7 @@ TEST_CASE("TransientSolver restart resets runtime state",
     solver.set_simulation_time(0.0, 3.0, 1.0, 2.0);
     solver.initialize();
 
-    solver.set_converged(true);
+    solver.set_converged(/*value=*/true);
     solver.set_state(2.5, 4, 2);
     solver.restart_for_test();
 

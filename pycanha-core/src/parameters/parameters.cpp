@@ -2,6 +2,7 @@
 
 #include <spdlog/spdlog.h>
 
+#include <algorithm>
 #include <bit>
 #include <cctype>
 #include <cmath>
@@ -40,12 +41,13 @@ constexpr bool is_matrix_type_v = IsMatrixType<T>::value;
 
 [[nodiscard]] std::string canonicalize_parameter_key(std::string_view name) {
     std::string canonical;
-    canonical.reserve(name.size());
+    canonical.resize(name.size());
 
-    for (const char ch : name) {
-        canonical.push_back(
-            static_cast<char>(std::tolower(static_cast<unsigned char>(ch))));
-    }
+    std::transform(name.begin(), name.end(), canonical.begin(),
+                   [](const char ch) {
+                       return static_cast<char>(
+                           std::tolower(static_cast<unsigned char>(ch)));
+                   });
 
     return canonical;
 }

@@ -3,9 +3,12 @@
 #include <spdlog/spdlog.h>
 
 #include <memory>
+#include <optional>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <utility>
+#include <vector>
 
 #include "pycanha-core/globals.hpp"
 #include "pycanha-core/parameters/entity.hpp"
@@ -434,7 +437,7 @@ const SolverRegistry& ThermalMathematicalModel::solvers() const {
 
 std::optional<Entity> ThermalMathematicalModel::find_entity(
     std::string_view text) const {
-    return Entity::from_string(const_cast<ThermalNetwork&>(network()), text);
+    return Entity::from_string(*_network, text);
 }
 
 Entity ThermalMathematicalModel::entity(std::string_view text) const {

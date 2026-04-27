@@ -15,6 +15,7 @@
 
 #include "pycanha-core/globals.hpp"
 #include "pycanha-core/parameters/entity.hpp"
+#include "pycanha-core/parameters/formula.hpp"
 #include "pycanha-core/parameters/formulas.hpp"
 #include "pycanha-core/solvers/solver.hpp"
 #include "pycanha-core/solvers/tscnrlds.hpp"
@@ -161,7 +162,6 @@ void TSCNRLDS_JACOBIAN::collect_parameter_names() {
             continue;
         }
 
-        const auto* derivatives = formula->get_derivative_values();
         const auto& dependencies = formula->parameter_dependencies();
 
         std::copy_if(dependencies.begin(), dependencies.end(),

@@ -3,6 +3,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <cmath>
 #include <memory>
+#include <stdexcept>
 #include <vector>
 
 #include "pycanha-core/globals.hpp"

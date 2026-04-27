@@ -1,9 +1,11 @@
 #include "pycanha-core/tmm/thermalmodel.hpp"
 
 #include <memory>
+#include <stdexcept>
 #include <string>
 #include <utility>
 
+#include "pycanha-core/gmm/geometrymodel.hpp"
 #include "pycanha-core/parameters/formulas.hpp"
 #include "pycanha-core/parameters/parameters.hpp"
 #include "pycanha-core/solvers/callback_registry.hpp"

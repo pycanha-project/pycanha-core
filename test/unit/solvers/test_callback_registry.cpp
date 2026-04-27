@@ -1,5 +1,6 @@
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
+#include <stdexcept>
 #include <string>
 #include <utility>
 #include <vector>
@@ -10,6 +11,40 @@
 #include "pycanha-core/tmm/node.hpp"
 #include "pycanha-core/tmm/thermalmathematicalmodel.hpp"
 #include "pycanha-core/tmm/thermalmodel.hpp"
+
+namespace {
+
+void require_callback_model_refs(pycanha::CallbackContext& context,
+                                 const pycanha::ThermalModel& tm) {
+    REQUIRE(&context.tm() == &tm);
+    REQUIRE(&context.tmm() == &tm.tmm());
+}
+
+void require_callback_time(const pycanha::CallbackContext& context) {
+    REQUIRE(context.time() == Catch::Approx(4.5));
+}
+
+void require_const_callback_view(pycanha::CallbackContext& context,
+                                 const pycanha::ThermalModel& tm) {
+    const auto& const_context = std::as_const(context);
+    REQUIRE(&const_context.tm() == &tm);
+    REQUIRE(&const_context.tmm() == &tm.tmm());
+    REQUIRE(const_context.time() == Catch::Approx(4.5));
+}
+
+void require_solver_guard(pycanha::CallbackContext& context) {
+    const auto& const_context = std::as_const(context);
+    REQUIRE_THROWS_AS(context.solver(), std::runtime_error);
+    REQUIRE_THROWS_AS(const_context.solver(), std::runtime_error);
+}
+
+void invoke_all_callbacks(pycanha::CallbackRegistry& callbacks) {
+    callbacks.invoke_solver_loop();
+    callbacks.invoke_time_change();
+    callbacks.invoke_after_timestep();
+}
+
+}  // namespace
 
 TEST_CASE("ThermalModel callbacks expose root model solver and time",
           "[solver][callbacks]") {
@@ -56,7 +91,7 @@ TEST_CASE("ThermalModel callbacks expose root model solver and time",
     REQUIRE(seen_times.back() > 0.0);
 }
 
-TEST_CASE("CallbackRegistry direct invocations expose context guards",
+TEST_CASE("CallbackRegistry solver-loop invocation exposes context guards",
           "[solver][callbacks]") {
     pycanha::ThermalModel tm("direct_callback_model");
 
@@ -65,44 +100,71 @@ TEST_CASE("CallbackRegistry direct invocations expose context guards",
     tm.tmm().time = 4.5;
 
     int solver_loop_calls = 0;
-    int time_change_calls = 0;
-    int after_timestep_calls = 0;
 
     tm.callbacks().solver_loop = [&](pycanha::CallbackContext& context) {
         ++solver_loop_calls;
-        REQUIRE(&context.tm() == &tm);
-        REQUIRE(&context.tmm() == &tm.tmm());
-        REQUIRE(context.time() == Catch::Approx(4.5));
-        const auto& const_context = std::as_const(context);
-        REQUIRE(&const_context.tm() == &tm);
-        REQUIRE(&const_context.tmm() == &tm.tmm());
-        REQUIRE(const_context.time() == Catch::Approx(4.5));
-        REQUIRE_THROWS_AS(context.solver(), std::runtime_error);
-        REQUIRE_THROWS_AS(const_context.solver(), std::runtime_error);
-    };
-    tm.callbacks().time_change = [&](pycanha::CallbackContext& context) {
-        ++time_change_calls;
-        REQUIRE(context.time() == Catch::Approx(4.5));
-    };
-    tm.callbacks().after_timestep = [&](pycanha::CallbackContext& context) {
-        ++after_timestep_calls;
-        REQUIRE(context.time() == Catch::Approx(4.5));
+        require_callback_model_refs(context, tm);
+        require_callback_time(context);
+        require_const_callback_view(context, tm);
+        require_solver_guard(context);
     };
 
     tm.callbacks().invoke_solver_loop();
+
+    REQUIRE(solver_loop_calls == 1);
+}
+
+TEST_CASE("CallbackRegistry time callbacks expose the current time",
+          "[solver][callbacks]") {
+    pycanha::ThermalModel tm("direct_time_callback_model");
+    tm.tmm().time = 4.5;
+
+    int time_change_calls = 0;
+    int after_timestep_calls = 0;
+    double seen_time_change = 0.0;
+    double seen_after_timestep = 0.0;
+
+    tm.callbacks().time_change = [&](const pycanha::CallbackContext& context) {
+        ++time_change_calls;
+        seen_time_change = context.time();
+    };
+    tm.callbacks().after_timestep =
+        [&](const pycanha::CallbackContext& context) {
+            ++after_timestep_calls;
+            seen_after_timestep = context.time();
+        };
+
     tm.callbacks().invoke_time_change();
     tm.callbacks().invoke_after_timestep();
 
-    REQUIRE(solver_loop_calls == 1);
     REQUIRE(time_change_calls == 1);
     REQUIRE(after_timestep_calls == 1);
+    REQUIRE(seen_time_change == Catch::Approx(4.5));
+    REQUIRE(seen_after_timestep == Catch::Approx(4.5));
+}
+
+TEST_CASE("CallbackRegistry active flag suppresses direct invocations",
+          "[solver][callbacks]") {
+    pycanha::ThermalModel tm("inactive_direct_callback_model");
+
+    int solver_loop_calls = 0;
+    int time_change_calls = 0;
+    int after_timestep_calls = 0;
+
+    tm.callbacks().solver_loop = [&](pycanha::CallbackContext&) {
+        ++solver_loop_calls;
+    };
+    tm.callbacks().time_change = [&](const pycanha::CallbackContext&) {
+        ++time_change_calls;
+    };
+    tm.callbacks().after_timestep = [&](const pycanha::CallbackContext&) {
+        ++after_timestep_calls;
+    };
 
     tm.callbacks().active = false;
-    tm.callbacks().invoke_solver_loop();
-    tm.callbacks().invoke_time_change();
-    tm.callbacks().invoke_after_timestep();
+    invoke_all_callbacks(tm.callbacks());
 
-    REQUIRE(solver_loop_calls == 1);
-    REQUIRE(time_change_calls == 1);
-    REQUIRE(after_timestep_calls == 1);
+    REQUIRE(solver_loop_calls == 0);
+    REQUIRE(time_change_calls == 0);
+    REQUIRE(after_timestep_calls == 0);
 }

@@ -38,6 +38,41 @@ void run_transient(pycanha::ThermalModel& tm) {
     solver.deinitialize();
 }
 
+void verify_heater_can_be_disabled() {
+    pycanha::ThermalModel tm("thermostat_demo");
+    populate_callback_model(tm, 25.0);
+
+    int callback_count = 0;
+    tm.callbacks().after_timestep = [&](pycanha::CallbackContext& context) {
+        ++callback_count;
+        if (context.tmm().nodes().get_T(1) > 280.0) {
+            context.tmm().nodes().set_qi(1, 0.0);
+        }
+    };
+
+    run_transient(tm);
+
+    REQUIRE(callback_count > 0);
+    REQUIRE(tm.tmm().nodes().get_qi(1) == Catch::Approx(0.0));
+}
+
+void verify_inactive_callbacks_have_no_effect() {
+    pycanha::ThermalModel tm("disabled_callback_demo");
+    populate_callback_model(tm, 25.0);
+
+    int callback_count = 0;
+    tm.callbacks().active = false;
+    tm.callbacks().after_timestep = [&](pycanha::CallbackContext& context) {
+        ++callback_count;
+        context.tmm().nodes().set_qi(1, 0.0);
+    };
+
+    run_transient(tm);
+
+    REQUIRE(callback_count == 0);
+    REQUIRE(tm.tmm().nodes().get_qi(1) == Catch::Approx(25.0));
+}
+
 }  // namespace
 
 TEST_CASE("CallbackContext exposes the whole model-owned solver workflow",
@@ -45,8 +80,8 @@ TEST_CASE("CallbackContext exposes the whole model-owned solver workflow",
     pycanha::ThermalModel tm("callback_demo");
     populate_callback_model(tm, 25.0);
 
-    pycanha::ThermalModel* seen_tm = nullptr;
-    pycanha::ThermalMathematicalModel* seen_tmm = nullptr;
+    const pycanha::ThermalModel* seen_tm = nullptr;
+    const pycanha::ThermalMathematicalModel* seen_tmm = nullptr;
     std::string seen_solver_name;
     std::vector<double> seen_times;
 
@@ -66,40 +101,11 @@ TEST_CASE("CallbackContext exposes the whole model-owned solver workflow",
     REQUIRE(seen_times.back() > 0.0);
 }
 
-TEST_CASE("Callbacks can teach active control logic without leaving the model",
+TEST_CASE("Callbacks can switch off a heater mid-transient",
           "[api][callbacks]") {
-    SECTION("after_timestep can switch off a heater mid-transient") {
-        pycanha::ThermalModel tm("thermostat_demo");
-        populate_callback_model(tm, 25.0);
+    verify_heater_can_be_disabled();
+}
 
-        int callback_count = 0;
-        tm.callbacks().after_timestep = [&](pycanha::CallbackContext& context) {
-            ++callback_count;
-            if (context.tmm().nodes().get_T(1) > 280.0) {
-                context.tmm().nodes().set_qi(1, 0.0);
-            }
-        };
-
-        run_transient(tm);
-
-        REQUIRE(callback_count > 0);
-        REQUIRE(tm.tmm().nodes().get_qi(1) == Catch::Approx(0.0));
-    }
-
-    SECTION("active=false disables callback side effects") {
-        pycanha::ThermalModel tm("disabled_callback_demo");
-        populate_callback_model(tm, 25.0);
-
-        int callback_count = 0;
-        tm.callbacks().active = false;
-        tm.callbacks().after_timestep = [&](pycanha::CallbackContext& context) {
-            ++callback_count;
-            context.tmm().nodes().set_qi(1, 0.0);
-        };
-
-        run_transient(tm);
-
-        REQUIRE(callback_count == 0);
-        REQUIRE(tm.tmm().nodes().get_qi(1) == Catch::Approx(25.0));
-    }
+TEST_CASE("Inactive callbacks leave the model unchanged", "[api][callbacks]") {
+    verify_inactive_callbacks_have_no_effect();
 }

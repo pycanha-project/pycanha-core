@@ -1,6 +1,8 @@
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
 #include <cmath>
+#include <optional>
+#include <stdexcept>
 #include <vector>
 
 #include "pycanha-core/globals.hpp"
@@ -13,6 +15,14 @@
 #include "pycanha-core/tmm/thermalnetwork.hpp"
 
 namespace {
+
+pycanha::Index require_index(const std::optional<pycanha::Index>& value) {
+    if (!value.has_value()) {
+        throw std::runtime_error("Expected node index to exist");
+    }
+
+    return value.value();
+}
 
 void populate_network(pycanha::ThermalModel& tm, pycanha::Node& plate) {
     auto& network = tm.tmm().network();
@@ -79,11 +89,14 @@ TEST_CASE(
         REQUIRE(idx_2.has_value());
         REQUIRE(idx_10.has_value());
         REQUIRE(idx_100.has_value());
-        REQUIRE(*idx_2 == 0);
-        REQUIRE(*idx_10 == 1);
-        REQUIRE(*idx_100 == 2);
-        REQUIRE(nodes.get_node_num_from_idx(*idx_2) == 2);
-        REQUIRE(nodes.get_node_num_from_idx(*idx_100) == 100);
+        const auto idx_2_value = require_index(idx_2);
+        const auto idx_10_value = require_index(idx_10);
+        const auto idx_100_value = require_index(idx_100);
+        REQUIRE(idx_2_value == 0);
+        REQUIRE(idx_10_value == 1);
+        REQUIRE(idx_100_value == 2);
+        REQUIRE(nodes.get_node_num_from_idx(idx_2_value) == 2);
+        REQUIRE(nodes.get_node_num_from_idx(idx_100_value) == 100);
         REQUIRE_FALSE(nodes.get_idx_from_node_num(999).has_value());
 
         pycanha::Node duplicate_plate(10);
