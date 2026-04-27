@@ -2,6 +2,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <memory>
 #include <stdexcept>
+#include <utility>
 
 #include "pycanha-core/gmm/geometrymodel.hpp"
 #include "pycanha-core/parameters/formulas.hpp"
@@ -78,6 +79,15 @@ TEST_CASE("ThermalModel exposes stable subsystem ownership",
 
         // SolverRegistry lazily owns persistent solver instances.
         REQUIRE(&solvers.sslu() == &tm.solvers().sslu());
+
+        const auto& const_tm = std::as_const(tm);
+        REQUIRE(&const_tm.tmm() == &tmm);
+        REQUIRE(&const_tm.gmm() == &gmm);
+        REQUIRE(&const_tm.parameters() == &parameters);
+        REQUIRE(&const_tm.formulas() == &formulas);
+        REQUIRE(&const_tm.thermal_data() == &thermal_data);
+        REQUIRE(&const_tm.solvers() == &solvers);
+        REQUIRE(&const_tm.callbacks() == &callbacks);
     }
 
     SECTION(

@@ -91,3 +91,96 @@ TEST_CASE("Smart formula factory rejects temperature variables for now",
     REQUIRE_THROWS_AS(formulas.create_formula(Entity::qi(*network, 1), "kappa"),
                       std::invalid_argument);
 }
+
+TEST_CASE("Formulas overloads and association guards stay explicit",
+          "[formulas][factory]") {
+    auto network = std::make_shared<ThermalNetwork>();
+    auto parameters = std::make_shared<Parameters>();
+
+    Node node1(1);
+    Node node2(2);
+    node2.set_type(BOUNDARY_NODE);
+    node2.set_T(7.0);
+
+    network->add_node(node1);
+    network->add_node(node2);
+    network->nodes().set_qi(1, 0.0);
+
+    parameters->add_parameter("gain", 3.0);
+    parameters->add_parameter("offset", 2.0);
+
+    const auto heat = Entity::qi(*network, 1);
+
+    Formulas detached;
+    REQUIRE_THROWS_AS(detached.create_formula(heat, "gain"),
+                      std::runtime_error);
+    REQUIRE_THROWS_AS(detached.create_parameter_formula(heat, "gain"),
+                      std::runtime_error);
+    REQUIRE_THROWS_AS(detached.add_expression_formula(heat, "gain"),
+                      std::runtime_error);
+
+    Formulas formulas(network, parameters);
+
+    auto& static_formula = formulas.add_formula(heat, 4.0);
+    REQUIRE(dynamic_cast<ValueFormula*>(&static_formula) != nullptr);
+    formulas.apply_formulas();
+    REQUIRE(network->nodes().get_qi(1) == Catch::Approx(4.0));
+
+    REQUIRE(formulas.remove_formula(heat));
+    REQUIRE_FALSE(formulas.parameter_dependencies().contains("gain"));
+
+    auto& parameter_formula = formulas.add_parameter_formula("QI1", "gain");
+    auto& auto_selected_formula = formulas.add_formula("T2", "gain + offset");
+    auto& expression_formula =
+        formulas.add_expression_formula("QR1", "QI1 * 2.0");
+    REQUIRE(dynamic_cast<ParameterFormula*>(&parameter_formula) != nullptr);
+    REQUIRE(dynamic_cast<ParameterFormula*>(&auto_selected_formula) != nullptr);
+    REQUIRE(dynamic_cast<ExpressionFormula*>(&expression_formula) != nullptr);
+
+    auto self_formula = formulas.create_formula(heat, "QI1");
+    REQUIRE(dynamic_cast<ExpressionFormula*>(self_formula.get()) != nullptr);
+
+    formulas.apply_formulas();
+    REQUIRE(network->nodes().get_qi(1) == Catch::Approx(3.0));
+    REQUIRE(network->nodes().get_T(2) == Catch::Approx(5.0));
+    REQUIRE(network->nodes().get_qr(1) == Catch::Approx(6.0));
+    REQUIRE(formulas.parameter_dependencies().at("gain").size() == 2U);
+    REQUIRE(formulas.parameter_dependencies().at("offset").size() == 1U);
+
+    REQUIRE(formulas.remove_formula(Entity::t(*network, 2)));
+    REQUIRE(formulas.parameter_dependencies().at("gain").size() == 1U);
+    REQUIRE_FALSE(formulas.parameter_dependencies().contains("offset"));
+}
+
+TEST_CASE("Sparse formula targets materialize storage on registration",
+          "[formulas][factory][sparse-targets]") {
+    auto network = std::make_shared<ThermalNetwork>();
+    auto parameters = std::make_shared<Parameters>();
+    Formulas formulas(network, parameters);
+
+    Node node1(1);
+    network->add_node(node1);
+
+    parameters->add_parameter("gain", 3.0);
+    parameters->add_parameter("offset", 2.0);
+
+    REQUIRE(network->nodes().qi_vector.nonZeros() == 0);
+    REQUIRE(network->nodes().qs_vector.nonZeros() == 0);
+    REQUIRE(network->nodes().qr_vector.nonZeros() == 0);
+
+    auto& parameter_formula = formulas.add_parameter_formula("QI1", "gain");
+    auto& auto_selected_formula = formulas.add_formula("QS1", "gain + offset");
+    auto& expression_formula =
+        formulas.add_expression_formula("QR1", "QI1 * 2.0");
+
+    REQUIRE(dynamic_cast<ParameterFormula*>(&parameter_formula) != nullptr);
+    REQUIRE(dynamic_cast<ParameterFormula*>(&auto_selected_formula) != nullptr);
+    REQUIRE(dynamic_cast<ExpressionFormula*>(&expression_formula) != nullptr);
+
+    REQUIRE(network->nodes().qi_vector.nonZeros() == 1);
+    REQUIRE(network->nodes().qs_vector.nonZeros() == 1);
+    REQUIRE(network->nodes().qr_vector.nonZeros() == 1);
+    REQUIRE(network->nodes().get_qi_value_ref(1) != nullptr);
+    REQUIRE(network->nodes().get_qs_value_ref(1) != nullptr);
+    REQUIRE(network->nodes().get_qr_value_ref(1) != nullptr);
+}

@@ -361,6 +361,12 @@ void Formulas::add_formula(const std::shared_ptr<Formula>& formula) {
                                     "' already exists");
     }
 
+    // Materialize writable target storage immediately so sparse node
+    // attributes become formula-managed as soon as the formula is registered.
+    if (formula->entity().exists() && formula->entity().writable()) {
+        static_cast<void>(formula->entity().get_value_ref());
+    }
+
     _formulas.push_back(formula);
     _validated_structure_version.reset();
     _compiled_structure_version.reset();
