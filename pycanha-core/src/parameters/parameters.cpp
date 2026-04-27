@@ -2,7 +2,9 @@
 
 #include <spdlog/spdlog.h>
 
+#include <algorithm>
 #include <bit>
+#include <cctype>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -12,11 +14,14 @@
 #include <optional>
 #include <sstream>
 #include <string>
+#include <string_view>
 #include <type_traits>
 #include <utility>
 #include <variant>
 
 #include "pycanha-core/globals.hpp"
+#include "pycanha-core/parameters/entity.hpp"
+#include "pycanha-core/tmm/thermalnetwork.hpp"
 #include "pycanha-core/utils/logger.hpp"
 
 namespace pycanha {
@@ -33,6 +38,42 @@ struct IsMatrixType<
 
 template <typename T>
 constexpr bool is_matrix_type_v = IsMatrixType<T>::value;
+
+[[nodiscard]] std::string canonicalize_parameter_key(std::string_view name) {
+    std::string canonical;
+    canonical.resize(name.size());
+
+    std::transform(name.begin(), name.end(), canonical.begin(),
+                   [](const char ch) {
+                       return static_cast<char>(
+                           std::tolower(static_cast<unsigned char>(ch)));
+                   });
+
+    return canonical;
+}
+
+[[nodiscard]] bool is_reserved_user_parameter_name(
+    std::string_view name) noexcept {
+    return canonicalize_parameter_key(name) == "time";
+}
+
+[[nodiscard]] bool is_entity_like_parameter_name(std::string_view name) {
+    ThermalNetwork network;
+    return Entity::from_string(network, name).has_value();
+}
+
+[[nodiscard]] bool is_valid_user_parameter_name(std::string_view name) {
+    const auto canonical_name = canonicalize_parameter_key(name);
+    if (canonical_name.empty()) {
+        return false;
+    }
+
+    if (is_reserved_user_parameter_name(name)) {
+        return false;
+    }
+
+    return !is_entity_like_parameter_name(name);
+}
 
 }  // namespace
 
@@ -78,7 +119,7 @@ Parameters::ThermalValue Parameters::missing_parameter_value() {
 
 Parameters::ParameterSlot* Parameters::find_slot(
     const std::string& name) noexcept {
-    const auto iterator = _name_to_slot.find(name);
+    const auto iterator = _name_to_slot.find(canonicalize_parameter_key(name));
     if (iterator == _name_to_slot.end()) {
         return nullptr;
     }
@@ -88,7 +129,7 @@ Parameters::ParameterSlot* Parameters::find_slot(
 
 const Parameters::ParameterSlot* Parameters::find_slot(
     const std::string& name) const noexcept {
-    const auto iterator = _name_to_slot.find(name);
+    const auto iterator = _name_to_slot.find(canonicalize_parameter_key(name));
     if (iterator == _name_to_slot.end()) {
         return nullptr;
     }
@@ -219,13 +260,23 @@ void Parameters::add_parameter(std::string name, ThermalValue value) {
         return;
     }
 
-    if (_name_to_slot.contains(name)) {
+    if (!is_valid_user_parameter_name(name)) {
+        SPDLOG_LOGGER_INFO(pycanha::get_logger(),
+                           "Parameter '{}' uses a reserved or entity-like "
+                           "name",
+                           name);
+        return;
+    }
+
+    const auto canonical_name = canonicalize_parameter_key(name);
+
+    if (_name_to_slot.contains(canonical_name)) {
         SPDLOG_LOGGER_INFO(pycanha::get_logger(),
                            "Parameter '{}' already exists", name);
         return;
     }
 
-    _name_to_slot.emplace(name, _slots.size());
+    _name_to_slot.emplace(canonical_name, _slots.size());
     _slots.push_back(
         ParameterSlot{std::move(name), std::move(value), true, false});
     ++_active_size;
@@ -236,13 +287,15 @@ void Parameters::add_parameter(std::string name, ThermalValue value) {
 }
 
 void Parameters::add_internal_parameter(std::string name, ThermalValue value) {
-    if (_name_to_slot.contains(name)) {
+    const auto canonical_name = canonicalize_parameter_key(name);
+
+    if (_name_to_slot.contains(canonical_name)) {
         SPDLOG_LOGGER_INFO(pycanha::get_logger(),
                            "Internal parameter '{}' already exists", name);
         return;
     }
 
-    _name_to_slot.emplace(name, _slots.size());
+    _name_to_slot.emplace(canonical_name, _slots.size());
     _slots.push_back(
         ParameterSlot{std::move(name), std::move(value), true, true});
     ++_active_size;
@@ -276,7 +329,7 @@ void Parameters::remove_parameter(const std::string& name) {
         return;
     }
 
-    _name_to_slot.erase(name);
+    _name_to_slot.erase(canonicalize_parameter_key(slot->name));
     slot->active = false;
     slot->value = missing_parameter_value();
     --_active_size;
@@ -307,7 +360,7 @@ void Parameters::remove_internal_parameter(const std::string& name) {
         return;
     }
 
-    _name_to_slot.erase(name);
+    _name_to_slot.erase(canonicalize_parameter_key(slot->name));
     slot->active = false;
     slot->value = missing_parameter_value();
     slot->is_internal = false;
@@ -342,15 +395,27 @@ void Parameters::rename_parameter(const std::string& current_name,
         return;
     }
 
-    if (_name_to_slot.contains(new_name)) {
+    if (!is_valid_user_parameter_name(new_name)) {
+        SPDLOG_LOGGER_INFO(pycanha::get_logger(),
+                           "Parameter '{}' uses a reserved or entity-like "
+                           "name",
+                           new_name);
+        return;
+    }
+
+    const auto current_canonical_name = canonicalize_parameter_key(slot->name);
+    const auto new_canonical_name = canonicalize_parameter_key(new_name);
+
+    if ((new_canonical_name != current_canonical_name) &&
+        _name_to_slot.contains(new_canonical_name)) {
         SPDLOG_LOGGER_INFO(pycanha::get_logger(),
                            "Parameter '{}' already exists", new_name);
         return;
     }
 
-    const auto slot_index = _name_to_slot.at(current_name);
-    _name_to_slot.erase(current_name);
-    _name_to_slot.emplace(new_name, slot_index);
+    const auto slot_index = _name_to_slot.at(current_canonical_name);
+    _name_to_slot.erase(current_canonical_name);
+    _name_to_slot.emplace(new_canonical_name, slot_index);
     slot->name = std::move(new_name);
     mark_structural_change();
 
@@ -599,7 +664,7 @@ std::uint64_t Parameters::get_memory_address(const std::string& name) const {
 }
 
 std::optional<Index> Parameters::get_idx(const std::string& name) const {
-    const auto iterator = _name_to_slot.find(name);
+    const auto iterator = _name_to_slot.find(canonicalize_parameter_key(name));
     if (iterator == _name_to_slot.end()) {
         SPDLOG_LOGGER_INFO(pycanha::get_logger(),
                            "Parameter '{}' doesn't exist", name);
@@ -658,7 +723,8 @@ std::uint64_t Parameters::get_structure_version() const noexcept {
 }
 
 bool Parameters::contains(const std::string& name) const noexcept {
-    return _name_to_slot.find(name) != _name_to_slot.end();
+    return _name_to_slot.find(canonicalize_parameter_key(name)) !=
+           _name_to_slot.end();
 }
 
 std::size_t Parameters::size() const noexcept { return _active_size; }

@@ -212,7 +212,7 @@ void TSCNRLDS::solve() {
         tmm.time = time;
         callback_transient_time_change();
 
-        for (solver_iter = 0; solver_iter < MAX_ITERS; ++solver_iter) {
+        for (solver_iter = 0; solver_iter < max_iters; ++solver_iter) {
             callback_solver_loop();
             build_conductance_matrix();
             build_heat_flux();
@@ -236,7 +236,7 @@ void TSCNRLDS::solve() {
             dTd.cwiseAbs().maxCoeff(&max_index);
             SPDLOG_LOGGER_ERROR(
                 get_logger(), "TSCNRLDS did not converge after {} iterations.",
-                MAX_ITERS);
+                max_iters);
             SPDLOG_LOGGER_ERROR(get_logger(), "Time iter: {} Time: {} s",
                                 time_iter, time);
             SPDLOG_LOGGER_ERROR(get_logger(), "Max. dT: {} K at index: {}",

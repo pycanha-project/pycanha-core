@@ -4,7 +4,10 @@
 #include <catch2/catch_test_macros.hpp>
 #include <cmath>
 #include <cstdint>
+#include <optional>
+#include <stdexcept>
 #include <string>
+#include <utility>
 #include <variant>
 
 #include "pycanha-core/globals.hpp"
@@ -13,6 +16,18 @@
 using namespace pycanha;  // NOLINT(build/namespaces)
 
 // NOLINTBEGIN(bugprone-chained-comparison)
+
+namespace {
+
+Index require_index(const std::optional<Index>& value) {
+    if (!value.has_value()) {
+        throw std::runtime_error("Expected parameter index to exist");
+    }
+
+    return value.value();
+}
+
+}  // namespace
 
 TEST_CASE("Parameters add and retrieve scalars", "[parameters]") {
     // NOLINTNEXTLINE(misc-const-correctness)
@@ -150,6 +165,39 @@ TEST_CASE("Parameters rename entries and track structure version",
     REQUIRE(params.get_structure_version() == version_after_add + 1U);
 }
 
+TEST_CASE("Parameters are case-insensitive at the public boundary",
+          "[parameters]") {
+    Parameters params;
+
+    params.add_parameter("Gain", 12.0);
+
+    REQUIRE(params.contains("gain"));
+    REQUIRE(params.contains("GAIN"));
+    REQUIRE(std::get<double>(params.get_parameter("gAiN")) ==
+            Catch::Approx(12.0));
+
+    params.rename_parameter("GAIN", "Offset");
+
+    REQUIRE_FALSE(params.contains("gain"));
+    REQUIRE(params.contains("offset"));
+    REQUIRE(std::get<double>(params.get_parameter("OFFSET")) ==
+            Catch::Approx(12.0));
+}
+
+TEST_CASE("Parameters reject reserved and entity-like user names",
+          "[parameters]") {
+    Parameters params;
+
+    params.add_parameter("time", 1.0);
+    params.add_parameter("QI1", 2.0);
+    params.add_parameter("gl(1,2)", 3.0);
+
+    REQUIRE(params.size() == 0U);
+    REQUIRE_FALSE(params.contains("time"));
+    REQUIRE_FALSE(params.contains("QI1"));
+    REQUIRE_FALSE(params.contains("gl(1,2)"));
+}
+
 TEST_CASE("Parameters expose explicit handle getters and setters",
           "[parameters]") {
     Parameters params;
@@ -235,6 +283,57 @@ TEST_CASE("Parameters expose memory pointers and sizes", "[parameters]") {
 
     REQUIRE(params.get_idx("scalar").has_value());
     REQUIRE(params.get_idx("label").has_value());
+}
+
+TEST_CASE("Parameters refresh cached data and expose index accessors",
+          "[parameters]") {
+    Parameters params;
+
+    params.add_parameter("scalar", 1.5);
+    params.add_internal_parameter("time", 0.0);
+
+    const auto scalar_idx = params.get_idx("scalar");
+    const auto time_idx = params.get_idx("time");
+    REQUIRE(scalar_idx.has_value());
+    REQUIRE(time_idx.has_value());
+    const auto scalar_idx_value = require_index(scalar_idx);
+    const auto time_idx_value = require_index(time_idx);
+
+    const auto scalar_value = params.get_parameter_optional(scalar_idx_value);
+    REQUIRE(scalar_value.has_value());
+    REQUIRE(std::get<double>(scalar_value.value_or(
+                Parameters::ThermalValue{0.0})) == Catch::Approx(1.5));
+    REQUIRE(params.get_parameter_name(time_idx_value) ==
+            std::optional<std::string>{"time"});
+
+    const auto* scalar_ptr = static_cast<const double*>(
+        std::as_const(params).get_value_ptr(scalar_idx_value));
+    REQUIRE(scalar_ptr != nullptr);
+    REQUIRE(*scalar_ptr == Catch::Approx(1.5));
+    REQUIRE(std::as_const(params).get_double_ptr(scalar_idx_value) != nullptr);
+
+    const auto& snapshot = params.data();
+    REQUIRE(snapshot.size() == 2U);
+    REQUIRE(snapshot.find("scalar") != snapshot.end());
+    REQUIRE(snapshot.find("time") != snapshot.end());
+
+    params.rename_parameter("scalar", "renamed_scalar");
+    const auto& renamed = params.data();
+    REQUIRE(renamed.size() == 2U);
+    REQUIRE(renamed.find("scalar") == renamed.end());
+    REQUIRE(renamed.find("renamed_scalar") != renamed.end());
+
+    params.remove_internal_parameter("time");
+    const auto& after_remove = params.data();
+    REQUIRE(after_remove.size() == 1U);
+    REQUIRE(after_remove.find("time") == after_remove.end());
+
+    REQUIRE(params.get_value_ptr(Index{99}) == nullptr);
+    REQUIRE(std::as_const(params).get_value_ptr(Index{99}) == nullptr);
+    REQUIRE(params.get_double_ptr(Index{99}) == nullptr);
+    REQUIRE(std::as_const(params).get_double_ptr(Index{99}) == nullptr);
+    REQUIRE_FALSE(params.get_parameter_optional(Index{99}).has_value());
+    REQUIRE_FALSE(params.get_parameter_name(Index{99}).has_value());
 }
 
 // NOLINTEND(bugprone-chained-comparison)

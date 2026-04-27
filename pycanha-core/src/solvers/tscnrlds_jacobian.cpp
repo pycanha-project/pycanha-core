@@ -15,6 +15,7 @@
 
 #include "pycanha-core/globals.hpp"
 #include "pycanha-core/parameters/entity.hpp"
+#include "pycanha-core/parameters/formula.hpp"
 #include "pycanha-core/parameters/formulas.hpp"
 #include "pycanha-core/solvers/solver.hpp"
 #include "pycanha-core/solvers/tscnrlds.hpp"
@@ -60,17 +61,18 @@ TSCNRLDS_JACOBIAN::TSCNRLDS_JACOBIAN(
 
 void TSCNRLDS_JACOBIAN::initialize() {
     collect_parameter_names();
-    if (_parameter_names.empty()) {
+    if (_derivative_parameter_names.empty()) {
         throw std::invalid_argument(
-            "TSCNRLDS_JACOBIAN requires at least one formula with derivative "
-            "metadata");
+            "TSCNRLDS_JACOBIAN requires at least one selected derivative "
+            "parameter");
     }
 
     TSCNRLDS::initialize();
 
-    auto& output_model = tmm.thermal_data.models().get_model(output_model_name);
+    auto& output_model =
+        tmm.thermal_data().models().get_model(output_model_name);
     output_model.get_matrix_attribute(DataModelAttribute::JAC) =
-        DenseMatrixTimeSeries(nd, to_idx(_parameter_names.size()));
+        DenseMatrixTimeSeries(nd, to_idx(_derivative_parameter_names.size()));
     output_model.get_matrix_attribute(DataModelAttribute::JAC)
         .reserve(to_sizet(num_outputs));
 
@@ -79,13 +81,14 @@ void TSCNRLDS_JACOBIAN::initialize() {
     _d_kr_dd_matrices.clear();
     _d_kr_db_matrices.clear();
 
-    _d_kl_dd_matrices.reserve(_parameter_names.size());
-    _d_kl_db_matrices.reserve(_parameter_names.size());
-    _d_kr_dd_matrices.reserve(_parameter_names.size());
-    _d_kr_db_matrices.reserve(_parameter_names.size());
+    _d_kl_dd_matrices.reserve(_derivative_parameter_names.size());
+    _d_kl_db_matrices.reserve(_derivative_parameter_names.size());
+    _d_kr_dd_matrices.reserve(_derivative_parameter_names.size());
+    _d_kr_db_matrices.reserve(_derivative_parameter_names.size());
 
     for (std::size_t parameter_index = 0;
-         parameter_index < _parameter_names.size(); ++parameter_index) {
+         parameter_index < _derivative_parameter_names.size();
+         ++parameter_index) {
         _d_kl_dd_matrices.emplace_back(nd, nd);
         _d_kl_db_matrices.emplace_back(nd, nb);
         _d_kr_dd_matrices.emplace_back(nd, nd);
@@ -93,28 +96,36 @@ void TSCNRLDS_JACOBIAN::initialize() {
     }
 
     _d_capacity_matrix =
-        DenseJacobian::Zero(nd, to_idx(_parameter_names.size()));
+        DenseJacobian::Zero(nd, to_idx(_derivative_parameter_names.size()));
     _d_heat_flux_matrix =
-        DenseJacobian::Zero(nd, to_idx(_parameter_names.size()));
+        DenseJacobian::Zero(nd, to_idx(_derivative_parameter_names.size()));
 
-    _m_k = DenseJacobian::Zero(nd, to_idx(_parameter_names.size()));
-    _m_q = DenseJacobian::Zero(nd, to_idx(_parameter_names.size()));
-    _m_c = DenseJacobian::Zero(nd, to_idx(_parameter_names.size()));
-    _mt = DenseJacobian::Zero(nd, to_idx(_parameter_names.size()));
-    _mb = DenseJacobian::Zero(nd, to_idx(_parameter_names.size()));
+    _m_k = DenseJacobian::Zero(nd, to_idx(_derivative_parameter_names.size()));
+    _m_q = DenseJacobian::Zero(nd, to_idx(_derivative_parameter_names.size()));
+    _m_c = DenseJacobian::Zero(nd, to_idx(_derivative_parameter_names.size()));
+    _mt = DenseJacobian::Zero(nd, to_idx(_derivative_parameter_names.size()));
+    _mb = DenseJacobian::Zero(nd, to_idx(_derivative_parameter_names.size()));
 
     _sp_nd_diag.resize(nd, nd);
     sparse_utils::add_zero_diag_square(_sp_nd_diag);
 
     std::unordered_map<std::string, Index> parameter_lookup;
-    parameter_lookup.reserve(_parameter_names.size());
+    parameter_lookup.reserve(_derivative_parameter_names.size());
     for (std::size_t parameter_index = 0;
-         parameter_index < _parameter_names.size(); ++parameter_index) {
-        parameter_lookup.emplace(_parameter_names[parameter_index],
+         parameter_index < _derivative_parameter_names.size();
+         ++parameter_index) {
+        parameter_lookup.emplace(_derivative_parameter_names[parameter_index],
                                  to_idx(parameter_index));
     }
 
-    for (const auto& formula : tmm.formulas.formulas()) {
+    for (const auto& formula : tmm.formulas().formulas()) {
+        auto* parameter_formula =
+            dynamic_cast<ParameterFormula*>(formula.get());
+        if (parameter_formula == nullptr) {
+            continue;
+        }
+
+        parameter_formula->calculate_derivatives();
         const auto* derivatives = formula->get_derivative_values();
         if ((derivatives == nullptr) || derivatives->empty()) {
             continue;
@@ -143,26 +154,33 @@ void TSCNRLDS_JACOBIAN::initialize() {
 
 void TSCNRLDS_JACOBIAN::collect_parameter_names() {
     _parameter_names.clear();
+    _derivative_parameter_names.clear();
 
     std::unordered_set<std::string> seen_parameters;
-    for (const auto& formula : tmm.formulas.formulas()) {
-        const auto* derivatives = formula->get_derivative_values();
-        if ((derivatives == nullptr) || derivatives->empty()) {
+    for (const auto& formula : tmm.formulas().formulas()) {
+        if (dynamic_cast<ParameterFormula*>(formula.get()) == nullptr) {
             continue;
         }
 
         const auto& dependencies = formula->parameter_dependencies();
-        if (dependencies.size() != derivatives->size()) {
-            throw std::invalid_argument(
-                "Formula derivative metadata size mismatch for " +
-                formula->entity().string_representation());
-        }
 
         std::copy_if(dependencies.begin(), dependencies.end(),
                      std::back_inserter(_parameter_names),
                      [&seen_parameters](const std::string& dependency) {
                          return seen_parameters.insert(dependency).second;
                      });
+    }
+
+    for (const auto& parameter_name :
+         tmm.formulas().parameters_with_derivatives().parameter_names()) {
+        const auto found = std::find(_parameter_names.begin(),
+                                     _parameter_names.end(), parameter_name);
+        if (found == _parameter_names.end()) {
+            throw std::invalid_argument(
+                "Derivative parameter '" + parameter_name +
+                "' is not produced by any ParameterFormula");
+        }
+        _derivative_parameter_names.push_back(parameter_name);
     }
 }
 
@@ -222,7 +240,8 @@ void TSCNRLDS_JACOBIAN::fill_matrices(const Entity& entity,
 
 void TSCNRLDS_JACOBIAN::build_mk() {
     for (std::size_t parameter_index = 0;
-         parameter_index < _parameter_names.size(); ++parameter_index) {
+         parameter_index < _derivative_parameter_names.size();
+         ++parameter_index) {
         const auto& d_kl_dd = _d_kl_dd_matrices[parameter_index];
         const auto& d_kl_db = _d_kl_db_matrices[parameter_index];
         const auto& d_kr_dd = _d_kr_dd_matrices[parameter_index];
@@ -246,7 +265,8 @@ void TSCNRLDS_JACOBIAN::build_mk() {
 
 void TSCNRLDS_JACOBIAN::build_mq() {
     for (std::size_t parameter_index = 0;
-         parameter_index < _parameter_names.size(); ++parameter_index) {
+         parameter_index < _derivative_parameter_names.size();
+         ++parameter_index) {
         const auto& d_kl_db = _d_kl_db_matrices[parameter_index];
         const auto& d_kr_db = _d_kr_db_matrices[parameter_index];
 
@@ -266,7 +286,7 @@ void TSCNRLDS_JACOBIAN::build_mc() {
 void TSCNRLDS_JACOBIAN::solve_jacobian_step() {
 #if PYCANHA_USE_MKL
     _pardiso_phase = 33;
-    _pardiso_nrhs = static_cast<MKL_INT>(_parameter_names.size());
+    _pardiso_nrhs = static_cast<MKL_INT>(_derivative_parameter_names.size());
     // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast)
     pardiso(reinterpret_cast<void*>(_pardiso_pt.data()), &_pardiso_maxfct,
             &_pardiso_mnum, &_pardiso_mtype, &_pardiso_phase, &_pardiso_size,
@@ -296,15 +316,16 @@ void TSCNRLDS_JACOBIAN::solve() {
 
     const FormulaExecutionGuard formula_execution(*this);
 
-    if (_parameter_names.empty()) {
+    if (_derivative_parameter_names.empty()) {
         TSCNRLDS::solve();
         return;
     }
 
     restart_solve();
-    auto& output_model = tmm.thermal_data.models().get_model(output_model_name);
+    auto& output_model =
+        tmm.thermal_data().models().get_model(output_model_name);
     output_model.get_matrix_attribute(DataModelAttribute::JAC) =
-        DenseMatrixTimeSeries(nd, to_idx(_parameter_names.size()));
+        DenseMatrixTimeSeries(nd, to_idx(_derivative_parameter_names.size()));
     output_model.get_matrix_attribute(DataModelAttribute::JAC)
         .reserve(to_sizet(num_outputs));
     _mt.setZero();
@@ -339,7 +360,7 @@ void TSCNRLDS_JACOBIAN::solve() {
         tmm.time = time;
         callback_transient_time_change();
 
-        for (solver_iter = 0; solver_iter < MAX_ITERS; ++solver_iter) {
+        for (solver_iter = 0; solver_iter < max_iters; ++solver_iter) {
             callback_solver_loop();
             build_conductance_matrix();
             build_heat_flux();
@@ -364,7 +385,7 @@ void TSCNRLDS_JACOBIAN::solve() {
             SPDLOG_LOGGER_ERROR(
                 get_logger(),
                 "TSCNRLDS_JACOBIAN did not converge after {} iterations.",
-                MAX_ITERS);
+                max_iters);
             SPDLOG_LOGGER_ERROR(get_logger(), "Time iter: {} Time: {} s",
                                 time_iter, time);
             SPDLOG_LOGGER_ERROR(get_logger(), "Max. dT: {} K at index: {}",
@@ -397,7 +418,8 @@ void TSCNRLDS_JACOBIAN::solve() {
 }
 
 void TSCNRLDS_JACOBIAN::save_jacobian_data() {
-    auto& output_series = tmm.thermal_data.models()
+    auto& output_series = tmm.thermal_data()
+                              .models()
                               .get_model(output_model_name)
                               .get_matrix_attribute(DataModelAttribute::JAC);
     if ((output_series.num_timesteps() > 0) &&

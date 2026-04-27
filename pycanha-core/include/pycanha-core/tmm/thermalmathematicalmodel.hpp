@@ -3,9 +3,12 @@
 #include <Eigen/Core>
 #include <functional>
 #include <memory>
+#include <optional>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 #include <unordered_set>
+#include <vector>
 
 #include "pycanha-core/globals.hpp"
 #include "pycanha-core/parameters/variable.hpp"
@@ -14,13 +17,40 @@ namespace pycanha {
 
 class Coupling;
 class ConductiveCouplings;
+class Entity;
 class Formulas;
 class Node;
 class Nodes;
 class Parameters;
 class RadiativeCouplings;
+class Solver;
+class SolverRegistry;
 class ThermalData;
 class ThermalNetwork;
+class ThermalMathematicalModel;
+
+class EntitiesHelper {
+  public:
+    explicit EntitiesHelper(ThermalMathematicalModel& tmm) noexcept
+        : _tmm(&tmm) {}
+
+    [[nodiscard]] Entity attribute(std::string_view token,
+                                   NodeNum node_num) const;
+    [[nodiscard]] Entity temperature(NodeNum node_num) const;
+    [[nodiscard]] Entity capacity(NodeNum node_num) const;
+    [[nodiscard]] Entity solar_heat(NodeNum node_num) const;
+    [[nodiscard]] Entity albedo_heat(NodeNum node_num) const;
+    [[nodiscard]] Entity earth_ir(NodeNum node_num) const;
+    [[nodiscard]] Entity internal_heat(NodeNum node_num) const;
+    [[nodiscard]] Entity other_heat(NodeNum node_num) const;
+    [[nodiscard]] Entity conductive_coupling(NodeNum node_num_1,
+                                             NodeNum node_num_2) const;
+    [[nodiscard]] Entity radiative_coupling(NodeNum node_num_1,
+                                            NodeNum node_num_2) const;
+
+  private:
+    ThermalMathematicalModel* _tmm;
+};
 
 class ThermalMathematicalModel {
   public:
@@ -33,13 +63,7 @@ class ThermalMathematicalModel {
 
     explicit ThermalMathematicalModel(std::string model_name);
     ThermalMathematicalModel(std::string model_name,
-                             std::shared_ptr<Nodes> nodes,
-                             std::shared_ptr<ConductiveCouplings> conductive,
-                             std::shared_ptr<RadiativeCouplings> radiative);
-    ThermalMathematicalModel(std::string model_name,
-                             std::shared_ptr<Nodes> nodes,
-                             std::shared_ptr<ConductiveCouplings> conductive,
-                             std::shared_ptr<RadiativeCouplings> radiative,
+                             std::shared_ptr<ThermalNetwork> network,
                              std::shared_ptr<Parameters> parameters,
                              std::shared_ptr<Formulas> formulas,
                              std::shared_ptr<ThermalData> thermal_data);
@@ -55,6 +79,22 @@ class ThermalMathematicalModel {
     [[nodiscard]] const Nodes& nodes() const noexcept;
     [[nodiscard]] std::shared_ptr<Nodes> nodes_ptr() noexcept;
     [[nodiscard]] std::shared_ptr<const Nodes> nodes_ptr() const noexcept;
+
+    [[nodiscard]] std::shared_ptr<Parameters> parameters_ptr() noexcept;
+    [[nodiscard]] std::shared_ptr<const Parameters> parameters_ptr()
+        const noexcept;
+    [[nodiscard]] std::shared_ptr<Formulas> formulas_ptr() noexcept;
+    [[nodiscard]] std::shared_ptr<const Formulas> formulas_ptr() const noexcept;
+    [[nodiscard]] std::shared_ptr<ThermalData> thermal_data_ptr() noexcept;
+    [[nodiscard]] std::shared_ptr<const ThermalData> thermal_data_ptr()
+        const noexcept;
+
+    [[nodiscard]] Parameters& parameters() noexcept;
+    [[nodiscard]] const Parameters& parameters() const noexcept;
+    [[nodiscard]] Formulas& formulas() noexcept;
+    [[nodiscard]] const Formulas& formulas() const noexcept;
+    [[nodiscard]] ThermalData& thermal_data() noexcept;
+    [[nodiscard]] const ThermalData& thermal_data() const noexcept;
 
     [[nodiscard]] ConductiveCouplings& conductive_couplings() noexcept;
     [[nodiscard]] const ConductiveCouplings& conductive_couplings()
@@ -72,6 +112,12 @@ class ThermalMathematicalModel {
                                 double value);
     void add_conductive_coupling(Coupling coupling);
     void add_radiative_coupling(Coupling coupling);
+    [[nodiscard]] double flow_conductive(Index node_num_1, Index node_num_2);
+    [[nodiscard]] double flow_conductive(const std::vector<Index>& node_nums_1,
+                                         const std::vector<Index>& node_nums_2);
+    [[nodiscard]] double flow_radiative(Index node_num_1, Index node_num_2);
+    [[nodiscard]] double flow_radiative(const std::vector<Index>& node_nums_1,
+                                        const std::vector<Index>& node_nums_2);
     void add_time_variable(
         const std::string& name, Eigen::VectorXd x_data, Eigen::VectorXd y_data,
         InterpolationMethod interp = InterpolationMethod::Linear,
@@ -101,6 +147,17 @@ class ThermalMathematicalModel {
     void callback_transient_time_change();
     void callback_transient_after_timestep();
 
+    void associate_solvers(SolverRegistry& solvers) noexcept;
+    [[nodiscard]] SolverRegistry& solvers();
+    [[nodiscard]] const SolverRegistry& solvers() const;
+    void set_current_callback_solver(Solver* solver) noexcept;
+    [[nodiscard]] Solver* current_callback_solver() const noexcept;
+    [[nodiscard]] std::optional<Entity> find_entity(
+        std::string_view text) const;
+    [[nodiscard]] Entity entity(std::string_view text) const;
+    [[nodiscard]] EntitiesHelper& entities() noexcept;
+    [[nodiscard]] const EntitiesHelper& entities() const noexcept;
+
     void internal_callback_solver_loop();
     void internal_callback_transient_time_change();
     void internal_callback_transient_after_timestep();
@@ -124,6 +181,9 @@ class ThermalMathematicalModel {
     std::shared_ptr<Parameters> _parameters_shptr;
     std::shared_ptr<Formulas> _formulas_shptr;
     std::shared_ptr<ThermalData> _thermal_data_shptr;
+    SolverRegistry* _solvers{nullptr};
+    Solver* _current_callback_solver{nullptr};
+    EntitiesHelper _entities{*this};
     double* _time_parameter_ptr{nullptr};
     std::unordered_map<std::string, TimeVariable> _time_variables;
     std::unordered_map<std::string, TemperatureVariable> _temperature_variables;
@@ -136,10 +196,6 @@ class ThermalMathematicalModel {
   public:
     std::string name;
     double time{0.0};
-
-    Parameters& parameters;
-    Formulas& formulas;
-    ThermalData& thermal_data;
 };
 
 }  // namespace pycanha

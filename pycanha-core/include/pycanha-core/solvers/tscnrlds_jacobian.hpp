@@ -25,6 +25,11 @@ class TSCNRLDS_JACOBIAN : public TSCNRLDS {
         return _parameter_names;
     }
 
+    [[nodiscard]] const std::vector<std::string>& derivative_parameter_names()
+        const noexcept {
+        return _derivative_parameter_names;
+    }
+
   private:
     using DenseJacobian = Eigen::MatrixXd;
 
@@ -38,6 +43,7 @@ class TSCNRLDS_JACOBIAN : public TSCNRLDS {
     void save_jacobian_data();
 
     std::vector<std::string> _parameter_names;
+    std::vector<std::string> _derivative_parameter_names;
 
     std::vector<SpMatRow> _d_kl_dd_matrices;
     std::vector<SpMatRow> _d_kl_db_matrices;

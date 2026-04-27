@@ -1,7 +1,10 @@
 #include <catch2/catch_test_macros.hpp>
+#include <cmath>
+#include <memory>
 #include <string>
 
 #include "pycanha-core/tmm/node.hpp"
+#include "pycanha-core/tmm/nodes.hpp"
 
 using namespace pycanha;  // NOLINT(build/namespaces)
 
@@ -186,6 +189,27 @@ TEST_CASE("Node Default Values", "[node]") {
     }
 
     // TODO: test the rest of the methods.
+}
+
+TEST_CASE("Associated node becomes invalid after parent removal", "[node]") {
+    auto nodes = std::make_shared<Nodes>();
+
+    Node stored(7);
+    stored.set_T(290.0);
+    stored.set_qr(12.0);
+    nodes->add_node(stored);
+
+    Node associated = nodes->get_node_from_node_num(7);
+    REQUIRE(associated.get_int_parent_pointer() != 0U);
+    REQUIRE(associated.get_T() == 290.0);
+    REQUIRE(associated.get_qr() == 12.0);
+
+    nodes->remove_node(7);
+
+    REQUIRE(std::isnan(associated.get_T()));
+    REQUIRE(associated.get_type() == static_cast<char>(0));
+    REQUIRE_FALSE(associated.get_int_node_num().has_value());
+    REQUIRE(associated.get_int_parent_pointer() == 0U);
 }
 
 // NOLINTEND(readability-function-cognitive-complexity)

@@ -59,7 +59,7 @@ void SSLU::solve() {
 
     solver_converged = false;
 
-    for (solver_iter = 0; solver_iter < MAX_ITERS; ++solver_iter) {
+    for (solver_iter = 0; solver_iter < max_iters; ++solver_iter) {
         PYCANHA_PROFILE_SCOPE("SSLU iteration");
 
         Q = -(QI_sp + QS_sp + QA_sp + QE_sp + QR_sp);
@@ -122,7 +122,7 @@ void SSLU::solve() {
         SPDLOG_LOGGER_ERROR(
             get_logger(),
             "SSLU did NOT converge after {} iterations. Max. dT = {} K.",
-            MAX_ITERS, max_dT);
+            max_iters, max_dT);
     }
 }
 

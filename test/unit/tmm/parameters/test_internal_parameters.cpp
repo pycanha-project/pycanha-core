@@ -63,3 +63,30 @@ TEST_CASE("Internal parameters bypass add lock but keep removal guarded",
     params.remove_internal_parameter("time");
     REQUIRE_FALSE(params.contains("time"));
 }
+
+TEST_CASE("Internal parameters keep type and shape compatibility",
+          "[parameters][internal]") {
+    Parameters params;
+
+    params.add_parameter("external", 1.0);
+
+    Parameters::MatrixRXd matrix(1, 2);
+    matrix << 2.0, 3.0;
+    params.add_internal_parameter("mat", matrix);
+
+    Parameters::MatrixRXd wrong_shape(2, 1);
+    wrong_shape << 4.0, 5.0;
+    params.set_internal_parameter("mat", wrong_shape);
+    params.set_internal_parameter("mat", true);
+    params.set_internal_parameter("external", 2.0);
+    params.set_internal_parameter("missing", 3.0);
+
+    const auto stored_matrix =
+        std::get<Parameters::MatrixRXd>(params.get_parameter("mat"));
+    REQUIRE(stored_matrix.rows() == 1);
+    REQUIRE(stored_matrix.cols() == 2);
+    REQUIRE(stored_matrix(0, 0) == Catch::Approx(2.0));
+    REQUIRE(stored_matrix(0, 1) == Catch::Approx(3.0));
+    REQUIRE(std::get<double>(params.get_parameter("external")) ==
+            Catch::Approx(1.0));
+}

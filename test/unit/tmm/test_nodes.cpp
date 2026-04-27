@@ -1,6 +1,7 @@
 #include <Eigen/Sparse>
 #include <algorithm>
 #include <catch2/catch_test_macros.hpp>
+#include <cmath>
 #include <memory>
 #include <random>
 #include <vector>
@@ -109,16 +110,137 @@ void assert_blank_nodes_attributes_are_trivial_zeros(
 
 // Test Node constructor with Nodes pointer
 TEST_CASE("Node Constructor with Nodes pointer", "[node]") {
-    // Nodes instance in a shared pointer
     std::shared_ptr<Nodes> tns = std::make_shared<Nodes>();
 
-    // Weak pointer to the Nodes instance
+    Node stored(5);
+    stored.set_T(280.0);
+    stored.set_qi(12.0);
+    tns->add_node(stored);
+
     std::weak_ptr<Nodes> weak_tns = tns;
+    Node tn(5, weak_tns);
 
-    int usr_num = 5;
-    Node tn(usr_num, weak_tns);
+    REQUIRE_FALSE(weak_tns.expired());
+    REQUIRE(tn.get_int_node_num().has_value());
+    REQUIRE(tn.get_int_parent_pointer() == stored.get_int_parent_pointer());
+    REQUIRE(tn.get_T() == 280.0);
+    REQUIRE(tn.get_qi() == 12.0);
 
-    // TODO: Add checks
+    tn.set_T(285.0);
+    REQUIRE(tns->get_T(5) == 285.0);
+    REQUIRE(tns->set_qi(5, 18.0));
+    REQUIRE(tn.get_qi() == 18.0);
+}
+
+TEST_CASE("Nodes expose safe fallback access for missing nodes", "[nodes]") {
+    Nodes tns;
+    Node node(10);
+    node.set_T(273.15);
+    node.set_C(12.5);
+    node.set_qi(5.0);
+    tns.add_node(node);
+
+    REQUIRE(tns.get_idx_from_node_num(10) == std::optional<Index>{0});
+    REQUIRE(tns.get_node_num_from_idx(0) == std::optional<NodeNum>{10});
+
+    double* temperature_ref = tns.get_T_value_ref(10);
+    REQUIRE(temperature_ref != nullptr);
+    *temperature_ref = 275.0;
+    REQUIRE(tns.get_T(10) == 275.0);
+
+    double* heat_ref = tns.get_qi_value_ref(10);
+    REQUIRE(heat_ref != nullptr);
+    *heat_ref = 8.0;
+    REQUIRE(tns.get_qi(10) == 8.0);
+
+    REQUIRE(std::isnan(tns.get_T(999)));
+    REQUIRE_FALSE(tns.set_T(999, 1.0));
+    REQUIRE(tns.get_T_value_ref(999) == nullptr);
+    REQUIRE(tns.get_qi_value_ref(999) == nullptr);
+    REQUIRE_FALSE(tns.get_idx_from_node_num(999).has_value());
+    REQUIRE_FALSE(tns.get_node_num_from_idx(-1).has_value());
+    REQUIRE_FALSE(tns.get_node_num_from_idx(5).has_value());
+    REQUIRE_FALSE(tns.is_node(999));
+}
+
+TEST_CASE("Nodes removal closes mapping gaps", "[nodes]") {
+    Nodes tns;
+
+    Node diff_10(10);
+    Node diff_20(20);
+    Node bound_99(99);
+    bound_99.set_type('B');
+
+    tns.add_node(diff_10);
+    tns.add_node(diff_20);
+    tns.add_node(bound_99);
+
+    tns.remove_node(20);
+
+    REQUIRE(tns.num_nodes() == 2);
+    REQUIRE_FALSE(tns.is_node(20));
+    REQUIRE(tns.get_node_num_from_idx(0) == std::optional<NodeNum>{10});
+    REQUIRE(tns.get_node_num_from_idx(1) == std::optional<NodeNum>{99});
+    REQUIRE(tns.get_idx_from_node_num(99) == std::optional<Index>{1});
+
+    tns.remove_node(999);
+    REQUIRE(tns.num_nodes() == 2);
+}
+
+TEST_CASE("Nodes copy and move preserve stored values", "[nodes]") {
+    Nodes original;
+
+    Node diff_10(10);
+    diff_10.set_T(300.0);
+    diff_10.set_qi(4.0);
+
+    Node bound_20(20);
+    bound_20.set_type('B');
+    bound_20.set_T(250.0);
+    bound_20.set_a(1.5);
+
+    original.add_node(diff_10);
+    original.add_node(bound_20);
+
+    auto require_state = [](Nodes& nodes) {
+        REQUIRE(nodes.num_nodes() == 2);
+        REQUIRE(nodes.get_type(10) == 'D');
+        REQUIRE(nodes.get_type(20) == 'B');
+        REQUIRE(nodes.get_T(10) == 300.0);
+        REQUIRE(nodes.get_qi(10) == 4.0);
+        REQUIRE(nodes.get_T(20) == 250.0);
+        REQUIRE(nodes.get_a(20) == 1.5);
+        REQUIRE(nodes.get_idx_from_node_num(10) == std::optional<Index>{0});
+        REQUIRE(nodes.get_idx_from_node_num(20) == std::optional<Index>{1});
+    };
+
+    Nodes copied(original);
+    require_state(copied);
+
+    Nodes assigned;
+    assigned = original;
+    require_state(assigned);
+
+    Nodes moved(std::move(copied));
+    require_state(moved);
+
+    Nodes move_assigned;
+    move_assigned = std::move(assigned);
+    require_state(move_assigned);
+}
+
+TEST_CASE("Nodes set_type currently reports success without reordering nodes",
+          "[nodes]") {
+    Nodes tns;
+
+    Node node(10);
+    tns.add_node(node);
+
+    // TODO: Replace this with real D<->B conversion assertions once
+    // diffusive_to_boundary/boundary_to_diffusive are implemented.
+    REQUIRE(tns.set_type(10, 'B'));
+    REQUIRE(tns.get_type(10) == 'D');
+    REQUIRE(tns.get_idx_from_node_num(10) == std::optional<Index>{0});
 }
 
 TEST_CASE("Nodes Testing", "[nodes]") {

@@ -173,24 +173,62 @@ TEST_CASE("Formulas require fresh validation before locking", "[formulas]") {
                       std::runtime_error);
 }
 
+TEST_CASE("Formulas validate registry and removal edge cases", "[formulas]") {
+    pycanha::DerivativeParameterRegistry registry;
+    REQUIRE_FALSE(registry.contains("missing"));
+    REQUIRE_FALSE(registry.remove_parameter("missing"));
+    REQUIRE_THROWS_AS(registry.add_parameter("missing"), std::runtime_error);
+
+    auto network = std::make_shared<pycanha::ThermalNetwork>();
+    auto parameters = std::make_shared<pycanha::Parameters>();
+    pycanha::Formulas formulas(network, parameters);
+
+    pycanha::Node node1(1);
+    network->add_node(node1);
+    network->nodes().set_qi(1, 0.0);
+
+    parameters->add_parameter("P1", 10.0);
+    registry.associate(parameters);
+    REQUIRE_THROWS_AS(registry.add_parameter("missing"), std::invalid_argument);
+    registry.add_parameter("P1");
+    registry.add_parameter("P1");
+    REQUIRE(registry.contains("P1"));
+    REQUIRE(registry.parameter_names().size() == 1U);
+    REQUIRE_FALSE(registry.remove_parameter("missing"));
+    REQUIRE(registry.remove_parameter("P1"));
+    REQUIRE_FALSE(registry.contains("P1"));
+
+    REQUIRE_THROWS_AS(formulas.add_formula(std::shared_ptr<pycanha::Formula>{}),
+                      std::invalid_argument);
+    REQUIRE_FALSE(formulas.remove_formula("not an entity"));
+
+    const pycanha::Entity heat_load = pycanha::Entity::qi(*network, 1);
+    formulas.add_formula(
+        pycanha::ParameterFormula(heat_load, *parameters, "P1"));
+    formulas.validate_for_execution();
+    formulas.compile_formulas();
+    parameters->add_parameter("P2", 2.0);
+    REQUIRE_THROWS_AS(formulas.apply_compiled_formulas(), std::runtime_error);
+}
+
 TEST_CASE("ThermalMathematicalModel uses compiled formulas while locked",
           "[formulas]") {
     auto model = std::make_shared<pycanha::ThermalMathematicalModel>("model");
     model->add_node(1);
     model->nodes().set_qi(1, 0.0);
 
-    model->parameters.add_parameter("P1", 10.0);
-    model->formulas.add_formula(pycanha::ParameterFormula(
-        pycanha::Entity::qi(model->network(), 1), model->parameters, "P1"));
+    model->parameters().add_parameter("P1", 10.0);
+    model->formulas().add_formula(pycanha::ParameterFormula(
+        model->entity("QI1"), model->parameters(), "P1"));
 
-    model->formulas.validate_for_execution();
-    model->formulas.compile_formulas();
-    model->formulas.lock_parameters_for_execution();
+    model->formulas().validate_for_execution();
+    model->formulas().compile_formulas();
+    model->formulas().lock_parameters_for_execution();
 
-    model->parameters.set_parameter("P1", 15.0);
+    model->parameters().set_parameter("P1", 15.0);
     model->callback_solver_loop();
 
     REQUIRE(model->nodes().get_qi(1) == Catch::Approx(15.0));
 
-    model->formulas.unlock_parameters();
+    model->formulas().unlock_parameters();
 }

@@ -1,41 +1,55 @@
 
+set(UNIT_TEST_SOURCES
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/dependencies/test_conan_dependencies.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/test_primitives.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/test_trimesh.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/test_geometryutils.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/test_transformations.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/test_geometry.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/test_geometrymodel.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/parameters/test_formula.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/parameters/test_variable.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/parameters/test_smart_formula.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/solvers/test_sslu.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/solvers/test_callback_registry.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/solvers/test_transient_solver.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/solvers/test_tscnrlds.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/solvers/test_tscnrlds_jacobian.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/tmm/test_coupling.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/tmm/test_couplings.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/tmm/test_node.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/tmm/test_sparse_utils.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/tmm/test_nodes.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/tmm/test_thermal_network.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/tmm/test_thermal_mathematical_model.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/tmm/test_esatan_reader.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/tmm/parameters/test_parameters.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/tmm/parameters/test_internal_parameters.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/tmm/parameters/test_formulas.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/tmm/thermaldata/test_interpolation_utils.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/tmm/thermaldata/test_lookup_table.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/tmm/thermaldata/test_dense_time_series.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/tmm/thermaldata/test_dense_matrix_time_series.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/tmm/thermaldata/test_data_model.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/tmm/thermaldata/test_data_table_store.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/tmm/thermaldata/test_sparse_time_series.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/tmm/thermaldata/test_thermaldata.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/test_logger.cpp"
+)
 
-set(TEST_SOURCES 
-      "${CMAKE_CURRENT_SOURCE_DIR}/gmm/test_primitives.cpp"
-      "${CMAKE_CURRENT_SOURCE_DIR}/gmm/test_trimesh.cpp"
-      "${CMAKE_CURRENT_SOURCE_DIR}/gmm/test_geometryutils.cpp"
-      "${CMAKE_CURRENT_SOURCE_DIR}/gmm/test_transformations.cpp"
-      "${CMAKE_CURRENT_SOURCE_DIR}/gmm/test_geometry.cpp"
-      "${CMAKE_CURRENT_SOURCE_DIR}/gmm/test_geometrymodel.cpp"
-  "${CMAKE_CURRENT_SOURCE_DIR}/dependencies/test_conan_dependencies.cpp"
-  "${CMAKE_CURRENT_SOURCE_DIR}/utils/test_logger.cpp"
-  "${CMAKE_CURRENT_SOURCE_DIR}/dependencies/test_conan_dependencies.cpp"
+set(API_TEST_SOURCES
+  "${CMAKE_CURRENT_SOURCE_DIR}/api/test_overview.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/api/test_thermal_network.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/api/test_parameters.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/api/test_formulas.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/api/test_solvers.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/api/test_callbacks.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/api/test_thermaldata.cpp"
+)
 
-  "${CMAKE_CURRENT_SOURCE_DIR}/tmm/test_coupling.cpp"
-      "${CMAKE_CURRENT_SOURCE_DIR}/tmm/test_couplings.cpp"
-      "${CMAKE_CURRENT_SOURCE_DIR}/tmm/test_node.cpp"
-      "${CMAKE_CURRENT_SOURCE_DIR}/tmm/test_sparse_utils.cpp"
-      "${CMAKE_CURRENT_SOURCE_DIR}/tmm/test_nodes.cpp"
-      "${CMAKE_CURRENT_SOURCE_DIR}/tmm/test_thermal_network.cpp"
-      "${CMAKE_CURRENT_SOURCE_DIR}/tmm/test_thermal_mathematical_model.cpp"
-      "${CMAKE_CURRENT_SOURCE_DIR}/tmm/test_esatan_reader.cpp"
-      "${CMAKE_CURRENT_SOURCE_DIR}/tmm/parameters/test_parameters.cpp"
-      "${CMAKE_CURRENT_SOURCE_DIR}/tmm/parameters/test_internal_parameters.cpp"
-      "${CMAKE_CURRENT_SOURCE_DIR}/tmm/parameters/test_formulas.cpp"
-      "${CMAKE_CURRENT_SOURCE_DIR}/parameters/test_formula.cpp"
-      "${CMAKE_CURRENT_SOURCE_DIR}/parameters/test_variable.cpp"
-      "${CMAKE_CURRENT_SOURCE_DIR}/parameters/test_smart_formula.cpp"
-      "${CMAKE_CURRENT_SOURCE_DIR}/tmm/thermaldata/test_interpolation_utils.cpp"
-      "${CMAKE_CURRENT_SOURCE_DIR}/tmm/thermaldata/test_lookup_table.cpp"
-      "${CMAKE_CURRENT_SOURCE_DIR}/tmm/thermaldata/test_dense_time_series.cpp"
-      "${CMAKE_CURRENT_SOURCE_DIR}/tmm/thermaldata/test_dense_matrix_time_series.cpp"
-      "${CMAKE_CURRENT_SOURCE_DIR}/tmm/thermaldata/test_data_model.cpp"
-      "${CMAKE_CURRENT_SOURCE_DIR}/tmm/thermaldata/test_data_table_store.cpp"
-      "${CMAKE_CURRENT_SOURCE_DIR}/tmm/thermaldata/test_sparse_time_series.cpp"
-      "${CMAKE_CURRENT_SOURCE_DIR}/tmm/thermaldata/test_thermaldata.cpp"
-      "${CMAKE_CURRENT_SOURCE_DIR}/solvers/test_sslu.cpp"
-      "${CMAKE_CURRENT_SOURCE_DIR}/solvers/test_tscnrlds.cpp"
-      "${CMAKE_CURRENT_SOURCE_DIR}/solvers/test_tscnrlds_jacobian.cpp"
+set(TEST_SOURCES
+  ${UNIT_TEST_SOURCES}
+  ${API_TEST_SOURCES}
 )
 
 set(TEST_HEADERS "")
@@ -124,7 +138,7 @@ if(WIN32 AND PYCANHA_OPTION_USE_MKL AND MKL_ROOT)
     )
 endif()
 
-catch_discover_tests(${TEST_TARGET_NAME})
+catch_discover_tests(${TEST_TARGET_NAME} ADD_TAGS_AS_LABELS)
 
 if(PYCANHA_OPTION_COVERAGE)
   set(COVERAGE_MAIN "coverage")

@@ -6,8 +6,6 @@
 #include <memory>
 #include <stdexcept>
 
-#include "pycanha-core/parameters/entity.hpp"
-#include "pycanha-core/parameters/formula.hpp"
 #include "pycanha-core/parameters/formulas.hpp"
 #include "pycanha-core/solvers/tscnrlds.hpp"
 #include "pycanha-core/solvers/tscnrlds_jacobian.hpp"
@@ -80,22 +78,16 @@ std::shared_ptr<pycanha::ThermalMathematicalModel> make_python_example_model() {
     model->add_node(boundary_node);
     model->add_conductive_coupling(1, 2, example_conductive_coupling);
 
-    model->parameters.add_parameter("k", example_conductive_coupling);
-    model->parameters.add_parameter("C", example_capacity);
-
-    const pycanha::Entity conductive_entity =
-        pycanha::Entity::gl(model->network(), 1, 2);
-    const pycanha::Entity capacity_entity =
-        pycanha::Entity::c(model->network(), 1);
+    model->parameters().add_parameter("k", example_conductive_coupling);
+    model->parameters().add_parameter("C", example_capacity);
 
     // This is the C++ equivalent of the Python formulas GL(1,2)=k and C1=C.
     // The derivative with respect to the corresponding parameter is 1.
-    model->formulas.add_formula(std::make_shared<pycanha::ParameterFormula>(
-        conductive_entity, model->parameters, "k"));
-    model->formulas.add_formula(std::make_shared<pycanha::ParameterFormula>(
-        capacity_entity, model->parameters, "C"));
-
-    model->formulas.apply_formulas();
+    static_cast<void>(model->formulas().add_parameter_formula("GL(1,2)", "k"));
+    static_cast<void>(model->formulas().add_parameter_formula("C1", "C"));
+    model->formulas().apply_formulas();
+    model->formulas().parameters_with_derivatives().add_parameter("k");
+    model->formulas().parameters_with_derivatives().add_parameter("C");
     return model;
 }
 
@@ -174,16 +166,16 @@ TEST_CASE("TSCNRLDS_JACOBIAN reproduces the Python example",
     auto model = make_python_example_model();
 
     pycanha::TSCNRLDS_JACOBIAN solver(model);
-    solver.MAX_ITERS = 50;
+    solver.max_iters = 50;
     solver.abstol_temp = 1.0e-9;
     solver.set_simulation_time(0.0, end_time, time_step, output_stride);
     solver.initialize();
     solver.solve();
 
-    REQUIRE(model->thermal_data.models().has_model("TSCNRLDS"));
+    REQUIRE(model->thermal_data().models().has_model("TSCNRLDS"));
 
     const auto& output_model =
-        model->thermal_data.models().get_model("TSCNRLDS");
+        model->thermal_data().models().get_model("TSCNRLDS");
     const auto& temperature_output = output_model.T();
     const auto& jacobian_output = output_model.jacobian();
     REQUIRE(jacobian_output.rows() == 1);
@@ -192,6 +184,9 @@ TEST_CASE("TSCNRLDS_JACOBIAN reproduces the Python example",
     REQUIRE(solver.parameter_names().size() == 2);
     REQUIRE(solver.parameter_names().at(0) == "k");
     REQUIRE(solver.parameter_names().at(1) == "C");
+    REQUIRE(solver.derivative_parameter_names().size() == 2);
+    REQUIRE(solver.derivative_parameter_names().at(0) == "k");
+    REQUIRE(solver.derivative_parameter_names().at(1) == "C");
 
     require_python_example_samples(temperature_output, jacobian_output);
 }

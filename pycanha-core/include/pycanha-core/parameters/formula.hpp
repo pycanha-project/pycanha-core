@@ -81,102 +81,39 @@ class Formula {
 class ParameterFormula final : public Formula {
   public:
     ParameterFormula(Entity entity, Parameters& parameters,
-                     std::string parameter_name)
-        : Formula(std::move(entity)),
-          _parameters(&parameters),
-          _parameter_name(std::move(parameter_name)) {
-        if (_parameters == nullptr) {
-            throw std::invalid_argument(
-                "ParameterFormula requires parameter storage");
-        }
+                     std::string expression);
 
-        const auto parameter_idx = _parameters->get_idx(_parameter_name);
-        if (!parameter_idx.has_value()) {
-            throw std::invalid_argument(
-                "ParameterFormula references unknown parameter '" +
-                _parameter_name + "'");
-        }
+    void compile_formula() override;
+    void apply_formula() override;
+    void apply_compiled_formula() override;
+    void calculate_derivatives() override;
 
-        _parameter_idx = *parameter_idx;
-        if (_parameters->get_double_ptr(_parameter_idx) == nullptr) {
-            throw std::invalid_argument("ParameterFormula expects parameter '" +
-                                        _parameter_name +
-                                        "' to hold a double value");
-        }
-
-        mutable_dependencies().push_back(_parameter_name);
-    }
-
-    void compile_formula() override {
-        auto* entity_ptr = entity().get_value_ref();
-        if (entity_ptr == nullptr) {
-            throw std::runtime_error(
-                "ParameterFormula could not obtain entity pointer");
-        }
-        set_entity_data_ptr(entity_ptr);
-
-        auto* parameter_ptr = _parameters->get_double_ptr(_parameter_idx);
-        if (parameter_ptr == nullptr) {
-            throw std::runtime_error(
-                "ParameterFormula expects parameter to hold a double value");
-        }
-
-        _parameter_data = parameter_ptr;
-        _compiled_structure_version = _parameters->get_structure_version();
-    }
-
-    void apply_formula() override {
-        const auto* parameter_value =
-            _parameters->get_double_ptr(_parameter_idx);
-        if (parameter_value == nullptr) {
-            throw std::runtime_error(
-                "ParameterFormula expects parameter to hold a double value");
-        }
-        if (!entity().set_value(*parameter_value)) {
-            throw std::runtime_error(
-                "ParameterFormula could not assign entity value");
-        }
-    }
-
-    void apply_compiled_formula() override {
-        if (entity_data_ptr() == nullptr || _parameter_data == nullptr) {
-            throw std::runtime_error(
-                "ParameterFormula needs to be compiled before applying");
-        }
-        if (_parameters->get_structure_version() !=
-            _compiled_structure_version) {
-            throw std::runtime_error(
-                "ParameterFormula compiled state is stale after structural "
-                "parameter changes");
-        }
-        *entity_data_ptr() = *_parameter_data;
-    }
-
-    [[nodiscard]] double get_value() const override {
-        const auto* parameter_value =
-            _parameters->get_double_ptr(_parameter_idx);
-        if (parameter_value == nullptr) {
-            throw std::runtime_error(
-                "ParameterFormula expects parameter to hold a double value");
-        }
-        return *parameter_value;
-    }
-
-    [[nodiscard]] std::vector<double>* get_derivative_values() override {
-        return &_derivatives;
-    }
-
-    [[nodiscard]] std::unique_ptr<Formula> clone() const override {
-        return std::make_unique<ParameterFormula>(*this);
-    }
+    [[nodiscard]] double get_value() const override;
+    [[nodiscard]] std::vector<double>* get_derivative_values() override;
+    [[nodiscard]] std::unique_ptr<Formula> clone() const override;
+    [[nodiscard]] const std::string& expression() const noexcept;
 
   private:
+    void initialize_expression();
+    [[nodiscard]] SymEngine::vec_basic lambda_inputs() const;
+    [[nodiscard]] double evaluate_expression(
+        const SymEngine::RCP<const SymEngine::Basic>& expr) const;
+
     Parameters* _parameters;
-    std::string _parameter_name;
-    Index _parameter_idx{-1};
-    double* _parameter_data{nullptr};
+    std::string _expression;
+    std::string _normalized_expression;
+    std::vector<Index> _parameter_indices;
+    std::vector<SymEngine::RCP<const SymEngine::Symbol>> _symbols;
+    SymEngine::RCP<const SymEngine::Basic> _parsed_expr;
+    std::vector<SymEngine::RCP<const SymEngine::Basic>> _derivative_exprs;
+    SymEngine::LambdaRealDoubleVisitor _compiled_eval;
+    std::vector<SymEngine::LambdaRealDoubleVisitor> _compiled_derivs;
+    std::vector<double*> _parameter_ptrs;
     std::uint64_t _compiled_structure_version{0U};
-    std::vector<double> _derivatives{1.0};
+    double _cached_value{0.0};
+    std::vector<double> _derivatives;
+    std::vector<bool> _compiled_derivs_ready;
+    bool _compiled{false};
 };
 
 class ValueFormula final : public Formula {

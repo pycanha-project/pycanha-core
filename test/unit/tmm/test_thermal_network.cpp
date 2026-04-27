@@ -2,6 +2,8 @@
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
 #include <cmath>
+#include <memory>
+#include <stdexcept>
 #include <vector>
 
 #include "pycanha-core/globals.hpp"
@@ -211,6 +213,20 @@ TEST_CASE("ThermalNetwork handles boundary nodes", "[thermalnetwork]") {
 
     REQUIRE((conductive.get_coupling_value(1, 10) == Catch::Approx(5.5)));
     REQUIRE((radiative.get_coupling_value(1, 10) == Catch::Approx(7.5)));
+}
+
+TEST_CASE("ThermalNetwork requires all shared resource containers",
+          "[thermalnetwork]") {
+    auto nodes = std::make_shared<Nodes>();
+    auto conductive = std::make_shared<ConductiveCouplings>(nodes);
+    auto radiative = std::make_shared<RadiativeCouplings>(nodes);
+
+    REQUIRE_THROWS_AS(ThermalNetwork(nullptr, conductive, radiative),
+                      std::invalid_argument);
+    REQUIRE_THROWS_AS(ThermalNetwork(nodes, nullptr, radiative),
+                      std::invalid_argument);
+    REQUIRE_THROWS_AS(ThermalNetwork(nodes, conductive, nullptr),
+                      std::invalid_argument);
 }
 
 TEST_CASE("ThermalNetwork removes nodes and couplings", "[thermalnetwork]") {

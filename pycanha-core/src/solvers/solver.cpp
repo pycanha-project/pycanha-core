@@ -16,6 +16,29 @@
 
 namespace pycanha {
 
+namespace {
+
+class ActiveSolverCallbackScope {
+  public:
+    ActiveSolverCallbackScope(ThermalMathematicalModel& tmm, Solver& solver)
+        : _tmm(tmm) {
+        _tmm.set_current_callback_solver(std::addressof(solver));
+    }
+
+    ~ActiveSolverCallbackScope() { _tmm.set_current_callback_solver(nullptr); }
+
+    ActiveSolverCallbackScope(const ActiveSolverCallbackScope&) = delete;
+    ActiveSolverCallbackScope& operator=(const ActiveSolverCallbackScope&) =
+        delete;
+    ActiveSolverCallbackScope(ActiveSolverCallbackScope&&) = delete;
+    ActiveSolverCallbackScope& operator=(ActiveSolverCallbackScope&&) = delete;
+
+  private:
+    ThermalMathematicalModel& _tmm;
+};
+
+}  // namespace
+
 Solver::Solver(std::shared_ptr<ThermalMathematicalModel> tmm_shptr)
     : _tmm_shptr(std::move(tmm_shptr)),
       tmm(*_tmm_shptr),
@@ -87,27 +110,30 @@ void Solver::initialize_common() {
 
 void Solver::callback_transient_time_change() {
     PYCANHA_PROFILE_SCOPE("Callback Time Change");
+    const ActiveSolverCallbackScope active_solver_scope(tmm, *this);
     _tmm_shptr->callback_transient_time_change();
 }
 
 void Solver::callback_solver_loop() {
     PYCANHA_PROFILE_SCOPE("Callback Solver Loop");
+    const ActiveSolverCallbackScope active_solver_scope(tmm, *this);
     _tmm_shptr->callback_solver_loop();
 }
 
 void Solver::callback_transient_after_timestep() {
     PYCANHA_PROFILE_SCOPE("Callback Timestep");
+    const ActiveSolverCallbackScope active_solver_scope(tmm, *this);
     _tmm_shptr->callback_transient_after_timestep();
 }
 
 void Solver::prepare_formulas_for_execution() {
-    tmm.formulas.validate_for_execution();
-    tmm.formulas.compile_formulas();
-    tmm.formulas.lock_parameters_for_execution();
+    tmm.formulas().validate_for_execution();
+    tmm.formulas().compile_formulas();
+    tmm.formulas().lock_parameters_for_execution();
 }
 
 void Solver::release_formulas_after_execution() noexcept {
-    tmm.formulas.unlock_parameters();
+    tmm.formulas().unlock_parameters();
 }
 
 bool Solver::temperature_convergence_check() {

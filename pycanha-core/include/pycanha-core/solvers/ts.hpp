@@ -8,6 +8,8 @@
 
 namespace pycanha {
 
+class DataModel;
+
 class TransientSolver : public Solver {
     friend class TSCN;
 
@@ -18,6 +20,8 @@ class TransientSolver : public Solver {
 
     void set_simulation_time(double start_time, double end_time, double dtime,
                              double output_stride);
+    [[nodiscard]] DataModel& output_model();
+    [[nodiscard]] const DataModel& output_model() const;
 
   protected:
     // TODO: Refactor initialize_common naming throughout the solver hierarchy

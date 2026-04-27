@@ -23,7 +23,7 @@ namespace {
 std::filesystem::path get_reference_tmd_path() {
     const std::filesystem::path this_file(__FILE__);
     const std::filesystem::path test_root =
-        this_file.parent_path().parent_path();
+        this_file.parent_path().parent_path().parent_path();
     return test_root / "data" / "esatan" / "DISCTR_TRANSIENT.TMD";
 }
 
@@ -75,7 +75,7 @@ TEST_CASE("ESATANReader can import real TMD and model is solvable",
     REQUIRE(model->nodes().get_num_nodes() > 0);
 
     pycanha::SSLU solver(model);
-    solver.MAX_ITERS = 2;
+    solver.max_iters = 2;
     solver.abstol_temp = 1.0;
 
     REQUIRE_NOTHROW(solver.initialize());

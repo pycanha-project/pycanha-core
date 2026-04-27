@@ -46,7 +46,7 @@ class Solver {
     virtual void solve() = 0;
     virtual void deinitialize() = 0;
 
-    int MAX_ITERS = 5;
+    int max_iters = 5;
     int solver_iter = 0;
     double abstol_temp = 1e-3;
     double abstol_enrgy = 1e-3;

@@ -103,7 +103,7 @@ TEST_CASE("SSLU solves a simple model", "[solver][sslu]") {
     auto model = make_model();
 
     pycanha::SSLU solver(model);
-    solver.MAX_ITERS = 100;
+    solver.max_iters = 100;
     solver.abstol_temp = 1e-6;
 
     solver.initialize();
@@ -114,7 +114,7 @@ TEST_CASE("SSLU solves a simple model", "[solver][sslu]") {
 
     REQUIRE(solver.solver_converged);
 
-    const bool iter_within_limit = solver.solver_iter < solver.MAX_ITERS;
+    const bool iter_within_limit = solver.solver_iter < solver.max_iters;
     REQUIRE(iter_within_limit);
 
     // In case of error, set print_diffs to true to see detailed comparison
