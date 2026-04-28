@@ -1,7 +1,25 @@
 var searchData=
 [
-  ['2_20a_20automatic_20configuration_20by_20importing_20a_20vs_20code_20profile_0',['2.a. Automatic configuration by importing a VS Code profile',['../md_docs_2configuring.html#autotoc_md30',1,'']]],
-  ['2_20b_20manual_20configuration_1',['2.b Manual configuration',['../md_docs_2configuring.html#autotoc_md31',1,'']]],
-  ['2_20configure_20vs_20code_2',['2. Configure VS Code',['../md_docs_2configuring.html#autotoc_md29',1,'']]],
-  ['2_20create_20a_20python_20virtual_20environment_20and_20activate_20it_20in_20vs_20code_3',['3.2. Create a Python virtual environment and activate it in VS Code',['../md_docs_2configuring.html#autotoc_md34',1,'']]]
+  ['a_5fvector_0',['a_vector',['../classpycanha_1_1Nodes.html#a223e59dbda3f38f8d3e97d1cf039eba5',1,'pycanha::Nodes']]],
+  ['add_5fcutting_5fgeometry_5fitem_1',['add_cutting_geometry_item',['../classpycanha_1_1gmm_1_1GeometryGroupCutted.html#ac92939b500984cb6488fe61a8c56ce9c',1,'pycanha::gmm::GeometryGroupCutted']]],
+  ['add_5fgeometry_5fgroup_2',['add_geometry_group',['../classpycanha_1_1gmm_1_1GeometryGroup.html#a071de3df4d9d83e3edf221cf8d3ad7a7',1,'pycanha::gmm::GeometryGroup']]],
+  ['add_5fgeometry_5fgroup_5fcutted_3',['add_geometry_group_cutted',['../classpycanha_1_1gmm_1_1GeometryGroup.html#a66e6e5add5684119ef38d21f70484d4b',1,'pycanha::gmm::GeometryGroup']]],
+  ['add_5fgeometry_5fitem_4',['add_geometry_item',['../classpycanha_1_1gmm_1_1GeometryGroup.html#af310e7c7fa1034f186f9983724fd3771',1,'pycanha::gmm::GeometryGroup']]],
+  ['add_5fmesh_5',['add_mesh',['../classpycanha_1_1gmm_1_1TriMeshModel.html#ad7303091b268e94f5a617b36ac1139da',1,'pycanha::gmm::TriMeshModel']]],
+  ['add_5fnew_5fcoupling_5ffrom_5fnode_5fidxs_6',['add_new_coupling_from_node_idxs',['../classpycanha_1_1CouplingMatrices.html#abc36eec3fc74fc93c009d5e2a3993b00',1,'pycanha::CouplingMatrices']]],
+  ['add_5fnode_7',['add_node',['../classpycanha_1_1Nodes.html#a9653a8fbd5e2f07eb29cf1c94d05bbdd',1,'pycanha::Nodes']]],
+  ['add_5fnode_5finsert_5fidx_8',['add_node_insert_idx',['../classpycanha_1_1Nodes.html#a9e9b067ca2c37eb1df8cb9d17595c181',1,'pycanha::Nodes']]],
+  ['add_5fnodes_9',['add_nodes',['../classpycanha_1_1Nodes.html#a2064ca42d6010ce5fed2722f21deac3a',1,'pycanha::Nodes']]],
+  ['add_5fovw_5fcoupling_5ffrom_5fnode_5fidxs_10',['add_ovw_coupling_from_node_idxs',['../classpycanha_1_1CouplingMatrices.html#a7b5423e4eace6582373db707c482d529',1,'pycanha::CouplingMatrices']]],
+  ['add_5fovw_5fcoupling_5ffrom_5fnode_5fidxs_5fverbose_11',['add_ovw_coupling_from_node_idxs_verbose',['../classpycanha_1_1CouplingMatrices.html#ae969e5c4a6ec2b4c1ee1cc55e973a46d',1,'pycanha::CouplingMatrices']]],
+  ['add_5fsum_5fcoupling_5ffrom_5fnode_5fidxs_12',['add_sum_coupling_from_node_idxs',['../classpycanha_1_1CouplingMatrices.html#a3e82c3b07c76240c4df9fa7a43ca44e1',1,'pycanha::CouplingMatrices']]],
+  ['add_5fsum_5fcoupling_5ffrom_5fnode_5fidxs_5fverbose_13',['add_sum_coupling_from_node_idxs_verbose',['../classpycanha_1_1CouplingMatrices.html#af34b080ded161758f3233564ddd1e04a',1,'pycanha::CouplingMatrices']]],
+  ['additional_20documentation_14',['Additional documentation',['../index.html#autotoc_md5',1,'']]],
+  ['after_20conan_20install_15',['Eigen3 not found after conan install',['../md_docs_2faq.html#autotoc_md37',1,'']]],
+  ['analysis_20tools_16',['Static analysis tools',['../md_docs_2tools.html#autotoc_md10',1,'']]],
+  ['and_20pull_20requests_17',['Continuous validation on &lt;tt&gt;main&lt;/tt&gt; and pull requests',['../md_docs_2cicd.html#autotoc_md28',1,'']]],
+  ['and_20runtime_20status_18',['Build and runtime status',['../index.html#autotoc_md4',1,'']]],
+  ['and_20versioning_19',['Releases and versioning',['../md_docs_2workflow.html#autotoc_md25',1,'']]],
+  ['aph_5fvector_20',['aph_vector',['../classpycanha_1_1Nodes.html#a3634a1005bab0c128b3bba5507225870',1,'pycanha::Nodes']]],
+  ['awesome_20css_21',['Doxygen + graphviz + Doxygen Awesome CSS',['../md_docs_2tools.html#autotoc_md19',1,'']]]
 ];

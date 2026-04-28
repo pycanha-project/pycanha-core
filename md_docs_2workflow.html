@@ -95,7 +95,7 @@ $(document).ready(function(){initNavTree('md_docs_2workflow.html',''); initResiz
   <div class="headertitle"><div class="title">Development workflow</div></div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><p><a class="anchor" id="autotoc_md20"></a> Here I describe generally the intended workflow for this library using GitHub. The idea is to imitate what other project do but without adding too many complications, with the goal of having a <code>main</code> branch <b>stable</b> and <b>up-to-date</b>. So anyone that want to see the latest features and how the library evolves, just need to check the <code>main</code> branch. But to accomplish both, stability and up-to-date, it is necessary to follow some rules:</p>
+<div class="textblock"><p><a class="anchor" id="autotoc_md24"></a> Here I describe generally the intended workflow for this library using GitHub. The idea is to imitate what other project do but without adding too many complications, with the goal of having a <code>main</code> branch <b>stable</b> and <b>up-to-date</b>. So anyone that want to see the latest features and how the library evolves, just need to check the <code>main</code> branch. But to accomplish both, stability and up-to-date, it is necessary to follow some rules:</p>
 <ul>
 <li>Features and fixes should be added by a <code>pull request</code> to the <code>main</code> branch from a dedicated branch created for that feature or fix. Ideally, that branch would be associated to one and only one issue. By working in this way we have:<ul>
 <li>The work to be done on these feature or fix branches is limited, so the <em>lifespan</em>, or time between the creation of the branch and the merge to <code>main</code>, is short. By doing so, the <code>main</code> branch is maintained up-to-date with fixes and features.</li>
@@ -108,7 +108,7 @@ $(document).ready(function(){initNavTree('md_docs_2workflow.html',''); initResiz
 </ul>
 </li>
 </ul>
-<h1><a class="anchor" id="autotoc_md21"></a>
+<h1><a class="anchor" id="autotoc_md25"></a>
 Releases and versioning</h1>
 <p>For packages with binaries that need to be built, it is convenient for the users of the package to have access to the binaries directly without the need to build them by themselves. So that is where the release part of the package is for, and although by following the previous rules the <code>main</code> branch should be <em>stable</em>, we might not want to create a new release each time a commit to <code>main</code> is pushed or merged. Also, there might be some problems that are not captured by the tests or just we might want to avoid making several releases in the same day.</p>
 <p>One of the most common way of creating releases is by using Git tags. Tags are associated with specific commits and are used to highlight milestones, for example a release. The content of the tag is arbitrary, but for releases it is a good practice to follow the standard and use the <a href="https://semver.org">Semantic Versioning</a>.</p>
@@ -121,12 +121,12 @@ Releases and versioning</h1>
 <li>GitHub creates release notes automatically from the merged commits to <code>main</code>, so instead of configuring a complicated generator for the notes, is just easier to make good comments when merging a pull request.</li>
 <li>When the release is created, the deployment workflow starts.</li>
 </ul>
-<h1><a class="anchor" id="autotoc_md22"></a>
+<h1><a class="anchor" id="autotoc_md26"></a>
 Documentation</h1>
 <p>Documentation is available through GitHub Pages. However, unlike other documentation hosting services like <a href="https://readthedocs.org/">Read the Docs</a>, where you can navigate through the documentation through different points in the history of the repository, in GitHub Pages, only one built is available.</p>
-<p>The documentation is tested to be <em>buildable</em> with the <code>Documentation Workflow</code><a class="el" href="md_docs_2cicd.html">(see CI/CD Workflows)</a>, which is triggered for evey commit or pull request to the <code>main</code> branch. But to avoid incomplete documentation and version mismatching during the development, the documentation is only updated when a new release is set up, triggering the <code>Deployment Workflow</code><a class="el" href="md_docs_2cicd.html">(see CI/CD Workflows)</a>.</p>
+<p>The documentation is tested to be <em>buildable</em> with the <code>Documentation Workflow</code> <a class="el" href="md_docs_2cicd.html">(see CI/CD Workflows)</a>, which is triggered for every commit or pull request to the <code>main</code> branch. But to avoid incomplete documentation and version mismatching during development, the published site is only updated when a new release is created, which triggers the <code>Deployment Workflow</code> <a class="el" href="md_docs_2cicd.html">(see CI/CD Workflows)</a>.</p>
 <p>Because of that, the documentation will match the latest release, but it won't be up-to-date with the latest commit in <code>main</code>.</p>
-<p>To contribute to the documentation or to see a previous build you should build it locally. To do that, check how to build the documentation in the Building page, and how Doxygen is configured for this project. </p>
+<p>To contribute to the documentation or inspect a non-released state, build it locally by enabling the documentation option in the Conan/CMake configuration and then building the <code>doc</code> target. The Doxygen target definition lives in <code>cmake/Docs.cmake</code>. </p>
 </div></div><!-- contents -->
 </div><!-- PageDoc -->
 </div><!-- doc-content -->

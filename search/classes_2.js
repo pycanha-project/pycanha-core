@@ -6,5 +6,6 @@ var searchData=
   ['datatablestore_3',['DataTableStore',['../classpycanha_1_1DataTableStore.html',1,'pycanha']]],
   ['densematrixtimeseries_4',['DenseMatrixTimeSeries',['../classpycanha_1_1DenseMatrixTimeSeries.html',1,'pycanha']]],
   ['densetimeseries_5',['DenseTimeSeries',['../classpycanha_1_1DenseTimeSeries.html',1,'pycanha']]],
-  ['disc_6',['Disc',['../classpycanha_1_1gmm_1_1Disc.html',1,'pycanha::gmm']]]
+  ['derivativeparameterregistry_6',['DerivativeParameterRegistry',['../classpycanha_1_1DerivativeParameterRegistry.html',1,'pycanha']]],
+  ['disc_7',['Disc',['../classpycanha_1_1gmm_1_1Disc.html',1,'pycanha::gmm']]]
 ];

@@ -95,11 +95,17 @@ $(document).ready(function(){initNavTree('classpycanha_1_1Formulas.html',''); in
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-attribs">Public Attributes</a> &#124;
+<a href="#pri-methods">Private Member Functions</a> &#124;
 <a href="#pri-attribs">Private Attributes</a> &#124;
 <a href="classpycanha_1_1Formulas-members.html">List of all members</a>  </div>
   <div class="headertitle"><div class="title">pycanha::Formulas Class Reference</div></div>
 </div><!--header-->
 <div class="contents">
+<div class="dynheader">
+Collaboration diagram for pycanha::Formulas:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" frameborder="0" src="classpycanha_1_1Formulas__coll__graph.svg" width="323" height="139"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
@@ -127,12 +133,48 @@ std::shared_ptr&lt; <a class="el" href="classpycanha_1_1ThermalNetwork.html">The
 <tr class="memitem:a3466faf29477284a794affb9dabe5408" id="r_a3466faf29477284a794affb9dabe5408"><td class="memItemLeft" align="right" valign="top"><a id="a3466faf29477284a794affb9dabe5408" name="a3466faf29477284a794affb9dabe5408"></a>
 std::shared_ptr&lt; <a class="el" href="classpycanha_1_1Parameters.html">Parameters</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>parameters</b> () const noexcept</td></tr>
 <tr class="separator:a3466faf29477284a794affb9dabe5408"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad2f6601cd3d3cb5dd85bbbae04f933e8" id="r_ad2f6601cd3d3cb5dd85bbbae04f933e8"><td class="memItemLeft" align="right" valign="top"><a id="ad2f6601cd3d3cb5dd85bbbae04f933e8" name="ad2f6601cd3d3cb5dd85bbbae04f933e8"></a>
+<a class="el" href="classpycanha_1_1DerivativeParameterRegistry.html">DerivativeParameterRegistry</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>parameters_with_derivatives</b> () noexcept</td></tr>
+<tr class="separator:ad2f6601cd3d3cb5dd85bbbae04f933e8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acc2bb8c7e89bebc8a8c4c4fd11979396" id="r_acc2bb8c7e89bebc8a8c4c4fd11979396"><td class="memItemLeft" align="right" valign="top"><a id="acc2bb8c7e89bebc8a8c4c4fd11979396" name="acc2bb8c7e89bebc8a8c4c4fd11979396"></a>
+const <a class="el" href="classpycanha_1_1DerivativeParameterRegistry.html">DerivativeParameterRegistry</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>parameters_with_derivatives</b> () const noexcept</td></tr>
+<tr class="separator:acc2bb8c7e89bebc8a8c4c4fd11979396"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab76e05daf766e7facedf28523465402c" id="r_ab76e05daf766e7facedf28523465402c"><td class="memItemLeft" align="right" valign="top"><a id="ab76e05daf766e7facedf28523465402c" name="ab76e05daf766e7facedf28523465402c"></a>
 <a class="el" href="classpycanha_1_1ParameterFormula.html">ParameterFormula</a>&#160;</td><td class="memItemRight" valign="bottom"><b>create_parameter_formula</b> (<a class="el" href="classpycanha_1_1Entity.html">Entity</a> entity, const std::string &amp;parameter)</td></tr>
 <tr class="separator:ab76e05daf766e7facedf28523465402c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3ee3a0de429c31a227880280773feb90" id="r_a3ee3a0de429c31a227880280773feb90"><td class="memItemLeft" align="right" valign="top"><a id="a3ee3a0de429c31a227880280773feb90" name="a3ee3a0de429c31a227880280773feb90"></a>
 std::shared_ptr&lt; <a class="el" href="classpycanha_1_1Formula.html">Formula</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>create_formula</b> (<a class="el" href="classpycanha_1_1Entity.html">Entity</a> entity, const std::string &amp;formula_string)</td></tr>
 <tr class="separator:a3ee3a0de429c31a227880280773feb90"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a61135813495493b8b30439a84fed9d8e" id="r_a61135813495493b8b30439a84fed9d8e"><td class="memItemLeft" align="right" valign="top"><a id="a61135813495493b8b30439a84fed9d8e" name="a61135813495493b8b30439a84fed9d8e"></a>
+<a class="el" href="classpycanha_1_1ValueFormula.html">ValueFormula</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>add_value_formula</b> (<a class="el" href="classpycanha_1_1Entity.html">Entity</a> entity, double value)</td></tr>
+<tr class="separator:a61135813495493b8b30439a84fed9d8e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a282dcc2f02dd62bf9781899b5cee4c55" id="r_a282dcc2f02dd62bf9781899b5cee4c55"><td class="memItemLeft" align="right" valign="top"><a id="a282dcc2f02dd62bf9781899b5cee4c55" name="a282dcc2f02dd62bf9781899b5cee4c55"></a>
+<a class="el" href="classpycanha_1_1ValueFormula.html">ValueFormula</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>add_value_formula</b> (std::string_view entity, double value)</td></tr>
+<tr class="separator:a282dcc2f02dd62bf9781899b5cee4c55"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a25ed9474c33e856cb2187da355a8fd29" id="r_a25ed9474c33e856cb2187da355a8fd29"><td class="memItemLeft" align="right" valign="top"><a id="a25ed9474c33e856cb2187da355a8fd29" name="a25ed9474c33e856cb2187da355a8fd29"></a>
+<a class="el" href="classpycanha_1_1ParameterFormula.html">ParameterFormula</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>add_parameter_formula</b> (<a class="el" href="classpycanha_1_1Entity.html">Entity</a> entity, const std::string &amp;expression)</td></tr>
+<tr class="separator:a25ed9474c33e856cb2187da355a8fd29"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acca30271ee31960d803e30009165c366" id="r_acca30271ee31960d803e30009165c366"><td class="memItemLeft" align="right" valign="top"><a id="acca30271ee31960d803e30009165c366" name="acca30271ee31960d803e30009165c366"></a>
+<a class="el" href="classpycanha_1_1ParameterFormula.html">ParameterFormula</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>add_parameter_formula</b> (std::string_view entity, const std::string &amp;expression)</td></tr>
+<tr class="separator:acca30271ee31960d803e30009165c366"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab4010de0c259e98838bc7796aa613219" id="r_ab4010de0c259e98838bc7796aa613219"><td class="memItemLeft" align="right" valign="top"><a id="ab4010de0c259e98838bc7796aa613219" name="ab4010de0c259e98838bc7796aa613219"></a>
+<a class="el" href="classpycanha_1_1ExpressionFormula.html">ExpressionFormula</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>add_expression_formula</b> (<a class="el" href="classpycanha_1_1Entity.html">Entity</a> entity, const std::string &amp;expression)</td></tr>
+<tr class="separator:ab4010de0c259e98838bc7796aa613219"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a559b66891ddf88f6021c463b7cf95b9d" id="r_a559b66891ddf88f6021c463b7cf95b9d"><td class="memItemLeft" align="right" valign="top"><a id="a559b66891ddf88f6021c463b7cf95b9d" name="a559b66891ddf88f6021c463b7cf95b9d"></a>
+<a class="el" href="classpycanha_1_1ExpressionFormula.html">ExpressionFormula</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>add_expression_formula</b> (std::string_view entity, const std::string &amp;expression)</td></tr>
+<tr class="separator:a559b66891ddf88f6021c463b7cf95b9d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a67f59ea068e028799fee665baa39916f" id="r_a67f59ea068e028799fee665baa39916f"><td class="memItemLeft" align="right" valign="top"><a id="a67f59ea068e028799fee665baa39916f" name="a67f59ea068e028799fee665baa39916f"></a>
+<a class="el" href="classpycanha_1_1Formula.html">Formula</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>add_formula</b> (<a class="el" href="classpycanha_1_1Entity.html">Entity</a> entity, double value)</td></tr>
+<tr class="separator:a67f59ea068e028799fee665baa39916f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac21325d5a309ca7d8d1fd83a273bbc90" id="r_ac21325d5a309ca7d8d1fd83a273bbc90"><td class="memItemLeft" align="right" valign="top"><a id="ac21325d5a309ca7d8d1fd83a273bbc90" name="ac21325d5a309ca7d8d1fd83a273bbc90"></a>
+<a class="el" href="classpycanha_1_1Formula.html">Formula</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>add_formula</b> (std::string_view entity, double value)</td></tr>
+<tr class="separator:ac21325d5a309ca7d8d1fd83a273bbc90"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a748ff00cd6f98772ab9db791f7d0b586" id="r_a748ff00cd6f98772ab9db791f7d0b586"><td class="memItemLeft" align="right" valign="top"><a id="a748ff00cd6f98772ab9db791f7d0b586" name="a748ff00cd6f98772ab9db791f7d0b586"></a>
+<a class="el" href="classpycanha_1_1Formula.html">Formula</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>add_formula</b> (<a class="el" href="classpycanha_1_1Entity.html">Entity</a> entity, const std::string &amp;formula_string)</td></tr>
+<tr class="separator:a748ff00cd6f98772ab9db791f7d0b586"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a908e122dd082d588f9ee1aba16a23dec" id="r_a908e122dd082d588f9ee1aba16a23dec"><td class="memItemLeft" align="right" valign="top"><a id="a908e122dd082d588f9ee1aba16a23dec" name="a908e122dd082d588f9ee1aba16a23dec"></a>
+<a class="el" href="classpycanha_1_1Formula.html">Formula</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>add_formula</b> (std::string_view entity, const std::string &amp;formula_string)</td></tr>
+<tr class="separator:a908e122dd082d588f9ee1aba16a23dec"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1a31efb58bafcf51c6b1995668c939f5" id="r_a1a31efb58bafcf51c6b1995668c939f5"><td class="memItemLeft" align="right" valign="top"><a id="a1a31efb58bafcf51c6b1995668c939f5" name="a1a31efb58bafcf51c6b1995668c939f5"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>set_temperature_variable_names</b> (const std::unordered_set&lt; std::string &gt; *names) noexcept</td></tr>
 <tr class="separator:a1a31efb58bafcf51c6b1995668c939f5"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -142,6 +184,12 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>add_formula</b> (cons
 <tr class="memitem:ac0c1dd07cd343b85c124112be836729b" id="r_ac0c1dd07cd343b85c124112be836729b"><td class="memItemLeft" align="right" valign="top"><a id="ac0c1dd07cd343b85c124112be836729b" name="ac0c1dd07cd343b85c124112be836729b"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>add_formula</b> (const std::shared_ptr&lt; <a class="el" href="classpycanha_1_1Formula.html">Formula</a> &gt; &amp;formula)</td></tr>
 <tr class="separator:ac0c1dd07cd343b85c124112be836729b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a16076399e230124eb39856fb3c8a3beb" id="r_a16076399e230124eb39856fb3c8a3beb"><td class="memItemLeft" align="right" valign="top"><a id="a16076399e230124eb39856fb3c8a3beb" name="a16076399e230124eb39856fb3c8a3beb"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>remove_formula</b> (const <a class="el" href="classpycanha_1_1Entity.html">Entity</a> &amp;entity) noexcept</td></tr>
+<tr class="separator:a16076399e230124eb39856fb3c8a3beb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aee9f87f4c0edf22b80e3d9d35a72a0b7" id="r_aee9f87f4c0edf22b80e3d9d35a72a0b7"><td class="memItemLeft" align="right" valign="top"><a id="aee9f87f4c0edf22b80e3d9d35a72a0b7" name="aee9f87f4c0edf22b80e3d9d35a72a0b7"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>remove_formula</b> (std::string_view entity) noexcept</td></tr>
+<tr class="separator:aee9f87f4c0edf22b80e3d9d35a72a0b7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:abdda83e3691fd83af931ad5016b8ae09" id="r_abdda83e3691fd83af931ad5016b8ae09"><td class="memItemLeft" align="right" valign="top"><a id="abdda83e3691fd83af931ad5016b8ae09" name="abdda83e3691fd83af931ad5016b8ae09"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>validate_for_execution</b> ()</td></tr>
 <tr class="separator:abdda83e3691fd83af931ad5016b8ae09"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -182,6 +230,12 @@ Public Attributes</h2></td></tr>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>debug_formulas</b> {false}</td></tr>
 <tr class="separator:aae7979875d19ab9fc1ff58a656be7340"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pri-methods" name="pri-methods"></a>
+Private Member Functions</h2></td></tr>
+<tr class="memitem:abde6331c10b4aeab822aebcc5263b144" id="r_abde6331c10b4aeab822aebcc5263b144"><td class="memItemLeft" align="right" valign="top"><a id="abde6331c10b4aeab822aebcc5263b144" name="abde6331c10b4aeab822aebcc5263b144"></a>
+<a class="el" href="classpycanha_1_1Entity.html">Entity</a>&#160;</td><td class="memItemRight" valign="bottom"><b>resolve_entity</b> (std::string_view entity) const</td></tr>
+<tr class="separator:abde6331c10b4aeab822aebcc5263b144"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pri-attribs" name="pri-attribs"></a>
 Private Attributes</h2></td></tr>
 <tr class="memitem:a0d43f72d7b4944d663f9eeddc4954418" id="r_a0d43f72d7b4944d663f9eeddc4954418"><td class="memItemLeft" align="right" valign="top"><a id="a0d43f72d7b4944d663f9eeddc4954418" name="a0d43f72d7b4944d663f9eeddc4954418"></a>
@@ -190,6 +244,9 @@ std::shared_ptr&lt; <a class="el" href="classpycanha_1_1ThermalNetwork.html">The
 <tr class="memitem:ae921b4e4e8ac65ed7bab1e56d5497e42" id="r_ae921b4e4e8ac65ed7bab1e56d5497e42"><td class="memItemLeft" align="right" valign="top"><a id="ae921b4e4e8ac65ed7bab1e56d5497e42" name="ae921b4e4e8ac65ed7bab1e56d5497e42"></a>
 std::shared_ptr&lt; <a class="el" href="classpycanha_1_1Parameters.html">Parameters</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>_parameters</b></td></tr>
 <tr class="separator:ae921b4e4e8ac65ed7bab1e56d5497e42"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afc0a9ad2ef79eb9e3ee3403caa5aa4fc" id="r_afc0a9ad2ef79eb9e3ee3403caa5aa4fc"><td class="memItemLeft" align="right" valign="top"><a id="afc0a9ad2ef79eb9e3ee3403caa5aa4fc" name="afc0a9ad2ef79eb9e3ee3403caa5aa4fc"></a>
+<a class="el" href="classpycanha_1_1DerivativeParameterRegistry.html">DerivativeParameterRegistry</a>&#160;</td><td class="memItemRight" valign="bottom"><b>_parameters_with_derivatives</b></td></tr>
+<tr class="separator:afc0a9ad2ef79eb9e3ee3403caa5aa4fc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aae59d1a2ed12db4e3af718e9abd8693e" id="r_aae59d1a2ed12db4e3af718e9abd8693e"><td class="memItemLeft" align="right" valign="top"><a id="aae59d1a2ed12db4e3af718e9abd8693e" name="aae59d1a2ed12db4e3af718e9abd8693e"></a>
 std::vector&lt; std::shared_ptr&lt; <a class="el" href="classpycanha_1_1Formula.html">Formula</a> &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>_formulas</b></td></tr>
 <tr class="separator:aae59d1a2ed12db4e3af718e9abd8693e"><td class="memSeparator" colspan="2">&#160;</td></tr>

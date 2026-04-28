@@ -95,12 +95,90 @@ $(document).ready(function(){initNavTree('index.html',''); initResizable(); });
   <div class="headertitle"><div class="title">pycanha-core </div></div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><p><a class="anchor" id="md_README"></a></p>
+<div class="textblock"><p><a class="anchor" id="md_docs_2introduction"></a></p>
 <p><img src="https://img.shields.io/badge/C%2B%2B-23-blue" alt="C++" class="inline"/> <a href="https://github.com/pycanha-project/pycanha-core/actions/workflows/ci.yml"><img src="https://github.com/pycanha-project/pycanha-core/actions/workflows/ci.yml/badge.svg" alt="ci" style="pointer-events: none;" class="inline"/></a> <a href="https://github.com/pycanha-project/pycanha-core/actions/workflows/code-checks.yml"><img src="https://github.com/pycanha-project/pycanha-core/actions/workflows/code-checks.yml/badge.svg" alt="Code Checks" style="pointer-events: none;" class="inline"/></a> <a href="https://codecov.io/gh/pycanha-project/pycanha-core"><img src="https://codecov.io/gh/pycanha-project/pycanha-core/graph/badge.svg?token=XZRHKH2G8I" alt="codecov" style="pointer-events: none;" class="inline"/></a> <a href="https://pycanha-project.github.io/pycanha-core/"><img src="https://img.shields.io/badge/doc-GitHub%20Pages-blue" alt="docs" class="inline"/></a></p>
-<p>This is the repository of the C++ core of <em>pycanha</em></p>
-<h1><a class="anchor" id="autotoc_md1"></a>
-Logging and profiling</h1>
-<p>The library now uses <code>spdlog</code> for structured logging and timing output. Usage and configuration details are documented in docs/logging.md. </p>
+<p><code>pycanha-core</code> is the C++ core library behind pycanha. The current codebase is organized around a model-owned API for thermal network construction, parameterized model definition, solver execution, and post-processing of transient results.</p>
+<h1><a class="anchor" id="autotoc_md2"></a>
+Current implementation status</h1>
+<p>The public entry point is <code><a class="el" href="classpycanha_1_1ThermalModel.html">pycanha::ThermalModel</a></code>. It owns the main subsystems and keeps their identities stable across a workflow:</p>
+<ul>
+<li><code>tmm()</code>: thermal network and thermal mathematical model data.</li>
+<li><code>gmm()</code>: geometry model and geometric helpers.</li>
+<li><code>parameters()</code>: named scalar parameters.</li>
+<li><code>formulas()</code>: symbolic expressions that map parameters to model quantities such as heat loads, conductances, and capacities.</li>
+<li><code>thermal_data()</code>: lookup tables and solver-generated output models.</li>
+<li><code>solvers()</code>: steady-state and transient solver registry.</li>
+<li><code>callbacks()</code>: lifecycle hooks for solver-controlled updates during transient runs.</li>
+</ul>
+<p>The currently implemented public modules include:</p>
+<ul>
+<li>Thermal network primitives: nodes, couplings, conductive and radiative coupling containers, and thermal network/model wrappers.</li>
+<li>Parameter and formula infrastructure: entities, variables, formulas, parameter collections, and derivative-aware parameter registration.</li>
+<li>Solver implementations: <code>SSLU</code>, <code>TSCNRLDS</code>, and <code>TSCNRLDS_JACOBIAN</code>.</li>
+<li>Thermal data containers: lookup tables, dense and sparse time series, data models, and stores.</li>
+<li>Geometry support under <code>gmm</code>: primitives, transformations, meshes, triangulation, materials, and geometry model wrappers.</li>
+<li>Utilities: logging, profiling support, sparse matrix helpers, random generators, and package metadata.</li>
+</ul>
+<h1><a class="anchor" id="autotoc_md3"></a>
+How it works</h1>
+<p>The intended workflow is:</p>
+<ol type="1">
+<li>Create a <code>ThermalModel</code>.</li>
+<li>Add nodes and couplings to <code>tm.tmm()</code>.</li>
+<li>Register named parameters in <code>tm.parameters()</code>.</li>
+<li>Bind those parameters to model quantities through <code>tm.formulas()</code> and call <code>apply_formulas()</code>.</li>
+<li>Retrieve a solver from <code>tm.solvers()</code>, configure it, then call <code>initialize()</code>, <code>solve()</code>, and <code>deinitialize()</code>.</li>
+<li>Read temperatures directly from the model or inspect solver outputs stored in <code>tm.thermal_data()</code>.</li>
+</ol>
+<p>This is the smallest complete steady-state example exercised by the API tests:</p>
+<div class="fragment"><div class="line"><span class="preprocessor">#include &quot;pycanha-core/pycanha-core.hpp&quot;</span></div>
+<div class="line"> </div>
+<div class="line"><a class="code hl_class" href="classpycanha_1_1ThermalModel.html">pycanha::ThermalModel</a> tm(<span class="stringliteral">&quot;overview_model&quot;</span>);</div>
+<div class="line"> </div>
+<div class="line"><a class="code hl_class" href="classpycanha_1_1Node.html">pycanha::Node</a> plate(1);</div>
+<div class="line">plate.set_T(300.0);</div>
+<div class="line">plate.set_C(100.0);</div>
+<div class="line"> </div>
+<div class="line"><a class="code hl_class" href="classpycanha_1_1Node.html">pycanha::Node</a> sink(2);</div>
+<div class="line">sink.set_T(250.0);</div>
+<div class="line">sink.set_type(pycanha::BOUNDARY_NODE);</div>
+<div class="line"> </div>
+<div class="line">tm.tmm().add_node(plate);</div>
+<div class="line">tm.tmm().add_node(sink);</div>
+<div class="line">tm.tmm().add_conductive_coupling(1, 2, 0.0);</div>
+<div class="line"> </div>
+<div class="line">tm.parameters().add_parameter(<span class="stringliteral">&quot;heater_power&quot;</span>, 50.0);</div>
+<div class="line">tm.parameters().add_parameter(<span class="stringliteral">&quot;contact_conductance&quot;</span>, 5.0);</div>
+<div class="line"> </div>
+<div class="line">tm.formulas().add_formula(<span class="stringliteral">&quot;QI1&quot;</span>, <span class="stringliteral">&quot;heater_power&quot;</span>);</div>
+<div class="line">tm.formulas().add_formula(<span class="stringliteral">&quot;GL(1,2)&quot;</span>, <span class="stringliteral">&quot;contact_conductance&quot;</span>);</div>
+<div class="line">tm.formulas().apply_formulas();</div>
+<div class="line"> </div>
+<div class="line"><span class="keyword">auto</span>&amp; solver = tm.solvers().sslu();</div>
+<div class="line">solver.initialize();</div>
+<div class="line">solver.solve();</div>
+<div class="line">solver.deinitialize();</div>
+<div class="ttc" id="aclasspycanha_1_1Node_html"><div class="ttname"><a href="classpycanha_1_1Node.html">pycanha::Node</a></div><div class="ttdef"><b>Definition</b> node.hpp:51</div></div>
+<div class="ttc" id="aclasspycanha_1_1ThermalModel_html"><div class="ttname"><a href="classpycanha_1_1ThermalModel.html">pycanha::ThermalModel</a></div><div class="ttdef"><b>Definition</b> thermalmodel.hpp:17</div></div>
+</div><!-- fragment --><p>Transient workflows follow the same ownership model. <code>TSCNRLDS</code> stores its output in <code>tm.thermal_data().models()</code>, and <code>callbacks()</code> can inject model updates during the solver loop.</p>
+<h1><a class="anchor" id="autotoc_md4"></a>
+Build and runtime status</h1>
+<ul>
+<li>The package is built as a static library. It is no longer a header-only distribution.</li>
+<li>The build requires C++23.</li>
+<li>Conan and CMake are the supported build entry points.</li>
+<li>The CI matrix currently validates Ubuntu with GCC 14, Windows with MSVC 2022, and macOS with Clang. Debug and Release builds are exercised for each entry.</li>
+<li><code>PYCANHA_OPTION_USE_MKL</code> is enabled by default on supported platforms and uses dynamic MKL linking. When MKL is disabled, the code falls back to Eigen's <code>SparseLU</code> path.</li>
+<li>Unit and API tests are built with Catch2 and run through CTest.</li>
+<li>Documentation is generated with Doxygen and published to GitHub Pages on release.</li>
+</ul>
+<h1><a class="anchor" id="autotoc_md5"></a>
+Additional documentation</h1>
+<ul>
+<li>Logging and profiling details: logging.md</li>
+<li>MKL integration details: mkl-configuration.md</li>
+<li>Build, tool, and workflow pages: <a class="el" href="md_docs_2index.html">index.md</a> </li>
+</ul>
 </div></div><!-- PageDoc -->
 </div><!-- contents -->
 </div><!-- doc-content -->

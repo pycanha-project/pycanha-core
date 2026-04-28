@@ -1,13 +1,20 @@
 var searchData=
 [
-  ['e_20extra_20configuration_0',['E. Extra configuration',['../md_docs_2configuring.html#autotoc_md38',1,'']]],
-  ['eigen3_20not_20found_20after_20conan_20install_1',['Eigen3 not found after conan install',['../md_docs_2faq.html#autotoc_md50',1,'']]],
-  ['entity_2',['Entity',['../classpycanha_1_1Entity.html',1,'pycanha']]],
-  ['entityops_3',['EntityOps',['../structpycanha_1_1detail_1_1EntityOps.html',1,'pycanha::detail']]],
-  ['environment_20and_20activate_20it_20in_20vs_20code_4',['3.2. Create a Python virtual environment and activate it in VS Code',['../md_docs_2configuring.html#autotoc_md34',1,'']]],
-  ['eps_5fvector_5',['eps_vector',['../classpycanha_1_1Nodes.html#a40f2dd0b0c26104bd4520bb05513be10',1,'pycanha::Nodes']]],
-  ['esatanreader_6',['ESATANReader',['../classpycanha_1_1ESATANReader.html',1,'pycanha']]],
-  ['every_20commit_20pull_20request_20to_20main_7',['Workflows for every commit/pull request to main',['../md_docs_2cicd.html#autotoc_md40',1,'']]],
-  ['expressionformula_8',['ExpressionFormula',['../classpycanha_1_1ExpressionFormula.html',1,'pycanha']]],
-  ['extra_20configuration_9',['E. Extra configuration',['../md_docs_2configuring.html#autotoc_md38',1,'']]]
+  ['literals_5fa_0',['literals_a',['../classpycanha_1_1Nodes.html#aa7404b1e68f2aaadb0c85ba2a3b1956a',1,'pycanha::Nodes']]],
+  ['literals_5faph_1',['literals_aph',['../classpycanha_1_1Nodes.html#a721b0a604634adf012a80ec6d6c9ce50',1,'pycanha::Nodes']]],
+  ['literals_5fc_2',['literals_C',['../classpycanha_1_1Nodes.html#aaca4a75472321d6ceec6a935c7b582eb',1,'pycanha::Nodes']]],
+  ['literals_5feps_3',['literals_eps',['../classpycanha_1_1Nodes.html#a56247333f88d75d467a4344b33179502',1,'pycanha::Nodes']]],
+  ['literals_5ffx_4',['literals_fx',['../classpycanha_1_1Nodes.html#af066bb21b9be2113e53d0b763c912d4a',1,'pycanha::Nodes']]],
+  ['literals_5ffy_5',['literals_fy',['../classpycanha_1_1Nodes.html#a9151d1cc9de2ee9b005c04286e1badf4',1,'pycanha::Nodes']]],
+  ['literals_5ffz_6',['literals_fz',['../classpycanha_1_1Nodes.html#ae906608b40404eee5aec58749b475e22',1,'pycanha::Nodes']]],
+  ['literals_5fqa_7',['literals_qa',['../classpycanha_1_1Nodes.html#aadcf0f6c6468d1b02c9f27b3134205f7',1,'pycanha::Nodes']]],
+  ['literals_5fqe_8',['literals_qe',['../classpycanha_1_1Nodes.html#a99db2edffdf879a69d2fc92be7c03e61',1,'pycanha::Nodes']]],
+  ['literals_5fqi_9',['literals_qi',['../classpycanha_1_1Nodes.html#a45bc3397d32546c2503b1201789e153b',1,'pycanha::Nodes']]],
+  ['literals_5fqr_10',['literals_qr',['../classpycanha_1_1Nodes.html#ab3e1186587d207d0783090424c422277',1,'pycanha::Nodes']]],
+  ['literals_5fqs_11',['literals_qs',['../classpycanha_1_1Nodes.html#aca0bf0cbea81dfcf3b8457099dca8860',1,'pycanha::Nodes']]],
+  ['literalstring_12',['LiteralString',['../classpycanha_1_1LiteralString.html',1,'pycanha']]],
+  ['local_5fstorage_5fdestructor_13',['local_storage_destructor',['../classpycanha_1_1Node.html#a6b3e48a500d2f713fc7ee37e26693749',1,'pycanha::Node']]],
+  ['localstorage_14',['LocalStorage',['../structpycanha_1_1Node_1_1LocalStorage.html',1,'pycanha::Node']]],
+  ['lookuptable1d_15',['LookupTable1D',['../classpycanha_1_1LookupTable1D.html',1,'pycanha']]],
+  ['lookuptablevec1d_16',['LookupTableVec1D',['../classpycanha_1_1LookupTableVec1D.html',1,'pycanha']]]
 ];

@@ -1,7 +1,17 @@
 var searchData=
 [
-  ['main_0',['Workflows for every commit/pull request to main',['../md_docs_2cicd.html#autotoc_md40',1,'']]],
-  ['managers_3a_20conan_1',['Package managers: Conan',['../md_docs_2tools.html#autotoc_md16',1,'']]],
-  ['manual_20configuration_2',['2.b Manual configuration',['../md_docs_2configuring.html#autotoc_md31',1,'']]],
-  ['manually_3',['1.b. Manually',['../md_docs_2configuring.html#autotoc_md27',1,'']]]
+  ['radiativecouplings_0',['RadiativeCouplings',['../classpycanha_1_1RadiativeCouplings.html',1,'pycanha']]],
+  ['realgenerator_1',['RealGenerator',['../classpycanha_1_1random__generators_1_1RealGenerator.html',1,'pycanha::random_generators']]],
+  ['reconstruct_5fface_5fedges_5f2d_2',['reconstruct_face_edges_2d',['../classpycanha_1_1gmm_1_1Primitive.html#ae78c59b54280297c34e3ce74a0eedd63',1,'pycanha::gmm::Primitive']]],
+  ['rectangle_3',['rectangle',['../classpycanha_1_1gmm_1_1Rectangle.html',1,'pycanha::gmm::Rectangle'],['../classpycanha_1_1gmm_1_1Rectangle.html#a98a2e1fe649a48fe26d6ad903bdfa64e',1,'pycanha::gmm::Rectangle::Rectangle()']]],
+  ['release_20time_20publication_4',['Release-time publication',['../md_docs_2cicd.html#autotoc_md33',1,'']]],
+  ['releases_20and_20versioning_5',['Releases and versioning',['../md_docs_2workflow.html#autotoc_md25',1,'']]],
+  ['remove_5fcutting_5fgeometry_5fitem_6',['remove_cutting_geometry_item',['../classpycanha_1_1gmm_1_1GeometryGroupCutted.html#a1de97397672441df68f9c8f06db984bd',1,'pycanha::gmm::GeometryGroupCutted']]],
+  ['remove_5fgeometry_5fgroup_7',['remove_geometry_group',['../classpycanha_1_1gmm_1_1GeometryGroup.html#ab7517117ce583f1f4eb19fa3f57647df',1,'pycanha::gmm::GeometryGroup']]],
+  ['remove_5fgeometry_5fgroup_5fcutted_8',['remove_geometry_group_cutted',['../classpycanha_1_1gmm_1_1GeometryGroup.html#ab08976887dcff7f3235e821b196e9e8d',1,'pycanha::gmm::GeometryGroup']]],
+  ['remove_5fgeometry_5fitem_9',['remove_geometry_item',['../classpycanha_1_1gmm_1_1GeometryGroup.html#a98e9b312fff6d63ce606ab663d7d04d0',1,'pycanha::gmm::GeometryGroup']]],
+  ['remove_5fnode_10',['remove_node',['../classpycanha_1_1Nodes.html#a2d55736636b1f4ac3f7aa49ed4ec247d',1,'pycanha::Nodes']]],
+  ['repository_20usage_11',['Current repository usage',['../md_docs_2tools.html#autotoc_md23',1,'']]],
+  ['requests_12',['Continuous validation on &lt;tt&gt;main&lt;/tt&gt; and pull requests',['../md_docs_2cicd.html#autotoc_md28',1,'']]],
+  ['runtime_20status_13',['Build and runtime status',['../index.html#autotoc_md4',1,'']]]
 ];

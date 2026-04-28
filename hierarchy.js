@@ -1,5 +1,7 @@
 var hierarchy =
 [
+    [ "pycanha::CallbackContext", "classpycanha_1_1CallbackContext.html", null ],
+    [ "pycanha::CallbackRegistry", "classpycanha_1_1CallbackRegistry.html", null ],
     [ "pycanha::gmm::Color", "classpycanha_1_1gmm_1_1Color.html", null ],
     [ "pycanha::ConductiveCouplings", "classpycanha_1_1ConductiveCouplings.html", null ],
     [ "pycanha::Parameters::ConstDataMemoryAddress", "structpycanha_1_1Parameters_1_1ConstDataMemoryAddress.html", null ],
@@ -12,9 +14,11 @@ var hierarchy =
     [ "pycanha::DataTableStore", "classpycanha_1_1DataTableStore.html", null ],
     [ "pycanha::DenseMatrixTimeSeries", "classpycanha_1_1DenseMatrixTimeSeries.html", null ],
     [ "pycanha::DenseTimeSeries", "classpycanha_1_1DenseTimeSeries.html", null ],
+    [ "pycanha::DerivativeParameterRegistry", "classpycanha_1_1DerivativeParameterRegistry.html", null ],
     [ "std::enable_shared_from_this", null, [
       [ "pycanha::gmm::GeometryModel", "classpycanha_1_1gmm_1_1GeometryModel.html", null ]
     ] ],
+    [ "pycanha::EntitiesHelper", "classpycanha_1_1EntitiesHelper.html", null ],
     [ "pycanha::Entity", "classpycanha_1_1Entity.html", null ],
     [ "pycanha::detail::EntityOps", "structpycanha_1_1detail_1_1EntityOps.html", null ],
     [ "pycanha::ESATANReader", "classpycanha_1_1ESATANReader.html", null ],
@@ -72,11 +76,13 @@ var hierarchy =
       ] ]
     ] ],
     [ "pycanha::SolverOutputConfig", "structpycanha_1_1SolverOutputConfig.html", null ],
+    [ "pycanha::SolverRegistry", "classpycanha_1_1SolverRegistry.html", null ],
     [ "pycanha::SparseTimeSeries", "classpycanha_1_1SparseTimeSeries.html", null ],
     [ "pycanha::ExpressionFormula::SymbolBinding", "structpycanha_1_1ExpressionFormula_1_1SymbolBinding.html", null ],
     [ "pycanha::TemperatureVariable", "classpycanha_1_1TemperatureVariable.html", null ],
     [ "pycanha::ThermalData", "classpycanha_1_1ThermalData.html", null ],
     [ "pycanha::ThermalMathematicalModel", "classpycanha_1_1ThermalMathematicalModel.html", null ],
+    [ "pycanha::ThermalModel", "classpycanha_1_1ThermalModel.html", null ],
     [ "pycanha::ThermalNetwork", "classpycanha_1_1ThermalNetwork.html", null ],
     [ "pycanha::TimeVariable", "classpycanha_1_1TimeVariable.html", null ],
     [ "pycanha::gmm::TriMesh", "classpycanha_1_1gmm_1_1TriMesh.html", null ],
