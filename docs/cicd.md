@@ -1,36 +1,54 @@
 # CI/CD
 
-At this moment, there are several workflows to build, test and deploy the package. They are stored under the `.github/workflows` folder. The workflows can be divided in those that are executed for every commit or pull request to `main` and those 
+The repository currently uses five GitHub Actions workflows under `.github/workflows`. They fall into two groups: continuous validation on `main` and pull requests, and documentation publication on release.
 
-## Workflows for every commit/pull request to main 
-These workflows are only checks. They do not create new commits or change the code.
+## Continuous validation on `main` and pull requests
+
+These workflows verify the repository state. They do not rewrite source files or publish artifacts.
+
 ### Code Checks
-It is stored in the `code-checks.yml` file. This workflow checks that the code follow best practices standards. The badge `Code Checks` tracks if this workflow is passing or not. The following tools are used to check the code:
 
-- cpplint
-- clang-format
-- cppcheck
-- clang-tidy
+Defined in `code-checks.yml`.
 
-### CodeQL
-It is stored in the `code-ql.yml` file. This is also a workflow to check the code statically for bugs or vulnerabilities. It is also triggered every month. It uses [GitHub CodeQL](https://codeql.github.com/). The badge `CodeQL` tracks if this workflow is passing or not.
+This workflow runs repository-wide style and static-analysis checks:
+
+- `cpplint`
+- `clang-format`
+- `clang-tidy`
+- `cppcheck`
+
+The static-analysis job configures the project through Conan and CMake before invoking the analysis targets.
 
 ### CI
-It is stored in the `ci.yml` file. This is the **Continuous Integration** workflow, where we check the library can be built and the test passes for different OS and compilers. In this workflow the compiler warnings are active and all the warnings are treated as errors. The process is done for `Release` and `Debug` configurations for the following combination of OS and compiler:
 
-- Windows MSVC 2022
-- Ubuntu GCC 12
-- Ubuntu Clang 14
+Defined in `ci.yml`.
 
-The badge `ci` tracks if this workflow is passing or not.
+This is the main build-and-test matrix. It currently runs `conan create` for both `Debug` and `Release` with the following host configurations:
+
+- Ubuntu latest with GCC 14 and MKL enabled
+- Windows latest with MSVC 2022 and MKL enabled
+- macOS latest with Clang and MKL disabled
+
+The purpose of this workflow is to validate that the static library, its tests, and its Conan packaging path remain consistent across the supported configurations.
 
 ### Coverage
-It is stored in the `coverage.yml` file. The workflow checks how much of the code is covered by the tests. It also upload the coverage report to `CodeCov`, where the coverage evolution over time can be checked. The badge `codecov` track the percentage of the code covered by the tests.
 
-### Docs
-It is stored in the `docs.yml` file. This workflow checks that the doxygen documentation can be built.
+Defined in `coverage.yml`.
 
-## Workflows for a Release
+This workflow performs a debug build on Ubuntu with GCC 14, enables the coverage configuration, builds the `coverage` target, and uploads the resulting report to Codecov.
+
+### Documentation
+
+Defined in `docs.yml`.
+
+This workflow validates that the documentation can be configured and built on Ubuntu. It installs the documentation toolchain, configures the project through Conan with the documentation options profile, and builds the `doc` target.
+
+## Release-time publication
 
 ### Deploy
-It is stored in the `deploy.yml` file. At the moment, because the library is header-only, there is no need to build binaries, so the workflow only build the documentation. After building the documentation, the html built files are uploaded to the `gh-pages` branch, which is used by GitHub Pages. The docs are build as usual, but the deployment is automatically handled by the GitHub Action GitHub Pages deploy.
+
+Defined in `deploy.yml`.
+
+This workflow runs only when a GitHub release is published. It rebuilds the documentation and deploys the generated HTML to GitHub Pages.
+
+The repository now builds a static library rather than a header-only package. The current deploy workflow is documentation-only: it publishes the docs site, but it does not publish separate binary artifacts.

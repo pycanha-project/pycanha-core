@@ -60,7 +60,7 @@ set(DOXYGEN_CALL_GRAPH YES)
 
 
 set(DOXYGEN_PROJECT_BRIEF "The C++ core of pycanha")
-set(DOXYGEN_USE_MDFILE_AS_MAINPAGE README.md)
+set(DOXYGEN_USE_MDFILE_AS_MAINPAGE docs/introduction.md)
 
 
 # Add a target to generate the Doxygen documentation
@@ -69,13 +69,11 @@ set(DOXYGEN_USE_MDFILE_AS_MAINPAGE README.md)
 doxygen_add_docs(
     doc
     ${PROJECT_SOURCE_DIR}/README.md
+    ${PROJECT_SOURCE_DIR}/docs/introduction.md
     ${PROJECT_SOURCE_DIR}/docs/index.md
     ${PROJECT_SOURCE_DIR}/docs/tools.md
     ${PROJECT_SOURCE_DIR}/docs/workflow.md
-    ${PROJECT_SOURCE_DIR}/docs/configuring.md
     ${PROJECT_SOURCE_DIR}/docs/cicd.md
-    ${PROJECT_SOURCE_DIR}/docs/dependencies.md
-    ${PROJECT_SOURCE_DIR}/docs/releases.md
     ${PROJECT_SOURCE_DIR}/docs/faq.md
     ${PROJECT_SOURCE_DIR}/${LIB_NAME}
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}

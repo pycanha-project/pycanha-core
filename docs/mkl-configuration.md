@@ -7,7 +7,7 @@
 ## Build Options
 
 - `PYCANHA_OPTION_USE_MKL` (`ON`/`OFF`, default `ON`)
-- `PYCANHA_OPTION_MKL_VERSION` (string, default `2025.3.0`)
+- `PYCANHA_OPTION_MKL_VERSION` (string, default `2025.3.1`)
 
 `pycanha-core` now supports **dynamic MKL linking only**.
 
@@ -68,7 +68,7 @@ conan create . --build=missing
 conan create . --build=missing -o PYCANHA_OPTION_USE_MKL=False
 
 # Pin a specific pip MKL version
-conan create . --build=missing -o PYCANHA_OPTION_MKL_VERSION=2025.3.0
+conan create . --build=missing -o PYCANHA_OPTION_MKL_VERSION=2025.3.1
 ```
 
 To re-enable static MKL in the future, you must restore the removed

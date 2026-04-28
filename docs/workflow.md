@@ -33,9 +33,9 @@ If you have followed standard commit messages, it is easy to create and automate
 ## Documentation
 Documentation is available through GitHub Pages. However, unlike other documentation hosting services like [Read the Docs](https://readthedocs.org/), where you can navigate through the documentation through different points in the history of the repository, in GitHub Pages, only one built is available.
 
-The documentation is tested to be *buildable* with the `Documentation Workflow`[(see CI/CD Workflows)](docs/cicd.md), which is triggered for evey commit or pull request to the `main` branch. But to avoid incomplete documentation and version mismatching during the development, the documentation is only updated when a new release is set up, triggering the `Deployment Workflow`[(see CI/CD Workflows)](docs/cicd.md).
+The documentation is tested to be *buildable* with the `Documentation Workflow` [(see CI/CD Workflows)](cicd.md), which is triggered for every commit or pull request to the `main` branch. But to avoid incomplete documentation and version mismatching during development, the published site is only updated when a new release is created, which triggers the `Deployment Workflow` [(see CI/CD Workflows)](cicd.md).
 
 Because of that, the documentation will match the latest release, but it won't be up-to-date with the latest commit in `main`.
 
-To contribute to the documentation or to see a previous build you should build it locally. To do that, check how to build the documentation in the [Building](docs/Building.md) page, and how Doxygen is configured for this project.
+To contribute to the documentation or inspect a non-released state, build it locally by enabling the documentation option in the Conan/CMake configuration and then building the `doc` target. The Doxygen target definition lives in `cmake/Docs.cmake`.
 

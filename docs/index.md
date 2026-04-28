@@ -1,18 +1,25 @@
 # Index
 
-1. [Introduction](README.md): A quick introduction to **pycanha-core**
+The documentation currently has two goals:
 
-2. [Tools](tools.md): An explanation of the developer tools used in this package.
+- describe the implemented library surface and the intended usage pattern;
+- document the build, tooling, and release workflows around the repository.
 
-3. [Development workflow](workflow.md): An overview of the devlopment workflow using GitHub
+For a concise technical overview of the library itself, start with the introduction page. The remaining pages document operational details.
 
-4. [Set-up a development environment with VS Code](configuring.md)
+1. [Introduction](introduction.md): current implementation status, subsystem layout, and a minimal end-to-end solver example.
 
-5. [CI/CD](cicd.md): A detailed explanation of the GitHub workflows.
+2. [Logging and profiling](logging.md): logger usage, runtime level control, and profiling configuration.
 
-6. [FAQ](faq.md)
+3. [Intel MKL configuration](mkl-configuration.md): current MKL integration, runtime requirements, and fallback behavior.
 
-7. [Logging and profiling](logging.md): Logger usage, runtime level control and profiling configuration.
+4. [Tools](tools.md): formatting, static analysis, testing, packaging, and documentation tooling.
 
-Check also the **Classes** and **Files** sections for code references.
+5. [Development workflow](workflow.md): branch, pull request, release, and documentation publishing expectations.
+
+6. [CI/CD](cicd.md): current GitHub workflow coverage for build, test, documentation, and deployment.
+
+7. [FAQ](faq.md)
+
+Check also the **Classes** and **Files** sections for API-level browsing.
 
