@@ -26,7 +26,7 @@ I would recomment to run the analysis everytime upon saving or opening the files
 ### clang-tidy
 The checks are specified in the `.clang-tidy` file. Right now basically checking for everything except some specific rules for other projects
 or annoying checks like using auto return trailing types. The `.clang-tidy` is also configured to enforce the naming conventions I prefer.
-In `VS Code`, the preferred setup is the [clangd extension](https://marketplace.visualstudio.com/items?itemName=llvm-vs-code-extensions.vscode-clangd). It is usually faster than the Microsoft C++ language service for day-to-day editing, and it can surface `clang-tidy` diagnostics directly when started with the `--clang-tidy` argument. Because this repository generates `compile_commands.json`, `clangd` can pick up the project compilation flags and apply the checks from `.clang-tidy` consistently.
+In `VS Code`, the preferred setup is the *clangd* extension.
 
 There is also a custom option in CMake, configurable through Conan, to create dedicated `clang-tidy` targets. Those targets are intentionally disabled for MSVC builds; on non-MSVC configurations they are added through `Tools.cmake` and exercised in the `code-checks.yml` workflow.
 Because in the end it is another CMake target, it can be invoked directly from the CMake VS Code extension, and the code will be linted automatically. 

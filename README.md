@@ -8,5 +8,3 @@
 [![docs](https://img.shields.io/badge/doc-GitHub%20Pages-blue)](https://pycanha-project.github.io/pycanha-core/)
 
 This is the repository of the C++ core of [*pycanha*](https://github.com/pycanha-project/pycanha)
-
-
