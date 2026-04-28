@@ -55,8 +55,7 @@ jobs:
         
     - name: Run clang-tidy
       run: |
-        cmake --build build/Debug  --target tests_clangtidy
-        cmake --build build/Debug  --target pycanha-core_clangtidy
+        cmake --build build/Debug --parallel --target tests_clangtidy pycanha-core_clangtidy
       
     - name: Run cppcheck
       run: cmake --build build/Debug  --target tests_lib_cppcheck

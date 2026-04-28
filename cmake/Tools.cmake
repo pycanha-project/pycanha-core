@@ -35,7 +35,13 @@ function(add_clang_tidy_to_target target)
         TARGET_SOURCES
         INCLUDE
         REGEX
-        ".*.(cc|h|cpp|hpp)")
+        ".*\\.(cc|cpp|cxx)")
+    list(REMOVE_DUPLICATES TARGET_SOURCES)
+
+    if(NOT TARGET_SOURCES)
+        message("==> No compilable sources found for Clang Tidy Target: ${target}")
+        return()
+    endif()
 
     # Try to find specific versions of clang-tidy starting from 16, if not, check "clang-tidy"
     find_program(CLANG_TIDY_EXE NAMES clang-tidy-20 clang-tidy-19 clang-tidy-18 clang-tidy)
@@ -70,19 +76,53 @@ function(add_clang_tidy_to_target target)
         endif()
 
         message("==> Added Clang Tidy version ${CLANG_TIDY_VERSION} for Target: ${target}")
+
+        set(CLANG_TIDY_OUTPUTS)
+        set(CLANG_TIDY_OUTPUT_DIR
+            "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/${target}_clangtidy.dir")
+        file(MAKE_DIRECTORY "${CLANG_TIDY_OUTPUT_DIR}")
+
+        foreach(TARGET_SOURCE IN LISTS TARGET_SOURCES)
+            get_filename_component(
+                TARGET_SOURCE_ABS
+                "${TARGET_SOURCE}"
+                ABSOLUTE
+                BASE_DIR
+                ${CMAKE_CURRENT_SOURCE_DIR})
+            file(RELATIVE_PATH TARGET_SOURCE_REL
+                 ${CMAKE_SOURCE_DIR}
+                 ${TARGET_SOURCE_ABS})
+            string(MD5 TARGET_SOURCE_HASH "${TARGET_SOURCE_ABS}")
+            set(CLANG_TIDY_OUTPUT
+                "${CLANG_TIDY_OUTPUT_DIR}/${TARGET_SOURCE_HASH}.stamp")
+
+            add_custom_command(
+                OUTPUT ${CLANG_TIDY_OUTPUT}
+                COMMAND
+                    ${CLANG_TIDY_EXE}
+                    --quiet
+                    --config-file ${CMAKE_SOURCE_DIR}/.clang-tidy
+                    --extra-arg-before=-std=${CMAKE_CXX_STANDARD}
+                    ${CLANG_TIDY_EXTRA_ARGS}
+                    ${CLANG_TIDY_WARNING_AS_ERRORS}
+                    -p ${CMAKE_BINARY_DIR}
+                    ${TARGET_SOURCE_ABS}
+                COMMAND ${CMAKE_COMMAND} -E touch ${CLANG_TIDY_OUTPUT}
+                DEPENDS
+                    ${TARGET_SOURCE_ABS}
+                    ${CMAKE_SOURCE_DIR}/.clang-tidy
+                    ${CMAKE_BINARY_DIR}/compile_commands.json
+                WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+                COMMENT "Running clang-tidy on ${TARGET_SOURCE_REL}"
+                VERBATIM)
+
+            list(APPEND CLANG_TIDY_OUTPUTS ${CLANG_TIDY_OUTPUT})
+        endforeach()
+
         add_custom_target(
             ${target}_clangtidy
-            COMMAND
-                ${CLANG_TIDY_EXE}
-                --config-file ${CMAKE_SOURCE_DIR}/.clang-tidy
-                --extra-arg-before=-std=${CMAKE_CXX_STANDARD}
-                ${CLANG_TIDY_EXTRA_ARGS}
-                ${CLANG_TIDY_WARNING_AS_ERRORS}
-                -p ${CMAKE_BINARY_DIR}
-                ${TARGET_SOURCES}
-            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-            VERBATIM
-            USES_TERMINAL)
+            DEPENDS ${CLANG_TIDY_OUTPUTS}
+            COMMENT "Running clang-tidy for target ${target}")
     else()
         message("==> CLANGTIDY NOT FOUND")
     endif()  
