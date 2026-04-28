@@ -1,12 +1,6 @@
 
 set(UNIT_TEST_SOURCES
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/dependencies/test_conan_dependencies.cpp"
-  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/test_primitives.cpp"
-  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/test_trimesh.cpp"
-  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/test_geometryutils.cpp"
-  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/test_transformations.cpp"
-  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/test_geometry.cpp"
-  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/test_geometrymodel.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/parameters/test_formula.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/parameters/test_variable.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/parameters/test_smart_formula.cpp"
@@ -192,8 +186,8 @@ if (PYCANHA_OPTION_CPPCHECK)
                 --suppress=shadowFunction:*/gmm/primitives.hpp
                 # Supress test files manually if you find bad warnings.
                 --suppress=*:${CMAKE_CURRENT_SOURCE_DIR}/mytest1.cpp
-                # Supress CDT library
-                --suppress=*:${CMAKE_BINARY_DIR}/_deps/cdt-src/*
+                # Suppress third-party Manifold sources pulled by FetchContent.
+                --suppress=*:${CMAKE_BINARY_DIR}/_deps/manifold-src/*
                 ${CPP_CHECK_WARNING_AS_ERRORS}
             USES_TERMINAL)
     else()

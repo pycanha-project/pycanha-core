@@ -26,29 +26,39 @@ find_package(spdlog REQUIRED CONFIG)
 find_package(HDF5 REQUIRED COMPONENTS CXX)
 find_package(symengine REQUIRED CONFIG)
 
+set(PYCANHA_OPTION_MANIFOLD_VERSION "3.4.1" CACHE STRING "Pinned Manifold version")
 
-# CDT: https://github.com/artem-ogre/CDT
-# CDT is a header-only library, so we can use FetchContent
-include(FetchContent)
-if(NOT DEFINED CACHE{PYCANHA_OPTION_CDT_VERSION})
-    message(FATAL_ERROR
-        "PYCANHA_OPTION_CDT_VERSION is not defined. Configure with Conan so "
-        "all dependency versions are provided from conanfile.py.")
-endif()
-FetchContent_Declare(
-    cdt
-    GIT_REPOSITORY
-    https://github.com/artem-ogre/CDT.git
-    GIT_TAG
-    ${PYCANHA_OPTION_CDT_VERSION}
-) 
-FetchContent_GetProperties(cdt)
-if(NOT cdt_POPULATED)
-  FetchContent_Populate(cdt)
-  add_subdirectory(${cdt_SOURCE_DIR}/CDT ${cdt_BINARY_DIR}/CDT)
+find_package(manifold QUIET CONFIG)
+if(NOT manifold_FOUND)
+    include(FetchContent)
+
+    set(MANIFOLD_CBIND OFF CACHE BOOL "" FORCE)
+    set(MANIFOLD_CROSS_SECTION OFF CACHE BOOL "" FORCE)
+    set(MANIFOLD_JSBIND OFF CACHE BOOL "" FORCE)
+    set(MANIFOLD_PAR OFF CACHE BOOL "" FORCE)
+    set(MANIFOLD_PYBIND OFF CACHE BOOL "" FORCE)
+    set(MANIFOLD_TEST OFF CACHE BOOL "" FORCE)
+
+    FetchContent_Declare(
+        manifold
+        GIT_REPOSITORY
+        https://github.com/elalish/manifold.git
+        GIT_TAG
+        v${PYCANHA_OPTION_MANIFOLD_VERSION}
+        GIT_SHALLOW TRUE
+        GIT_PROGRESS TRUE
+        EXCLUDE_FROM_ALL
+    )
+    FetchContent_MakeAvailable(manifold)
 endif()
 
-#find_package(CDT REQUIRED CONFIG) # Use this if managed by conan
+if(TARGET manifold)
+    get_target_property(_pycanha_manifold_compile_options manifold INTERFACE_COMPILE_OPTIONS)
+    if(_pycanha_manifold_compile_options)
+        list(REMOVE_ITEM _pycanha_manifold_compile_options "-DMANIFOLD_PAR=-1")
+        set_property(TARGET manifold PROPERTY INTERFACE_COMPILE_OPTIONS "${_pycanha_manifold_compile_options}")
+    endif()
+endif()
 
 
 # MyLib Library
@@ -62,7 +72,7 @@ endif()
 # Change from INTERFACE to STATIC or SHARED, depending on your needs
 # Add all source files after the library name
 add_library(${LIB_NAME} STATIC 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/triangulation.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/geometrymodel.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/io/esatan.cpp
 
@@ -106,8 +116,6 @@ target_include_directories(${LIB_NAME}
     PUBLIC 
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
-    SYSTEM PRIVATE
-    $<BUILD_INTERFACE:${cdt_SOURCE_DIR}> # This adds the parent directory of CDT. So  #include <CDT/include/CDT.h> will work
 )
 
 target_link_libraries( ${LIB_NAME} 
@@ -117,8 +125,10 @@ target_link_libraries( ${LIB_NAME}
     symengine
     PRIVATE
     HDF5::HDF5
-    CDT::CDT
+    manifold::manifold
 )
+
+target_compile_definitions(${LIB_NAME} PRIVATE MANIFOLD_PAR=0)
 
 # ============================================================================
 # Intel MKL Configuration

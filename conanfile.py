@@ -41,7 +41,7 @@ class Recipe_pycanha_core(ConanFile):
     # Includes both Conan dependencies and tooling hints used by CMake/docs.
     DEPENDENCY_VERSIONS = {
         "eigen": "5.0.1",
-        "cdt": "1.4.4",
+        "manifold": "3.4.1",
         "mkl": "2025.3.1",
         "catch2": "3.13.0",
         "hdf5": "1.14.6",
@@ -103,16 +103,13 @@ class Recipe_pycanha_core(ConanFile):
         self.requires(f"eigen/{versions['eigen']}", transitive_headers=True)
         self.requires(f"hdf5/{versions['hdf5']}")
         self.requires(f"symengine/{versions['symengine']}")
+        self.requires(f"manifold/{versions['manifold']}")
         self.requires(
             f"spdlog/{versions['spdlog']}",
             transitive_headers=True,
             transitive_libs=True,
         )
         # transitive_headers=True is used when the dependencies of the library are headers needed by the consumer.
-
-        # self.requires(f"cdt/{versions['cdt']}")
-        # CDT is currently fetched in CMake with FetchContent. We still keep
-        # its version centralized here and pass it to CMake in generate().
 
         # Test dependencies
         self.test_requires(f"catch2/{versions['catch2']}")
@@ -192,9 +189,9 @@ class Recipe_pycanha_core(ConanFile):
         tc.cache_variables["CONAN_PROJECT_VERSION"] = self.version
 
         # Export centrally managed version hints for CMake and docs tooling.
-        tc.cache_variables["PYCANHA_OPTION_CDT_VERSION"] = self.DEPENDENCY_VERSIONS[
-            "cdt"
-        ]
+        tc.cache_variables["PYCANHA_OPTION_MANIFOLD_VERSION"] = (
+            self.DEPENDENCY_VERSIONS["manifold"]
+        )
         tc.cache_variables["PYCANHA_OPTION_DOXYGEN_VERSION"] = self.DEPENDENCY_VERSIONS[
             "doxygen"
         ]
