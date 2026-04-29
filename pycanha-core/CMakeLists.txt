@@ -28,29 +28,27 @@ find_package(symengine REQUIRED CONFIG)
 
 set(PYCANHA_OPTION_MANIFOLD_VERSION "3.4.1" CACHE STRING "Pinned Manifold version")
 
-find_package(manifold QUIET CONFIG)
-if(NOT manifold_FOUND)
-    include(FetchContent)
+include(FetchContent)
 
-    set(MANIFOLD_CBIND OFF CACHE BOOL "" FORCE)
-    set(MANIFOLD_CROSS_SECTION OFF CACHE BOOL "" FORCE)
-    set(MANIFOLD_JSBIND OFF CACHE BOOL "" FORCE)
-    set(MANIFOLD_PAR OFF CACHE BOOL "" FORCE)
-    set(MANIFOLD_PYBIND OFF CACHE BOOL "" FORCE)
-    set(MANIFOLD_TEST OFF CACHE BOOL "" FORCE)
+# TODO: Switch Manifold back to Conan once a suitable recipe is available.
+set(MANIFOLD_CBIND OFF CACHE BOOL "" FORCE)
+set(MANIFOLD_CROSS_SECTION OFF CACHE BOOL "" FORCE)
+set(MANIFOLD_JSBIND OFF CACHE BOOL "" FORCE)
+set(MANIFOLD_PAR OFF CACHE BOOL "" FORCE)
+set(MANIFOLD_PYBIND OFF CACHE BOOL "" FORCE)
+set(MANIFOLD_TEST OFF CACHE BOOL "" FORCE)
 
-    FetchContent_Declare(
-        manifold
-        GIT_REPOSITORY
-        https://github.com/elalish/manifold.git
-        GIT_TAG
-        v${PYCANHA_OPTION_MANIFOLD_VERSION}
-        GIT_SHALLOW TRUE
-        GIT_PROGRESS TRUE
-        EXCLUDE_FROM_ALL
-    )
-    FetchContent_MakeAvailable(manifold)
-endif()
+FetchContent_Declare(
+    manifold
+    GIT_REPOSITORY
+    https://github.com/elalish/manifold.git
+    GIT_TAG
+    v${PYCANHA_OPTION_MANIFOLD_VERSION}
+    GIT_SHALLOW TRUE
+    GIT_PROGRESS TRUE
+    EXCLUDE_FROM_ALL
+)
+FetchContent_MakeAvailable(manifold)
 
 if(TARGET manifold)
     get_target_property(_pycanha_manifold_compile_options manifold INTERFACE_COMPILE_OPTIONS)

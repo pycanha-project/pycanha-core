@@ -103,13 +103,14 @@ class Recipe_pycanha_core(ConanFile):
         self.requires(f"eigen/{versions['eigen']}", transitive_headers=True)
         self.requires(f"hdf5/{versions['hdf5']}")
         self.requires(f"symengine/{versions['symengine']}")
-        self.requires(f"manifold/{versions['manifold']}")
         self.requires(
             f"spdlog/{versions['spdlog']}",
             transitive_headers=True,
             transitive_libs=True,
         )
         # transitive_headers=True is used when the dependencies of the library are headers needed by the consumer.
+        # Manifold is intentionally not a Conan requirement yet.
+        # We fetch the pinned version from CMake until a suitable Conan recipe is available.
 
         # Test dependencies
         self.test_requires(f"catch2/{versions['catch2']}")
