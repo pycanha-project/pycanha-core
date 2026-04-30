@@ -55,7 +55,8 @@ jobs:
         
     - name: Run clang-tidy
       run: |
-        cmake --build build/Debug --parallel --target tests_clangtidy pycanha-core_clangtidy
+        # clang-tidy is memory-hungry; cap parallelism to avoid hosted-runner crashes.
+        cmake --build build/Debug --parallel 2 --target tests_clangtidy pycanha-core_clangtidy
       
     - name: Run cppcheck
       run: cmake --build build/Debug  --target tests_lib_cppcheck
