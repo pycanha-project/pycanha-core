@@ -1,6 +1,16 @@
 
 set(UNIT_TEST_SOURCES
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/dependencies/test_conan_dependencies.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/primitives/test_cone.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/primitives/test_cube.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/primitives/test_cylinder.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/primitives/test_disc.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/primitives/test_paraboloid.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/primitives/test_quadrilateral.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/primitives/test_rectangle.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/primitives/test_sphere.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/primitives/test_triangle.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/test_primitive_variant.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/parameters/test_formula.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/parameters/test_variable.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/parameters/test_smart_formula.cpp"
@@ -182,12 +192,8 @@ if (PYCANHA_OPTION_CPPCHECK)
                 --suppress=missingIncludeSystem --suppress=toomanyconfigs
                 --suppress=constStatement          
                 --inline-suppr
-                # Supress some warnings here about nomenclature                   
-                --suppress=shadowFunction:*/gmm/primitives.hpp
-                # Supress test files manually if you find bad warnings.
-                --suppress=*:${CMAKE_CURRENT_SOURCE_DIR}/mytest1.cpp
-                # Suppress third-party Manifold sources pulled by FetchContent.
-                --suppress=*:${CMAKE_BINARY_DIR}/_deps/manifold-src/*
+                # Ignore third-party Manifold sources pulled by FetchContent.
+                -i${CMAKE_BINARY_DIR}/_deps/manifold-src
                 ${CPP_CHECK_WARNING_AS_ERRORS}
             USES_TERMINAL)
     else()
