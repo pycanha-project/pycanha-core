@@ -3,4 +3,12 @@ CMakeUserPresets.json
 .vscode/*
 pycanha-core/include/pycanha-core/config.hpp
 pycanha-core/include/pycanha-core/.vscode/*
-pycanha-tmm/
+
+# Ignore the current (provisional) tests of the mesh
+test/unit/gmm/mesh/test_export_meshes.cpp
+mesh_exports/*
+
+# Dot folders (hidden directories) - ignore all except .github
+.*/
+!.github/
+!.conan/

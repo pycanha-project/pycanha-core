@@ -1,6 +1,17 @@
 
 set(UNIT_TEST_SOURCES
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/dependencies/test_conan_dependencies.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/mesh/test_export_meshes.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/mesh/test_mesh_ops.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/mesh/test_thermal_mesh.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/mesh/test_uv_mesher_cube.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/mesh/test_uv_mesher_disc.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/mesh/test_uv_mesher_planar.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/mesh/test_uv_mesher_revolution.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/mesh/test_uv_mesher_sphere.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/ops/test_distance.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/ops/test_face_id_from_uv.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/ops/test_transform.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/primitives/test_cone.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/primitives/test_cube.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/primitives/test_cylinder.cpp"
@@ -191,6 +202,7 @@ if (PYCANHA_OPTION_CPPCHECK)
                 --suppress=unusedFunction --suppress=unmatchedSuppression
                 --suppress=missingIncludeSystem --suppress=toomanyconfigs
                 --suppress=constStatement          
+                --suppress=*:${CMAKE_BINARY_DIR}/_deps/manifold-src/*
                 --inline-suppr
                 # Ignore third-party Manifold sources pulled by FetchContent.
                 -i${CMAKE_BINARY_DIR}/_deps/manifold-src

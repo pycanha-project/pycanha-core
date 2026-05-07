@@ -56,7 +56,7 @@ TEST_CASE("Paraboloid supports intrinsic shell operations",
     }
 
     SECTION("surface area matches the analytic formula") {
-        const double expected = pi * 2.0 * ((std::pow(68.0, 1.5)) - 8.0) / 48.0;
+        const double expected = pi * ((std::pow(68.0, 1.5)) - 8.0) / 48.0;
         REQUIRE(paraboloid.surface_area() == Catch::Approx(expected));
     }
 

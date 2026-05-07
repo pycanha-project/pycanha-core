@@ -1,0 +1,59 @@
+#include <vector>
+
+#include "uv_mesher_internal.hpp"
+
+namespace pycanha::gmm::mesh::detail {
+namespace {
+
+[[nodiscard]] SamplingPlan make_planar_sampling_plan(
+    const ThermalMesh& thermal_mesh, SurfacePointFunction point_at) {
+    const std::size_t num_dir1_cells = thermal_mesh.dir1_cuts().size() - 1U;
+    const std::size_t num_dir2_cells = thermal_mesh.dir2_cuts().size() - 1U;
+    return {std::vector<int>(num_dir1_cells, 1),
+            std::vector<int>(num_dir2_cells, 1),
+            make_linear_dir_sampler(thermal_mesh.dir1_cuts()),
+            make_linear_dir_sampler(thermal_mesh.dir2_cuts()),
+            std::move(point_at)};
+}
+
+}  // namespace
+
+TriMesh mesh_primitive(const Triangle& triangle,
+                       const ThermalMesh& thermal_mesh,
+                       const MeshOptions& /*options*/) {
+    return build_mesh_from_plan(
+        thermal_mesh, make_planar_sampling_plan(
+                          thermal_mesh, [&triangle](double dir1, double dir2) {
+                              return triangle_strip_point(triangle, dir1, dir2);
+                          }));
+}
+
+TriMesh mesh_primitive(const Rectangle& rectangle,
+                       const ThermalMesh& thermal_mesh,
+                       const MeshOptions& /*options*/) {
+    const double u_extent = (rectangle.p2() - rectangle.p1()).norm();
+    const double v_extent = rectangle.to_uv(rectangle.p3()).y();
+    return build_mesh_from_plan(
+        thermal_mesh, make_planar_sampling_plan(
+                          thermal_mesh, [&rectangle, u_extent, v_extent](
+                                            double dir1, double dir2) {
+                              return rectangle.to_cartesian(
+                                  {dir1 * u_extent, dir2 * v_extent});
+                          }));
+}
+
+TriMesh mesh_primitive(const Quadrilateral& quadrilateral,
+                       const ThermalMesh& thermal_mesh,
+                       const MeshOptions& /*options*/) {
+    const double u_extent = (quadrilateral.p2() - quadrilateral.p1()).norm();
+    const double v_extent = quadrilateral.to_uv(quadrilateral.p4()).y();
+    return build_mesh_from_plan(
+        thermal_mesh, make_planar_sampling_plan(
+                          thermal_mesh, [&quadrilateral, u_extent, v_extent](
+                                            double dir1, double dir2) {
+                              return quadrilateral.to_cartesian(
+                                  {dir1 * u_extent, dir2 * v_extent});
+                          }));
+}
+
+}  // namespace pycanha::gmm::mesh::detail

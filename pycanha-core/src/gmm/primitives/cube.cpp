@@ -10,9 +10,27 @@
 namespace pycanha::gmm {
 namespace {
 
+[[nodiscard]] Eigen::Quaterniond normalized_orientation(
+    Eigen::Quaterniond orientation) noexcept {
+    if (orientation.norm() <= LENGTH_TOL) {
+        return Eigen::Quaterniond::Identity();
+    }
+    return orientation.normalized();
+}
+
 [[nodiscard]] Point3D cube_local_point(const Cube& cube,
                                        const Point3D& point) noexcept {
-    return point - cube.center();
+    return cube.orientation().conjugate() * (point - cube.center());
+}
+
+[[nodiscard]] Point3D cube_world_point(const Cube& cube,
+                                       const Point3D& local_point) noexcept {
+    return cube.center() + cube.orientation() * local_point;
+}
+
+[[nodiscard]] Vector3D cube_world_direction(
+    const Cube& cube, const Vector3D& local_direction) noexcept {
+    return cube.orientation() * local_direction;
 }
 
 [[nodiscard]] int cube_face_from_uv(const Point2D& uv) noexcept {
@@ -26,16 +44,27 @@ namespace {
 
 }  // namespace
 
-Cube::Cube(Point3D center, Vector3D extent) noexcept
-    : _center(std::move(center)), _extent(std::move(extent)) {}
+Cube::Cube(Point3D center, Vector3D extent,
+           Eigen::Quaterniond orientation) noexcept
+    : _center(std::move(center)),
+      _extent(std::move(extent)),
+      _orientation(normalized_orientation(std::move(orientation))) {}
 
 const Point3D& Cube::center() const noexcept { return _center; }
 
 const Vector3D& Cube::extent() const noexcept { return _extent; }
 
+const Eigen::Quaterniond& Cube::orientation() const noexcept {
+    return _orientation;
+}
+
 void Cube::set_center(Point3D center) noexcept { _center = std::move(center); }
 
 void Cube::set_extent(Vector3D extent) noexcept { _extent = std::move(extent); }
+
+void Cube::set_orientation(Eigen::Quaterniond orientation) noexcept {
+    _orientation = normalized_orientation(std::move(orientation));
+}
 
 bool Cube::is_valid() const noexcept {
     return _extent.x() > LENGTH_TOL && _extent.y() > LENGTH_TOL &&
@@ -88,29 +117,29 @@ Point3D Cube::to_cartesian(const Point2D& uv) const {
 
     switch (face) {
         case 0:
-            return _center + Vector3D(hx,
-                                      detail::interval_from_unit(s, -hy, hy),
-                                      detail::interval_from_unit(t, -hz, hz));
+            return cube_world_point(
+                *this, Point3D(hx, detail::interval_from_unit(s, -hy, hy),
+                               detail::interval_from_unit(t, -hz, hz)));
         case 1:
-            return _center + Vector3D(-hx,
-                                      detail::interval_from_unit(s, hy, -hy),
-                                      detail::interval_from_unit(t, -hz, hz));
+            return cube_world_point(
+                *this, Point3D(-hx, detail::interval_from_unit(s, hy, -hy),
+                               detail::interval_from_unit(t, -hz, hz)));
         case 2:
-            return _center + Vector3D(detail::interval_from_unit(s, hx, -hx),
-                                      hy,
-                                      detail::interval_from_unit(t, -hz, hz));
+            return cube_world_point(
+                *this, Point3D(detail::interval_from_unit(s, hx, -hx), hy,
+                               detail::interval_from_unit(t, -hz, hz)));
         case 3:
-            return _center + Vector3D(detail::interval_from_unit(s, -hx, hx),
-                                      -hy,
-                                      detail::interval_from_unit(t, -hz, hz));
+            return cube_world_point(
+                *this, Point3D(detail::interval_from_unit(s, -hx, hx), -hy,
+                               detail::interval_from_unit(t, -hz, hz)));
         case 4:
-            return _center + Vector3D(detail::interval_from_unit(s, -hx, hx),
-                                      detail::interval_from_unit(t, -hy, hy),
-                                      hz);
+            return cube_world_point(
+                *this, Point3D(detail::interval_from_unit(s, -hx, hx),
+                               detail::interval_from_unit(t, -hy, hy), hz));
         default:
-            return _center + Vector3D(detail::interval_from_unit(s, -hx, hx),
-                                      detail::interval_from_unit(t, hy, -hy),
-                                      -hz);
+            return cube_world_point(
+                *this, Point3D(detail::interval_from_unit(s, -hx, hx),
+                               detail::interval_from_unit(t, hy, -hy), -hz));
     }
 }
 
@@ -119,17 +148,17 @@ Point3D Cube::to_cartesian(const Point2D& uv) const {
 Vector3D Cube::normal_at_uv(const Point2D& uv) const noexcept {
     switch (cube_face_from_uv(uv)) {
         case 0:
-            return Vector3D::UnitX();
+            return cube_world_direction(*this, Vector3D::UnitX());
         case 1:
-            return -Vector3D::UnitX();
+            return cube_world_direction(*this, -Vector3D::UnitX());
         case 2:
-            return Vector3D::UnitY();
+            return cube_world_direction(*this, Vector3D::UnitY());
         case 3:
-            return -Vector3D::UnitY();
+            return cube_world_direction(*this, -Vector3D::UnitY());
         case 4:
-            return Vector3D::UnitZ();
+            return cube_world_direction(*this, Vector3D::UnitZ());
         default:
-            return -Vector3D::UnitZ();
+            return cube_world_direction(*this, -Vector3D::UnitZ());
     }
 }
 

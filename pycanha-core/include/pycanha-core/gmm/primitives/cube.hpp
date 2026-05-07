@@ -1,18 +1,24 @@
 #pragma once
 
+#include <Eigen/Geometry>
+
 #include "pycanha-core/globals.hpp"
 
 namespace pycanha::gmm {
 
 class Cube {
   public:
-    Cube(Point3D center, Vector3D extent) noexcept;
+    Cube(Point3D center, Vector3D extent,
+         Eigen::Quaterniond orientation =
+             Eigen::Quaterniond::Identity()) noexcept;
 
     [[nodiscard]] const Point3D& center() const noexcept;
     [[nodiscard]] const Vector3D& extent() const noexcept;
+    [[nodiscard]] const Eigen::Quaterniond& orientation() const noexcept;
 
     void set_center(Point3D center) noexcept;
     void set_extent(Vector3D extent) noexcept;
+    void set_orientation(Eigen::Quaterniond orientation) noexcept;
 
     [[nodiscard]] bool is_valid() const noexcept;
     [[nodiscard]] Point2D to_uv(const Point3D& point) const;
@@ -23,6 +29,7 @@ class Cube {
   private:
     Point3D _center;
     Vector3D _extent;
+    Eigen::Quaterniond _orientation = Eigen::Quaterniond::Identity();
 };
 
 }  // namespace pycanha::gmm

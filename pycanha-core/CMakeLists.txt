@@ -26,38 +26,6 @@ find_package(spdlog REQUIRED CONFIG)
 find_package(HDF5 REQUIRED COMPONENTS CXX)
 find_package(symengine REQUIRED CONFIG)
 
-set(PYCANHA_OPTION_MANIFOLD_VERSION "3.4.1" CACHE STRING "Pinned Manifold version")
-
-include(FetchContent)
-
-# TODO: Switch Manifold back to Conan once a suitable recipe is available.
-set(MANIFOLD_CBIND OFF CACHE BOOL "" FORCE)
-set(MANIFOLD_CROSS_SECTION OFF CACHE BOOL "" FORCE)
-set(MANIFOLD_JSBIND OFF CACHE BOOL "" FORCE)
-set(MANIFOLD_PAR OFF CACHE BOOL "" FORCE)
-set(MANIFOLD_PYBIND OFF CACHE BOOL "" FORCE)
-set(MANIFOLD_TEST OFF CACHE BOOL "" FORCE)
-
-FetchContent_Declare(
-    manifold
-    GIT_REPOSITORY
-    https://github.com/elalish/manifold.git
-    GIT_TAG
-    v${PYCANHA_OPTION_MANIFOLD_VERSION}
-    GIT_SHALLOW TRUE
-    GIT_PROGRESS TRUE
-    EXCLUDE_FROM_ALL
-)
-FetchContent_MakeAvailable(manifold)
-
-if(TARGET manifold)
-    get_target_property(_pycanha_manifold_compile_options manifold INTERFACE_COMPILE_OPTIONS)
-    if(_pycanha_manifold_compile_options)
-        list(REMOVE_ITEM _pycanha_manifold_compile_options "-DMANIFOLD_PAR=-1")
-        set_property(TARGET manifold PROPERTY INTERFACE_COMPILE_OPTIONS "${_pycanha_manifold_compile_options}")
-    endif()
-endif()
-
 
 # MyLib Library
 ## For a compiled library:
@@ -71,6 +39,18 @@ endif()
 # Add all source files after the library name
 add_library(${LIB_NAME} STATIC 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/geometrymodel.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/mesh/thermal_mesh.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/mesh/uv_mesher.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/mesh/uv_mesher_cube.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/mesh/uv_mesher_disc.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/mesh/uv_mesher_planar.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/mesh/uv_mesher_revolution.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/mesh/uv_mesher_sphere.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/mesh/ops/compute_areas.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/mesh/ops/validate.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/ops/distance.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/ops/face_id_from_uv.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/ops/transform.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/primitives/cone.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/primitives/cube.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/primitives/cylinder.cpp
@@ -132,10 +112,7 @@ target_link_libraries( ${LIB_NAME}
     symengine
     PRIVATE
     HDF5::HDF5
-    manifold::manifold
 )
-
-target_compile_definitions(${LIB_NAME} PRIVATE MANIFOLD_PAR=0)
 
 # ============================================================================
 # Intel MKL Configuration
