@@ -1,6 +1,5 @@
 
-
-#include "pycanha-core/gmm/triangulation.hpp"
+#include "pycanha-core/legacy/gmm/triangulation.hpp"
 
 #include "pycanha-core/gmm/trimesh.hpp"
 

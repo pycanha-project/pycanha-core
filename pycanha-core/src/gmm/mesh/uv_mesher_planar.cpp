@@ -1,5 +1,13 @@
+#include <cstddef>
+#include <utility>
 #include <vector>
 
+#include "pycanha-core/gmm/mesh/mesh_options.hpp"
+#include "pycanha-core/gmm/mesh/thermal_mesh.hpp"
+#include "pycanha-core/gmm/mesh/trimesh.hpp"
+#include "pycanha-core/gmm/primitives/quadrilateral.hpp"
+#include "pycanha-core/gmm/primitives/rectangle.hpp"
+#include "pycanha-core/gmm/primitives/triangle.hpp"
 #include "uv_mesher_internal.hpp"
 
 namespace pycanha::gmm::mesh::detail {
@@ -21,11 +29,11 @@ namespace {
 TriMesh mesh_primitive(const Triangle& triangle,
                        const ThermalMesh& thermal_mesh,
                        const MeshOptions& /*options*/) {
-    return build_mesh_from_plan(
-        thermal_mesh, make_planar_sampling_plan(
-                          thermal_mesh, [&triangle](double dir1, double dir2) {
-                              return triangle_strip_point(triangle, dir1, dir2);
-                          }));
+    const auto plan = make_planar_sampling_plan(
+        thermal_mesh, [&triangle](double dir1, double dir2) {
+            return triangle_strip_point(triangle, dir1, dir2);
+        });
+    return build_mesh_from_plan(thermal_mesh, plan);
 }
 
 TriMesh mesh_primitive(const Rectangle& rectangle,
@@ -33,13 +41,12 @@ TriMesh mesh_primitive(const Rectangle& rectangle,
                        const MeshOptions& /*options*/) {
     const double u_extent = (rectangle.p2() - rectangle.p1()).norm();
     const double v_extent = rectangle.to_uv(rectangle.p3()).y();
-    return build_mesh_from_plan(
-        thermal_mesh, make_planar_sampling_plan(
-                          thermal_mesh, [&rectangle, u_extent, v_extent](
-                                            double dir1, double dir2) {
-                              return rectangle.to_cartesian(
-                                  {dir1 * u_extent, dir2 * v_extent});
-                          }));
+    const auto plan = make_planar_sampling_plan(
+        thermal_mesh,
+        [&rectangle, u_extent, v_extent](double dir1, double dir2) {
+            return rectangle.to_cartesian({dir1 * u_extent, dir2 * v_extent});
+        });
+    return build_mesh_from_plan(thermal_mesh, plan);
 }
 
 TriMesh mesh_primitive(const Quadrilateral& quadrilateral,
@@ -47,13 +54,13 @@ TriMesh mesh_primitive(const Quadrilateral& quadrilateral,
                        const MeshOptions& /*options*/) {
     const double u_extent = (quadrilateral.p2() - quadrilateral.p1()).norm();
     const double v_extent = quadrilateral.to_uv(quadrilateral.p4()).y();
-    return build_mesh_from_plan(
-        thermal_mesh, make_planar_sampling_plan(
-                          thermal_mesh, [&quadrilateral, u_extent, v_extent](
-                                            double dir1, double dir2) {
-                              return quadrilateral.to_cartesian(
-                                  {dir1 * u_extent, dir2 * v_extent});
-                          }));
+    const auto plan = make_planar_sampling_plan(
+        thermal_mesh,
+        [&quadrilateral, u_extent, v_extent](double dir1, double dir2) {
+            return quadrilateral.to_cartesian(
+                {dir1 * u_extent, dir2 * v_extent});
+        });
+    return build_mesh_from_plan(thermal_mesh, plan);
 }
 
 }  // namespace pycanha::gmm::mesh::detail

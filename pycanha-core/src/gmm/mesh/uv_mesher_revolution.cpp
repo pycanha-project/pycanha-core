@@ -1,7 +1,16 @@
 #include <algorithm>
 #include <cmath>
+#include <cstddef>
+#include <span>
+#include <utility>
 #include <vector>
 
+#include "pycanha-core/gmm/mesh/mesh_options.hpp"
+#include "pycanha-core/gmm/mesh/thermal_mesh.hpp"
+#include "pycanha-core/gmm/mesh/trimesh.hpp"
+#include "pycanha-core/gmm/primitives/cone.hpp"
+#include "pycanha-core/gmm/primitives/cylinder.hpp"
+#include "pycanha-core/gmm/primitives/paraboloid.hpp"
 #include "uv_mesher_internal.hpp"
 
 namespace pycanha::gmm::mesh::detail {
@@ -26,7 +35,7 @@ TriMesh mesh_primitive(const Cylinder& cylinder,
                        const ThermalMesh& thermal_mesh,
                        const MeshOptions& options) {
     const double height = (cylinder.p2() - cylinder.p1()).norm();
-    SamplingPlan plan{
+    const SamplingPlan plan{
         solve_circumferential_segments(
             thermal_mesh.dir1_cuts(), cylinder.radius(), cylinder.start_angle(),
             cylinder.end_angle(), options.deviation_tolerance),
@@ -47,7 +56,7 @@ TriMesh mesh_primitive(const Cone& cone, const ThermalMesh& thermal_mesh,
                        const MeshOptions& options) {
     const double max_radius = std::max(cone.radius1(), cone.radius2());
     const double height = (cone.p2() - cone.p1()).norm();
-    SamplingPlan plan{
+    const SamplingPlan plan{
         solve_circumferential_segments(thermal_mesh.dir1_cuts(), max_radius,
                                        cone.start_angle(), cone.end_angle(),
                                        options.deviation_tolerance),
@@ -77,7 +86,7 @@ TriMesh mesh_primitive(const Paraboloid& paraboloid,
     }
 
     std::vector<double> local_dir2_cuts(dir2_cuts.begin(), dir2_cuts.end());
-    SamplingPlan plan{
+    const SamplingPlan plan{
         solve_circumferential_segments(
             thermal_mesh.dir1_cuts(), paraboloid.radius(),
             paraboloid.start_angle(), paraboloid.end_angle(),

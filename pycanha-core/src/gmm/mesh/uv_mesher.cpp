@@ -3,16 +3,27 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <cstddef>
 #include <cstdint>
+#include <numbers>
+#include <span>
 #include <stdexcept>
 #include <unordered_map>
 #include <utility>
+#include <variant>
 #include <vector>
 
+#include "pycanha-core/globals.hpp"
+#include "pycanha-core/gmm/mesh/mesh_options.hpp"
+#include "pycanha-core/gmm/mesh/thermal_mesh.hpp"
+#include "pycanha-core/gmm/mesh/trimesh.hpp"
+#include "pycanha-core/gmm/primitives/primitive.hpp"
+#include "pycanha-core/gmm/primitives/triangle.hpp"
 #include "uv_mesher_internal.hpp"
 
 namespace pycanha::gmm {
 
+// NOLINTNEXTLINE(readability-convert-member-functions-to-static)
 TriMesh UvMesher::mesh(const Primitive& primitive,
                        const ThermalMesh& thermal_mesh,
                        const MeshOptions& options) const {
@@ -42,7 +53,7 @@ struct QuantizedPoint {
 struct QuantizedPointHash {
     [[nodiscard]] std::size_t operator()(
         const QuantizedPoint& point) const noexcept {
-        std::size_t seed = static_cast<std::size_t>(point.x);
+        auto seed = static_cast<std::size_t>(point.x);
         seed ^= static_cast<std::size_t>(point.y) + 0x9e3779b9U + (seed << 6U) +
                 (seed >> 2U);
         seed ^= static_cast<std::size_t>(point.z) + 0x9e3779b9U + (seed << 6U) +
@@ -82,7 +93,7 @@ struct QuantizedPointHash {
         return it->second;
     }
 
-    const Eigen::Index index = static_cast<Eigen::Index>(vertices.size());
+    const auto index = static_cast<Eigen::Index>(vertices.size());
     vertices.push_back(point);
     vertex_lookup.emplace(key, index);
     return index;
@@ -268,8 +279,8 @@ TriMesh build_mesh_from_plan(const ThermalMesh& thermal_mesh,
          ++triangle_idx) {
         const auto& triangle =
             triangles[static_cast<std::size_t>(triangle_idx)];
-        mesh.triangles.row(triangle_idx) << triangle[0], triangle[1],
-            triangle[2];
+        mesh.triangles.row(triangle_idx) << static_cast<int>(triangle[0]),
+            static_cast<int>(triangle[1]), static_cast<int>(triangle[2]);
         mesh.face_ids[triangle_idx] =
             face_ids[static_cast<std::size_t>(triangle_idx)];
     }

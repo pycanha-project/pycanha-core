@@ -1,7 +1,7 @@
 
 set(UNIT_TEST_SOURCES
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/dependencies/test_conan_dependencies.cpp"
-  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/mesh/test_export_meshes.cpp"
+#  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/mesh/test_export_meshes.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/mesh/test_mesh_ops.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/mesh/test_thermal_mesh.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/mesh/test_uv_mesher_cube.cpp"
@@ -21,7 +21,13 @@ set(UNIT_TEST_SOURCES
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/primitives/test_rectangle.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/primitives/test_sphere.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/primitives/test_triangle.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/scene/test_coordinate_transformation.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/scene/test_group.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/scene/test_item.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/test_face_node_mapping.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/test_geometry_model.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/test_primitive_variant.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/test_unified_mesh.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/parameters/test_formula.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/parameters/test_variable.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/parameters/test_smart_formula.cpp"

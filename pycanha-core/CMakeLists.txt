@@ -39,6 +39,7 @@ find_package(symengine REQUIRED CONFIG)
 # Add all source files after the library name
 add_library(${LIB_NAME} STATIC 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/geometrymodel.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/geometrymodel_unified_mesh.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/mesh/thermal_mesh.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/mesh/uv_mesher.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/mesh/uv_mesher_cube.cpp
@@ -47,6 +48,7 @@ add_library(${LIB_NAME} STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/mesh/uv_mesher_revolution.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/mesh/uv_mesher_sphere.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/mesh/ops/compute_areas.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/mesh/ops/sort.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/mesh/ops/validate.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/ops/distance.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/ops/face_id_from_uv.cpp
@@ -60,6 +62,10 @@ add_library(${LIB_NAME} STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/primitives/rectangle.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/primitives/sphere.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/primitives/triangle.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/scene/coordinate_transformation.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/scene/cut_group.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/scene/group.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/scene/item.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/io/esatan.cpp
 

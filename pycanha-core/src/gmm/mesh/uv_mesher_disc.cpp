@@ -1,5 +1,11 @@
+#include <cstddef>
+#include <utility>
 #include <vector>
 
+#include "pycanha-core/gmm/mesh/mesh_options.hpp"
+#include "pycanha-core/gmm/mesh/thermal_mesh.hpp"
+#include "pycanha-core/gmm/mesh/trimesh.hpp"
+#include "pycanha-core/gmm/primitives/disc.hpp"
 #include "uv_mesher_internal.hpp"
 
 namespace pycanha::gmm::mesh::detail {
@@ -16,7 +22,7 @@ TriMesh mesh_primitive(const Disc& disc, const ThermalMesh& thermal_mesh,
             options.deviation_tolerance);
     }
 
-    SamplingPlan plan{
+    const SamplingPlan plan{
         std::move(dir1_segments),
         std::vector<int>(thermal_mesh.dir2_cuts().size() - 1U, 1),
         make_linear_dir_sampler(thermal_mesh.dir1_cuts()),
