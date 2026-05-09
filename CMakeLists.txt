@@ -66,6 +66,7 @@ option(PYCANHA_OPTION_CLANG_TIDY           "Enable to add clang tidy."          
 option(PYCANHA_OPTION_CPPCHECK             "Add cppcheck."                                 OFF ) 
 option(PYCANHA_OPTION_SANITIZE_ADDR        "Enable to sanitize address (Unix only)."       OFF )
 option(PYCANHA_OPTION_SANITIZE_UNDEF       "Enable to sanitize undefined (Unix only)."     OFF )
+option(PYCANHA_USE_FETCHCONTENT_MANIFOLD   "Fetch Manifold from source instead of Conan."  ON  )
 
 
 

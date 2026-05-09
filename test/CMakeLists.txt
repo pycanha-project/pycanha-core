@@ -9,6 +9,11 @@ set(UNIT_TEST_SOURCES
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/mesh/test_uv_mesher_planar.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/mesh/test_uv_mesher_revolution.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/mesh/test_uv_mesher_sphere.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/cutting/test_manifold_smoke.cpp"
+#  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/cutting/test_cut_meshes.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/cutting/test_cutter_proxy.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/cutting/test_manifold_cut_backend.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/cutting/test_proxy_shell.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/ops/test_distance.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/ops/test_face_id_from_uv.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/ops/test_transform.cpp"
@@ -27,6 +32,7 @@ set(UNIT_TEST_SOURCES
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/test_face_node_mapping.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/test_geometry_model.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/test_primitive_variant.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/test_unified_mesh_cut.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/test_unified_mesh.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/parameters/test_formula.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/parameters/test_variable.cpp"
@@ -98,6 +104,11 @@ target_link_libraries(${TEST_TARGET_NAME} PRIVATE ${LIB_NAME})
 target_link_libraries(${TEST_TARGET_NAME} PRIVATE Catch2::Catch2WithMain)
 target_link_libraries(${TEST_TARGET_NAME} PRIVATE HDF5::HDF5)
 target_link_libraries(${TEST_TARGET_NAME} PRIVATE symengine)
+if(TARGET manifold::manifold)
+  target_link_libraries(${TEST_TARGET_NAME} PRIVATE manifold::manifold)
+elseif(TARGET manifold)
+  target_link_libraries(${TEST_TARGET_NAME} PRIVATE manifold)
+endif()
 if(UNIX AND NOT APPLE)
   target_link_libraries(${TEST_TARGET_NAME} PRIVATE m)
 endif()

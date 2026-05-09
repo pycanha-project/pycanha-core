@@ -26,6 +26,26 @@ find_package(spdlog REQUIRED CONFIG)
 find_package(HDF5 REQUIRED COMPONENTS CXX)
 find_package(symengine REQUIRED CONFIG)
 
+if(PYCANHA_USE_FETCHCONTENT_MANIFOLD)
+    include(FetchContent)
+
+    set(MANIFOLD_TEST OFF CACHE BOOL "" FORCE)
+    set(MANIFOLD_CROSS_SECTION OFF CACHE BOOL "" FORCE)
+    set(MANIFOLD_PAR OFF CACHE BOOL "" FORCE)
+    set(MANIFOLD_PYBIND OFF CACHE BOOL "" FORCE)
+
+    FetchContent_Declare(
+        manifold
+        GIT_REPOSITORY https://github.com/elalish/manifold.git
+        GIT_TAG v${PYCANHA_OPTION_MANIFOLD_VERSION}
+        GIT_SHALLOW TRUE)
+    FetchContent_MakeAvailable(manifold)
+    set(PYCANHA_MANIFOLD_TARGET manifold)
+else()
+    find_package(manifold REQUIRED CONFIG)
+    set(PYCANHA_MANIFOLD_TARGET manifold::manifold)
+endif()
+
 
 # MyLib Library
 ## For a compiled library:
@@ -40,6 +60,9 @@ find_package(symengine REQUIRED CONFIG)
 add_library(${LIB_NAME} STATIC 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/geometrymodel.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/geometrymodel_unified_mesh.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/cutting/cutter_proxy.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/cutting/manifold_cut_backend.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/cutting/proxy_shell.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/mesh/thermal_mesh.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/mesh/uv_mesher.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/mesh/uv_mesher_cube.cpp
@@ -48,7 +71,11 @@ add_library(${LIB_NAME} STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/mesh/uv_mesher_revolution.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/mesh/uv_mesher_sphere.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/mesh/ops/compute_areas.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/mesh/ops/boundary_edges.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/mesh/ops/classify.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/mesh/ops/clean.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/mesh/ops/sort.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/mesh/ops/subset.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/mesh/ops/validate.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/ops/distance.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/ops/face_id_from_uv.cpp
@@ -118,6 +145,7 @@ target_link_libraries( ${LIB_NAME}
     symengine
     PRIVATE
     HDF5::HDF5
+    ${PYCANHA_MANIFOLD_TARGET}
 )
 
 # ============================================================================

@@ -6,6 +6,7 @@ pycanha-core/include/pycanha-core/.vscode/*
 
 # Ignore the current (provisional) tests of the mesh
 test/unit/gmm/mesh/test_export_meshes.cpp
+test/unit/gmm/mesh/test_cut_meshes.cpp
 mesh_exports/*
 
 # Dot folders (hidden directories) - ignore all except .github
