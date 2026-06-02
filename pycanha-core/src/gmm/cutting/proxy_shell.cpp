@@ -1,15 +1,17 @@
 #include "pycanha-core/gmm/cutting/proxy_shell.hpp"
 
+#include <manifold/manifold.h>
+
 #include <array>
+#include <cstddef>
 #include <cstdint>
-#include <limits>
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
-#include <utility>
 #include <vector>
 
 #include "pycanha-core/globals.hpp"
+#include "pycanha-core/gmm/mesh/trimesh.hpp"
 
 namespace pycanha::gmm::cutting {
 namespace {
@@ -92,8 +94,7 @@ struct EdgeHash {
                                     {inner.x(), inner.y(), inner.z()});
     }
 
-    const std::uint64_t inner_offset =
-        static_cast<std::uint64_t>(mesh.vertices.rows());
+    const auto inner_offset = static_cast<std::uint64_t>(mesh.vertices.rows());
     const std::uint32_t inner_original_id = meta.outer_original_id + 1U;
     const std::uint32_t wall_original_id = meta.outer_original_id + 2U;
 
@@ -122,9 +123,7 @@ struct EdgeHash {
         ++inner_triangles;
     }
 
-    for (std::size_t edge_idx = 0; edge_idx < directed_edges.size();
-         ++edge_idx) {
-        const Edge edge = directed_edges[edge_idx];
+    for (const Edge edge : directed_edges) {
         if (edge_use_counts[normalized_edge(edge[0], edge[1])] != 1) {
             continue;
         }

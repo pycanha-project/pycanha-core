@@ -49,7 +49,8 @@
 // used by the macros at the bottom of this file.
 #ifdef PYCANHA_PROFILING
 #ifndef PROFILING
-#define PROFILING
+// NOLINTNEXTLINE(bugprone-macro-parentheses)
+#define PROFILING 1
 #endif
 #endif
 
@@ -177,11 +178,13 @@ class InstrumentationTimer {
 };
 
 #ifdef PROFILING
+// NOLINTBEGIN(bugprone-macro-parentheses)
 #define PROFILE_SCOPE(name) const InstrumentationTimer timer##__LINE__(name)
 #define PROFILE_FUNCTION() PROFILE_SCOPE(__FUNCTION__)
 #else
 #define PROFILE_SCOPE(name)
 #define PROFILE_FUNCTION()
 #endif
+// NOLINTEND(bugprone-macro-parentheses)
 
 }  // namespace pycanha

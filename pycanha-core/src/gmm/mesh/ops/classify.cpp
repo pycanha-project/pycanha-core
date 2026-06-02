@@ -3,7 +3,11 @@
 #include <variant>
 
 #include "pycanha-core/globals.hpp"
+#include "pycanha-core/gmm/ids.hpp"
+#include "pycanha-core/gmm/mesh/thermal_mesh.hpp"
+#include "pycanha-core/gmm/mesh/trimesh.hpp"
 #include "pycanha-core/gmm/ops/face_id_from_uv.hpp"
+#include "pycanha-core/gmm/primitives/primitive.hpp"
 
 namespace pycanha::gmm::mesh::ops {
 

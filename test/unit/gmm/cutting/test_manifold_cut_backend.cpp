@@ -1,14 +1,17 @@
-#include <catch2/catch_approx.hpp>
+#include <array>
 #include <catch2/catch_test_macros.hpp>
 #include <numbers>
+#include <span>
 
 #include "pycanha-core/gmm/cutting/manifold_cut_backend.hpp"
+#include "pycanha-core/gmm/mesh/mesh_options.hpp"
 #include "pycanha-core/gmm/mesh/ops/boundary_edges.hpp"
 #include "pycanha-core/gmm/mesh/ops/compute_areas.hpp"
 #include "pycanha-core/gmm/mesh/ops/validate.hpp"
 #include "pycanha-core/gmm/mesh/thermal_mesh.hpp"
 #include "pycanha-core/gmm/primitives/cylinder.hpp"
 #include "pycanha-core/gmm/primitives/rectangle.hpp"
+#include "pycanha-core/gmm/scene/coordinate_transformation.hpp"
 #include "pycanha-core/gmm/scene/item.hpp"
 
 namespace {
@@ -25,7 +28,7 @@ namespace mesh_ops = pycanha::gmm::mesh::ops;
 
 TEST_CASE("ManifoldCutBackend cuts a rectangle with a cylinder",
           "[gmm][cutting]") {
-    cutting::ManifoldCutBackend backend;
+    const cutting::ManifoldCutBackend backend;
     const Item panel(
         Rectangle({0.0, 0.0, 0.0}, {2.0, 0.0, 0.0}, {0.0, 2.0, 0.0}),
         ThermalMesh{{0.0, 0.5, 1.0}, {0.0, 0.5, 1.0}});

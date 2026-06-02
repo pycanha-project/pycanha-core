@@ -1,8 +1,12 @@
 #include "pycanha-core/gmm/cutting/cutter_proxy.hpp"
 
+#include <manifold/common.h>
+#include <manifold/manifold.h>
+
 #include <cmath>
 #include <numbers>
 #include <stdexcept>
+#include <type_traits>
 #include <variant>
 
 #include "pycanha-core/globals.hpp"
@@ -10,7 +14,9 @@
 #include "pycanha-core/gmm/primitives/cone.hpp"
 #include "pycanha-core/gmm/primitives/cube.hpp"
 #include "pycanha-core/gmm/primitives/cylinder.hpp"
+#include "pycanha-core/gmm/primitives/primitive.hpp"
 #include "pycanha-core/gmm/primitives/sphere.hpp"
+#include "pycanha-core/gmm/scene/coordinate_transformation.hpp"
 
 namespace pycanha::gmm::cutting {
 namespace {
@@ -66,7 +72,8 @@ namespace {
         cylinder.p1(), cylinder.p2(), cylinder.p3());
     const Point3D center = 0.5 * (cylinder.p1() + cylinder.p2());
     return manifold::Manifold::Cylinder(height, cylinder.radius(),
-                                        cylinder.radius(), 64, true)
+                                        cylinder.radius(), 64,
+                                        /*center=*/true)
         .Transform(to_manifold_transform(rotation, center));
 }
 
@@ -80,7 +87,7 @@ namespace {
         frame_from_axis_and_reference(cone.p1(), cone.p2(), cone.p3());
     const Point3D center = 0.5 * (cone.p1() + cone.p2());
     return manifold::Manifold::Cylinder(height, cone.radius1(), cone.radius2(),
-                                        64, true)
+                                        64, /*center=*/true)
         .Transform(to_manifold_transform(rotation, center));
 }
 
@@ -96,7 +103,8 @@ namespace {
 }
 
 [[nodiscard]] manifold::Manifold build_cube(const Cube& cube) {
-    return manifold::Manifold::Cube(to_manifold_vec(cube.extent()), true)
+    return manifold::Manifold::Cube(to_manifold_vec(cube.extent()),
+                                    /*center=*/true)
         .Transform(to_manifold_transform(cube.orientation().toRotationMatrix(),
                                          cube.center()));
 }

@@ -1,8 +1,13 @@
 #include "pycanha-core/gmm/mesh/ops/subset.hpp"
 
+#include <cstddef>
 #include <cstdint>
+#include <span>
 #include <unordered_set>
 #include <vector>
+
+#include "pycanha-core/gmm/ids.hpp"
+#include "pycanha-core/gmm/mesh/trimesh.hpp"
 
 namespace pycanha::gmm::mesh::ops {
 

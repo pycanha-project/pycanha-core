@@ -1,18 +1,21 @@
 #include "pycanha-core/gmm/mesh/ops/clean.hpp"
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstddef>
-#include <limits>
+#include <cstdint>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include "pycanha-core/globals.hpp"
+#include "pycanha-core/gmm/mesh/trimesh.hpp"
 
 namespace pycanha::gmm::mesh::ops {
 namespace {
 
-using VertexKey = std::array<long long, 3>;
+using VertexKey = std::array<std::int64_t, 3>;
 
 struct VertexKeyHash {
     [[nodiscard]] std::size_t operator()(const VertexKey& key) const noexcept {
@@ -23,9 +26,9 @@ struct VertexKeyHash {
 
 [[nodiscard]] VertexKey make_vertex_key(const Eigen::RowVector3d& vertex,
                                         double tolerance) {
-    return {static_cast<long long>(std::llround(vertex.x() / tolerance)),
-            static_cast<long long>(std::llround(vertex.y() / tolerance)),
-            static_cast<long long>(std::llround(vertex.z() / tolerance))};
+    return {static_cast<std::int64_t>(std::llround(vertex.x() / tolerance)),
+            static_cast<std::int64_t>(std::llround(vertex.y() / tolerance)),
+            static_cast<std::int64_t>(std::llround(vertex.z() / tolerance))};
 }
 
 void compact_referenced_vertices(TriMesh& mesh) {
@@ -83,8 +86,7 @@ void dedup_vertices(TriMesh& mesh, double tolerance) {
          ++vertex_idx) {
         const VertexKey key =
             make_vertex_key(mesh.vertices.row(vertex_idx), effective_tolerance);
-        const auto [iterator, inserted] =
-            vertex_map.emplace(key, static_cast<Eigen::Index>(next_vertex));
+        const auto [iterator, inserted] = vertex_map.emplace(key, next_vertex);
         if (inserted) {
             deduped_vertices.row(next_vertex) = mesh.vertices.row(vertex_idx);
             remap[static_cast<std::size_t>(vertex_idx)] = next_vertex;

@@ -9,7 +9,7 @@ set(UNIT_TEST_SOURCES
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/mesh/test_uv_mesher_planar.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/mesh/test_uv_mesher_revolution.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/mesh/test_uv_mesher_sphere.cpp"
-  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/cutting/test_manifold_smoke.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/cutting/test_manifold_dependency.cpp"
 #  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/cutting/test_cut_meshes.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/cutting/test_cutter_proxy.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/cutting/test_manifold_cut_backend.cpp"
@@ -66,6 +66,7 @@ set(UNIT_TEST_SOURCES
 
 set(API_TEST_SOURCES
   "${CMAKE_CURRENT_SOURCE_DIR}/api/test_overview.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/api/test_geometry_model.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/api/test_thermal_network.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/api/test_parameters.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/api/test_formulas.cpp"

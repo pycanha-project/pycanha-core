@@ -46,6 +46,20 @@ else()
     set(PYCANHA_MANIFOLD_TARGET manifold::manifold)
 endif()
 
+# Normalize MANIFOLD_PAR for clang-tidy/tooling.
+# TODO: Check if needed
+get_target_property(_pycanha_manifold_compile_options
+                    ${PYCANHA_MANIFOLD_TARGET}
+                    INTERFACE_COMPILE_OPTIONS)
+if(_pycanha_manifold_compile_options)
+    list(TRANSFORM _pycanha_manifold_compile_options
+         REPLACE "^-DMANIFOLD_PAR=-1$" "-DMANIFOLD_PAR=(-1)")
+    set_target_properties(${PYCANHA_MANIFOLD_TARGET}
+                          PROPERTIES
+                          INTERFACE_COMPILE_OPTIONS
+                          "${_pycanha_manifold_compile_options}")
+endif()
+
 
 # MyLib Library
 ## For a compiled library:

@@ -1,4 +1,5 @@
 #include <catch2/catch_test_macros.hpp>
+#include <numbers>
 
 #include "pycanha-core/gmm/cutting/cutter_proxy.hpp"
 #include "pycanha-core/gmm/primitives/cone.hpp"

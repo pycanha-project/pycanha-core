@@ -1,24 +1,30 @@
 #include "pycanha-core/gmm/cutting/manifold_cut_backend.hpp"
 
+#include <manifold/common.h>
 #include <manifold/manifold.h>
 
 #include <algorithm>
+#include <cstddef>
 #include <cstdint>
+#include <iterator>
 #include <limits>
+#include <span>
 #include <stdexcept>
-#include <unordered_map>
 #include <vector>
 
-#include "pycanha-core/globals.hpp"
 #include "pycanha-core/gmm/cutting/cutter_proxy.hpp"
 #include "pycanha-core/gmm/cutting/proxy_shell.hpp"
 #include "pycanha-core/gmm/ids.hpp"
-#include "pycanha-core/gmm/mesh/ops/boundary_edges.hpp"
+#include "pycanha-core/gmm/mesh/mesh_options.hpp"
 #include "pycanha-core/gmm/mesh/ops/classify.hpp"
 #include "pycanha-core/gmm/mesh/ops/clean.hpp"
 #include "pycanha-core/gmm/mesh/ops/compute_areas.hpp"
+#include "pycanha-core/gmm/mesh/trimesh.hpp"
 #include "pycanha-core/gmm/mesh/uv_mesher.hpp"
 #include "pycanha-core/gmm/ops/transform.hpp"
+#include "pycanha-core/gmm/primitives/primitive.hpp"
+#include "pycanha-core/gmm/scene/coordinate_transformation.hpp"
+#include "pycanha-core/gmm/scene/item.hpp"
 
 namespace pycanha::gmm::cutting {
 namespace {
@@ -119,7 +125,7 @@ TriMesh ManifoldCutBackend::cut(const Item& target,
     const Primitive world_target =
         ops::transform(target.primitive(), world_transform);
     const UvMesher mesher;
-    const TriMesh target_mesh =
+    TriMesh target_mesh =
         mesher.mesh(world_target, target.thermal_mesh(), options);
     if (cutters.empty() || (target_mesh.triangles.rows() == 0)) {
         return target_mesh;
@@ -133,9 +139,9 @@ TriMesh ManifoldCutBackend::cut(const Item& target,
 
     std::vector<manifold::Manifold> cutter_manifolds;
     cutter_manifolds.reserve(cutters.size());
-    for (const Primitive& cutter : cutters) {
-        cutter_manifolds.push_back(build_cutter(cutter));
-    }
+    std::transform(
+        cutters.begin(), cutters.end(), std::back_inserter(cutter_manifolds),
+        [](const Primitive& cutter) { return build_cutter(cutter); });
 
     const manifold::Manifold cut_union =
         cutter_manifolds.size() == 1U

@@ -1,11 +1,14 @@
 #include <algorithm>
-#include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
+#include <cstdint>
 #include <numbers>
+#include <utility>
 
 #include "pycanha-core/gmm/geometrymodel.hpp"
+#include "pycanha-core/gmm/ids.hpp"
 #include "pycanha-core/gmm/mesh/ops/boundary_edges.hpp"
 #include "pycanha-core/gmm/mesh/ops/compute_areas.hpp"
+#include "pycanha-core/gmm/mesh/trimesh.hpp"
 #include "pycanha-core/gmm/primitives/cylinder.hpp"
 #include "pycanha-core/gmm/primitives/rectangle.hpp"
 #include "pycanha-core/gmm/scene/cut_group.hpp"
@@ -29,8 +32,8 @@ TEST_CASE("GeometryModel applies CutGroup cutters during unified mesh build",
         "trim");
 
     const auto& mesh = model.unified_mesh();
-    pycanha::gmm::TriMesh tri_mesh{mesh.vertices, mesh.triangles,
-                                   mesh.face_ids};
+    const pycanha::gmm::TriMesh tri_mesh{mesh.vertices, mesh.triangles,
+                                         mesh.face_ids};
     const auto loops = pycanha::gmm::mesh::ops::boundary_edge_loops(tri_mesh);
 
     REQUIRE(mesh.vertices.rows() > 0);

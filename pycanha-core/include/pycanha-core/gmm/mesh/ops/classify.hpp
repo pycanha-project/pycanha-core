@@ -8,7 +8,7 @@
 namespace pycanha::gmm::mesh::ops {
 
 [[nodiscard]] FaceId classify_triangle_by_centroid(
-    const TriMesh& mesh, Eigen::Index triangle_index, const Primitive& primitive,
-    const ThermalMesh& thermal_mesh);
+    const TriMesh& mesh, Eigen::Index triangle_index,
+    const Primitive& primitive, const ThermalMesh& thermal_mesh);
 
 }  // namespace pycanha::gmm::mesh::ops

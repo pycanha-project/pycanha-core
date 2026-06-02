@@ -1,7 +1,6 @@
 #include <algorithm>
 #include <cstdint>
 #include <iterator>
-#include <ranges>
 #include <vector>
 
 #include "pycanha-core/config.hpp"
@@ -15,6 +14,7 @@
 #include "pycanha-core/gmm/mesh/unified_trimesh.hpp"
 #include "pycanha-core/gmm/mesh/uv_mesher.hpp"
 #include "pycanha-core/gmm/ops/transform.hpp"
+#include "pycanha-core/gmm/primitives/primitive.hpp"
 #include "pycanha-core/gmm/scene/coordinate_transformation.hpp"
 #include "pycanha-core/gmm/scene/cut_group.hpp"
 #include "pycanha-core/gmm/scene/group.hpp"
@@ -101,10 +101,12 @@ const UnifiedTriMesh& GeometryModel::unified_mesh() const {
             const CutGroup& cut_group = _cut_groups.at(frame.index);
             active_cutters.reserve(active_cutters.size() +
                                    cut_group.cutters().size());
-            for (const Primitive& cutter : cut_group.cutters()) {
-                active_cutters.push_back(
-                    ops::transform(cutter, group_transform));
-            }
+            std::transform(cut_group.cutters().begin(),
+                           cut_group.cutters().end(),
+                           std::back_inserter(active_cutters),
+                           [&group_transform](const Primitive& cutter) {
+                               return ops::transform(cutter, group_transform);
+                           });
         }
 
         for (const std::uint32_t item_index : group.child_item_indices()) {
@@ -114,10 +116,8 @@ const UnifiedTriMesh& GeometryModel::unified_mesh() const {
             }
 
             const Item& item = _items[item_index];
-            const MeshOptions& mesh_options =
-                item.mesh_options_override().has_value()
-                    ? *item.mesh_options_override()
-                    : _default_mesh_options;
+            const MeshOptions mesh_options =
+                item.mesh_options_override().value_or(_default_mesh_options);
             const CoordinateTransformation item_transform =
                 item.transform().compose(group_transform);
             const bool has_active_cutters = !active_cutters.empty();
