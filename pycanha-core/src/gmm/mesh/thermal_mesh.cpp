@@ -4,60 +4,103 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <limits>
 #include <span>
 #include <stdexcept>
-#include <string>
 #include <utility>
 #include <vector>
 
-#include "pycanha-core/config.hpp"
 #include "pycanha-core/globals.hpp"
-#include "pycanha-core/gmm/ids.hpp"
 
 namespace pycanha::gmm {
 
-ThermalMesh::ThermalMesh() = default;
+ThermalMesh::ThermalMesh() { validate(); }
 
-ThermalMesh::ThermalMesh(std::vector<double> dir1_cuts,
-                         std::vector<double> dir2_cuts)
-    : _dir1_cuts(std::move(dir1_cuts)), _dir2_cuts(std::move(dir2_cuts)) {
-    validate_cuts(_dir1_cuts, "dir1");
-    validate_cuts(_dir2_cuts, "dir2");
+ThermalMesh::ThermalMesh(std::vector<double> dir1_mesh,
+                         std::vector<double> dir2_mesh)
+    : _dir1_mesh(std::move(dir1_mesh)), _dir2_mesh(std::move(dir2_mesh)) {
+    validate();
 }
 
-std::span<const double> ThermalMesh::dir1_cuts() const noexcept {
-    return _dir1_cuts;
+std::span<const double> ThermalMesh::get_dir1_mesh() const noexcept {
+    return _dir1_mesh;
 }
 
-std::span<const double> ThermalMesh::dir2_cuts() const noexcept {
-    return _dir2_cuts;
+std::span<const double> ThermalMesh::get_dir2_mesh() const noexcept {
+    return _dir2_mesh;
 }
 
-std::size_t ThermalMesh::num_faces_per_side() const noexcept {
-    return (_dir1_cuts.size() - 1U) * (_dir2_cuts.size() - 1U);
+void ThermalMesh::set_dir1_mesh(std::vector<double> dir1_mesh) {
+    std::vector<double> previous = std::move(_dir1_mesh);
+    _dir1_mesh = std::move(dir1_mesh);
+    try {
+        validate();
+    } catch (...) {
+        _dir1_mesh = std::move(previous);
+        throw;
+    }
 }
 
-FaceId ThermalMesh::face_id(std::size_t i, std::size_t j,
-                            Side side) const noexcept {
-    PYCANHA_ASSERT(i + 1U < _dir1_cuts.size(), "dir1 face index out of range");
-    PYCANHA_ASSERT(j + 1U < _dir2_cuts.size(), "dir2 face index out of range");
-
-    const std::size_t linear_index = i * (_dir2_cuts.size() - 1U) + j;
-    return static_cast<FaceId>(static_cast<std::uint64_t>(
-        2U * linear_index + static_cast<unsigned char>(side)));
+void ThermalMesh::set_dir2_mesh(std::vector<double> dir2_mesh) {
+    std::vector<double> previous = std::move(_dir2_mesh);
+    _dir2_mesh = std::move(dir2_mesh);
+    try {
+        validate();
+    } catch (...) {
+        _dir2_mesh = std::move(previous);
+        throw;
+    }
 }
 
-void ThermalMesh::validate_cuts(std::span<const double> cuts,
-                                const char* axis_name) {
-    const bool valid = cuts.size() >= 2U &&
-                       std::abs(cuts.front()) <= LENGTH_TOL &&
-                       std::abs(cuts.back() - 1.0) <= LENGTH_TOL &&
-                       std::is_sorted(cuts.begin(), cuts.end());
+void ThermalMesh::set_side1_thick(double thick) {
+    if (thick < 0.0) {
+        throw std::invalid_argument("ThermalMesh: side1 thickness must be >= 0");
+    }
+    _side1_thick = thick;
+}
 
-    PYCANHA_ASSERT(valid, "ThermalMesh cuts must be sorted and span [0, 1]");
-    if (!valid) {
-        throw std::invalid_argument(std::string("Invalid ThermalMesh ") +
-                                    axis_name + " cuts");
+void ThermalMesh::set_side2_thick(double thick) {
+    if (thick < 0.0) {
+        throw std::invalid_argument("ThermalMesh: side2 thickness must be >= 0");
+    }
+    _side2_thick = thick;
+}
+
+bool ThermalMesh::is_valid() const noexcept {
+    // Guard against face-id overflow: 2 * n1_cells * n2_cells must fit in
+    // MeshIndex. Use cut sizes (one more than the cell count) as a safe bound.
+    const bool fits =
+        2U * _dir1_mesh.size() * _dir2_mesh.size() <=
+        static_cast<std::size_t>(std::numeric_limits<MeshIndex>::max());
+
+    return fits && _dir1_mesh.size() >= 2U && _dir2_mesh.size() >= 2U &&
+           std::abs(_dir1_mesh.front()) <= LENGTH_TOL &&
+           std::abs(_dir1_mesh.back() - 1.0) <= LENGTH_TOL &&
+           std::abs(_dir2_mesh.front()) <= LENGTH_TOL &&
+           std::abs(_dir2_mesh.back() - 1.0) <= LENGTH_TOL &&
+           std::is_sorted(_dir1_mesh.begin(), _dir1_mesh.end()) &&
+           std::is_sorted(_dir2_mesh.begin(), _dir2_mesh.end());
+}
+
+MeshIndex ThermalMesh::get_number_of_pair_faces() const noexcept {
+    return to_meshidx((_dir1_mesh.size() - 1U) * (_dir2_mesh.size() - 1U));
+}
+
+NodeNum ThermalMesh::node_of(MeshIndex i, MeshIndex j,
+                             unsigned side) const noexcept {
+    const auto cell = static_cast<std::int64_t>(i) *
+                          static_cast<std::int64_t>(_dir2_mesh.size() - 1U) +
+                      static_cast<std::int64_t>(j);
+    const std::int64_t start = side == 2U ? _node2_start : _node1_start;
+    const std::int64_t step = side == 2U ? _node2_step : _node1_step;
+    return static_cast<NodeNum>(start + cell * step);
+}
+
+void ThermalMesh::validate() const {
+    if (!is_valid()) {
+        throw std::invalid_argument(
+            "Invalid ThermalMesh: UV cuts must be sorted, span [0, 1], and "
+            "have at least 2 entries per direction");
     }
 }
 

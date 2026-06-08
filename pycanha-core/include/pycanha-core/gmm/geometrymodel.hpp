@@ -7,6 +7,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "pycanha-core/globals.hpp"
 #include "pycanha-core/gmm/ids.hpp"
 #include "pycanha-core/gmm/mesh/mesh_options.hpp"
 #include "pycanha-core/gmm/mesh/unified_trimesh.hpp"

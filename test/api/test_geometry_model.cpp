@@ -38,7 +38,6 @@ using pycanha::gmm::Group;
 using pycanha::gmm::Item;
 using pycanha::gmm::Kind;
 using pycanha::gmm::Rectangle;
-using pycanha::gmm::Side;
 using pycanha::gmm::ThermalMesh;
 using pycanha::gmm::TriMesh;
 using pycanha::gmm::UnifiedTriMesh;
@@ -61,15 +60,25 @@ struct SceneIds {
                 CoordinateTransformation::from_translation({0.0, 2.0, 0.0}));
 }
 
+// Local replacement for the removed ThermalMesh::face_id(i, j, Side): even
+// id = side 1 (front), odd = side 2 (back). Side parity is now an internal
+// convention.
+[[nodiscard]] FaceId tm_face_id(const ThermalMesh& thermal_mesh, std::size_t i,
+                                std::size_t j, unsigned side) {
+    const std::size_t num_dir2_cells = thermal_mesh.get_dir2_mesh().size() - 1U;
+    const std::size_t linear_index = i * num_dir2_cells + j;
+    return static_cast<FaceId>(2U * static_cast<std::uint64_t>(linear_index) +
+                               (side == 2U ? 1U : 0U));
+}
+
 [[nodiscard]] std::unordered_set<std::uint64_t> face_id_set(
     const ThermalMesh& thermal_mesh) {
     std::unordered_set<std::uint64_t> ids;
-    for (std::size_t i = 0; i < thermal_mesh.dir1_cuts().size() - 1U; ++i) {
-        for (std::size_t j = 0; j < thermal_mesh.dir2_cuts().size() - 1U; ++j) {
-            ids.insert(
-                pycanha::gmm::to_raw(thermal_mesh.face_id(i, j, Side::Front)));
-            ids.insert(
-                pycanha::gmm::to_raw(thermal_mesh.face_id(i, j, Side::Back)));
+    for (std::size_t i = 0; i < thermal_mesh.get_dir1_mesh().size() - 1U; ++i) {
+        for (std::size_t j = 0; j < thermal_mesh.get_dir2_mesh().size() - 1U;
+             ++j) {
+            ids.insert(pycanha::gmm::to_raw(tm_face_id(thermal_mesh, i, j, 1U)));
+            ids.insert(pycanha::gmm::to_raw(tm_face_id(thermal_mesh, i, j, 2U)));
         }
     }
     return ids;
@@ -225,11 +234,11 @@ void require_forward_face_node_mapping(const GeometryModel& model,
                                        FaceId face_x, FaceId face_y,
                                        FaceId face_z) {
     REQUIRE(model.face_to_node(face_x) ==
-            std::optional<pycanha::gmm::NodeNum>{42});
+            std::optional<pycanha::NodeNum>{42});
     REQUIRE(model.face_to_node(face_y) ==
-            std::optional<pycanha::gmm::NodeNum>{42});
+            std::optional<pycanha::NodeNum>{42});
     REQUIRE(model.face_to_node(face_z) ==
-            std::optional<pycanha::gmm::NodeNum>{7});
+            std::optional<pycanha::NodeNum>{7});
 }
 
 void require_faces_for_node_42(std::span<const FaceId> faces_for_42,
@@ -264,9 +273,9 @@ void require_reverse_face_node_mapping(const GeometryModel& model,
 void require_face_node_mapping(GeometryModel& model,
                                const ThermalMesh& panel_mesh,
                                const ThermalMesh& tube_mesh) {
-    const FaceId face_x = panel_mesh.face_id(0U, 0U, Side::Front);
-    const FaceId face_y = panel_mesh.face_id(1U, 0U, Side::Front);
-    const FaceId face_z = tube_mesh.face_id(1U, 1U, Side::Back);
+    const FaceId face_x = tm_face_id(panel_mesh, 0U, 0U, 1U);
+    const FaceId face_y = tm_face_id(panel_mesh, 1U, 0U, 1U);
+    const FaceId face_z = tm_face_id(tube_mesh, 1U, 1U, 2U);
 
     assign_face_node_mapping(model, face_x, face_y, face_z);
     require_forward_face_node_mapping(model, face_x, face_y, face_z);

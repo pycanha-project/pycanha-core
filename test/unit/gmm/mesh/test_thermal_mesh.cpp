@@ -1,25 +1,33 @@
 #include <catch2/catch_test_macros.hpp>
-#include <cstdint>
+#include <memory>
 #include <stdexcept>
 
+#include "pycanha-core/gmm/materials/bulk_material.hpp"
 #include "pycanha-core/gmm/mesh/thermal_mesh.hpp"
 
 namespace {
 
-using pycanha::gmm::Side;
+using pycanha::gmm::BulkMaterial;
 using pycanha::gmm::ThermalMesh;
 
 }  // namespace
 
-TEST_CASE("ThermalMesh exposes ordered cuts and face ids", "[gmm][mesh]") {
-    const ThermalMesh mesh({0.0, 0.25, 1.0}, {0.0, 0.5, 1.0});
+TEST_CASE("ThermalMesh default is a valid unit square", "[gmm][mesh]") {
+    const ThermalMesh mesh;
+    REQUIRE(mesh.is_valid());
+    REQUIRE(mesh.get_dir1_mesh().size() == 2);
+    REQUIRE(mesh.get_dir2_mesh().size() == 2);
+    REQUIRE(mesh.get_number_of_pair_faces() == 1U);
+}
 
-    REQUIRE(mesh.dir1_cuts().size() == 3);
-    REQUIRE(mesh.dir2_cuts().size() == 3);
-    REQUIRE(mesh.num_faces_per_side() == 4);
-    REQUIRE(static_cast<std::uint64_t>(mesh.face_id(0, 0, Side::Front)) == 0U);
-    REQUIRE(static_cast<std::uint64_t>(mesh.face_id(0, 0, Side::Back)) == 1U);
-    REQUIRE(static_cast<std::uint64_t>(mesh.face_id(1, 1, Side::Front)) == 6U);
+TEST_CASE("ThermalMesh exposes ordered cuts and pair faces", "[gmm][mesh]") {
+    ThermalMesh mesh({0.0, 0.25, 1.0}, {0.0, 0.5, 1.0});
+    REQUIRE(mesh.get_dir1_mesh().size() == 3);
+    REQUIRE(mesh.get_dir2_mesh().size() == 3);
+    REQUIRE(mesh.get_number_of_pair_faces() == 4U);
+
+    mesh.set_dir2_mesh({0.0, 1.0});
+    REQUIRE(mesh.get_number_of_pair_faces() == 2U);
 }
 
 TEST_CASE("ThermalMesh rejects invalid cut definitions", "[gmm][mesh]") {
@@ -27,4 +35,43 @@ TEST_CASE("ThermalMesh rejects invalid cut definitions", "[gmm][mesh]") {
                       std::invalid_argument);
     REQUIRE_THROWS_AS(ThermalMesh({0.1, 1.0}, {0.0, 1.0}),
                       std::invalid_argument);
+
+    ThermalMesh mesh;
+    REQUIRE_THROWS_AS(mesh.set_dir1_mesh({0.0}), std::invalid_argument);
+    // A throwing setter leaves the mesh unchanged.
+    REQUIRE(mesh.get_dir1_mesh().size() == 2);
+    REQUIRE_THROWS_AS(mesh.set_side1_thick(-1.0), std::invalid_argument);
+}
+
+TEST_CASE("ThermalMesh node_of follows start + k * step", "[gmm][mesh]") {
+    ThermalMesh mesh({0.0, 0.5, 1.0}, {0.0, 0.5, 1.0});  // 2x2 cells
+
+    // Defaults: every face maps to node 0.
+    REQUIRE(mesh.node_of(0U, 0U, 1U) == 0);
+    REQUIRE(mesh.node_of(1U, 1U, 2U) == 0);
+
+    mesh.set_node1_start(100);
+    mesh.set_node1_step(1);
+    mesh.set_node2_start(200);
+    mesh.set_node2_step(0);
+
+    // k = i * (n2 - 1) + j, n2 - 1 == 2.
+    REQUIRE(mesh.node_of(0U, 0U, 1U) == 100);  // k = 0
+    REQUIRE(mesh.node_of(0U, 1U, 1U) == 101);  // k = 1
+    REQUIRE(mesh.node_of(1U, 1U, 1U) == 103);  // k = 3
+    // Side 2 with step 0: every face shares node 200.
+    REQUIRE(mesh.node_of(0U, 0U, 2U) == 200);
+    REQUIRE(mesh.node_of(1U, 1U, 2U) == 200);
+}
+
+TEST_CASE("ThermalMesh materials are shared by reference", "[gmm][mesh]") {
+    auto aluminum =
+        std::make_shared<BulkMaterial>("aluminum", 2700.0, 167.0, 896.0);
+    ThermalMesh mesh;
+    mesh.set_side1_material(aluminum);
+    mesh.set_side2_material(aluminum);
+
+    REQUIRE(mesh.get_side1_material() == aluminum);
+    REQUIRE(mesh.get_side1_material() == mesh.get_side2_material());
+    REQUIRE(mesh.get_side1_material()->get_density() == 2700.0);
 }

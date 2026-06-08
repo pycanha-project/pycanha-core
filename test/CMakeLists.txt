@@ -2,6 +2,7 @@
 set(UNIT_TEST_SOURCES
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/dependencies/test_conan_dependencies.cpp"
 #  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/mesh/test_export_meshes.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/materials/test_materials.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/mesh/test_mesh_ops.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/mesh/test_thermal_mesh.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/mesh/test_uv_mesher_cube.cpp"

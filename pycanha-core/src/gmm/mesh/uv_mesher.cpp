@@ -196,8 +196,8 @@ DirSampler make_linear_dir_sampler(std::span<const double> cuts) {
 
 TriMesh build_mesh_from_plan(const ThermalMesh& thermal_mesh,
                              const SamplingPlan& plan) {
-    const auto dir1_cuts = thermal_mesh.dir1_cuts();
-    const auto dir2_cuts = thermal_mesh.dir2_cuts();
+    const auto dir1_cuts = thermal_mesh.get_dir1_mesh();
+    const auto dir2_cuts = thermal_mesh.get_dir2_mesh();
     const std::size_t num_dir1_cells = dir1_cuts.size() - 1U;
     const std::size_t num_dir2_cells = dir2_cuts.size() - 1U;
 
@@ -216,8 +216,12 @@ TriMesh build_mesh_from_plan(const ThermalMesh& thermal_mesh,
         const int dir1_segments = std::max(plan.dir1_segments[dir1_idx], 1);
         for (std::size_t dir2_idx = 0; dir2_idx < num_dir2_cells; ++dir2_idx) {
             const int dir2_segments = std::max(plan.dir2_segments[dir2_idx], 1);
-            const auto face_id_value = static_cast<std::uint64_t>(
-                thermal_mesh.face_id(dir1_idx, dir2_idx, Side::Front));
+            // Even-numbered local face id = side 1 (front). Side parity is an
+            // internal convention; node assignment happens later.
+            const std::size_t linear_index =
+                dir1_idx * num_dir2_cells + dir2_idx;
+            const auto face_id_value =
+                2U * static_cast<std::uint64_t>(linear_index);
 
             std::vector<Eigen::Index> cell_vertices(static_cast<std::size_t>(
                 (dir1_segments + 1) * (dir2_segments + 1)));

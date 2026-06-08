@@ -12,7 +12,8 @@ enum class Kind : std::uint8_t {
 
 enum class GeometryId : std::uint64_t {};
 enum class FaceId : std::uint64_t {};
-using NodeNum = std::int64_t;
+// NodeNum is the global pycanha::NodeNum (int32, see globals.hpp). The gmm
+// previously shadowed it as int64; that shadow has been removed.
 
 [[nodiscard]] constexpr std::uint64_t to_raw(GeometryId geometry_id) noexcept {
     return static_cast<std::uint64_t>(geometry_id);

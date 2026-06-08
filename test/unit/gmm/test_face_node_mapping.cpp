@@ -49,11 +49,11 @@ TEST_CASE("GeometryModel face-to-node mapping round-trips",
     model.assign_face_to_node(face_z, 7);
 
     REQUIRE(model.face_to_node(face_x) ==
-            std::optional<pycanha::gmm::NodeNum>{42});
+            std::optional<pycanha::NodeNum>{42});
     REQUIRE(model.face_to_node(face_y) ==
-            std::optional<pycanha::gmm::NodeNum>{42});
+            std::optional<pycanha::NodeNum>{42});
     REQUIRE(model.face_to_node(face_z) ==
-            std::optional<pycanha::gmm::NodeNum>{7});
+            std::optional<pycanha::NodeNum>{7});
     REQUIRE_FALSE(model.face_to_node(static_cast<FaceId>(8U)).has_value());
 
     REQUIRE(as_raw(model.faces_of_node(42)) ==

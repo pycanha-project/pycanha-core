@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
+#include <cstdint>
 #include <iterator>
 #include <limits>
 #include <numbers>
@@ -186,9 +187,13 @@ FaceId face_id_from_uv(const Primitive& primitive,
         },
         primitive);
 
-    return thermal_mesh.face_id(find_cell(thermal_mesh.dir1_cuts(), dir1),
-                                find_cell(thermal_mesh.dir2_cuts(), dir2),
-                                side);
+    const std::size_t cell_i = find_cell(thermal_mesh.get_dir1_mesh(), dir1);
+    const std::size_t cell_j = find_cell(thermal_mesh.get_dir2_mesh(), dir2);
+    const std::size_t linear_index =
+        cell_i * (thermal_mesh.get_dir2_mesh().size() - 1U) + cell_j;
+    const auto raw = 2U * static_cast<std::uint64_t>(linear_index) +
+                     (side == Side::Back ? 1U : 0U);
+    return static_cast<FaceId>(raw);
 }
 
 }  // namespace pycanha::gmm::ops

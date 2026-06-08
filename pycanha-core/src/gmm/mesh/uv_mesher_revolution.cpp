@@ -37,11 +37,11 @@ TriMesh mesh_primitive(const Cylinder& cylinder,
     const double height = (cylinder.p2() - cylinder.p1()).norm();
     const SamplingPlan plan{
         solve_circumferential_segments(
-            thermal_mesh.dir1_cuts(), cylinder.radius(), cylinder.start_angle(),
+            thermal_mesh.get_dir1_mesh(), cylinder.radius(), cylinder.start_angle(),
             cylinder.end_angle(), options.deviation_tolerance),
-        std::vector<int>(thermal_mesh.dir2_cuts().size() - 1U, 1),
-        make_linear_dir_sampler(thermal_mesh.dir1_cuts()),
-        make_linear_dir_sampler(thermal_mesh.dir2_cuts()),
+        std::vector<int>(thermal_mesh.get_dir2_mesh().size() - 1U, 1),
+        make_linear_dir_sampler(thermal_mesh.get_dir1_mesh()),
+        make_linear_dir_sampler(thermal_mesh.get_dir2_mesh()),
         [&cylinder, height](double dir1, double dir2) {
             const double angle =
                 cylinder.start_angle() +
@@ -57,12 +57,12 @@ TriMesh mesh_primitive(const Cone& cone, const ThermalMesh& thermal_mesh,
     const double max_radius = std::max(cone.radius1(), cone.radius2());
     const double height = (cone.p2() - cone.p1()).norm();
     const SamplingPlan plan{
-        solve_circumferential_segments(thermal_mesh.dir1_cuts(), max_radius,
+        solve_circumferential_segments(thermal_mesh.get_dir1_mesh(), max_radius,
                                        cone.start_angle(), cone.end_angle(),
                                        options.deviation_tolerance),
-        std::vector<int>(thermal_mesh.dir2_cuts().size() - 1U, 1),
-        make_linear_dir_sampler(thermal_mesh.dir1_cuts()),
-        make_linear_dir_sampler(thermal_mesh.dir2_cuts()),
+        std::vector<int>(thermal_mesh.get_dir2_mesh().size() - 1U, 1),
+        make_linear_dir_sampler(thermal_mesh.get_dir1_mesh()),
+        make_linear_dir_sampler(thermal_mesh.get_dir2_mesh()),
         [&cone, height](double dir1, double dir2) {
             const double angle = cone.start_angle() +
                                  dir1 * (cone.end_angle() - cone.start_angle());
@@ -76,7 +76,7 @@ TriMesh mesh_primitive(const Cone& cone, const ThermalMesh& thermal_mesh,
 TriMesh mesh_primitive(const Paraboloid& paraboloid,
                        const ThermalMesh& thermal_mesh,
                        const MeshOptions& options) {
-    const auto dir2_cuts = thermal_mesh.dir2_cuts();
+    const auto dir2_cuts = thermal_mesh.get_dir2_mesh();
     const double height = (paraboloid.p2() - paraboloid.p1()).norm();
     std::vector<int> dir2_segments(dir2_cuts.size() - 1U, 1);
     for (std::size_t index = 0; index + 1U < dir2_cuts.size(); ++index) {
@@ -88,11 +88,11 @@ TriMesh mesh_primitive(const Paraboloid& paraboloid,
     std::vector<double> local_dir2_cuts(dir2_cuts.begin(), dir2_cuts.end());
     const SamplingPlan plan{
         solve_circumferential_segments(
-            thermal_mesh.dir1_cuts(), paraboloid.radius(),
+            thermal_mesh.get_dir1_mesh(), paraboloid.radius(),
             paraboloid.start_angle(), paraboloid.end_angle(),
             options.deviation_tolerance),
         std::move(dir2_segments),
-        make_linear_dir_sampler(thermal_mesh.dir1_cuts()),
+        make_linear_dir_sampler(thermal_mesh.get_dir1_mesh()),
         [local_dir2_cuts = std::move(local_dir2_cuts)](
             std::size_t cell_index, int step, int step_count) {
             const double start = std::sqrt(local_dir2_cuts[cell_index]);

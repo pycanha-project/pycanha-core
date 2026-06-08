@@ -15,12 +15,12 @@ namespace {
 
 [[nodiscard]] SamplingPlan make_planar_sampling_plan(
     const ThermalMesh& thermal_mesh, SurfacePointFunction point_at) {
-    const std::size_t num_dir1_cells = thermal_mesh.dir1_cuts().size() - 1U;
-    const std::size_t num_dir2_cells = thermal_mesh.dir2_cuts().size() - 1U;
+    const std::size_t num_dir1_cells = thermal_mesh.get_dir1_mesh().size() - 1U;
+    const std::size_t num_dir2_cells = thermal_mesh.get_dir2_mesh().size() - 1U;
     return {std::vector<int>(num_dir1_cells, 1),
             std::vector<int>(num_dir2_cells, 1),
-            make_linear_dir_sampler(thermal_mesh.dir1_cuts()),
-            make_linear_dir_sampler(thermal_mesh.dir2_cuts()),
+            make_linear_dir_sampler(thermal_mesh.get_dir1_mesh()),
+            make_linear_dir_sampler(thermal_mesh.get_dir2_mesh()),
             std::move(point_at)};
 }
 

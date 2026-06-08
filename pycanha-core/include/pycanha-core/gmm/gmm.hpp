@@ -2,6 +2,7 @@
 
 #include "pycanha-core/gmm/geometrymodel.hpp"           // IWYU pragma: keep
 #include "pycanha-core/gmm/ids.hpp"                     // IWYU pragma: keep
+#include "pycanha-core/gmm/materials/materials.hpp"     // IWYU pragma: keep
 #include "pycanha-core/gmm/mesh/mesh_options.hpp"       // IWYU pragma: keep
 #include "pycanha-core/gmm/mesh/ops/compute_areas.hpp"  // IWYU pragma: keep
 #include "pycanha-core/gmm/mesh/ops/sort.hpp"           // IWYU pragma: keep

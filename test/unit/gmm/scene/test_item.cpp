@@ -39,7 +39,7 @@ TEST_CASE("Item stores primitive, thermal mesh, transform, and mesh override",
     item.set_mesh_options_override(MeshOptions{1.0e-5});
 
     REQUIRE(std::holds_alternative<Triangle>(item.primitive()));
-    REQUIRE(item.thermal_mesh().num_faces_per_side() == 2U);
+    REQUIRE(item.thermal_mesh().get_number_of_pair_faces() == 2U);
     REQUIRE(item.transform()
                 .apply({0.0, 0.0, 0.0})
                 .isApprox(Eigen::Vector3d(-1.0, -2.0, -3.0)));

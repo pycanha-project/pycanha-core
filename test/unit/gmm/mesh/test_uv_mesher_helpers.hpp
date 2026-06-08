@@ -18,12 +18,15 @@ namespace pycanha::gmm::test {
 [[nodiscard]] inline std::unordered_set<std::uint64_t> valid_face_ids(
     const ThermalMesh& thermal_mesh) {
     std::unordered_set<std::uint64_t> face_ids;
+    const std::size_t num_dir2_cells = thermal_mesh.get_dir2_mesh().size() - 1U;
     for (std::size_t dir1_idx = 0;
-         dir1_idx + 1U < thermal_mesh.dir1_cuts().size(); ++dir1_idx) {
+         dir1_idx + 1U < thermal_mesh.get_dir1_mesh().size(); ++dir1_idx) {
         for (std::size_t dir2_idx = 0;
-             dir2_idx + 1U < thermal_mesh.dir2_cuts().size(); ++dir2_idx) {
-            face_ids.insert(static_cast<std::uint64_t>(
-                thermal_mesh.face_id(dir1_idx, dir2_idx, Side::Front)));
+             dir2_idx + 1U < thermal_mesh.get_dir2_mesh().size(); ++dir2_idx) {
+            // Even local face id = side 1 (front).
+            const std::size_t linear_index =
+                dir1_idx * num_dir2_cells + dir2_idx;
+            face_ids.insert(2U * static_cast<std::uint64_t>(linear_index));
         }
     }
     return face_ids;

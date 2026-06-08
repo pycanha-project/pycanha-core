@@ -37,8 +37,8 @@ namespace {
 
 TriMesh mesh_primitive(const Sphere& sphere, const ThermalMesh& thermal_mesh,
                        const MeshOptions& options) {
-    const auto dir1_cuts = thermal_mesh.dir1_cuts();
-    const auto dir2_cuts = thermal_mesh.dir2_cuts();
+    const auto dir1_cuts = thermal_mesh.get_dir1_mesh();
+    const auto dir2_cuts = thermal_mesh.get_dir2_mesh();
     const double min_latitude = sphere_min_latitude(sphere);
     const double max_latitude = sphere_max_latitude(sphere);
     const double latitude_span = max_latitude - min_latitude;
@@ -65,8 +65,8 @@ TriMesh mesh_primitive(const Sphere& sphere, const ThermalMesh& thermal_mesh,
 
     const SamplingPlan plan{
         std::move(dir1_segments), std::move(dir2_segments),
-        make_linear_dir_sampler(thermal_mesh.dir1_cuts()),
-        make_linear_dir_sampler(thermal_mesh.dir2_cuts()),
+        make_linear_dir_sampler(thermal_mesh.get_dir1_mesh()),
+        make_linear_dir_sampler(thermal_mesh.get_dir2_mesh()),
         [&sphere, min_latitude, latitude_span](double dir1, double dir2) {
             const double longitude =
                 sphere.start_angle() +
