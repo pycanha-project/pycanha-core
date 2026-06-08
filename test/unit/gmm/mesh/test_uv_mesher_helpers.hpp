@@ -11,7 +11,7 @@
 
 namespace pycanha::gmm::test {
 
-[[nodiscard]] inline double sum_triangle_areas(const TriMesh& mesh) {
+[[nodiscard]] inline double sum_triangle_areas(const TriMeshD& mesh) {
     return mesh::ops::compute_areas(mesh).sum();
 }
 
@@ -33,7 +33,7 @@ namespace pycanha::gmm::test {
 }
 
 [[nodiscard]] inline bool face_ids_cover_all_cells(
-    const TriMesh& mesh, const ThermalMesh& thermal_mesh) {
+    const TriMeshD& mesh, const ThermalMesh& thermal_mesh) {
     const auto expected_ids = valid_face_ids(thermal_mesh);
     std::unordered_set<std::uint64_t> actual_ids;
     for (Eigen::Index index = 0; index < mesh.face_ids.rows(); ++index) {
@@ -46,7 +46,7 @@ namespace pycanha::gmm::test {
     return actual_ids == expected_ids;
 }
 
-[[nodiscard]] inline std::size_t count_vertices_near(const TriMesh& mesh,
+[[nodiscard]] inline std::size_t count_vertices_near(const TriMeshD& mesh,
                                                      const Point3D& point,
                                                      double tolerance) {
     std::size_t count = 0U;
@@ -59,7 +59,7 @@ namespace pycanha::gmm::test {
     return count;
 }
 
-[[nodiscard]] inline bool has_no_degenerate_triangles(const TriMesh& mesh,
+[[nodiscard]] inline bool has_no_degenerate_triangles(const TriMeshD& mesh,
                                                       double min_area) {
     const auto areas = mesh::ops::compute_areas(mesh);
     for (Eigen::Index index = 0; index < areas.rows(); ++index) {
@@ -70,7 +70,7 @@ namespace pycanha::gmm::test {
     return true;
 }
 
-[[nodiscard]] inline double absolute_area_error(const TriMesh& mesh,
+[[nodiscard]] inline double absolute_area_error(const TriMeshD& mesh,
                                                 double expected_area) {
     return std::abs(sum_triangle_areas(mesh) - expected_area);
 }

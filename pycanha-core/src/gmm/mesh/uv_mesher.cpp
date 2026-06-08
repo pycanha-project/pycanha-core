@@ -15,6 +15,7 @@
 
 #include "pycanha-core/globals.hpp"
 #include "pycanha-core/gmm/mesh/mesh_options.hpp"
+#include "pycanha-core/gmm/mesh/node_numbering.hpp"
 #include "pycanha-core/gmm/mesh/thermal_mesh.hpp"
 #include "pycanha-core/gmm/mesh/trimesh.hpp"
 #include "pycanha-core/gmm/primitives/primitive.hpp"
@@ -24,15 +25,18 @@
 namespace pycanha::gmm {
 
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
-TriMesh UvMesher::mesh(const Primitive& primitive,
-                       const ThermalMesh& thermal_mesh,
-                       const MeshOptions& options) const {
-    return std::visit(
+TriMeshD UvMesher::mesh(const Primitive& primitive,
+                        const ThermalMesh& thermal_mesh,
+                        const MeshOptions& options) const {
+    TriMeshD result = std::visit(
         [&thermal_mesh, &options](const auto& concrete_primitive) {
             return mesh::detail::mesh_primitive(concrete_primitive,
                                                 thermal_mesh, options);
         },
         primitive);
+    // Populate dense per-face node numbers from the ThermalMesh (E.3).
+    mesh::fill_node_numbers(result, thermal_mesh);
+    return result;
 }
 
 }  // namespace pycanha::gmm
@@ -194,7 +198,7 @@ DirSampler make_linear_dir_sampler(std::span<const double> cuts) {
     };
 }
 
-TriMesh build_mesh_from_plan(const ThermalMesh& thermal_mesh,
+TriMeshD build_mesh_from_plan(const ThermalMesh& thermal_mesh,
                              const SamplingPlan& plan) {
     const auto dir1_cuts = thermal_mesh.get_dir1_mesh();
     const auto dir2_cuts = thermal_mesh.get_dir2_mesh();
@@ -267,7 +271,7 @@ TriMesh build_mesh_from_plan(const ThermalMesh& thermal_mesh,
         }
     }
 
-    TriMesh mesh;
+    TriMeshD mesh;
     mesh.vertices.resize(static_cast<Eigen::Index>(vertices.size()), 3);
     for (Eigen::Index vertex_idx = 0;
          vertex_idx < static_cast<Eigen::Index>(vertices.size());
@@ -283,8 +287,10 @@ TriMesh build_mesh_from_plan(const ThermalMesh& thermal_mesh,
          ++triangle_idx) {
         const auto& triangle =
             triangles[static_cast<std::size_t>(triangle_idx)];
-        mesh.triangles.row(triangle_idx) << static_cast<int>(triangle[0]),
-            static_cast<int>(triangle[1]), static_cast<int>(triangle[2]);
+        mesh.triangles.row(triangle_idx)
+            << static_cast<pycanha::MeshIndex>(triangle[0]),
+            static_cast<pycanha::MeshIndex>(triangle[1]),
+            static_cast<pycanha::MeshIndex>(triangle[2]);
         mesh.face_ids[triangle_idx] =
             face_ids[static_cast<std::size_t>(triangle_idx)];
     }

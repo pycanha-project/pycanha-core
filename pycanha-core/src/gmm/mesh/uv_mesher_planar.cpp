@@ -26,7 +26,7 @@ namespace {
 
 }  // namespace
 
-TriMesh mesh_primitive(const Triangle& triangle,
+TriMeshD mesh_primitive(const Triangle& triangle,
                        const ThermalMesh& thermal_mesh,
                        const MeshOptions& /*options*/) {
     const auto plan = make_planar_sampling_plan(
@@ -36,7 +36,7 @@ TriMesh mesh_primitive(const Triangle& triangle,
     return build_mesh_from_plan(thermal_mesh, plan);
 }
 
-TriMesh mesh_primitive(const Rectangle& rectangle,
+TriMeshD mesh_primitive(const Rectangle& rectangle,
                        const ThermalMesh& thermal_mesh,
                        const MeshOptions& /*options*/) {
     const double u_extent = (rectangle.p2() - rectangle.p1()).norm();
@@ -49,7 +49,7 @@ TriMesh mesh_primitive(const Rectangle& rectangle,
     return build_mesh_from_plan(thermal_mesh, plan);
 }
 
-TriMesh mesh_primitive(const Quadrilateral& quadrilateral,
+TriMeshD mesh_primitive(const Quadrilateral& quadrilateral,
                        const ThermalMesh& thermal_mesh,
                        const MeshOptions& /*options*/) {
     const double u_extent = (quadrilateral.p2() - quadrilateral.p1()).norm();

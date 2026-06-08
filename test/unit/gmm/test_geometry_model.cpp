@@ -1,9 +1,10 @@
 #include <spdlog/spdlog.h>
 
 #include <catch2/catch_test_macros.hpp>
+#include <memory>
 #include <numbers>
-#include <optional>
 #include <sstream>
+#include <vector>
 
 #include "pycanha-core/gmm/geometrymodel.hpp"
 #include "pycanha-core/gmm/mesh/thermal_mesh.hpp"
@@ -11,19 +12,21 @@
 #include "pycanha-core/gmm/primitives/rectangle.hpp"
 #include "pycanha-core/gmm/primitives/sphere.hpp"
 #include "pycanha-core/gmm/scene/coordinate_transformation.hpp"
-#include "pycanha-core/gmm/scene/cut_group.hpp"
-#include "pycanha-core/gmm/scene/group.hpp"
-#include "pycanha-core/gmm/scene/item.hpp"
+#include "pycanha-core/gmm/scene/geometry.hpp"
+#include "pycanha-core/gmm/scene/geometry_group.hpp"
+#include "pycanha-core/gmm/scene/geometry_group_cutted.hpp"
+#include "pycanha-core/gmm/scene/geometry_item.hpp"
 #include "pycanha-core/utils/logger.hpp"
 
 namespace {
 
 using pycanha::gmm::CoordinateTransformation;
-using pycanha::gmm::CutGroup;
 using pycanha::gmm::Cylinder;
+using pycanha::gmm::Geometry;
+using pycanha::gmm::GeometryGroup;
+using pycanha::gmm::GeometryGroupCutted;
+using pycanha::gmm::GeometryItem;
 using pycanha::gmm::GeometryModel;
-using pycanha::gmm::Group;
-using pycanha::gmm::Item;
 using pycanha::gmm::Rectangle;
 using pycanha::gmm::Sphere;
 using pycanha::gmm::ThermalMesh;
@@ -46,16 +49,20 @@ class LoggerRegistryGuard {
     }
 };
 
-[[nodiscard]] Item make_panel_item() {
-    return Item(Rectangle({0.0, 0.0, 0.0}, {2.0, 0.0, 0.0}, {0.0, 1.0, 0.0}),
-                ThermalMesh{{0.0, 0.5, 1.0}, {0.0, 1.0}});
+[[nodiscard]] std::shared_ptr<GeometryItem> make_panel(const char* name) {
+    return std::make_shared<GeometryItem>(
+        name, Rectangle({0.0, 0.0, 0.0}, {2.0, 0.0, 0.0}, {0.0, 1.0, 0.0}),
+        ThermalMesh{{0.0, 0.5, 1.0}, {0.0, 1.0}});
 }
 
-[[nodiscard]] Sphere make_sphere_cutter() {
+[[nodiscard]] std::shared_ptr<GeometryItem> make_sphere_cutter(
+    const char* name) {
     using std::numbers::pi;
-    return {
-        {0.0, 0.0, 0.0}, {0.0, 0.0, 1.0}, {1.0, 0.0, 0.0}, 1.0, -1.0, 1.0, 0.0,
-        2.0 * pi};
+    return std::make_shared<GeometryItem>(
+        name,
+        Sphere({0.0, 0.0, 0.0}, {0.0, 0.0, 1.0}, {1.0, 0.0, 0.0}, 1.0, -1.0,
+               1.0, 0.0, 2.0 * pi),
+        ThermalMesh{});
 }
 
 }  // namespace
@@ -64,31 +71,29 @@ TEST_CASE("GeometryModel manages hierarchy and lookups",
           "[gmm][geometrymodel]") {
     GeometryModel model("scene");
 
-    const auto rig_id = model.add_group(
-        "rig",
-        Group(CoordinateTransformation::from_translation({1.0, 0.0, 0.0})));
-    const auto trim_id = model.add_cut_group("trim", CutGroup{});
-    const auto panel_id = model.add_item("panel", make_panel_item(), "rig");
+    auto rig = std::make_shared<GeometryGroup>(
+        "rig", std::vector<std::shared_ptr<Geometry>>{},
+        CoordinateTransformation::from_translation({1.0, 0.0, 0.0}));
+    auto trim = std::make_shared<GeometryGroupCutted>(
+        "trim", std::vector<std::shared_ptr<Geometry>>{},
+        std::vector<std::shared_ptr<GeometryItem>>{});
+    model.add(rig);
+    model.add(trim);
+    model.add(make_panel("panel"), "rig");
 
     REQUIRE(model.contains("rig"));
     REQUIRE(model.contains("panel"));
-    REQUIRE(model.id_optional("rig") == rig_id);
-    REQUIRE(model.id_optional("panel") == panel_id);
-    REQUIRE(model.name_of(panel_id) == std::optional<std::string>{"panel"});
-    REQUIRE(model.group_optional("rig") != nullptr);
-    REQUIRE(model.cut_group_optional("trim") != nullptr);
-    REQUIRE(model.item_optional("panel") != nullptr);
-    REQUIRE(model.group_optional("panel") == nullptr);
-    REQUIRE(model.cut_group_optional("rig") == nullptr);
-    REQUIRE(model.group_optional("rig")->child_item_indices().size() == 1U);
-    REQUIRE(model.group_optional("rig")->child_group_indices().empty());
-    REQUIRE(model.group_optional("rig")->child_cut_group_indices().empty());
-    REQUIRE(model.group_optional("trim") == nullptr);
-    REQUIRE(model.name_of(trim_id) == std::optional<std::string>{"trim"});
+    REQUIRE(model.contains(rig));
+    REQUIRE(model.get_group("rig") != nullptr);
+    REQUIRE(model.get_cut_group("trim") != nullptr);
+    REQUIRE(model.get_item("panel") != nullptr);
+    REQUIRE(model.get_group("panel") == nullptr);
+    REQUIRE(model.get_cut_group("rig") == nullptr);
+    REQUIRE(model.get_group("rig")->children().size() == 1U);
+    REQUIRE(model.get_group("rig")->children()[0]->name() == "panel");
 
-    REQUIRE_THROWS(model.add_item("panel", make_panel_item()));
-    REQUIRE_THROWS(
-        model.add_item("ghost", make_panel_item(), "missing-parent"));
+    REQUIRE_THROWS(model.add(make_panel("panel")));  // duplicate name
+    REQUIRE_THROWS(model.add(make_panel("ghost"), "missing-parent"));
 }
 
 TEST_CASE("GeometryModel remove unknown name logs warning",
@@ -108,18 +113,18 @@ TEST_CASE("GeometryModel remove unknown name logs warning",
 TEST_CASE("GeometryModel rename and reparent enforce invariants",
           "[gmm][geometrymodel]") {
     GeometryModel model("scene");
-    model.add_group("rig", Group{});
-    model.add_group("other", Group{});
-    model.add_group("child", Group{}, "rig");
-    model.add_item("panel", make_panel_item(), "rig");
-    model.add_item("tube", make_panel_item(), "other");
+    model.add(std::make_shared<GeometryGroup>("rig"));
+    model.add(std::make_shared<GeometryGroup>("other"));
+    model.add(std::make_shared<GeometryGroup>("child"), "rig");
+    model.add(make_panel("panel"), "rig");
+    model.add(make_panel("tube"), "other");
 
     REQUIRE_THROWS(model.rename("panel", "tube"));
-    REQUIRE_THROWS(model.reparent("rig", "child"));
+    REQUIRE_THROWS(model.reparent("rig", "child"));  // cycle
 
     model.reparent("panel", "other");
-    REQUIRE(model.group_optional("rig")->child_item_indices().empty());
-    REQUIRE(model.group_optional("other")->child_item_indices().size() == 2U);
+    REQUIRE(model.get_group("rig")->children().size() == 1U);    // child group
+    REQUIRE(model.get_group("other")->children().size() == 2U);  // tube, panel
 
     const auto version_before_rename = model.get_structure_version();
     model.rename("panel", "panel-renamed");
@@ -128,26 +133,23 @@ TEST_CASE("GeometryModel rename and reparent enforce invariants",
     REQUIRE(model.get_structure_version() == version_before_rename + 1U);
 }
 
-TEST_CASE("GeometryModel structure version tracks only structural changes",
+TEST_CASE("GeometryModel structure version tracks structural changes",
           "[gmm][geometrymodel]") {
     GeometryModel model("scene");
     const auto version_before = model.get_structure_version();
 
-    model.add_group("rig", Group{});
+    model.add(std::make_shared<GeometryGroup>("rig"));
     REQUIRE(model.get_structure_version() == version_before + 1U);
-    model.add_item("panel", make_panel_item(), "rig");
+    model.add(make_panel("panel"), "rig");
     REQUIRE(model.get_structure_version() == version_before + 2U);
-    model.add_cut_group("trim", CutGroup{});
+    model.add(std::make_shared<GeometryGroupCutted>(
+                  "trim", std::vector<std::shared_ptr<Geometry>>{},
+                  std::vector<std::shared_ptr<GeometryItem>>{}));
     REQUIRE(model.get_structure_version() == version_before + 3U);
 
+    // Default mesh options do not bump the structure version.
     const auto version_before_mesh_options = model.get_structure_version();
     model.set_default_mesh_options({1.0e-4});
-    REQUIRE(model.get_structure_version() == version_before_mesh_options);
-
-    auto* item = model.item_optional("panel");
-    REQUIRE(item != nullptr);
-    item->set_primitive(
-        Rectangle({0.0, 0.0, 0.0}, {3.0, 0.0, 0.0}, {0.0, 1.0, 0.0}));
     REQUIRE(model.get_structure_version() == version_before_mesh_options);
 
     const auto version_before_remove = model.get_structure_version();
@@ -155,14 +157,19 @@ TEST_CASE("GeometryModel structure version tracks only structural changes",
     REQUIRE(model.get_structure_version() == version_before_remove + 1U);
 }
 
-TEST_CASE("CutGroup rejects non-solid primitives", "[gmm][geometrymodel]") {
+TEST_CASE("GeometryGroupCutted rejects non-solid cutters",
+          "[gmm][geometrymodel]") {
     using std::numbers::pi;
 
-    CutGroup cut_group;
-    REQUIRE_NOTHROW(cut_group.add_cutter(make_sphere_cutter()));
-    REQUIRE_NOTHROW(
-        cut_group.add_cutter(Cylinder({0.0, 0.0, 0.0}, {0.0, 0.0, 2.0},
-                                      {1.0, 0.0, 0.0}, 0.5, 0.0, 2.0 * pi)));
-    REQUIRE_THROWS(cut_group.add_cutter(
-        Rectangle({0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, {0.0, 1.0, 0.0})));
+    GeometryGroupCutted cut_group(
+        "trim", std::vector<std::shared_ptr<Geometry>>{make_panel("target")},
+        std::vector<std::shared_ptr<GeometryItem>>{});
+
+    REQUIRE_NOTHROW(cut_group.cut_with(make_sphere_cutter("sphere")));
+    REQUIRE_NOTHROW(cut_group.cut_with(std::make_shared<GeometryItem>(
+        "tube",
+        Cylinder({0.0, 0.0, 0.0}, {0.0, 0.0, 2.0}, {1.0, 0.0, 0.0}, 0.5, 0.0,
+                 2.0 * pi),
+        ThermalMesh{})));
+    REQUIRE_THROWS(cut_group.cut_with(make_panel("flat")));
 }

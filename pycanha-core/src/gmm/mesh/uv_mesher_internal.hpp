@@ -42,36 +42,36 @@ struct SamplingPlan {
                                                 double row_end,
                                                 double deviation_tolerance);
 [[nodiscard]] DirSampler make_linear_dir_sampler(std::span<const double> cuts);
-[[nodiscard]] TriMesh build_mesh_from_plan(const ThermalMesh& thermal_mesh,
+[[nodiscard]] TriMeshD build_mesh_from_plan(const ThermalMesh& thermal_mesh,
                                            const SamplingPlan& plan);
 [[nodiscard]] Point3D triangle_strip_point(const Triangle& triangle,
                                            double dir1, double dir2);
 
-[[nodiscard]] TriMesh mesh_primitive(const Triangle& triangle,
+[[nodiscard]] TriMeshD mesh_primitive(const Triangle& triangle,
                                      const ThermalMesh& thermal_mesh,
                                      const MeshOptions& options);
-[[nodiscard]] TriMesh mesh_primitive(const Rectangle& rectangle,
+[[nodiscard]] TriMeshD mesh_primitive(const Rectangle& rectangle,
                                      const ThermalMesh& thermal_mesh,
                                      const MeshOptions& options);
-[[nodiscard]] TriMesh mesh_primitive(const Quadrilateral& quadrilateral,
+[[nodiscard]] TriMeshD mesh_primitive(const Quadrilateral& quadrilateral,
                                      const ThermalMesh& thermal_mesh,
                                      const MeshOptions& options);
-[[nodiscard]] TriMesh mesh_primitive(const Cylinder& cylinder,
+[[nodiscard]] TriMeshD mesh_primitive(const Cylinder& cylinder,
                                      const ThermalMesh& thermal_mesh,
                                      const MeshOptions& options);
-[[nodiscard]] TriMesh mesh_primitive(const Cone& cone,
+[[nodiscard]] TriMeshD mesh_primitive(const Cone& cone,
                                      const ThermalMesh& thermal_mesh,
                                      const MeshOptions& options);
-[[nodiscard]] TriMesh mesh_primitive(const Paraboloid& paraboloid,
+[[nodiscard]] TriMeshD mesh_primitive(const Paraboloid& paraboloid,
                                      const ThermalMesh& thermal_mesh,
                                      const MeshOptions& options);
-[[nodiscard]] TriMesh mesh_primitive(const Disc& disc,
+[[nodiscard]] TriMeshD mesh_primitive(const Disc& disc,
                                      const ThermalMesh& thermal_mesh,
                                      const MeshOptions& options);
-[[nodiscard]] TriMesh mesh_primitive(const Sphere& sphere,
+[[nodiscard]] TriMeshD mesh_primitive(const Sphere& sphere,
                                      const ThermalMesh& thermal_mesh,
                                      const MeshOptions& options);
-[[nodiscard]] TriMesh mesh_primitive(const Cube& cube,
+[[nodiscard]] TriMeshD mesh_primitive(const Cube& cube,
                                      const ThermalMesh& thermal_mesh,
                                      const MeshOptions& options);
 

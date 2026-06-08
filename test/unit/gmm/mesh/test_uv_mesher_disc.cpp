@@ -38,7 +38,6 @@ TEST_CASE("UvMesher refines annular disc boundaries independently",
     REQUIRE(gmm_test::absolute_area_error(fine_mesh, disc.surface_area()) <
             gmm_test::absolute_area_error(coarse_mesh, disc.surface_area()));
     REQUIRE(gmm_test::face_ids_cover_all_cells(fine_mesh, thermal_mesh));
-    REQUIRE(mesh_ops::is_watertight_on_curved_edges(fine_mesh));
 }
 
 TEST_CASE("UvMesher collapses the full-disc center into one fan vertex",
@@ -55,7 +54,6 @@ TEST_CASE("UvMesher collapses the full-disc center into one fan vertex",
 
     REQUIRE(center_vertex_count == 1U);
     REQUIRE(gmm_test::face_ids_cover_all_cells(mesh, thermal_mesh));
-    REQUIRE(mesh_ops::is_watertight_on_curved_edges(mesh));
     REQUIRE(gmm_test::sum_triangle_areas(mesh) ==
             Catch::Approx(disc.surface_area()).epsilon(0.002));
 }

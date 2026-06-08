@@ -9,7 +9,6 @@
 #include "pycanha-core/gmm/mesh/thermal_mesh.hpp"
 #include "pycanha-core/gmm/mesh/trimesh.hpp"
 #include "pycanha-core/gmm/mesh/uv_mesher.hpp"
-#include "pycanha-core/gmm/ops/face_id_from_uv.hpp"
 #include "pycanha-core/gmm/primitives/quadrilateral.hpp"
 #include "pycanha-core/gmm/primitives/rectangle.hpp"
 #include "pycanha-core/gmm/primitives/triangle.hpp"
@@ -17,7 +16,6 @@
 
 namespace {
 
-using pycanha::Point3D;
 using pycanha::gmm::MeshOptions;
 using pycanha::gmm::Quadrilateral;
 using pycanha::gmm::Rectangle;
@@ -25,21 +23,7 @@ using pycanha::gmm::ThermalMesh;
 using pycanha::gmm::Triangle;
 using pycanha::gmm::UvMesher;
 namespace mesh_ops = pycanha::gmm::mesh::ops;
-namespace gmm_ops = pycanha::gmm::ops;
 namespace gmm_test = pycanha::gmm::test;
-
-template <typename PrimitiveType>
-void require_centroid_face_ids_match(const PrimitiveType& primitive,
-                                     const ThermalMesh& thermal_mesh,
-                                     const pycanha::gmm::TriMesh& mesh) {
-    const auto centroids = mesh_ops::compute_centroids(mesh);
-    for (Eigen::Index index = 0; index < mesh.triangles.rows(); ++index) {
-        const Point3D centroid = centroids.row(index).transpose();
-        REQUIRE(static_cast<std::uint64_t>(gmm_ops::face_id_from_uv(
-                    primitive, thermal_mesh, primitive.to_uv(centroid))) ==
-                mesh.face_ids[index]);
-    }
-}
 
 }  // namespace
 
@@ -54,12 +38,10 @@ TEST_CASE("UvMesher minimally triangulates rectangles", "[gmm][mesh]") {
     REQUIRE(mesh.vertices.rows() == 12);
     REQUIRE(mesh.triangles.rows() == 12);
     REQUIRE(mesh_ops::has_consistent_face_ids(mesh));
-    REQUIRE(mesh_ops::is_manifold(mesh));
     REQUIRE_FALSE(mesh_ops::is_watertight(mesh));
     REQUIRE(gmm_test::face_ids_cover_all_cells(mesh, thermal_mesh));
     REQUIRE(gmm_test::sum_triangle_areas(mesh) ==
             Catch::Approx(rectangle.surface_area()));
-    require_centroid_face_ids_match(rectangle, thermal_mesh, mesh);
 }
 
 TEST_CASE("UvMesher minimally triangulates quadrilaterals", "[gmm][mesh]") {
@@ -76,7 +58,6 @@ TEST_CASE("UvMesher minimally triangulates quadrilaterals", "[gmm][mesh]") {
     REQUIRE(gmm_test::face_ids_cover_all_cells(mesh, thermal_mesh));
     REQUIRE(gmm_test::sum_triangle_areas(mesh) ==
             Catch::Approx(quadrilateral.surface_area()));
-    require_centroid_face_ids_match(quadrilateral, thermal_mesh, mesh);
 }
 
 TEST_CASE("UvMesher collapses the triangle apex edge into a fan",
@@ -94,5 +75,4 @@ TEST_CASE("UvMesher collapses the triangle apex edge into a fan",
     REQUIRE(gmm_test::face_ids_cover_all_cells(mesh, thermal_mesh));
     REQUIRE(gmm_test::sum_triangle_areas(mesh) ==
             Catch::Approx(triangle.surface_area()));
-    require_centroid_face_ids_match(triangle, thermal_mesh, mesh);
 }

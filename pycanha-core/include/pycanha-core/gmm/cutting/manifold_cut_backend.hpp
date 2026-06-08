@@ -6,10 +6,10 @@ namespace pycanha::gmm::cutting {
 
 class ManifoldCutBackend : public CutBackend {
   public:
-    [[nodiscard]] TriMesh cut(const Item& target,
-                              std::span<const Primitive> cutters,
-                              const CoordinateTransformation& world_transform,
-                              const MeshOptions& options) const override;
+    [[nodiscard]] TriMeshD cut(
+        const GeometryItem& target, std::span<const Primitive> cutters,
+        const CoordinateTransformation& world_transform,
+        const MeshOptions& options) const override;
 };
 
 }  // namespace pycanha::gmm::cutting

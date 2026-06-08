@@ -10,7 +10,7 @@
 
 namespace pycanha::gmm::mesh::detail {
 
-TriMesh mesh_primitive(const Disc& disc, const ThermalMesh& thermal_mesh,
+TriMeshD mesh_primitive(const Disc& disc, const ThermalMesh& thermal_mesh,
                        const MeshOptions& options) {
     const auto dir1_cuts = thermal_mesh.get_dir1_mesh();
     std::vector<int> dir1_segments(dir1_cuts.size() - 1U, 1);

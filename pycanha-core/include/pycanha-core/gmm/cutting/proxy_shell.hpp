@@ -4,7 +4,7 @@
 
 #include <manifold/manifold.h>
 
-#include "pycanha-core/gmm/geometrymodel.hpp"
+#include "pycanha-core/gmm/ids.hpp"
 #include "pycanha-core/gmm/mesh/trimesh.hpp"
 
 namespace pycanha::gmm::cutting {
@@ -16,6 +16,6 @@ struct ProxyMeta {
 };
 
 [[nodiscard]] manifold::Manifold build_primitive_proxy(
-    const TriMesh& triangulated_primitive, const ProxyMeta& meta);
+    const TriMeshD& triangulated_primitive, const ProxyMeta& meta);
 
 }  // namespace pycanha::gmm::cutting

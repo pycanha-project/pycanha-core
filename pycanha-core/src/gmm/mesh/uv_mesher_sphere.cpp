@@ -35,7 +35,7 @@ namespace {
 
 }  // namespace
 
-TriMesh mesh_primitive(const Sphere& sphere, const ThermalMesh& thermal_mesh,
+TriMeshD mesh_primitive(const Sphere& sphere, const ThermalMesh& thermal_mesh,
                        const MeshOptions& options) {
     const auto dir1_cuts = thermal_mesh.get_dir1_mesh();
     const auto dir2_cuts = thermal_mesh.get_dir2_mesh();

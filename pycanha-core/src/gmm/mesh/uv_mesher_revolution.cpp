@@ -31,7 +31,7 @@ namespace {
 
 }  // namespace
 
-TriMesh mesh_primitive(const Cylinder& cylinder,
+TriMeshD mesh_primitive(const Cylinder& cylinder,
                        const ThermalMesh& thermal_mesh,
                        const MeshOptions& options) {
     const double height = (cylinder.p2() - cylinder.p1()).norm();
@@ -52,7 +52,7 @@ TriMesh mesh_primitive(const Cylinder& cylinder,
     return build_mesh_from_plan(thermal_mesh, plan);
 }
 
-TriMesh mesh_primitive(const Cone& cone, const ThermalMesh& thermal_mesh,
+TriMeshD mesh_primitive(const Cone& cone, const ThermalMesh& thermal_mesh,
                        const MeshOptions& options) {
     const double max_radius = std::max(cone.radius1(), cone.radius2());
     const double height = (cone.p2() - cone.p1()).norm();
@@ -73,7 +73,7 @@ TriMesh mesh_primitive(const Cone& cone, const ThermalMesh& thermal_mesh,
     return build_mesh_from_plan(thermal_mesh, plan);
 }
 
-TriMesh mesh_primitive(const Paraboloid& paraboloid,
+TriMeshD mesh_primitive(const Paraboloid& paraboloid,
                        const ThermalMesh& thermal_mesh,
                        const MeshOptions& options) {
     const auto dir2_cuts = thermal_mesh.get_dir2_mesh();

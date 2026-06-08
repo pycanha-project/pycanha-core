@@ -6,7 +6,7 @@
 #include "pycanha-core/gmm/mesh/trimesh.hpp"
 #include "pycanha-core/gmm/primitives/primitive.hpp"
 #include "pycanha-core/gmm/scene/coordinate_transformation.hpp"
-#include "pycanha-core/gmm/scene/item.hpp"
+#include "pycanha-core/gmm/scene/geometry_item.hpp"
 
 namespace pycanha::gmm::cutting {
 
@@ -14,8 +14,8 @@ class CutBackend {
   public:
     virtual ~CutBackend() = default;
 
-    [[nodiscard]] virtual TriMesh cut(
-        const Item& target, std::span<const Primitive> cutters,
+    [[nodiscard]] virtual TriMeshD cut(
+        const GeometryItem& target, std::span<const Primitive> cutters,
         const CoordinateTransformation& world_transform,
         const MeshOptions& options) const = 0;
 };

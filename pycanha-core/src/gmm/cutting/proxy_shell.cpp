@@ -28,7 +28,7 @@ struct EdgeHash {
     return lhs < rhs ? Edge{lhs, rhs} : Edge{rhs, lhs};
 }
 
-[[nodiscard]] manifold::MeshGL64 build_proxy_meshgl(const TriMesh& mesh,
+[[nodiscard]] manifold::MeshGL64 build_proxy_meshgl(const TriMeshD& mesh,
                                                     const ProxyMeta& meta) {
     std::vector<Vector3D> vertex_normals(
         static_cast<std::size_t>(mesh.vertices.rows()), Vector3D::Zero());
@@ -39,7 +39,7 @@ struct EdgeHash {
     directed_edges.reserve(static_cast<std::size_t>(mesh.triangles.rows() * 3));
 
     for (Eigen::Index tri_idx = 0; tri_idx < mesh.triangles.rows(); ++tri_idx) {
-        const Eigen::Vector3i triangle = mesh.triangles.row(tri_idx);
+        const auto triangle = mesh.triangles.row(tri_idx);
         const Vector3D p0 = mesh.vertices.row(triangle[0]).transpose();
         const Vector3D p1 = mesh.vertices.row(triangle[1]).transpose();
         const Vector3D p2 = mesh.vertices.row(triangle[2]).transpose();
@@ -103,7 +103,7 @@ struct EdgeHash {
     std::size_t wall_triangles = 0U;
 
     for (Eigen::Index tri_idx = 0; tri_idx < mesh.triangles.rows(); ++tri_idx) {
-        const Eigen::Vector3i triangle = mesh.triangles.row(tri_idx);
+        const auto triangle = mesh.triangles.row(tri_idx);
         proxy.triVerts.insert(proxy.triVerts.end(),
                               {static_cast<std::uint64_t>(triangle[0]),
                                static_cast<std::uint64_t>(triangle[1]),
@@ -113,7 +113,7 @@ struct EdgeHash {
     }
 
     for (Eigen::Index tri_idx = 0; tri_idx < mesh.triangles.rows(); ++tri_idx) {
-        const Eigen::Vector3i triangle = mesh.triangles.row(tri_idx);
+        const auto triangle = mesh.triangles.row(tri_idx);
         proxy.triVerts.insert(
             proxy.triVerts.end(),
             {static_cast<std::uint64_t>(triangle[0]) + inner_offset,
@@ -153,8 +153,8 @@ struct EdgeHash {
 
 }  // namespace
 
-manifold::Manifold build_primitive_proxy(const TriMesh& triangulated_primitive,
-                                         const ProxyMeta& meta) {
+manifold::Manifold build_primitive_proxy(
+    const TriMeshD& triangulated_primitive, const ProxyMeta& meta) {
     manifold::MeshGL64 proxy_mesh =
         build_proxy_meshgl(triangulated_primitive, meta);
     proxy_mesh.Merge();

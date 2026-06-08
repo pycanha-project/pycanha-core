@@ -2,7 +2,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <cstdint>
 #include <iterator>
-#include <optional>
+#include <memory>
 #include <span>
 #include <vector>
 
@@ -10,69 +10,63 @@
 #include "pycanha-core/gmm/ids.hpp"
 #include "pycanha-core/gmm/mesh/thermal_mesh.hpp"
 #include "pycanha-core/gmm/primitives/rectangle.hpp"
-#include "pycanha-core/gmm/scene/item.hpp"
+#include "pycanha-core/gmm/scene/geometry_item.hpp"
 
 namespace {
 
 using pycanha::gmm::FaceId;
+using pycanha::gmm::GeometryItem;
 using pycanha::gmm::GeometryModel;
-using pycanha::gmm::Item;
 using pycanha::gmm::Rectangle;
 using pycanha::gmm::ThermalMesh;
 
-[[nodiscard]] Item make_item() {
-    return {Rectangle({0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}),
-            ThermalMesh{}};
-}
-
-[[nodiscard]] std::vector<std::uint64_t> as_raw(std::span<const FaceId> faces) {
-    std::vector<std::uint64_t> values;
+[[nodiscard]] std::vector<std::uint32_t> as_raw(std::span<const FaceId> faces) {
+    std::vector<std::uint32_t> values;
     values.reserve(faces.size());
-    std::transform(
-        faces.begin(), faces.end(), std::back_inserter(values),
-        [](const FaceId face_id) { return pycanha::gmm::to_raw(face_id); });
+    std::transform(faces.begin(), faces.end(), std::back_inserter(values),
+                   [](const FaceId face_id) {
+                       return static_cast<std::uint32_t>(face_id);
+                   });
     std::sort(values.begin(), values.end());
     return values;
 }
 
+// Two dir1 cells, one dir2 cell. side1 node = 100 + k, side2 node = 7 + k.
+[[nodiscard]] std::shared_ptr<GeometryItem> make_panel() {
+    ThermalMesh thermal_mesh{{0.0, 0.5, 1.0}, {0.0, 1.0}};
+    thermal_mesh.set_node1_start(100);
+    thermal_mesh.set_node1_step(1);
+    thermal_mesh.set_node2_start(7);
+    thermal_mesh.set_node2_step(1);
+    return std::make_shared<GeometryItem>(
+        "panel", Rectangle({0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}),
+        std::move(thermal_mesh));
+}
+
 }  // namespace
 
-TEST_CASE("GeometryModel face-to-node mapping round-trips",
+TEST_CASE("GeometryModel reverse node -> face_ids from node_numbers",
           "[gmm][geometrymodel][mapping]") {
     GeometryModel model("scene");
-    const auto face_x = static_cast<FaceId>(2U);
-    const auto face_y = static_cast<FaceId>(4U);
-    const auto face_z = static_cast<FaceId>(6U);
+    model.add(make_panel());
+    model.create_mesh();
 
-    model.assign_face_to_node(face_x, 42);
-    model.assign_face_to_node(face_y, 42);
-    model.assign_face_to_node(face_z, 7);
-
-    REQUIRE(model.face_to_node(face_x) ==
-            std::optional<pycanha::NodeNum>{42});
-    REQUIRE(model.face_to_node(face_y) ==
-            std::optional<pycanha::NodeNum>{42});
-    REQUIRE(model.face_to_node(face_z) ==
-            std::optional<pycanha::NodeNum>{7});
-    REQUIRE_FALSE(model.face_to_node(static_cast<FaceId>(8U)).has_value());
-
-    REQUIRE(as_raw(model.faces_of_node(42)) ==
-            std::vector<std::uint64_t>{2U, 4U});
-    REQUIRE(as_raw(model.faces_of_node(7)) == std::vector<std::uint64_t>{6U});
+    // Cell k=0 -> face_id 0 (side1) / 1 (side2); cell k=1 -> 2 / 3.
+    REQUIRE(as_raw(model.faces_of_node(100)) == std::vector<std::uint32_t>{0U});
+    REQUIRE(as_raw(model.faces_of_node(101)) == std::vector<std::uint32_t>{2U});
+    REQUIRE(as_raw(model.faces_of_node(7)) == std::vector<std::uint32_t>{1U});
+    REQUIRE(as_raw(model.faces_of_node(8)) == std::vector<std::uint32_t>{3U});
     REQUIRE(model.faces_of_node(99).empty());
 }
 
-TEST_CASE("GeometryModel face-to-node reverse cache refreshes on mutation",
+TEST_CASE("GeometryModel reverse mapping refreshes after structural change",
           "[gmm][geometrymodel][mapping]") {
     GeometryModel model("scene");
-    model.assign_face_to_node(static_cast<FaceId>(2U), 42);
-    REQUIRE(as_raw(model.faces_of_node(42)) == std::vector<std::uint64_t>{2U});
+    model.add(make_panel());
+    model.create_mesh();
+    REQUIRE_FALSE(model.faces_of_node(100).empty());
 
-    model.assign_face_to_node(static_cast<FaceId>(4U), 42);
-    REQUIRE(as_raw(model.faces_of_node(42)) ==
-            std::vector<std::uint64_t>{2U, 4U});
-
-    model.add_item("panel", make_item());
-    REQUIRE(as_raw(model.faces_of_node(42)) ==
-            std::vector<std::uint64_t>{2U, 4U});
+    model.remove("panel");
+    model.create_mesh();
+    REQUIRE(model.faces_of_node(100).empty());
 }

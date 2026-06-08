@@ -9,9 +9,9 @@ namespace pycanha::gmm {
 
 class UvMesher {
   public:
-    [[nodiscard]] TriMesh mesh(const Primitive& primitive,
-                               const ThermalMesh& thermal_mesh,
-                               const MeshOptions& options) const;
+    [[nodiscard]] TriMeshD mesh(const Primitive& primitive,
+                                const ThermalMesh& thermal_mesh,
+                                const MeshOptions& options) const;
 };
 
 }  // namespace pycanha::gmm

@@ -71,11 +71,12 @@ endif()
 
 # Change from INTERFACE to STATIC or SHARED, depending on your needs
 # Add all source files after the library name
-add_library(${LIB_NAME} STATIC 
+add_library(${LIB_NAME} STATIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/ids.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/geometrymodel.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/geometrymodel_unified_mesh.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/cutting/cutter_proxy.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/cutting/manifold_cut_backend.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/cutting/cut_mesh_ops.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/cutting/proxy_shell.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/mesh/thermal_mesh.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/mesh/uv_mesher.cpp
@@ -84,15 +85,7 @@ add_library(${LIB_NAME} STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/mesh/uv_mesher_planar.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/mesh/uv_mesher_revolution.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/mesh/uv_mesher_sphere.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/mesh/ops/compute_areas.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/mesh/ops/boundary_edges.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/mesh/ops/classify.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/mesh/ops/clean.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/mesh/ops/sort.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/mesh/ops/subset.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/mesh/ops/validate.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/ops/distance.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/ops/face_id_from_uv.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/ops/transform.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/primitives/cone.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/primitives/cube.cpp
@@ -104,9 +97,9 @@ add_library(${LIB_NAME} STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/primitives/sphere.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/primitives/triangle.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/scene/coordinate_transformation.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/scene/cut_group.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/scene/group.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/scene/item.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/scene/geometry_item.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/scene/geometry_group.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/scene/geometry_group_cutted.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/materials/bulk_material.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/materials/optical_material.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/materials/color.cpp
