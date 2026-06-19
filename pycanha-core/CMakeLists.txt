@@ -110,6 +110,7 @@ add_library(${LIB_NAME} STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/thermaldata/dense_matrix_time_series.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/thermaldata/dense_time_series.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/thermaldata/lookup_table.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/thermaldata/named_constants.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/thermaldata/sparse_time_series.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/parameters/formula.cpp
