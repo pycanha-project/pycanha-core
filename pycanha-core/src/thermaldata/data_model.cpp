@@ -13,6 +13,7 @@
 #include "pycanha-core/globals.hpp"
 #include "pycanha-core/thermaldata/dense_matrix_time_series.hpp"
 #include "pycanha-core/thermaldata/dense_time_series.hpp"
+#include "pycanha-core/thermaldata/named_constants.hpp"
 #include "pycanha-core/thermaldata/sparse_time_series.hpp"
 
 namespace pycanha {
@@ -516,6 +517,12 @@ std::vector<Index>& DataModel::node_numbers() noexcept { return _node_numbers; }
 
 const std::vector<Index>& DataModel::node_numbers() const noexcept {
     return _node_numbers;
+}
+
+NamedConstants& DataModel::constants() noexcept { return _constants; }
+
+const NamedConstants& DataModel::constants() const noexcept {
+    return _constants;
 }
 
 std::vector<DataModelAttribute> DataModel::populated_attributes() const {

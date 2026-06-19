@@ -1,0 +1,99 @@
+BEGIN_MODEL DISCTR
+
+BULK Delrin;
+Delrin = [1400.00000000, 2900.00000000, 0.20000000];
+
+OPTICAL Low_e;
+DEFINE_OPTICAL (
+    optical = Low_e, 
+    ir_emiss = 0.40000000, 
+    ir_transm = 0.00000000, 
+    solar_absorb = 0.40000000, 
+    solar_transm = 0.00000000, 
+    ir_spec_refl = 0.00000000, 
+    solar_spec_refl = 0.00000000);
+
+/* End of bound variable block - no errors */
+
+/* Start of primitive block */
+
+GEOMETRY BOUND;
+BOUND = SHELL_SCS_SPHERE(
+    radius = 0.11000000, 
+    lat_min = -90.00000000, 
+    lat_max = 90.00000000, 
+    long_min = 0.00000000, 
+    long_max = 360.00000000, 
+    sense = -1, 
+    meshType1 = "regular", 
+    nodes1 = 1, 
+    ratio1 = 1.00000000, 
+    meshType2 = "regular", 
+    nodes2 = 1, 
+    ratio2 = 1.00000000, 
+    analysis_type = "Lumped Parameter", 
+    side1 = "Inactive", 
+    criticality1 = "NORMAL", 
+    nbase1 = 2000, 
+    ndelta1 = 1, 
+    colour1 = "DARK_RED", 
+    side2 = "Active", 
+    criticality2 = "NORMAL", 
+    nbase2 = 2000, 
+    ndelta2 = 1, 
+    opt2 = Low_e, 
+    colour2 = "GREEN", 
+    composition = "SINGLE", 
+    bulk = [-10000.00000000, -10000.00000000, -10000.00000000], 
+    thick = 0.00000000, 
+    bulk1 = [-10000.00000000, -10000.00000000, -10000.00000000], 
+    thick1 = 0.00000000, 
+    bulk2 = [-10000.00000000, -10000.00000000, -10000.00000000], 
+    thick2 = 0.00000000, 
+    through_cond = "BULK", 
+    conductance = 0.00000000, 
+    emittance = 0.00000000);
+
+GEOMETRY DISC;
+DISC = SHELL_SCS_DISC(
+    rmax = 0.10000000, 
+    rmin = 0.00000000, 
+    height = 0.00000000, 
+    angmin = 0.00000000, 
+    angmax = 360.00000000, 
+    sense = -1, 
+    meshType1 = "regular", 
+    nodes1 = 10, 
+    ratio1 = 1.00000000, 
+    meshType2 = "regular", 
+    nodes2 = 10, 
+    ratio2 = 1.00000000, 
+    analysis_type = "Lumped Parameter", 
+    side1 = "Active", 
+    criticality1 = "NORMAL", 
+    nbase1 = 1000, 
+    ndelta1 = 1, 
+    opt1 = Low_e, 
+    colour1 = "GREY", 
+    side2 = "Active", 
+    criticality2 = "NORMAL", 
+    nbase2 = 1000, 
+    ndelta2 = 1, 
+    opt2 = Low_e, 
+    colour2 = "GREY", 
+    composition = "SINGLE", 
+    bulk = Delrin, 
+    thick = 0.01000000, 
+    bulk1 = [-10000.00000000, -10000.00000000, -10000.00000000], 
+    thick1 = 0.00000000, 
+    bulk2 = [-10000.00000000, -10000.00000000, -10000.00000000], 
+    thick2 = 0.00000000, 
+    through_cond = "BULK", 
+    conductance = 0.00000000, 
+    emittance = 0.00000000);
+
+
+DISCTR = BOUND + DISC;
+
+
+END_MODEL
