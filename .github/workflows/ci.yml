@@ -73,6 +73,18 @@ jobs:
       env:
         # Print the full output of any failing test so aborts/exceptions are visible in the log
         CTEST_OUTPUT_ON_FAILURE: '1'
+        # AddressSanitizer container-overflow FALSE POSITIVE, macOS only.
+        # symengine (a conan-center dep) is built WITHOUT ASan, so it never adds libc++'s
+        # container annotations to the std::vector<RCP> it returns from get_args(). Our
+        # instrumented code then reads that vector (formulas.cpp std::copy over rbegin/rend,
+        # which is strictly in-bounds), and ASan misreads the stale size/capacity annotation as
+        # an overflow. It is not a real bug. Container-overflow is the one ASan check that needs
+        # every TU touching the container to be instrumented; the others rely on allocation
+        # redzones and work fine with "our code only". libc++ enables these annotations by
+        # default (macOS); libstdc++ (Linux) does not (needs -D_GLIBCXX_SANITIZE_VECTOR), so the
+        # check only runs here in the first place. This disables ONLY container-overflow; all
+        # other ASan/UBSan checks stay active. Revisit if symengine is ever built with ASan.
+        ASAN_OPTIONS: ${{ matrix.config.os == 'macos' && 'detect_container_overflow=0' || '' }}
       run: >
         conan create . --build=missing
         -pr:h=${{matrix.config.profile_base}} -pr:h=build-${{matrix.build_type}} -pr:h=options-ci
