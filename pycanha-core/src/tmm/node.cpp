@@ -25,7 +25,7 @@ Node::Node(NodeNum node_num, const std::weak_ptr<Nodes>& parent_pointer)
     : _node_num(node_num), _parent_pointer(parent_pointer) {}
 
 double Node::resolve_get_double(double (Nodes::*nodes_getter)(NodeNum),
-                                double LocalStorage::*local_member) {
+                                double LocalStorage::* local_member) {
     if (auto parent_nodes = _parent_pointer.lock()) {
         Nodes& nodes_ref = *parent_nodes;
         const double temp = (nodes_ref.*nodes_getter)(_node_num);
@@ -50,7 +50,7 @@ double Node::resolve_get_double(double (Nodes::*nodes_getter)(NodeNum),
 }
 
 void Node::resolve_set_double(bool (Nodes::*nodes_setter)(NodeNum, double),
-                              double LocalStorage::*local_member,
+                              double LocalStorage::* local_member,
                               double value) {
     if (auto parent_nodes = _parent_pointer.lock()) {
         Nodes& nodes_ref = *parent_nodes;

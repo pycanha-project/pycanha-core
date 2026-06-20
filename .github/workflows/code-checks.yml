@@ -38,6 +38,7 @@ jobs:
         
   static_analysis:
     runs-on: ubuntu-26.04
+    timeout-minutes: 60
 
     steps:
     - name: Check out repo's default branch
@@ -55,7 +56,10 @@ jobs:
         
     - name: Run clang-tidy
       run: |
-        cmake --build build/Debug --parallel --target tests_clangtidy pycanha-core_clangtidy
+        # Cap parallelism: bare --parallel passes unbounded -j to make, launching all ~43
+        # clang-tidy processes at once and exhausting the runner's RAM (job gets reclaimed
+        # with exit 143). The standard GitHub runner has 4 vCPUs, so cap at 4.
+        cmake --build build/Debug --parallel 4 --target tests_clangtidy pycanha-core_clangtidy
       
     - name: Run cppcheck
       run: cmake --build build/Debug  --target tests_lib_cppcheck

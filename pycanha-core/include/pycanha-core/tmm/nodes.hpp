@@ -213,16 +213,16 @@ class Nodes {
     ~Nodes();
 
     // Copy Constructor
-    Nodes(const Nodes &other);
+    Nodes(const Nodes& other);
 
     // Copy Assignment Operator
-    Nodes &operator=(const Nodes &other);
+    Nodes& operator=(const Nodes& other);
 
     // Move Constructor
-    Nodes(Nodes &&other) noexcept;
+    Nodes(Nodes&& other) noexcept;
 
     // Move Assignment Operator
-    Nodes &operator=(Nodes &&other) noexcept;
+    Nodes& operator=(Nodes&& other) noexcept;
 
     // Node handlers
 
@@ -239,7 +239,7 @@ class Nodes {
      * attributes of the node to Nodes, the local storage of the input node is
      * deleted and the node is associated to the Nodes instance.
      */
-    void add_node(Node &node);
+    void add_node(Node& node);
 
     /// Method to add a several nodes contained in a std::vector.
     /**
@@ -249,7 +249,7 @@ class Nodes {
      * In the future, some optimization might be implemented, so inserting a
      * large number of nodes will be more efficient through this method.
      */
-    void add_nodes(std::vector<Node> &node_vector);
+    void add_nodes(std::vector<Node>& node_vector);
 
     /// Method to delete a node of the model.
     /**
@@ -309,64 +309,64 @@ class Nodes {
     // NOLINTBEGIN(readability-identifier-naming)
     bool set_literal_C(
         NodeNum node_num,
-        const std::string &str);  ///< Literal thermal capacity setter.
+        const std::string& str);  ///< Literal thermal capacity setter.
 
-    double *get_T_value_ref(
+    double* get_T_value_ref(
         NodeNum node_num);  ///< Pointer where the temperature value is stored.
-    double *get_C_value_ref(
+    double* get_C_value_ref(
         NodeNum node_num);  ///< Pointer where the capacity value is stored.
     // NOLINTEND(readability-identifier-naming)
-    double *get_qs_value_ref(
+    double* get_qs_value_ref(
         NodeNum node_num);  ///< Solar load [W] pointer to the value. Note:
                             ///< Values are store in sparse vectors. Calling
                             ///< this function will create a zero value in the
                             ///< matrix if not exist.
-    double *get_qa_value_ref(
+    double* get_qa_value_ref(
         NodeNum node_num);  ///< Albedo load [W] pointer to the value. Note:
                             ///< Values are store in sparse vectors. Calling
                             ///< this function will create a zero value in the
                             ///< matrix if not exist.
-    double *get_qe_value_ref(
+    double* get_qe_value_ref(
         NodeNum node_num);  ///< Earth IR load [W] pointer to the value. Note:
                             ///< Values are store in sparse vectors. Calling
                             ///< this function will create a zero value in the
                             ///< matrix if not exist.
-    double *get_qi_value_ref(
+    double* get_qi_value_ref(
         NodeNum node_num);  ///< Internal load [W] pointer to the value. Note:
                             ///< Values are store in sparse vectors. Calling
                             ///< this function will create a zero value in the
                             ///< matrix if not exist.
-    double *get_qr_value_ref(
+    double* get_qr_value_ref(
         NodeNum node_num);  ///< Other load [W] pointer to the value. Note:
                             ///< Values are store in sparse vectors. Calling
                             ///< this function will create a zero value in the
                             ///< matrix if not exist.
-    double *get_a_value_ref(
+    double* get_a_value_ref(
         NodeNum node_num);  ///< Area [m^2] pointer to the value. Note: Values
                             ///< are store in sparse vectors. Calling this
                             ///< function will create a zero value in the matrix
                             ///< if not exist.
-    double *get_fx_value_ref(
+    double* get_fx_value_ref(
         NodeNum node_num);  ///< X coordinate [m] pointer to the value. Note:
                             ///< Values are store in sparse vectors. Calling
                             ///< this function will create a zero value in the
                             ///< matrix if not exist.
-    double *get_fy_value_ref(
+    double* get_fy_value_ref(
         NodeNum node_num);  ///< Y coordinate [m] pointer to the value. Note:
                             ///< Values are store in sparse vectors. Calling
                             ///< this function will create a zero value in the
                             ///< matrix if not exist.
-    double *get_fz_value_ref(
+    double* get_fz_value_ref(
         NodeNum node_num);  ///< Z coordinate [m] pointer to the value. Note:
                             ///< Values are store in sparse vectors. Calling
                             ///< this function will create a zero value in the
                             ///< matrix if not exist.
-    double *get_eps_value_ref(
+    double* get_eps_value_ref(
         NodeNum node_num);  ///< IR emissivity pointer to the value. Note:
                             ///< Values are store in sparse vectors. Calling
                             ///< this function will create a zero value in the
                             ///< matrix if not exist.
-    double *get_aph_value_ref(
+    double* get_aph_value_ref(
         NodeNum node_num);  ///< Solar absortivity pointer to the value. Note:
                             ///< Values are store in sparse vectors. Calling
                             ///< this function will create a zero value in the
@@ -404,27 +404,27 @@ class Nodes {
     void create_node_num_map() const;
 
     void ensure_node_map() const;
-    bool find_node_index(NodeNum node_num, Index &index,
-                         const char *error_prefix) const;
+    bool find_node_index(NodeNum node_num, Index& index,
+                         const char* error_prefix) const;
     double resolve_get_dense_attr(NodeNum node_num,
-                                  const std::vector<double> &storage) const;
-    bool resolve_set_dense_attr(NodeNum node_num, std::vector<double> &storage,
+                                  const std::vector<double>& storage) const;
+    bool resolve_set_dense_attr(NodeNum node_num, std::vector<double>& storage,
                                 double value);
-    double *resolve_get_dense_attr_ref(NodeNum node_num,
-                                       std::vector<double> &storage);
+    double* resolve_get_dense_attr_ref(NodeNum node_num,
+                                       std::vector<double>& storage);
     double resolve_get_sparse_attr(
-        NodeNum node_num, const Eigen::SparseVector<double> &storage) const;
+        NodeNum node_num, const Eigen::SparseVector<double>& storage) const;
     bool resolve_set_sparse_attr(NodeNum node_num,
-                                 Eigen::SparseVector<double> &storage,
+                                 Eigen::SparseVector<double>& storage,
                                  double value);
-    double *resolve_get_sparse_attr_ref(NodeNum node_num,
-                                        Eigen::SparseVector<double> &storage);
+    double* resolve_get_sparse_attr_ref(NodeNum node_num,
+                                        Eigen::SparseVector<double>& storage);
     std::string resolve_get_literal_attr(
         NodeNum node_num,
-        const Eigen::SparseVector<LiteralString> &storage) const;
+        const Eigen::SparseVector<LiteralString>& storage) const;
     bool resolve_set_literal_attr(NodeNum node_num,
-                                  Eigen::SparseVector<LiteralString> &storage,
-                                  const std::string &value);
+                                  Eigen::SparseVector<LiteralString>& storage,
+                                  const std::string& value);
 
     /**
      * Change the type of the node from diffusive to boundary. Because of how
@@ -445,23 +445,23 @@ class Nodes {
      * vector. The size of the vector is increased by one, and the elements
      * after the inserted one are displaced one position.
      */
-    static void insert_displace(Eigen::SparseVector<LiteralString> &sparse,
-                                Index index, const LiteralString &string);
+    static void insert_displace(Eigen::SparseVector<LiteralString>& sparse,
+                                Index index, const LiteralString& string);
 
     /**
      * Helper method to insert a string value in the middle of a Sparse
      * vector. The size of the vector is increased by one, and the elements
      * after the inserted one are displaced one position.
      */
-    static void insert_displace(Eigen::SparseVector<LiteralString> &sparse,
-                                Index index, const std::string &string);
+    static void insert_displace(Eigen::SparseVector<LiteralString>& sparse,
+                                Index index, const std::string& string);
 
     /**
      * Helper method to insert a double value in the middle of a Sparse vector.
      * The size of the vector is increased by one, and the elements after the
      * inserted one are displaced one position.
      */
-    static void insert_displace(Eigen::SparseVector<double> &sparse,
+    static void insert_displace(Eigen::SparseVector<double>& sparse,
                                 Index index, double value);
 
     // Delete methods for SparseVectors
@@ -471,7 +471,7 @@ class Nodes {
      * of LiteralString. The size of the vector is decreased by one, and the
      * elements after the deleted one are displaced one position.
      */
-    static void delete_displace(Eigen::SparseVector<LiteralString> &sparse,
+    static void delete_displace(Eigen::SparseVector<LiteralString>& sparse,
                                 Index index);
 
     /**
@@ -479,7 +479,7 @@ class Nodes {
      * of doubles. The size of the vector is decreased by one, and the elements
      * after the deleted one are displaced one position.
      */
-    static void delete_displace(Eigen::SparseVector<double> &sparse,
+    static void delete_displace(Eigen::SparseVector<double>& sparse,
                                 Index index);
 
     /**
@@ -487,7 +487,7 @@ class Nodes {
      * This is an internal function to be called from
      * add_node. No checks are performed here.
      */
-    void add_node_insert_idx(Node &node, Index insert_idx);
+    void add_node_insert_idx(Node& node, Index insert_idx);
 };
 
 }  // namespace pycanha

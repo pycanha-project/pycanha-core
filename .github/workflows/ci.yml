@@ -34,7 +34,7 @@ jobs:
             profile_base: windows-msvc2026-amd64
             mkl_option: "True"
           - os: macos
-            compiler: clang21
+            compiler: apple-clang21
             runner: macos-26
             profile_base: macos-clang21-arm64
             mkl_option: "False"
@@ -58,7 +58,7 @@ jobs:
         pip install conan
         pip install cmake
 
-    - name: Configure clang 21 (LLVM)
+    - name: Configure Apple Clang 21
       if: matrix.config.os == 'macos'
       run: |
         clang --version
