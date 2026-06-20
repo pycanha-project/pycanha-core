@@ -58,14 +58,12 @@ jobs:
         pip install conan
         pip install cmake
 
-    - name: Configure Homebrew LLVM clang 21
+    - name: Configure clang 21 (LLVM)
       if: matrix.config.os == 'macos'
       run: |
-        LLVM_PREFIX="$(brew --prefix llvm)"
-        echo "Using clang from ${LLVM_PREFIX}"
-        "${LLVM_PREFIX}/bin/clang" --version
-        echo "CC=${LLVM_PREFIX}/bin/clang" >> $GITHUB_ENV
-        echo "CXX=${LLVM_PREFIX}/bin/clang++" >> $GITHUB_ENV
+        clang --version
+        echo "CC=clang" >> $GITHUB_ENV
+        echo "CXX=clang++" >> $GITHUB_ENV
 
     - name: Install conan profiles
       run: |
