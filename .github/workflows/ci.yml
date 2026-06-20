@@ -70,6 +70,9 @@ jobs:
         conan config install .conan
 
     - name: Build and test application in ${{matrix.build_type}} mode
+      env:
+        # Print the full output of any failing test so aborts/exceptions are visible in the log
+        CTEST_OUTPUT_ON_FAILURE: '1'
       run: >
         conan create . --build=missing
         -pr:h=${{matrix.config.profile_base}} -pr:h=build-${{matrix.build_type}} -pr:h=options-ci
