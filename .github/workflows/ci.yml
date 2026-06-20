@@ -20,20 +20,28 @@ jobs:
         config:
           - os: ubuntu
             compiler: gcc14
+            runner: ubuntu-26.04
             profile_base: ubuntu-gcc14-amd64
             mkl_option: "True"
+          - os: ubuntu
+            compiler: gcc15
+            runner: ubuntu-26.04
+            profile_base: ubuntu-gcc15-amd64
+            mkl_option: "True"
           - os: windows
-            compiler: msvc2022
-            profile_base: windows-msvc2022-amd64
+            compiler: msvc2026
+            runner: windows-2025-vs2026
+            profile_base: windows-msvc2026-amd64
             mkl_option: "True"
           - os: macos
-            compiler: clang
-            profile_base: macos-clang-arm64
+            compiler: clang21
+            runner: macos-26
+            profile_base: macos-clang21-arm64
             mkl_option: "False"
         build_type: [release, debug]
 
     name: ${{matrix.config.os}} ${{matrix.config.compiler}} ${{matrix.build_type}} built and tests
-    runs-on: ${{matrix.config.os}}-latest
+    runs-on: ${{matrix.config.runner}}
     timeout-minutes: 45
 
     steps:
@@ -50,11 +58,14 @@ jobs:
         pip install conan
         pip install cmake
 
-    - name: Configure Apple Clang
+    - name: Configure Homebrew LLVM clang 21
       if: matrix.config.os == 'macos'
       run: |
-        echo "CC=clang" >> $GITHUB_ENV
-        echo "CXX=clang++" >> $GITHUB_ENV
+        LLVM_PREFIX="$(brew --prefix llvm)"
+        echo "Using clang from ${LLVM_PREFIX}"
+        "${LLVM_PREFIX}/bin/clang" --version
+        echo "CC=${LLVM_PREFIX}/bin/clang" >> $GITHUB_ENV
+        echo "CXX=${LLVM_PREFIX}/bin/clang++" >> $GITHUB_ENV
 
     - name: Install conan profiles
       run: |

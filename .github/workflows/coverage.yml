@@ -8,7 +8,7 @@ on:
 
 jobs:
   code-cov:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
     - name: Check out repo's default branch
       uses: actions/checkout@v3
@@ -18,11 +18,11 @@ jobs:
       with:
         python-version: '3.12'
 
-    - name: Set GCC 14, G++ 14, and gcov-14 as default
+    - name: Set GCC 15, G++ 15, and gcov-15 as default
       run: |
-        sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-14 100
-        sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-14 100
-        sudo update-alternatives --install /usr/bin/gcov gcov /usr/bin/gcov-14 100
+        sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-15 100
+        sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-15 100
+        sudo update-alternatives --install /usr/bin/gcov gcov /usr/bin/gcov-15 100
         gcc --version
         g++ --version
         gcov --version
@@ -36,8 +36,8 @@ jobs:
       run: |
         conan config install .conan
         conan install . --build=missing \
-          -pr:h=ubuntu-gcc14-amd64 -pr:h=build-debug -pr:h=options-coverage \
-          -pr:b=ubuntu-gcc14-amd64 -pr:b=build-debug -pr:b=options-coverage
+          -pr:h=ubuntu-gcc15-amd64 -pr:h=build-debug -pr:h=options-coverage \
+          -pr:b=ubuntu-gcc15-amd64 -pr:b=build-debug -pr:b=options-coverage
         cmake --preset=conan-debug
 
     - name: Build with coverage target

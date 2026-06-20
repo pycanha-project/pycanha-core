@@ -8,7 +8,7 @@ on:
 jobs:
   check-code-cpplint:
     name: Check code with cpplint
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
     - name: Check out repo's default branch
       uses: actions/checkout@v3
@@ -21,7 +21,7 @@ jobs:
  
   check-code-clang-format:
     name: Check format with clang-format
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     strategy:
       matrix:
         path:
@@ -32,12 +32,12 @@ jobs:
     - name: Run clang-format style check.
       uses: jidicula/clang-format-action@v4.11.0
       with:
-        clang-format-version: '18'
+        clang-format-version: '22'
         check-path: ${{ matrix.path}}
         fallback-style: 'Google' # optional
         
   static_analysis:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
 
     steps:
     - name: Check out repo's default branch
@@ -50,7 +50,7 @@ jobs:
     - name: Install with conan
       run: |
         conan config install .conan
-        conan install . --build=missing  -pr:h=ubuntu-gcc14-amd64 -pr:h=build-debug -pr:h=options-ci  -pr:b=ubuntu-gcc14-amd64 -pr:b=build-debug -pr:b=options-ci
+        conan install . --build=missing  -pr:h=ubuntu-gcc15-amd64 -pr:h=build-debug -pr:h=options-ci  -pr:b=ubuntu-gcc15-amd64 -pr:b=build-debug -pr:b=options-ci
         cmake --preset=conan-debug
         
     - name: Run clang-tidy

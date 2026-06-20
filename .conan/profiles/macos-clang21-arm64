@@ -1,0 +1,17 @@
+[settings]
+arch = armv8
+compiler = clang
+compiler.cppstd = 23
+compiler.libcxx = libc++
+compiler.version = 21
+os = Macos
+
+[buildenv]
+# Homebrew LLVM clang 21 (preinstalled on the macos-26 runner image)
+CC = /opt/homebrew/opt/llvm/bin/clang
+CXX = /opt/homebrew/opt/llvm/bin/clang++
+
+[conf]
+# Link against Homebrew LLVM's libc++/libunwind to match the clang 21 frontend
+tools.build:exelinkflags = ["-L/opt/homebrew/opt/llvm/lib/c++", "-L/opt/homebrew/opt/llvm/lib/unwind", "-lunwind", "-Wl,-rpath,/opt/homebrew/opt/llvm/lib/c++"]
+tools.build:sharedlinkflags = ["-L/opt/homebrew/opt/llvm/lib/c++", "-L/opt/homebrew/opt/llvm/lib/unwind", "-lunwind", "-Wl,-rpath,/opt/homebrew/opt/llvm/lib/c++"]
