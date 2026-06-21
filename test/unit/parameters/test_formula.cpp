@@ -149,7 +149,7 @@ TEST_CASE(
 
     formula.apply_formula();
     REQUIRE(network->nodes().get_qi(1) ==
-            Catch::Approx(6.0 * 4.0 / 123.0 + 0.01));
+            Catch::Approx((6.0 * 4.0 / 123.0) + 0.01));
 
     formula.compile_formula();
     parameters.set_parameter("p1", 8.0);
@@ -157,7 +157,7 @@ TEST_CASE(
     formula.apply_compiled_formula();
 
     REQUIRE(network->nodes().get_qi(1) ==
-            Catch::Approx(8.0 * 3.0 / 123.0 + 0.01));
+            Catch::Approx((8.0 * 3.0 / 123.0) + 0.01));
 }
 
 TEST_CASE("ExpressionFormula calculates analytical derivatives",

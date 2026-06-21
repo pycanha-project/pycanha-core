@@ -526,15 +526,15 @@ TEST_CASE("Cylinder Primitive", "[gmm][primitive][cylinder]") {
         cyl.set_p2(p2);
         cyl.set_p3(p3);
         cyl.set_radius(radius + 1.0);
-        cyl.set_start_angle(start_angle + pi / 2.0);
-        cyl.set_end_angle(end_angle + pi / 2.0);
+        cyl.set_start_angle(start_angle + (pi / 2.0));
+        cyl.set_end_angle(end_angle + (pi / 2.0));
 
         REQUIRE(cyl.get_p1() == p1);
         REQUIRE(cyl.get_p2() == p2);
         REQUIRE(cyl.get_p3() == p3);
         REQUIRE(cyl.get_radius() == radius + 1.0);
-        REQUIRE(cyl.get_start_angle() == start_angle + pi / 2.0);
-        REQUIRE(cyl.get_end_angle() == end_angle + pi / 2.0);
+        REQUIRE(cyl.get_start_angle() == start_angle + (pi / 2.0));
+        REQUIRE(cyl.get_end_angle() == end_angle + (pi / 2.0));
     }
     SECTION("Check valid Cylinder") {
         const Point3D p1(0.0, 0.0, 0.0);
@@ -615,10 +615,10 @@ TEST_CASE("Cylinder Primitive", "[gmm][primitive][cylinder]") {
         REQUIRE_THAT(cyl.distance(p1 + (p2 - p1) * 0.5),
                      Catch::Matchers::WithinAbs(radius, LENGTH_TOL));
         REQUIRE_THAT(cyl.distance(p2 + (p2 - p1).normalized()),
-                     Catch::Matchers::WithinAbs(std::sqrt(radius * radius + 1),
+                     Catch::Matchers::WithinAbs(std::sqrt((radius * radius) + 1),
                                                 LENGTH_TOL));
         REQUIRE_THAT(cyl.distance(p1 - (p2 - p1).normalized()),
-                     Catch::Matchers::WithinAbs(std::sqrt(radius * radius + 1),
+                     Catch::Matchers::WithinAbs(std::sqrt((radius * radius) + 1),
                                                 LENGTH_TOL));
         // Points outside
         REQUIRE_THAT(cyl.distance(Point3D(0.0, 0.5, 0.0)),

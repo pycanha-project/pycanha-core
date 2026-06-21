@@ -28,6 +28,11 @@ jobs:
             runner: ubuntu-26.04
             profile_base: ubuntu-gcc15-amd64
             mkl_option: "True"
+          - os: ubuntu
+            compiler: clang22
+            runner: ubuntu-26.04
+            profile_base: ubuntu-clang22-amd64
+            mkl_option: "True"
           - os: windows
             compiler: msvc2026
             runner: windows-2025-vs2026
@@ -64,6 +69,13 @@ jobs:
         clang --version
         echo "CC=clang" >> $GITHUB_ENV
         echo "CXX=clang++" >> $GITHUB_ENV
+
+    - name: Install libc++ for clang
+      if: matrix.config.compiler == 'clang22'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libc++-22-dev libc++abi-22-dev
+        clang-22 --version
 
     - name: Install conan profiles
       run: |
