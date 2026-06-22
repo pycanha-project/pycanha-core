@@ -92,11 +92,11 @@ jobs:
         # which is strictly in-bounds), and ASan misreads the stale size/capacity annotation as
         # an overflow. It is not a real bug. Container-overflow is the one ASan check that needs
         # every TU touching the container to be instrumented; the others rely on allocation
-        # redzones and work fine with "our code only". libc++ enables these annotations by
-        # default (macOS); libstdc++ (Linux) does not (needs -D_GLIBCXX_SANITIZE_VECTOR), so the
-        # check only runs here in the first place. This disables ONLY container-overflow; all
+        # redzones and work fine with "our code only". This only bites with libc++ (macOS, and
+        # the Linux clang job which uses libc++); libstdc++ (gcc) does not annotate vectors by
+        # default (needs -D_GLIBCXX_SANITIZE_VECTOR). This disables ONLY container-overflow; all
         # other ASan/UBSan checks stay active. Revisit if symengine is ever built with ASan.
-        ASAN_OPTIONS: ${{ matrix.config.os == 'macos' && 'detect_container_overflow=0' || '' }}
+        ASAN_OPTIONS: ${{ (matrix.config.os == 'macos' || matrix.config.compiler == 'clang22') && 'detect_container_overflow=0' || '' }}
       run: >
         conan create . --build=missing
         -pr:h=${{matrix.config.profile_base}} -pr:h=build-${{matrix.build_type}} -pr:h=options-ci

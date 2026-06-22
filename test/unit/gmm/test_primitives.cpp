@@ -596,6 +596,7 @@ TEST_CASE("Cylinder Primitive", "[gmm][primitive][cylinder]") {
         const double start_angle = 0.0;
         const double end_angle = 2.0 * pi;
         const Cylinder cyl(p1, p2, p3, radius, start_angle, end_angle);
+        const double diag_dist = std::sqrt((radius * radius) + 1);
 
         // Points on the cylinder surface
         REQUIRE_THAT(cyl.distance(Point3D(1.0, 0.0, 1.0)),
@@ -615,11 +616,9 @@ TEST_CASE("Cylinder Primitive", "[gmm][primitive][cylinder]") {
         REQUIRE_THAT(cyl.distance(p1 + (p2 - p1) * 0.5),
                      Catch::Matchers::WithinAbs(radius, LENGTH_TOL));
         REQUIRE_THAT(cyl.distance(p2 + (p2 - p1).normalized()),
-                     Catch::Matchers::WithinAbs(std::sqrt((radius * radius) + 1),
-                                                LENGTH_TOL));
+                     Catch::Matchers::WithinAbs(diag_dist, LENGTH_TOL));
         REQUIRE_THAT(cyl.distance(p1 - (p2 - p1).normalized()),
-                     Catch::Matchers::WithinAbs(std::sqrt((radius * radius) + 1),
-                                                LENGTH_TOL));
+                     Catch::Matchers::WithinAbs(diag_dist, LENGTH_TOL));
         // Points outside
         REQUIRE_THAT(cyl.distance(Point3D(0.0, 0.5, 0.0)),
                      Catch::Matchers::WithinAbs(std::sqrt(1.25), LENGTH_TOL));

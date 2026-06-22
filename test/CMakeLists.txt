@@ -89,6 +89,20 @@ target_set_warnings(
   AS_ERRORS
   ${PYCANHA_OPTION_WARNINGS_AS_ERRORS})
 
+# clang 22's -Wc2y-extensions (enabled by -Wpedantic) flags __COUNTER__, which
+# Catch2's TEST_CASE macro expands to. This is a test-only issue (the library
+# does not use __COUNTER__), so suppress it just for the test target rather than
+# in the library's warning set. See https://github.com/catchorg/Catch2/issues/3076
+# Carried on an INTERFACE target linked last so the -Wno- lands after the
+# library's propagated -Wpedantic on the compile line. Scoped to upstream
+# Clang >= 22: Apple Clang and older Clang reject the unknown flag under -Werror.
+add_library(catch2_warning_overrides INTERFACE)
+if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang"
+   AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 22)
+  target_compile_options(catch2_warning_overrides INTERFACE -Wno-c2y-extensions)
+endif()
+target_link_libraries(${TEST_TARGET_NAME} PRIVATE catch2_warning_overrides)
+
 target_set_warnings(
     TARGET
     ${TEST_TARGET_NAME}_lib

@@ -108,8 +108,10 @@ class ProbeTransientSolver final : public pycanha::TransientSolver {
     }
 
     [[nodiscard]] NonZeroCounts coupling_nonzero_counts() const noexcept {
-        return {KLdd.nonZeros(), KRdd.nonZeros(), KLdb.nonZeros(),
-                KRdb.nonZeros()};
+        return {.kldd = KLdd.nonZeros(),
+                .krdd = KRdd.nonZeros(),
+                .kldb = KLdb.nonZeros(),
+                .krdb = KRdb.nonZeros()};
     }
 };
 
