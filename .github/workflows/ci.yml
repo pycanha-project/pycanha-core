@@ -70,11 +70,18 @@ jobs:
         echo "CC=clang" >> $GITHUB_ENV
         echo "CXX=clang++" >> $GITHUB_ENV
 
-    - name: Install libc++ for clang
+    - name: Install libc++, lld and llvm tools for clang
       if: matrix.config.compiler == 'clang22'
       run: |
         sudo apt-get update
-        sudo apt-get install -y libc++-22-dev libc++abi-22-dev
+        # libc++/libc++abi: clang uses libc++ (see profile), not preinstalled.
+        # lld-22 + llvm-22: needed for the LTO/Release build. clang's -flto emits
+        # pure LLVM bitcode, which GNU ar/ld.bfd cannot read ("file format not
+        # recognized"). llvm-22 provides llvm-ar/llvm-ranlib (CMake auto-detects
+        # these via 'clang -print-prog-name' and uses them to build the static
+        # lib's archive index for IPO); lld links the bitcode without needing the
+        # gold plugin (-fuse-ld=lld is set in the clang profile).
+        sudo apt-get install -y libc++-22-dev libc++abi-22-dev lld-22 llvm-22
         clang-22 --version
 
     - name: Install conan profiles
