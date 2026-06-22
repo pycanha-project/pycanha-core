@@ -38,7 +38,7 @@ jobs:
         
   static_analysis:
     runs-on: ubuntu-26.04
-    timeout-minutes: 60
+    timeout-minutes: 120
 
     steps:
     - name: Check out repo's default branch

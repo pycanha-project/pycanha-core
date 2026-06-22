@@ -32,15 +32,16 @@ jobs:
     - name: Build instrumented tests
       run: |
         conan config install .conan
-        # Build our package in Debug (instrumented) but dependencies in Release,
-        # like ci.yml. Building deps in Debug pulls in symengine's Teuchos debug
-        # utilities, which fail to compile with libc++ (std::terminate used
-        # without <exception>); Release skips that component.
+        # Same split as ci.yml: all dependencies in Release, only our package in
+        # Debug (instrumented). The build-release profile builds everything in
+        # Release; "&:build_type=Debug" overrides just the root package back to
+        # Debug, which also selects the conan-debug preset below. (Building deps
+        # in Debug would pull in symengine's Teuchos utilities, which fail to
+        # compile with libc++.)
         conan install . --build=missing \
-          -pr:h=ubuntu-clang22-amd64 -pr:h=build-debug -pr:h=options-coverage \
-          -pr:b=ubuntu-clang22-amd64 -pr:b=build-debug -pr:b=options-coverage \
-          -s:h "&:build_type=Debug" \
-          -s:h "*:build_type=Release"
+          -pr:h=ubuntu-clang22-amd64 -pr:h=build-release -pr:h=options-coverage \
+          -pr:b=ubuntu-clang22-amd64 -pr:b=build-release -pr:b=options-coverage \
+          -s:h "&:build_type=Debug"
         cmake --preset=conan-debug
         cmake --build build/Debug -j4
 
