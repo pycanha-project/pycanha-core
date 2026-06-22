@@ -59,7 +59,10 @@ jobs:
         # Cap parallelism: bare --parallel passes unbounded -j to make, launching all ~43
         # clang-tidy processes at once and exhausting the runner's RAM (job gets reclaimed
         # with exit 143). The standard GitHub runner has 4 vCPUs, so cap at 4.
-        cmake --build build/Debug --parallel 4 --target tests_clangtidy pycanha-core_clangtidy
+        # -k (keep-going): each source file is an independent make target, so this keeps
+        # checking the rest after a file fails, surfacing every clang-tidy error in one run
+        # instead of stopping at the first. make still exits non-zero, so the job fails.
+        cmake --build build/Debug --parallel 4 --target tests_clangtidy pycanha-core_clangtidy -- -k
       
     - name: Run cppcheck
       run: cmake --build build/Debug  --target tests_lib_cppcheck
