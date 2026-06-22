@@ -154,25 +154,11 @@ endif()
 
 catch_discover_tests(${TEST_TARGET_NAME} ADD_TAGS_AS_LABELS)
 
-if(PYCANHA_OPTION_COVERAGE)
-  set(COVERAGE_MAIN "coverage")
-  set(COVERAGE_EXCLUDES
-      "${PROJECT_SOURCE_DIR}/benchmarks/*"
-      "${PROJECT_SOURCE_DIR}/cmake/*"
-      "${PROJECT_SOURCE_DIR}/docs/*"
-      "${PROJECT_SOURCE_DIR}/external/*"
-      "${PROJECT_SOURCE_DIR}/test/*"
-      "${PROJECT_SOURCE_DIR}/build/*"
-      "/usr/include/*"
-      "11/*"
-      )
-      
-  setup_target_for_coverage_lcov(
-      NAME ${COVERAGE_MAIN}
-      EXECUTABLE ${TEST_TARGET_NAME}
-      DEPENDENCIES ${TEST_TARGET_NAME})
-endif()
-
+# Code coverage: with PYCANHA_OPTION_COVERAGE the tests are instrumented in the
+# top-level CMakeLists (Clang -fprofile-instr-generate -fcoverage-mapping). The
+# report is generated in .github/workflows/coverage.yml by running the tests and
+# processing the .profraw files with llvm-profdata/llvm-cov; no CMake target is
+# needed here.
 
 #CPPCHECK
 if (PYCANHA_OPTION_CPPCHECK)
