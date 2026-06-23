@@ -426,7 +426,7 @@ void Parameters::rename_parameter(const std::string& current_name,
 
 Parameters::Parameter Parameters::get_parameter_handle(
     const std::string& name) noexcept {
-    const auto index = get_idx(name);
+    const auto index = find_idx(name);
     if (!index.has_value()) {
         return {};
     }
@@ -664,22 +664,29 @@ std::uint64_t Parameters::get_memory_address(const std::string& name) const {
     return static_cast<std::uint64_t>(std::bit_cast<std::uintptr_t>(address));
 }
 
-std::optional<Index> Parameters::get_idx(const std::string& name) const {
+std::optional<Index> Parameters::find_idx(
+    const std::string& name) const noexcept {
     const auto iterator = _name_to_slot.find(canonicalize_parameter_key(name));
     if (iterator == _name_to_slot.end()) {
-        SPDLOG_LOGGER_INFO(pycanha::get_logger(),
-                           "Parameter '{}' doesn't exist", name);
         return std::nullopt;
     }
 
-    const auto* slot = find_slot(to_idx(iterator->second));
-    if (slot == nullptr) {
-        SPDLOG_LOGGER_INFO(pycanha::get_logger(),
-                           "Parameter '{}' doesn't exist", name);
+    const auto index = to_idx(iterator->second);
+    if (find_slot(index) == nullptr) {
         return std::nullopt;
     }
 
-    return to_idx(iterator->second);
+    return index;
+}
+
+std::optional<Index> Parameters::get_idx(const std::string& name) const {
+    const auto index = find_idx(name);
+    if (!index.has_value()) {
+        SPDLOG_LOGGER_INFO(pycanha::get_logger(),
+                           "Parameter '{}' doesn't exist", name);
+    }
+
+    return index;
 }
 
 bool Parameters::is_internal_parameter(const std::string& name) const noexcept {

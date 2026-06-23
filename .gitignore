@@ -10,8 +10,20 @@
 !/LICENSE
 !/README.md
 
+# Source/config directories that must stay tracked
+!/.conan/
+!/.github/
+!/cmake/
+!/docs/
+!/examples/
+!/pycanha-core/
+!/test/
+!/test_package/
+
 /build/
 /CMakeUserPresets.json
+test_package/build/
+test_package/CMakeUserPresets.json
 /.vscode/*
 /pycanha-core/include/pycanha-core/config.hpp
 /pycanha-core/include/pycanha-core/.vscode/*

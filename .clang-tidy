@@ -219,11 +219,4 @@ CheckOptions:
   # SparseMatrix usage is misdetected
   - key: misc-include-cleaner.IgnoreHeaders
     value: 'Eigen/.*'
-
-  # std::format (used by spdlog with SPDLOG_USE_STD_FORMAT) has a throw
-  # std::format_error path that the analyzer sees as reachable from noexcept
-  # functions that log. Our format strings are compile-time-checked literals, so
-  # format_error cannot actually be thrown; don't treat it as a noexcept escape.
-  - key: bugprone-exception-escape.IgnoredExceptions
-    value: 'format_error'
 ...

@@ -1,5 +1,6 @@
 #include "pycanha-core/parameters/formulas.hpp"
 
+#include <spdlog/common.h>
 #include <spdlog/spdlog.h>
 #include <symengine/basic.h>
 #include <symengine/eval_double.h>
@@ -380,9 +381,11 @@ bool Formulas::remove_formula(const Entity& entity) noexcept {
             return formula->entity().is_same_as(entity);
         });
     if (iterator == _formulas.end()) {
-        SPDLOG_LOGGER_INFO(get_logger(),
-                           "Formula '{}' was not present for removal",
-                           entity.string_representation());
+        // noexcept function: compose without std::format and use the
+        // non-formatting log path (see pycanha::log_noexcept).
+        log_noexcept(spdlog::level::info, "Formula '" +
+                                              entity.string_representation() +
+                                              "' was not present for removal");
         return false;
     }
 
@@ -406,9 +409,11 @@ bool Formulas::remove_formula(std::string_view entity) noexcept {
     }
     const auto resolved = Entity::from_string(*_network, entity);
     if (!resolved.has_value()) {
-        SPDLOG_LOGGER_INFO(get_logger(),
-                           "Formula target '{}' was not present for removal",
-                           std::string(entity));
+        // noexcept function: compose without std::format and use the
+        // non-formatting log path (see pycanha::log_noexcept).
+        log_noexcept(spdlog::level::info, "Formula target '" +
+                                              std::string(entity) +
+                                              "' was not present for removal");
         return false;
     }
     return remove_formula(*resolved);
