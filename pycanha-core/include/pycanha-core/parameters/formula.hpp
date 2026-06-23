@@ -80,7 +80,7 @@ class Formula {
 
 class ParameterFormula final : public Formula {
   public:
-    ParameterFormula(Entity entity, Parameters& parameters,
+    ParameterFormula(const Entity& entity, Parameters& parameters,
                      std::string expression);
 
     void compile_formula() override;
@@ -176,7 +176,7 @@ class ValueFormula final : public Formula {
 
 class ExpressionFormula final : public Formula {
   public:
-    ExpressionFormula(Entity entity, Parameters& parameters,
+    ExpressionFormula(const Entity& entity, Parameters& parameters,
                       std::string expression,
                       ThermalNetwork* network = nullptr);
 

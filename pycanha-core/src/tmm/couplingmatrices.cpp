@@ -14,11 +14,13 @@
 
 using namespace pycanha;  // NOLINT(build/namespaces)
 
+namespace {
 bool are_coupling_values_almost_equal(double val1, double val2) {
     return fabs(val1 - val2) <=
            ((fabs(val1) < fabs(val2) ? fabs(val2) : fabs(val1)) *
             ALMOST_EQUAL_COUPLING_EPSILON);
 }
+}  // namespace
 
 CouplingMatrices::CouplingMatrices() = default;
 

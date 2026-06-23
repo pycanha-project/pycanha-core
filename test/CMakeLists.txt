@@ -184,6 +184,11 @@ if (PYCANHA_OPTION_CPPCHECK)
                 ${CPPCHECK} 
                 --project=${CMAKE_BINARY_DIR}/compile_commands.json
                 --enable=all
+                # Analyze all branches. Without this, cppcheck 2.15+ emits the
+                # 'normalCheckLevelMaxBranches' information message, which trips
+                # --error-exitcode and fails the target. Exhaustive does the
+                # deeper analysis the message recommends (no suppression needed).
+                --check-level=exhaustive
                 --suppress=unusedFunction --suppress=unmatchedSuppression
                 --suppress=missingIncludeSystem --suppress=toomanyconfigs
                 --suppress=constStatement          

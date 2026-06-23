@@ -74,7 +74,7 @@ class Formulas {
 
     bool debug_formulas{false};
 
-    ParameterFormula create_parameter_formula(Entity entity,
+    ParameterFormula create_parameter_formula(const Entity& entity,
                                               const std::string& parameter);
     [[nodiscard]] std::shared_ptr<Formula> create_formula(
         Entity entity, const std::string& formula_string);
@@ -89,9 +89,9 @@ class Formulas {
         Entity entity, const std::string& expression);
     [[nodiscard]] ExpressionFormula& add_expression_formula(
         std::string_view entity, const std::string& expression);
-    [[nodiscard]] Formula& add_formula(Entity entity, double value);
+    [[nodiscard]] Formula& add_formula(const Entity& entity, double value);
     [[nodiscard]] Formula& add_formula(std::string_view entity, double value);
-    [[nodiscard]] Formula& add_formula(Entity entity,
+    [[nodiscard]] Formula& add_formula(const Entity& entity,
                                        const std::string& formula_string);
     [[nodiscard]] Formula& add_formula(std::string_view entity,
                                        const std::string& formula_string);

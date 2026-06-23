@@ -215,10 +215,10 @@ void move_delete_row_col_fun(
                     auto elems_to_move = (ival - ival_start - 1 + nnz);
                     memmove(sparse.valuePtr() + ival,
                             sparse.valuePtr() + ival + 1,
-                            (elems_to_move) * sizeof(*sparse.valuePtr()));
+                            elems_to_move * sizeof(*sparse.valuePtr()));
                     memmove(sparse.innerIndexPtr() + ival,
                             sparse.innerIndexPtr() + ival + 1,
-                            (elems_to_move) * sizeof(*sparse.innerIndexPtr()));
+                            elems_to_move * sizeof(*sparse.innerIndexPtr()));
                     sparse.innerIndexPtr()[ival]--;
                 }
                 sparse.innerNonZeroPtr()[iouter]--;

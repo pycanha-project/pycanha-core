@@ -17,8 +17,18 @@ Checks: "*,
         -readability-magic-numbers,
         -bugprone-easily-swappable-parameters,
         -bugprone-misplaced-widening-cast,
-        -bugprone-implicit-widening-of-multiplication-result
+        -bugprone-implicit-widening-of-multiplication-result,
+        -boost-use-ranges,
+        -cppcoreguidelines-pro-bounds-avoid-unchecked-container-access,
+        -clang-analyzer-unix.Malloc
 "
+# boost-use-ranges: the project does not depend on Boost (and it duplicates
+# modernize-use-ranges, which we do apply). cppcoreguidelines-pro-bounds-
+# avoid-unchecked-container-access: flags every operator[]; using bounds-checked
+# .at() throughout would regress this numerical library's hot loops. Both off by
+# choice; modernize-use-ranges and the readability/bugprone checks stay on.
+# clang-analyzer-unix.Malloc: false positives inside Eigen's sparse allocator
+# (a -isystem dependency the analyzer reports through); we use no raw malloc/free.
 # Because we mix in many places uint32_t and size_t (uint64_t), for
 # example, in std::vector and triangles and points indices,
 # we need to disable these checks to avoid been too verbose 
@@ -209,4 +219,11 @@ CheckOptions:
   # SparseMatrix usage is misdetected
   - key: misc-include-cleaner.IgnoreHeaders
     value: 'Eigen/.*'
+
+  # std::format (used by spdlog with SPDLOG_USE_STD_FORMAT) has a throw
+  # std::format_error path that the analyzer sees as reachable from noexcept
+  # functions that log. Our format strings are compile-time-checked literals, so
+  # format_error cannot actually be thrown; don't treat it as a noexcept escape.
+  - key: bugprone-exception-escape.IgnoredExceptions
+    value: 'format_error'
 ...

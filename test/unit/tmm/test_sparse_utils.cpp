@@ -206,12 +206,14 @@ void move_test() {
     // Move rows again to the original position
     for (std::size_t i = 0; i < rows_idxs.size(); ++i) {
         if (rows_idxs[i] != i) {
-            for (std::size_t j = i + 1; j < rows_idxs.size(); ++j) {
-                if (rows_idxs[j] == i) {
-                    std::swap(rows_idxs[i], rows_idxs[j]);
-                    move_rows(sparse, to_idx(i), to_idx(j));
-                    break;
-                }
+            const auto found = std::find(
+                rows_idxs.begin() + static_cast<std::ptrdiff_t>(i + 1),
+                rows_idxs.end(), i);
+            if (found != rows_idxs.end()) {
+                const auto j =
+                    static_cast<std::size_t>(found - rows_idxs.begin());
+                std::swap(rows_idxs[i], rows_idxs[j]);
+                move_rows(sparse, to_idx(i), to_idx(j));
             }
         }
     }
@@ -219,12 +221,14 @@ void move_test() {
     // Move cols again to the original position
     for (std::size_t i = 0; i < cols_idxs.size(); ++i) {
         if (cols_idxs[i] != i) {
-            for (std::size_t j = i + 1; j < cols_idxs.size(); ++j) {
-                if (cols_idxs[j] == i) {
-                    std::swap(cols_idxs[i], cols_idxs[j]);
-                    move_cols(sparse, to_idx(i), to_idx(j));
-                    break;
-                }
+            const auto found = std::find(
+                cols_idxs.begin() + static_cast<std::ptrdiff_t>(i + 1),
+                cols_idxs.end(), i);
+            if (found != cols_idxs.end()) {
+                const auto j =
+                    static_cast<std::size_t>(found - cols_idxs.begin());
+                std::swap(cols_idxs[i], cols_idxs[j]);
+                move_cols(sparse, to_idx(i), to_idx(j));
             }
         }
     }

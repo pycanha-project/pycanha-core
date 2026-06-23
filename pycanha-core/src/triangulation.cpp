@@ -100,7 +100,7 @@ void cdt_trimesher(TriMesh& trimesh) {
     // (bound).
 
     // Create an unordered_set from the perimete
-    std::unordered_set<uint32_t> set_bound_edges(
+    const std::unordered_set<uint32_t> set_bound_edges(
         trimesh.get_perimeter_edges().begin(),
         trimesh.get_perimeter_edges().end());
 
@@ -109,7 +109,7 @@ void cdt_trimesher(TriMesh& trimesh) {
     std::unordered_set<uint32_t> set_interior_edges;
 
     for (int edge_idx = 0; edge_idx < trimesh.get_edges().size(); ++edge_idx) {
-        if (set_bound_edges.find(edge_idx) == set_bound_edges.end()) {
+        if (!set_bound_edges.contains(edge_idx)) {
             set_interior_edges.insert(edge_idx);
         }
     }

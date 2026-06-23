@@ -5,7 +5,6 @@
 #include <algorithm>
 #include <bit>
 #include <cctype>
-#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <deque>
@@ -43,11 +42,9 @@ constexpr bool is_matrix_type_v = IsMatrixType<T>::value;
     std::string canonical;
     canonical.resize(name.size());
 
-    std::transform(name.begin(), name.end(), canonical.begin(),
-                   [](const char ch) {
-                       return static_cast<char>(
-                           std::tolower(static_cast<unsigned char>(ch)));
-                   });
+    std::ranges::transform(name, canonical.begin(), [](const char ch) {
+        return static_cast<char>(std::tolower(static_cast<unsigned char>(ch)));
+    });
 
     return canonical;
 }
@@ -277,8 +274,10 @@ void Parameters::add_parameter(std::string name, ThermalValue value) {
     }
 
     _name_to_slot.emplace(canonical_name, _slots.size());
-    _slots.push_back(
-        ParameterSlot{std::move(name), std::move(value), true, false});
+    _slots.push_back(ParameterSlot{.name = std::move(name),
+                                   .value = std::move(value),
+                                   .active = true,
+                                   .is_internal = false});
     ++_active_size;
     mark_structural_change();
 
@@ -296,8 +295,10 @@ void Parameters::add_internal_parameter(std::string name, ThermalValue value) {
     }
 
     _name_to_slot.emplace(canonical_name, _slots.size());
-    _slots.push_back(
-        ParameterSlot{std::move(name), std::move(value), true, true});
+    _slots.push_back(ParameterSlot{.name = std::move(name),
+                                   .value = std::move(value),
+                                   .active = true,
+                                   .is_internal = true});
     ++_active_size;
     mark_structural_change();
 
@@ -723,8 +724,7 @@ std::uint64_t Parameters::get_structure_version() const noexcept {
 }
 
 bool Parameters::contains(const std::string& name) const noexcept {
-    return _name_to_slot.find(canonicalize_parameter_key(name)) !=
-           _name_to_slot.end();
+    return _name_to_slot.contains(canonicalize_parameter_key(name));
 }
 
 std::size_t Parameters::size() const noexcept { return _active_size; }

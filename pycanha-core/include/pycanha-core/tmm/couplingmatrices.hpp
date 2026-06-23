@@ -90,10 +90,10 @@ class CouplingMatrices {
 
     void print_sparse() const;
 
-    void reserve(int nnz);
+    static void reserve(int nnz);
 
   private:
-    void _move_node(Index to_idx, Index from_idx);
+    static void _move_node(Index to_idx, Index from_idx);
 
     inline bool _is_thermal_nodes_valid();
 

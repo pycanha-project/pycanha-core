@@ -186,9 +186,8 @@ void Solver::restore_expanded_coupling_matrices() {
             : _original(original) {}
 
         bool operator()(Index row, Index col, double /*value*/) const {
-            return _original->find(std::make_pair(static_cast<int>(row),
-                                                  static_cast<int>(col))) !=
-                   _original->end();
+            return _original->contains(
+                std::make_pair(static_cast<int>(row), static_cast<int>(col)));
         }
 
       private:

@@ -24,7 +24,7 @@ void require_callback_time(const pycanha::CallbackContext& context) {
     REQUIRE(context.time() == Catch::Approx(4.5));
 }
 
-void require_const_callback_view(pycanha::CallbackContext& context,
+void require_const_callback_view(const pycanha::CallbackContext& context,
                                  const pycanha::ThermalModel& tm) {
     const auto& const_context = std::as_const(context);
     REQUIRE(&const_context.tm() == &tm);

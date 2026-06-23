@@ -19,7 +19,7 @@ constexpr double boundary_temperature = 250.0;
 constexpr double heater_power = 50.0;
 constexpr double contact_conductance = 5.0;
 constexpr double expected_plate_temperature =
-    boundary_temperature + heater_power / contact_conductance;
+    boundary_temperature + (heater_power / contact_conductance);
 
 void populate_minimal_model(pycanha::ThermalModel& tm) {
     pycanha::Node plate(1);

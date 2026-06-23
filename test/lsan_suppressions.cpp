@@ -20,9 +20,9 @@ namespace {
     "leak:mkl_pds_lp64_sfinit_pardiso\n";
 
 constexpr bool k_with_asan() {
-#if defined(__SANITIZE_ADDRESS__)
+#ifdef __SANITIZE_ADDRESS__
     return true;
-#elif defined(__has_feature)
+#elifdef __has_feature
 #if __has_feature(address_sanitizer)
     return true;
 #else

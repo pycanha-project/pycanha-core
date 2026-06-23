@@ -84,7 +84,7 @@ class Geometry : public UniqueID {
      * @brief Gets the name.
      * @return The name.
      */
-    [[nodiscard]] std::string get_name() const { return _name; }
+    [[nodiscard]] const std::string& get_name() const { return _name; }
 
     /**
      * @brief Sets the name.

@@ -43,11 +43,14 @@ jobs:
     steps:
     - name: Check out repo's default branch
       uses: actions/checkout@v3
-    - name: Install conan, cmake and cppcheck
+    - name: Install conan, cmake, cppcheck and clang-tidy 22
       run: |
         pip install conan
         pip install cmake
-        sudo apt-get install cppcheck
+        sudo apt-get update
+        # clang-tidy-22: cmake/Tools.cmake requires clang-tidy 22 with no fallback.
+        # The runner image's generic clang-tidy is an older version, so install 22.
+        sudo apt-get install -y cppcheck clang-tidy-22
     - name: Install with conan
       run: |
         conan config install .conan
