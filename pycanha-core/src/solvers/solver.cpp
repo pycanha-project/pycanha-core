@@ -51,11 +51,6 @@ Solver::Solver(std::shared_ptr<ThermalMathematicalModel> tmm_shptr)
       KRdd(rtcs.sparse_dd),
       KRdb(rtcs.sparse_db),
       KRbb(rtcs.sparse_bb),
-      QI_sp(tmm.nodes().qi_vector),
-      QS_sp(tmm.nodes().qs_vector),
-      QA_sp(tmm.nodes().qa_vector),
-      QE_sp(tmm.nodes().qe_vector),
-      QR_sp(tmm.nodes().qr_vector),
       T(nullptr, Index{0}),
       Td(nullptr, Index{0}),
       Tb(nullptr, Index{0}),
@@ -63,7 +58,12 @@ Solver::Solver(std::shared_ptr<ThermalMathematicalModel> tmm_shptr)
       Qb(nullptr, Index{0}),
       C(nullptr, Index{0}),
       Cd(nullptr, Index{0}),
-      Cb(nullptr, Index{0}) {}
+      Cb(nullptr, Index{0}),
+      QI_sp(tmm.nodes().qi_vector),
+      QS_sp(tmm.nodes().qs_vector),
+      QA_sp(tmm.nodes().qa_vector),
+      QE_sp(tmm.nodes().qe_vector),
+      QR_sp(tmm.nodes().qr_vector) {}
 
 Solver::FormulaExecutionGuard::FormulaExecutionGuard(Solver& solver)
     : _solver(solver) {

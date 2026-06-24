@@ -102,13 +102,17 @@ add_library(${LIB_NAME} STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/tscnrlds_jacobian.cpp
 
 )
-target_include_directories(${LIB_NAME} 
-    PUBLIC 
+target_include_directories(${LIB_NAME}
+    PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
-    SYSTEM PRIVATE
-    $<BUILD_INTERFACE:${cdt_SOURCE_DIR}> # This adds the parent directory of CDT. So  #include <CDT/include/CDT.h> will work
 )
+# CDT is entered via #include <CDT/include/CDT.h> through this parent directory.
+# It MUST be a separate call with SYSTEM first (SYSTEM is only recognised as the
+# first argument after the target); folding it into the call above left CDT as a
+# non-system -I, so its third-party-header warnings tripped our -Werror.
+target_include_directories(${LIB_NAME} SYSTEM PRIVATE
+    $<BUILD_INTERFACE:${cdt_SOURCE_DIR}>)
 
 target_link_libraries( ${LIB_NAME} 
     PUBLIC 

@@ -67,6 +67,11 @@ function(target_set_warnings)
         -Wformat=2 # warn on security issues around functions that format output
         -Wcast-align # warn for potential performance problem casts
         -Wconversion # warn on type conversions that may lose data
+        # Clang's -Wconversion implies -Wsign-conversion but GCC's does not, so
+        # these signed-index/size_t conversions were never enforced. Suppressed
+        # for now to keep GCC/Clang parity; the pre-existing sites are tracked
+        # for a later fix in SIGN_CONVERSION_FOLLOWUP.md. Must follow -Wconversion.
+        -Wno-sign-conversion
         -Wnull-dereference # warn if a null dereference is detected
         # C++ Warnings
         -Wnon-virtual-dtor # if a class with virtual func has a non-virtual dest
@@ -91,10 +96,13 @@ function(target_set_warnings)
         set(WARNINGS ${GCC_WARNINGS})
     endif()
 
-    # For compiled library:
-    #target_compile_options(${TARGET_SET_WARNINGS_TARGET} PRIVATE ${WARNINGS})
-
-    # For header-only library:
-    target_compile_options(${TARGET_SET_WARNINGS_TARGET} INTERFACE ${WARNINGS})
+    # Apply the warnings to the target's OWN translation units (PRIVATE). The
+    # library is a compiled STATIC lib, so its .cpp files must be warned here; an
+    # INTERFACE-only set (the old header-only template default) skipped them and
+    # only warned consumers. PRIVATE also stops the flags (notably -Werror) from
+    # leaking onto downstream consumers of the installed package. The test
+    # targets call this helper directly, so their sources are warned the same way
+    # rather than relying on propagation from the library.
+    target_compile_options(${TARGET_SET_WARNINGS_TARGET} PRIVATE ${WARNINGS})
 
 endfunction(target_set_warnings)

@@ -108,7 +108,8 @@ void cdt_trimesher(TriMesh& trimesh) {
     // in the set_bound_edges
     std::unordered_set<uint32_t> set_interior_edges;
 
-    for (int edge_idx = 0; edge_idx < trimesh.get_edges().size(); ++edge_idx) {
+    for (uint32_t edge_idx = 0; edge_idx < trimesh.get_edges().size();
+         ++edge_idx) {
         if (!set_bound_edges.contains(edge_idx)) {
             set_interior_edges.insert(edge_idx);
         }
