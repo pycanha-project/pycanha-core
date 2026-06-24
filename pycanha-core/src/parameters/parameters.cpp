@@ -79,9 +79,9 @@ struct Parameters::DataMemoryAddress {
     void* operator()(T& data) const noexcept {
         if constexpr (std::is_same_v<T, std::string> || is_matrix_type_v<T>) {
             return static_cast<void*>(data.data());
+        } else {
+            return static_cast<void*>(std::addressof(data));
         }
-
-        return static_cast<void*>(std::addressof(data));
     }
 };
 
@@ -90,9 +90,9 @@ struct Parameters::ConstDataMemoryAddress {
     const void* operator()(const T& data) const noexcept {
         if constexpr (std::is_same_v<T, std::string> || is_matrix_type_v<T>) {
             return static_cast<const void*>(data.data());
+        } else {
+            return static_cast<const void*>(std::addressof(data));
         }
-
-        return static_cast<const void*>(std::addressof(data));
     }
 };
 
@@ -104,9 +104,9 @@ struct Parameters::ParameterSize {
         } else if constexpr (is_matrix_type_v<T>) {
             return static_cast<std::size_t>(data.size()) *
                    sizeof(typename T::Scalar);
+        } else {
+            return sizeof(T);
         }
-
-        return sizeof(T);
     }
 };
 
