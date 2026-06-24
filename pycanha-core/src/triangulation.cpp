@@ -64,8 +64,9 @@ void cdt_trimesher(TriMesh& trimesh) {
         trimesh.get_perimeter_edges().begin(),  // start iterator
         trimesh.get_perimeter_edges().end(),    // end iterator
         num_bound_edges_pairs,  // initial value for the accumulation
-        [&trimesh](const auto& sum, const auto& edge_idx) {
-            return sum + trimesh.get_edges()[edge_idx].size() - 1;
+        [&trimesh](const auto& sum, const auto& edge_idx) -> MeshIndex {
+            return static_cast<MeshIndex>(
+                sum + trimesh.get_edges()[edge_idx].size() - 1);
         });
     // Same as:
     // for (const auto& edge_idx : trimesh.get_perimeter_edges()) {
@@ -123,8 +124,9 @@ void cdt_trimesher(TriMesh& trimesh) {
         set_interior_edges.begin(),  // start iterator
         set_interior_edges.end(),    // end iterator
         num_interior_edges_pairs,    // initial value for the accumulation
-        [&trimesh](const auto& sum, const auto& edge_idx) {
-            return sum + trimesh.get_edges()[edge_idx].size() - 1;
+        [&trimesh](const auto& sum, const auto& edge_idx) -> MeshIndex {
+            return static_cast<MeshIndex>(
+                sum + trimesh.get_edges()[edge_idx].size() - 1);
         });
 
     // Same as:

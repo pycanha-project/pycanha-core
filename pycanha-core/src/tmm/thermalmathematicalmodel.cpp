@@ -260,10 +260,11 @@ double ThermalMathematicalModel::flow_radiative(
     return network().flow_radiative(node_nums_1, node_nums_2);
 }
 
-void ThermalMathematicalModel::add_time_variable(
-    const std::string& var_name, Eigen::VectorXd x_data,
-    Eigen::VectorXd y_data, InterpolationMethod interp,
-    ExtrapolationMethod extrap) {
+void ThermalMathematicalModel::add_time_variable(const std::string& var_name,
+                                                 Eigen::VectorXd x_data,
+                                                 Eigen::VectorXd y_data,
+                                                 InterpolationMethod interp,
+                                                 ExtrapolationMethod extrap) {
     if (_temperature_variable_names.contains(var_name)) {
         throw std::invalid_argument("Variable name '" + var_name +
                                     "' is already used by a "
@@ -304,11 +305,9 @@ const TimeVariable& ThermalMathematicalModel::get_time_variable(
 }
 
 void ThermalMathematicalModel::add_temperature_variable(
-    const std::string& var_name, Eigen::VectorXd x_data,
-    Eigen::VectorXd y_data, InterpolationMethod interp,
-    ExtrapolationMethod extrap) {
-    if (parameters().contains(var_name) ||
-        _time_variables.contains(var_name)) {
+    const std::string& var_name, Eigen::VectorXd x_data, Eigen::VectorXd y_data,
+    InterpolationMethod interp, ExtrapolationMethod extrap) {
+    if (parameters().contains(var_name) || _time_variables.contains(var_name)) {
         throw std::invalid_argument("Variable name '" + var_name +
                                     "' is already in use");
     }

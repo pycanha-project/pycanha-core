@@ -727,7 +727,7 @@ void Nodes::remove_node(NodeNum node_num) {
         return;
     }
 
-    _usr_to_int_node_num.extract(node_num);
+    _usr_to_int_node_num.erase(node_num);
 
     T_vector.erase(T_vector.begin() + *idx);
     C_vector.erase(C_vector.begin() + *idx);
