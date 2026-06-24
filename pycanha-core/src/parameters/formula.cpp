@@ -17,6 +17,7 @@
 #include <iterator>
 #include <map>
 #include <memory>
+#include <ranges>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -45,8 +46,7 @@ using SymbolMap =
 }
 
 [[nodiscard]] std::string preprocess_expression(const std::string& expression) {
-    if ((expression.find('[') != std::string::npos) ||
-        (expression.find(']') != std::string::npos)) {
+    if ((expression.contains('[')) || (expression.contains(']'))) {
         throw std::invalid_argument(
             "ExpressionFormula does not support matrix or array access yet");
     }
@@ -70,14 +70,14 @@ void collect_symbols(const ExpressionNode& expr, SymbolMap& symbols) {
         }
 
         const auto arguments = current->get_args();
-        std::copy(arguments.rbegin(), arguments.rend(),
-                  std::back_inserter(pending));
+        std::ranges::copy(std::views::reverse(arguments),
+                          std::back_inserter(pending));
     }
 }
 
 }  // namespace
 
-ParameterFormula::ParameterFormula(Entity entity, Parameters& parameters,
+ParameterFormula::ParameterFormula(const Entity& entity, Parameters& parameters,
                                    std::string expression)
     : Formula(entity),
       _parameters(&parameters),
@@ -140,11 +140,10 @@ void ParameterFormula::initialize_expression() {
 
     _derivative_exprs.clear();
     _derivative_exprs.reserve(_symbols.size());
-    std::transform(_symbols.begin(), _symbols.end(),
-                   std::back_inserter(_derivative_exprs),
-                   [this](const auto& symbol) {
-                       return SymEngine::diff(_parsed_expr, symbol);
-                   });
+    std::ranges::transform(_symbols, std::back_inserter(_derivative_exprs),
+                           [this](const auto& symbol) {
+                               return SymEngine::diff(_parsed_expr, symbol);
+                           });
     _derivatives.assign(_symbols.size(), 0.0);
     _parameter_ptrs.clear();
     _compiled_derivs.clear();
@@ -155,7 +154,7 @@ void ParameterFormula::initialize_expression() {
 SymEngine::vec_basic ParameterFormula::lambda_inputs() const {
     SymEngine::vec_basic inputs;
     inputs.reserve(_symbols.size());
-    std::copy(_symbols.begin(), _symbols.end(), std::back_inserter(inputs));
+    std::ranges::copy(_symbols, std::back_inserter(inputs));
     return inputs;
 }
 
@@ -319,7 +318,8 @@ const std::string& ParameterFormula::expression() const noexcept {
     return _expression;
 }
 
-ExpressionFormula::ExpressionFormula(Entity entity, Parameters& parameters,
+ExpressionFormula::ExpressionFormula(const Entity& entity,
+                                     Parameters& parameters,
                                      std::string expression,
                                      ThermalNetwork* network)
     : Formula(entity),
@@ -415,11 +415,10 @@ void ExpressionFormula::initialize_expression() {
     _derivative_exprs.clear();
     if (!_has_entity_dependencies) {
         _derivative_exprs.reserve(_symbols.size());
-        std::transform(_symbols.begin(), _symbols.end(),
-                       std::back_inserter(_derivative_exprs),
-                       [this](const auto& symbol) {
-                           return SymEngine::diff(_parsed_expr, symbol);
-                       });
+        std::ranges::transform(_symbols, std::back_inserter(_derivative_exprs),
+                               [this](const auto& symbol) {
+                                   return SymEngine::diff(_parsed_expr, symbol);
+                               });
         _derivatives.assign(_symbols.size(), 0.0);
     } else {
         _derivatives.clear();
@@ -434,7 +433,7 @@ void ExpressionFormula::initialize_expression() {
 SymEngine::vec_basic ExpressionFormula::lambda_inputs() const {
     SymEngine::vec_basic inputs;
     inputs.reserve(_symbols.size());
-    std::copy(_symbols.begin(), _symbols.end(), std::back_inserter(inputs));
+    std::ranges::copy(_symbols, std::back_inserter(inputs));
     return inputs;
 }
 
@@ -516,8 +515,8 @@ void ExpressionFormula::compile_formula() {
 
     _param_ptrs.clear();
     _param_ptrs.reserve(_bindings.size());
-    std::transform(
-        _bindings.begin(), _bindings.end(), std::back_inserter(_param_ptrs),
+    std::ranges::transform(
+        _bindings, std::back_inserter(_param_ptrs),
         [this](const auto& binding) { return resolve_symbol_ptr(binding); });
 
     const auto inputs = lambda_inputs();

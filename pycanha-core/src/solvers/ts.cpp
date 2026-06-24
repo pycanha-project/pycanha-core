@@ -139,21 +139,23 @@ TransientSolver::TransientSolver(
     std::shared_ptr<ThermalMathematicalModel> tmm_shptr)
     : Solver(std::move(tmm_shptr)) {}
 
-void TransientSolver::set_simulation_time(double start_time, double end_time,
-                                          double dtime, double output_stride) {
-    if (end_time < start_time) {
+void TransientSolver::set_simulation_time(double new_start_time,
+                                          double new_end_time,
+                                          double new_time_step,
+                                          double output_stride) {
+    if (new_end_time < new_start_time) {
         throw std::invalid_argument("end_time must be greater than start_time");
     }
-    if (dtime <= 0.0) {
+    if (new_time_step <= 0.0) {
         throw std::invalid_argument("dtime must be positive");
     }
     if (output_stride < 0.0) {
         throw std::invalid_argument("output stride must be non-negative");
     }
 
-    this->start_time = start_time;
-    this->end_time = end_time;
-    this->dtime = dtime;
+    this->start_time = new_start_time;
+    this->end_time = new_end_time;
+    this->dtime = new_time_step;
     dtime_out = output_stride;
 }
 

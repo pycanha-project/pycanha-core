@@ -93,8 +93,9 @@ void add_zero_col_fun(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
 
 // TODO: FIX. This function should be faster than calling first row and then col
 // TOOD: After fix, refactor internal functions ..._row  ..._col ...row_col
-void add_zero_row_col_fun(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
-                          Index new_row_idx, Index new_col_idx) {
+[[maybe_unused]] void add_zero_row_col_fun(
+    Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse, Index new_row_idx,
+    Index new_col_idx) {
     // Change the size of the matrix without deleting the values
     sparse.conservativeResize(sparse.rows() + 1, sparse.cols() + 1);
 
@@ -215,10 +216,10 @@ void move_delete_row_col_fun(
                     auto elems_to_move = (ival - ival_start - 1 + nnz);
                     memmove(sparse.valuePtr() + ival,
                             sparse.valuePtr() + ival + 1,
-                            (elems_to_move) * sizeof(*sparse.valuePtr()));
+                            elems_to_move * sizeof(*sparse.valuePtr()));
                     memmove(sparse.innerIndexPtr() + ival,
                             sparse.innerIndexPtr() + ival + 1,
-                            (elems_to_move) * sizeof(*sparse.innerIndexPtr()));
+                            elems_to_move * sizeof(*sparse.innerIndexPtr()));
                     sparse.innerIndexPtr()[ival]--;
                 }
                 sparse.innerNonZeroPtr()[iouter]--;
@@ -450,9 +451,7 @@ void move_cols(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
     constexpr int limit_linear_search = 10;
 
     using StorageIndexPtr = decltype(sparse.innerIndexPtr());
-    using ValuesPtr = decltype(sparse.valuePtr());
     using StorageIndex = std::remove_pointer_t<StorageIndexPtr>;
-    using Values = std::remove_pointer_t<ValuesPtr>;
 
     // Ensure from_idx > to_idx
     if (from_idx >= to_idx) {
@@ -830,7 +829,7 @@ void copy_values_with_idx(double* dest, const double* from,
                           const std::vector<int>& dest_idx) {
     // Copy the values 'from' to 'dest'. The ival value is inserted in dest in
     // dest + dest_idx[i_nnz] No Checks performed.
-    for (int ival = 0; ival < dest_idx.size(); ival++) {
+    for (std::size_t ival = 0; ival < dest_idx.size(); ival++) {
         dest[dest_idx[ival]] = from[ival];
     }
 }
@@ -842,7 +841,7 @@ void copy_2_values_with_idx(double* dest, const double* from,
     //  - dest in dest + dest_idx_1[i_nnz]
     //  - dest in dest + dest_idx_2[i_nnz]
     // No Checks performed.
-    for (int ival = 0; ival < dest_idx_1.size(); ival++) {
+    for (std::size_t ival = 0; ival < dest_idx_1.size(); ival++) {
         dest[dest_idx_1[ival]] = from[ival];
         dest[dest_idx_2[ival]] = from[ival];
     }
@@ -851,7 +850,7 @@ void copy_2_values_with_idx(double* dest, const double* from,
 void copy_sum_values_with_idx(double* dest, const double* from,
                               const std::vector<int>& dest_idx) {
     // Same as the copy version, but sum the values.
-    for (int ival = 0; ival < dest_idx.size(); ival++) {
+    for (std::size_t ival = 0; ival < dest_idx.size(); ival++) {
         dest[dest_idx[ival]] += from[ival];
     }
 }
@@ -860,7 +859,7 @@ void copy_sum_2_values_with_idx(double* dest, const double* from,
                                 const std::vector<int>& dest_idx_1,
                                 const std::vector<int>& dest_idx_2) {
     // Same as the copy version, but sum the values.
-    for (int ival = 0; ival < dest_idx_1.size(); ival++) {
+    for (std::size_t ival = 0; ival < dest_idx_1.size(); ival++) {
         dest[dest_idx_1[ival]] += from[ival];
         dest[dest_idx_2[ival]] += from[ival];
     }

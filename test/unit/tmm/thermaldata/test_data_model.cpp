@@ -94,12 +94,12 @@ TEST_CASE("DataModel tracks populated attributes and node numbers",
     const auto attributes = model.populated_attributes();
     REQUIRE(model.node_numbers().size() == 2);
     REQUIRE(model.node_numbers().at(0) == 10);
-    REQUIRE(std::find(attributes.begin(), attributes.end(),
-                      DataModelAttribute::T) != attributes.end());
-    REQUIRE(std::find(attributes.begin(), attributes.end(),
-                      DataModelAttribute::KL) != attributes.end());
-    REQUIRE(std::find(attributes.begin(), attributes.end(),
-                      DataModelAttribute::JAC) != attributes.end());
+    REQUIRE(std::ranges::find(attributes, DataModelAttribute::T) !=
+            attributes.end());
+    REQUIRE(std::ranges::find(attributes, DataModelAttribute::KL) !=
+            attributes.end());
+    REQUIRE(std::ranges::find(attributes, DataModelAttribute::JAC) !=
+            attributes.end());
 }
 
 TEST_CASE("DataModel rejects mismatched generic attribute access",

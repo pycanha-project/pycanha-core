@@ -1439,7 +1439,8 @@ inline TriMesh create_2d_rectangular_mesh(const Eigen::VectorXd& dir1_mesh,
     const MeshIndex num_faces = (dir1_size - 1) * (dir2_size - 1);
     FaceEdges faces_edges(num_faces, EdgesIdsList(4));
     MeshIndex face_idx = 0;
-    skip_horizontal_edges = (dir2_size) * (dir1_size - 1);
+    // skip_horizontal_edges already equals (dir2_size) * (dir1_size - 1) here
+    // (set before the previous reverse loop), so no re-assignment is needed.
     for (MeshIndex i_dir2 = 0; i_dir2 < dir2_size - 1; ++i_dir2) {
         for (MeshIndex i_dir1 = 0; i_dir1 < dir1_size - 1; ++i_dir1) {
             faces_edges[face_idx][0] = i_dir1 + (dir1_size - 1) * i_dir2;
@@ -1825,7 +1826,8 @@ inline TriMesh create_2d_quadrilateral_mesh(
     const MeshIndex num_faces = (dir1_size - 1) * (dir2_size - 1);
     FaceEdges faces_edges(num_faces, EdgesIdsList(4));
     MeshIndex face_idx = 0;
-    skip_horizontal_edges = (dir2_size) * (dir1_size - 1);
+    // skip_horizontal_edges already equals (dir2_size) * (dir1_size - 1) here
+    // (set before the previous reverse loop), so no re-assignment is needed.
     for (MeshIndex i_dir2 = 0; i_dir2 < dir2_size - 1; ++i_dir2) {
         for (MeshIndex i_dir1 = 0; i_dir1 < dir1_size - 1; ++i_dir1) {
             faces_edges[face_idx][0] = i_dir1 + (dir1_size - 1) * i_dir2;

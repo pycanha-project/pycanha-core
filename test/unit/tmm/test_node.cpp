@@ -10,6 +10,8 @@ using namespace pycanha;  // NOLINT(build/namespaces)
 
 // NOLINTBEGIN(readability-function-cognitive-complexity)
 
+namespace {
+
 void assert_node_default_values(Node& tn) {
     // Suppress false positives from Catch2 expression decomposition.
     // NOLINTBEGIN(bugprone-chained-comparison)
@@ -63,6 +65,8 @@ void assert_nodes_have_same_attribute_values(Node& tn1, Node& tn2) {
 
     assert_nodes_have_same_attribute_values_except_usr_number(tn1, tn2);
 }
+
+}  // namespace
 
 TEST_CASE("Node Default Values", "[node]") {
     int usr_num = 5;

@@ -330,9 +330,9 @@ std::vector<Index> read_tmd_transient(
 
     std::vector<Index> model_node_numbers;
     model_node_numbers.reserve(node_numbers.size());
-    std::transform(node_numbers.begin(), node_numbers.end(),
-                   std::back_inserter(model_node_numbers),
-                   [](const auto node_number) { return to_idx(node_number); });
+    std::ranges::transform(
+        node_numbers, std::back_inserter(model_node_numbers),
+        [](const auto node_number) { return to_idx(node_number); });
 
     DataModel model(std::move(model_node_numbers));
 

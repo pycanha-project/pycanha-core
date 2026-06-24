@@ -43,10 +43,12 @@ function(add_clang_tidy_to_target target)
         return()
     endif()
 
-    # Try to find specific versions of clang-tidy starting from 16, if not, check "clang-tidy"
-    find_program(CLANG_TIDY_EXE NAMES clang-tidy-20 clang-tidy-19 clang-tidy-18 clang-tidy)
+    # Require clang-tidy 22 exactly; do NOT fall back to other versions. The CI
+    # (and the documented local workflow) pin clang-tidy 22 so findings are
+    # reproducible across environments.
+    find_program(CLANG_TIDY_EXE NAMES clang-tidy-22)
     if(CLANG_TIDY_EXE)
-        # Check version of clang-tidy. It should be >=14
+        # Confirm the located binary really is version 22.
         execute_process(
             COMMAND ${CLANG_TIDY_EXE} --version
             OUTPUT_VARIABLE CLANG_TIDY_VERSION_OUTPUT
@@ -54,9 +56,9 @@ function(add_clang_tidy_to_target target)
         )
         string(REGEX REPLACE ".*version ([0-9]+\\.[0-9]+\\.[0-9]+).*" "\\1"
         CLANG_TIDY_VERSION "${CLANG_TIDY_VERSION_OUTPUT}")
- 
-        if(CLANG_TIDY_VERSION VERSION_LESS "18.0")
-            message(WARNING "clang-tidy version 18 or higher is required. Found version ${CLANG_TIDY_VERSION}.")
+
+        if(CLANG_TIDY_VERSION VERSION_LESS "22.0")
+            message(WARNING "clang-tidy 22 is required. Found version ${CLANG_TIDY_VERSION}.")
             return()
         endif()
 

@@ -18,8 +18,8 @@ class TransientSolver : public Solver {
         std::shared_ptr<ThermalMathematicalModel> tmm_shptr);
     ~TransientSolver() override = default;
 
-    void set_simulation_time(double start_time, double end_time, double dtime,
-                             double output_stride);
+    void set_simulation_time(double new_start_time, double new_end_time,
+                             double new_time_step, double output_stride);
     [[nodiscard]] DataModel& output_model();
     [[nodiscard]] const DataModel& output_model() const;
 

@@ -311,16 +311,28 @@ TEST_CASE("ThermalMathematicalModel callback flags gate every callback family",
     model.callback_transient_time_change();
     model.callback_transient_after_timestep();
 
-    require_callback_counts(c_callback_counts(), CallbackCountState{1, 1, 1});
-    require_callback_counts(py_callback_counts, CallbackCountState{1, 1, 1});
+    require_callback_counts(
+        c_callback_counts(),
+        CallbackCountState{
+            .solver_calls = 1, .time_calls = 1, .after_calls = 1});
+    require_callback_counts(
+        py_callback_counts,
+        CallbackCountState{
+            .solver_calls = 1, .time_calls = 1, .after_calls = 1});
 
     model.callbacks_active = false;
     model.callback_solver_loop();
     model.callback_transient_time_change();
     model.callback_transient_after_timestep();
 
-    require_callback_counts(c_callback_counts(), CallbackCountState{1, 1, 1});
-    require_callback_counts(py_callback_counts, CallbackCountState{1, 1, 1});
+    require_callback_counts(
+        c_callback_counts(),
+        CallbackCountState{
+            .solver_calls = 1, .time_calls = 1, .after_calls = 1});
+    require_callback_counts(
+        py_callback_counts,
+        CallbackCountState{
+            .solver_calls = 1, .time_calls = 1, .after_calls = 1});
 }
 
 TEST_CASE("ThermalMathematicalModel surfaces missing solver associations",

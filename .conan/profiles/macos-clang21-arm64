@@ -1,0 +1,12 @@
+[settings]
+arch = armv8
+compiler = apple-clang
+compiler.cppstd = 23
+compiler.libcxx = libc++
+compiler.version = 21
+os = Macos
+
+[buildenv]
+# Apple clang 21.0.0 is the default clang on the macos-26 runner image
+CC = clang
+CXX = clang++

@@ -1,0 +1,18 @@
+[settings]
+arch = x86_64
+compiler = msvc
+compiler.cppstd = 23
+compiler.runtime = dynamic
+compiler.version = 195
+os = Windows
+
+[tool_requires]
+# hdf5's recipe caps CMake to < 4 (cmake/[>=3.18 <4]), but the
+# "Visual Studio 18 2026" generator was only added in CMake 4.2. Build hdf5
+# with Ninja (its own cmake 3.31 + MSVC via vcvars). This is scoped to hdf5
+# only and is invisible to consumers: pycanha-core and the bindings keep using
+# the Visual Studio generator and just link hdf5's artifacts.
+hdf5/*: ninja/[>=1.11]
+
+[conf]
+hdf5/*:tools.cmake.cmaketoolchain:generator=Ninja

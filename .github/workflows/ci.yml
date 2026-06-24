@@ -20,20 +20,33 @@ jobs:
         config:
           - os: ubuntu
             compiler: gcc14
+            runner: ubuntu-26.04
             profile_base: ubuntu-gcc14-amd64
             mkl_option: "True"
+          - os: ubuntu
+            compiler: gcc15
+            runner: ubuntu-26.04
+            profile_base: ubuntu-gcc15-amd64
+            mkl_option: "True"
+          - os: ubuntu
+            compiler: clang22
+            runner: ubuntu-26.04
+            profile_base: ubuntu-clang22-amd64
+            mkl_option: "True"
           - os: windows
-            compiler: msvc2022
-            profile_base: windows-msvc2022-amd64
+            compiler: msvc2026
+            runner: windows-2025-vs2026
+            profile_base: windows-msvc2026-amd64
             mkl_option: "True"
           - os: macos
-            compiler: clang
-            profile_base: macos-clang-arm64
+            compiler: apple-clang21
+            runner: macos-26
+            profile_base: macos-clang21-arm64
             mkl_option: "False"
         build_type: [release, debug]
 
     name: ${{matrix.config.os}} ${{matrix.config.compiler}} ${{matrix.build_type}} built and tests
-    runs-on: ${{matrix.config.os}}-latest
+    runs-on: ${{matrix.config.runner}}
     timeout-minutes: 45
 
     steps:
@@ -50,17 +63,47 @@ jobs:
         pip install conan
         pip install cmake
 
-    - name: Configure Apple Clang
+    - name: Configure Apple Clang 21
       if: matrix.config.os == 'macos'
       run: |
+        clang --version
         echo "CC=clang" >> $GITHUB_ENV
         echo "CXX=clang++" >> $GITHUB_ENV
+
+    - name: Install libc++, lld and llvm tools for clang
+      if: matrix.config.compiler == 'clang22'
+      run: |
+        sudo apt-get update
+        # libc++/libc++abi: clang uses libc++ (see profile), not preinstalled.
+        # lld-22 + llvm-22: needed for the LTO/Release build. clang's -flto emits
+        # pure LLVM bitcode, which GNU ar/ld.bfd cannot read ("file format not
+        # recognized"). llvm-22 provides llvm-ar/llvm-ranlib (CMake auto-detects
+        # these via 'clang -print-prog-name' and uses them to build the static
+        # lib's archive index for IPO); lld links the bitcode without needing the
+        # gold plugin (-fuse-ld=lld is set in the clang profile).
+        sudo apt-get install -y libc++-22-dev libc++abi-22-dev lld-22 llvm-22
+        clang-22 --version
 
     - name: Install conan profiles
       run: |
         conan config install .conan
 
     - name: Build and test application in ${{matrix.build_type}} mode
+      env:
+        # Print the full output of any failing test so aborts/exceptions are visible in the log
+        CTEST_OUTPUT_ON_FAILURE: '1'
+        # AddressSanitizer container-overflow FALSE POSITIVE, macOS only.
+        # symengine (a conan-center dep) is built WITHOUT ASan, so it never adds libc++'s
+        # container annotations to the std::vector<RCP> it returns from get_args(). Our
+        # instrumented code then reads that vector (formulas.cpp std::copy over rbegin/rend,
+        # which is strictly in-bounds), and ASan misreads the stale size/capacity annotation as
+        # an overflow. It is not a real bug. Container-overflow is the one ASan check that needs
+        # every TU touching the container to be instrumented; the others rely on allocation
+        # redzones and work fine with "our code only". This only bites with libc++ (macOS, and
+        # the Linux clang job which uses libc++); libstdc++ (gcc) does not annotate vectors by
+        # default (needs -D_GLIBCXX_SANITIZE_VECTOR). This disables ONLY container-overflow; all
+        # other ASan/UBSan checks stay active. Revisit if symengine is ever built with ASan.
+        ASAN_OPTIONS: ${{ (matrix.config.os == 'macos' || matrix.config.compiler == 'clang22') && 'detect_container_overflow=0' || '' }}
       run: >
         conan create . --build=missing
         -pr:h=${{matrix.config.profile_base}} -pr:h=build-${{matrix.build_type}} -pr:h=options-ci

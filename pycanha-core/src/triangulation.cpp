@@ -64,8 +64,9 @@ void cdt_trimesher(TriMesh& trimesh) {
         trimesh.get_perimeter_edges().begin(),  // start iterator
         trimesh.get_perimeter_edges().end(),    // end iterator
         num_bound_edges_pairs,  // initial value for the accumulation
-        [&trimesh](const auto& sum, const auto& edge_idx) {
-            return sum + trimesh.get_edges()[edge_idx].size() - 1;
+        [&trimesh](const auto& sum, const auto& edge_idx) -> MeshIndex {
+            return static_cast<MeshIndex>(
+                sum + trimesh.get_edges()[edge_idx].size() - 1);
         });
     // Same as:
     // for (const auto& edge_idx : trimesh.get_perimeter_edges()) {
@@ -100,7 +101,7 @@ void cdt_trimesher(TriMesh& trimesh) {
     // (bound).
 
     // Create an unordered_set from the perimete
-    std::unordered_set<uint32_t> set_bound_edges(
+    const std::unordered_set<uint32_t> set_bound_edges(
         trimesh.get_perimeter_edges().begin(),
         trimesh.get_perimeter_edges().end());
 
@@ -108,8 +109,9 @@ void cdt_trimesher(TriMesh& trimesh) {
     // in the set_bound_edges
     std::unordered_set<uint32_t> set_interior_edges;
 
-    for (int edge_idx = 0; edge_idx < trimesh.get_edges().size(); ++edge_idx) {
-        if (set_bound_edges.find(edge_idx) == set_bound_edges.end()) {
+    for (uint32_t edge_idx = 0; edge_idx < trimesh.get_edges().size();
+         ++edge_idx) {
+        if (!set_bound_edges.contains(edge_idx)) {
             set_interior_edges.insert(edge_idx);
         }
     }
@@ -122,8 +124,9 @@ void cdt_trimesher(TriMesh& trimesh) {
         set_interior_edges.begin(),  // start iterator
         set_interior_edges.end(),    // end iterator
         num_interior_edges_pairs,    // initial value for the accumulation
-        [&trimesh](const auto& sum, const auto& edge_idx) {
-            return sum + trimesh.get_edges()[edge_idx].size() - 1;
+        [&trimesh](const auto& sum, const auto& edge_idx) -> MeshIndex {
+            return static_cast<MeshIndex>(
+                sum + trimesh.get_edges()[edge_idx].size() - 1);
         });
 
     // Same as:

@@ -108,30 +108,30 @@ struct ThermalNetworkFlowFixture {
 
     [[nodiscard]] static const std::array<FlowLink, 9>& conductive_links() {
         static const std::array<FlowLink, 9> links{{
-            {17, 2, 1.2},
-            {17, 55, 0.8},
-            {11, 2, 1.5},
-            {11, 55, 2.0},
-            {40, 2, 0.6},
-            {40, 55, 1.1},
-            {17, 11, 3.0},
-            {11, 40, 0.4},
-            {2, 55, 4.4},
+            {.node_num_1 = 17, .node_num_2 = 2, .value = 1.2},
+            {.node_num_1 = 17, .node_num_2 = 55, .value = 0.8},
+            {.node_num_1 = 11, .node_num_2 = 2, .value = 1.5},
+            {.node_num_1 = 11, .node_num_2 = 55, .value = 2.0},
+            {.node_num_1 = 40, .node_num_2 = 2, .value = 0.6},
+            {.node_num_1 = 40, .node_num_2 = 55, .value = 1.1},
+            {.node_num_1 = 17, .node_num_2 = 11, .value = 3.0},
+            {.node_num_1 = 11, .node_num_2 = 40, .value = 0.4},
+            {.node_num_1 = 2, .node_num_2 = 55, .value = 4.4},
         }};
         return links;
     }
 
     [[nodiscard]] static const std::array<FlowLink, 9>& radiative_links() {
         static const std::array<FlowLink, 9> links{{
-            {17, 2, 0.10},
-            {17, 55, 0.05},
-            {11, 2, 0.07},
-            {11, 55, 0.09},
-            {40, 2, 0.11},
-            {40, 55, 0.04},
-            {17, 11, 0.08},
-            {11, 40, 0.06},
-            {2, 55, 0.03},
+            {.node_num_1 = 17, .node_num_2 = 2, .value = 0.10},
+            {.node_num_1 = 17, .node_num_2 = 55, .value = 0.05},
+            {.node_num_1 = 11, .node_num_2 = 2, .value = 0.07},
+            {.node_num_1 = 11, .node_num_2 = 55, .value = 0.09},
+            {.node_num_1 = 40, .node_num_2 = 2, .value = 0.11},
+            {.node_num_1 = 40, .node_num_2 = 55, .value = 0.04},
+            {.node_num_1 = 17, .node_num_2 = 11, .value = 0.08},
+            {.node_num_1 = 11, .node_num_2 = 40, .value = 0.06},
+            {.node_num_1 = 2, .node_num_2 = 55, .value = 0.03},
         }};
         return links;
     }

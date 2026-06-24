@@ -8,44 +8,61 @@ on:
 
 jobs:
   code-cov:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
-    - name: Check out repo's default branch
-      uses: actions/checkout@v3
+    - name: Check out repository
+      uses: actions/checkout@v4
 
-    - name: Setup Python
-      uses: actions/setup-python@v4
+    - name: Set up Python
+      uses: actions/setup-python@v5
       with:
-        python-version: '3.12'
+        python-version: '3.13'
 
-    - name: Set GCC 14, G++ 14, and gcov-14 as default
+    - name: Install clang runtime libs and llvm tools
       run: |
-        sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-14 100
-        sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-14 100
-        sudo update-alternatives --install /usr/bin/gcov gcov /usr/bin/gcov-14 100
-        gcc --version
-        g++ --version
-        gcov --version
+        sudo apt-get update
+        # libc++/libc++abi: required by the clang22 profile. llvm-22: provides
+        # llvm-profdata-22 and llvm-cov-22. lld-22: the clang22 profile links
+        # with -fuse-ld=lld.
+        sudo apt-get install -y libc++-22-dev libc++abi-22-dev lld-22 llvm-22
 
-    - name: Install Conan, CMake, gcovr, and lcov
-      run: |
-        pip install conan cmake
-        sudo apt-get install -y gcovr lcov
+    - name: Install Conan and CMake
+      run: pip install conan cmake
 
-    - name: Install dependencies with Conan
+    - name: Build instrumented tests
       run: |
         conan config install .conan
+        # Same split as ci.yml: all dependencies in Release, only our package in
+        # Debug (instrumented). The build-release profile builds everything in
+        # Release; "&:build_type=Debug" overrides just the root package back to
+        # Debug, which also selects the conan-debug preset below. (Building deps
+        # in Debug would pull in symengine's Teuchos utilities, which fail to
+        # compile with libc++.)
         conan install . --build=missing \
-          -pr:h=ubuntu-gcc14-amd64 -pr:h=build-debug -pr:h=options-coverage \
-          -pr:b=ubuntu-gcc14-amd64 -pr:b=build-debug -pr:b=options-coverage
+          -pr:h=ubuntu-clang22-amd64 -pr:h=build-release -pr:h=options-coverage \
+          -pr:b=ubuntu-clang22-amd64 -pr:b=build-release -pr:b=options-coverage \
+          -s:h "&:build_type=Debug"
         cmake --preset=conan-debug
+        cmake --build build/Debug -j4
 
-    - name: Build with coverage target
+    - name: Run tests and export coverage
+      working-directory: build/Debug
       run: |
-        cmake --build build/Debug --target coverage -j4
+        mkdir -p coverage
+        # One .profraw per test process (%p = pid); ctest spawns the binary once
+        # per Catch2 test case.
+        LLVM_PROFILE_FILE="$PWD/coverage/%p.profraw" ctest --output-on-failure
+        llvm-profdata-22 merge -sparse coverage/*.profraw -o coverage.profdata
+        # Keep only the library sources; drop tests, conan deps and system headers.
+        llvm-cov-22 export ./test/tests \
+          -instr-profile=coverage.profdata \
+          -format=lcov \
+          -ignore-filename-regex='(/test/|/\.conan2/|/usr/)' \
+          > coverage.lcov
 
     - name: Upload coverage reports to Codecov
       uses: codecov/codecov-action@v4.0.1
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         slug: pycanha-project/pycanha-core
+        files: build/Debug/coverage.lcov

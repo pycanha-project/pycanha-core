@@ -20,8 +20,9 @@ cmake_minimum_required(VERSION 3.25)
 # (that is ON or not set), the tests will be built. TODO: Use another variable?
 
 # - PYCANHA_OPTION_COVERAGE:
-# Create a coverage target. It also add the -fkeep-inline-functions flag to tests, 
-# which might be problematic in the future.
+# Build with Clang source-based coverage instrumentation
+# (-fprofile-instr-generate -fcoverage-mapping). The report is produced in CI
+# from the .profraw files with llvm-profdata/llvm-cov. Requires Clang.
 
 # - PYCANHA_OPTION_INCLUDE_WHAT_YOU_USE:
 # Not working right now.
@@ -112,8 +113,14 @@ if(PYCANHA_OPTION_SANITIZE_ADDR OR PYCANHA_OPTION_SANITIZE_UNDEF)
 endif()
 
 if(PYCANHA_OPTION_COVERAGE)
-    include(CodeCoverage)
-    append_coverage_compiler_flags()
+    # Clang source-based code coverage. Instruments every target defined in the
+    # subdirectories below (library + tests); the CI workflow runs the tests and
+    # turns the resulting .profraw into an lcov report with llvm-profdata/llvm-cov.
+    if(NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+        message(FATAL_ERROR "PYCANHA_OPTION_COVERAGE requires a Clang compiler")
+    endif()
+    add_compile_options(-fprofile-instr-generate -fcoverage-mapping)
+    add_link_options(-fprofile-instr-generate)
 endif()
 
 if(PYCANHA_OPTION_LTO)

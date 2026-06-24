@@ -1,5 +1,6 @@
 #include "pycanha-core/parameters/formulas.hpp"
 
+#include <spdlog/common.h>
 #include <spdlog/spdlog.h>
 #include <symengine/basic.h>
 #include <symengine/eval_double.h>
@@ -13,6 +14,7 @@
 #include <iterator>
 #include <map>
 #include <memory>
+#include <ranges>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -76,8 +78,7 @@ bool DerivativeParameterRegistry::remove_parameter(
         return false;
     }
 
-    const auto iterator = std::find(_parameter_names.begin(),
-                                    _parameter_names.end(), *resolved_name);
+    const auto iterator = std::ranges::find(_parameter_names, *resolved_name);
     if (iterator == _parameter_names.end()) {
         return false;
     }
@@ -102,9 +103,11 @@ bool DerivativeParameterRegistry::contains(
         return false;
     }
 
-    return std::find(_parameter_names.begin(), _parameter_names.end(),
-                     *resolved_name) != _parameter_names.end();
+    return std::ranges::find(_parameter_names, *resolved_name) !=
+           _parameter_names.end();
 }
+
+namespace {
 
 [[nodiscard]] std::shared_ptr<ThermalNetwork> ensure_network(
     const std::shared_ptr<ThermalNetwork>& network) {
@@ -122,8 +125,6 @@ bool DerivativeParameterRegistry::contains(
     return parameters;
 }
 
-namespace {
-
 using ExpressionNode = SymEngine::RCP<const SymEngine::Basic>;
 using SymbolMap =
     std::map<std::string, SymEngine::RCP<const SymEngine::Symbol>>;
@@ -138,8 +139,7 @@ using SymbolMap =
 }
 
 [[nodiscard]] std::string preprocess_expression(const std::string& expression) {
-    if ((expression.find('[') != std::string::npos) ||
-        (expression.find(']') != std::string::npos)) {
+    if ((expression.contains('[')) || (expression.contains(']'))) {
         throw std::invalid_argument(
             "ExpressionFormula does not support matrix or array access yet");
     }
@@ -163,8 +163,8 @@ void collect_symbols(const ExpressionNode& expr, SymbolMap& symbols) {
         }
 
         const auto arguments = current->get_args();
-        std::copy(arguments.rbegin(), arguments.rend(),
-                  std::back_inserter(pending));
+        std::ranges::copy(std::views::reverse(arguments),
+                          std::back_inserter(pending));
     }
 }
 
@@ -276,7 +276,7 @@ void Formulas::set_temperature_variable_names(
 }
 
 ParameterFormula Formulas::create_parameter_formula(
-    Entity entity, const std::string& parameter) {
+    const Entity& entity, const std::string& parameter) {
     [[maybe_unused]] auto validated_network = ensure_network(_network);
     auto parameter_storage = ensure_parameters(_parameters);
     return {entity, *parameter_storage, parameter};
@@ -320,7 +320,7 @@ ExpressionFormula& Formulas::add_expression_formula(
     return add_expression_formula(resolve_entity(entity), expression);
 }
 
-Formula& Formulas::add_formula(Entity entity, double value) {
+Formula& Formulas::add_formula(const Entity& entity, double value) {
     return add_value_formula(entity, value);
 }
 
@@ -328,7 +328,7 @@ Formula& Formulas::add_formula(std::string_view entity, double value) {
     return add_value_formula(entity, value);
 }
 
-Formula& Formulas::add_formula(Entity entity,
+Formula& Formulas::add_formula(const Entity& entity,
                                const std::string& formula_string) {
     auto formula = create_formula(entity, formula_string);
     add_formula(formula);
@@ -351,8 +351,8 @@ void Formulas::add_formula(const std::shared_ptr<Formula>& formula) {
         throw std::invalid_argument("Cannot add a null formula");
     }
 
-    const auto duplicate = std::find_if(
-        _formulas.begin(), _formulas.end(), [&formula](const auto& existing) {
+    const auto duplicate =
+        std::ranges::find_if(_formulas, [&formula](const auto& existing) {
             return existing->entity().is_same_as(formula->entity());
         });
     if (duplicate != _formulas.end()) {
@@ -376,14 +376,16 @@ void Formulas::add_formula(const std::shared_ptr<Formula>& formula) {
 }
 
 bool Formulas::remove_formula(const Entity& entity) noexcept {
-    const auto iterator = std::find_if(
-        _formulas.begin(), _formulas.end(), [&entity](const auto& formula) {
+    const auto iterator =
+        std::ranges::find_if(_formulas, [&entity](const auto& formula) {
             return formula->entity().is_same_as(entity);
         });
     if (iterator == _formulas.end()) {
-        SPDLOG_LOGGER_INFO(get_logger(),
-                           "Formula '{}' was not present for removal",
-                           entity.string_representation());
+        // noexcept function: compose without std::format and use the
+        // non-formatting log path (see pycanha::log_noexcept).
+        log_noexcept(spdlog::level::info, "Formula '" +
+                                              entity.string_representation() +
+                                              "' was not present for removal");
         return false;
     }
 
@@ -400,14 +402,21 @@ bool Formulas::remove_formula(const Entity& entity) noexcept {
 }
 
 bool Formulas::remove_formula(std::string_view entity) noexcept {
-    try {
-        return remove_formula(resolve_entity(entity));
-    } catch (const std::exception&) {
-        SPDLOG_LOGGER_INFO(get_logger(),
-                           "Formula target '{}' was not present for removal",
-                           std::string(entity));
+    // Resolve without throwing (resolve_entity throws on unknown targets):
+    // an unresolvable target simply means there is nothing to remove.
+    if (_network == nullptr) {
         return false;
     }
+    const auto resolved = Entity::from_string(*_network, entity);
+    if (!resolved.has_value()) {
+        // noexcept function: compose without std::format and use the
+        // non-formatting log path (see pycanha::log_noexcept).
+        log_noexcept(spdlog::level::info, "Formula target '" +
+                                              std::string(entity) +
+                                              "' was not present for removal");
+        return false;
+    }
+    return remove_formula(*resolved);
 }
 
 void Formulas::validate_for_execution() {
