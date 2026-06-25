@@ -6,6 +6,7 @@
 #include <cctype>
 #include <cstdint>
 #include <memory>
+#include <span>
 #include <stdexcept>
 #include <string>
 #include <unordered_set>
@@ -14,6 +15,11 @@
 
 #include "pycanha-core/globals.hpp"
 #include "pycanha-core/gmm/ids.hpp"
+#include "pycanha-core/gmm/mesh/mesh_options.hpp"
+#include "pycanha-core/gmm/scene/geometry.hpp"
+#include "pycanha-core/gmm/scene/geometry_group.hpp"
+#include "pycanha-core/gmm/scene/geometry_group_cutted.hpp"
+#include "pycanha-core/gmm/scene/geometry_item.hpp"
 #include "pycanha-core/utils/logger.hpp"
 
 namespace pycanha::gmm {
@@ -33,9 +39,9 @@ const std::string& GeometryModel::name() const noexcept { return _name; }
 
 std::string GeometryModel::canonicalize(const std::string& name) {
     std::string canonical = name;
-    std::transform(
-        canonical.begin(), canonical.end(), canonical.begin(),
-        [](unsigned char ch) { return static_cast<char>(std::tolower(ch)); });
+    std::ranges::transform(canonical, canonical.begin(), [](unsigned char ch) {
+        return static_cast<char>(std::tolower(ch));
+    });
     return canonical;
 }
 
@@ -67,9 +73,9 @@ void GeometryModel::add(std::shared_ptr<Geometry> object,
     if (!parent_name.empty()) {
         parent = std::dynamic_pointer_cast<GeometryGroup>(find(parent_name));
         if (parent == nullptr) {
-            throw std::invalid_argument(
-                "GeometryModel::add: parent '" + parent_name +
-                "' is not a registered group");
+            throw std::invalid_argument("GeometryModel::add: parent '" +
+                                        parent_name +
+                                        "' is not a registered group");
         }
     }
 
@@ -103,7 +109,7 @@ void GeometryModel::add(std::shared_ptr<Geometry> object,
         std::shared_ptr<Geometry> node;
         std::shared_ptr<GeometryGroup> parent_group;
     };
-    std::vector<Frame> stack{{object, parent}};
+    std::vector<Frame> stack{{.node = object, .parent_group = parent}};
     while (!stack.empty()) {
         const Frame frame = stack.back();
         stack.pop_back();
@@ -122,7 +128,7 @@ void GeometryModel::add(std::shared_ptr<Geometry> object,
         const auto as_group =
             std::dynamic_pointer_cast<GeometryGroup>(frame.node);
         for (const auto& child : frame.node->children()) {
-            stack.push_back({child, as_group});
+            stack.push_back({.node = child, .parent_group = as_group});
         }
     }
 
@@ -249,7 +255,8 @@ void GeometryModel::reparent(const std::string& name,
     }
 
     // Cycle check: new_parent must not be `node` or a descendant of it.
-    for (std::shared_ptr<Geometry> ancestor = new_parent; ancestor != nullptr;) {
+    for (std::shared_ptr<Geometry> ancestor = new_parent;
+         ancestor != nullptr;) {
         if (ancestor == node) {
             throw std::logic_error("Reparent would create a cycle");
         }
@@ -282,7 +289,8 @@ std::vector<std::shared_ptr<Geometry>> GeometryModel::children_recursive()
     return out;
 }
 
-void GeometryModel::set_default_mesh_options(MeshOptions mesh_options) noexcept {
+void GeometryModel::set_default_mesh_options(
+    MeshOptions mesh_options) noexcept {
     _default_mesh_options = mesh_options;
     _mesh_dirty = true;
     _faces_of_node_dirty = true;

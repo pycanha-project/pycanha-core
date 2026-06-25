@@ -1,8 +1,8 @@
 #pragma once
 
-#include <cstdint>
-
 #include <manifold/manifold.h>
+
+#include <cstdint>
 
 #include "pycanha-core/gmm/ids.hpp"
 #include "pycanha-core/gmm/mesh/trimesh.hpp"

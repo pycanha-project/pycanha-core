@@ -20,7 +20,7 @@ using Edge = std::array<std::uint64_t, 2>;
 
 struct EdgeHash {
     [[nodiscard]] std::size_t operator()(const Edge& edge) const noexcept {
-        return static_cast<std::size_t>(edge[0] * 1315423911ULL + edge[1]);
+        return static_cast<std::size_t>((edge[0] * 1315423911ULL) + edge[1]);
     }
 };
 
@@ -153,8 +153,8 @@ struct EdgeHash {
 
 }  // namespace
 
-manifold::Manifold build_primitive_proxy(
-    const TriMeshD& triangulated_primitive, const ProxyMeta& meta) {
+manifold::Manifold build_primitive_proxy(const TriMeshD& triangulated_primitive,
+                                         const ProxyMeta& meta) {
     manifold::MeshGL64 proxy_mesh =
         build_proxy_meshgl(triangulated_primitive, meta);
     proxy_mesh.Merge();

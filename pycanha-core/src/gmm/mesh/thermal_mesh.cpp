@@ -54,14 +54,16 @@ void ThermalMesh::set_dir2_mesh(std::vector<double> dir2_mesh) {
 
 void ThermalMesh::set_side1_thick(double thick) {
     if (thick < 0.0) {
-        throw std::invalid_argument("ThermalMesh: side1 thickness must be >= 0");
+        throw std::invalid_argument(
+            "ThermalMesh: side1 thickness must be >= 0");
     }
     _side1_thick = thick;
 }
 
 void ThermalMesh::set_side2_thick(double thick) {
     if (thick < 0.0) {
-        throw std::invalid_argument("ThermalMesh: side2 thickness must be >= 0");
+        throw std::invalid_argument(
+            "ThermalMesh: side2 thickness must be >= 0");
     }
     _side2_thick = thick;
 }
@@ -78,8 +80,8 @@ bool ThermalMesh::is_valid() const noexcept {
            std::abs(_dir1_mesh.back() - 1.0) <= LENGTH_TOL &&
            std::abs(_dir2_mesh.front()) <= LENGTH_TOL &&
            std::abs(_dir2_mesh.back() - 1.0) <= LENGTH_TOL &&
-           std::is_sorted(_dir1_mesh.begin(), _dir1_mesh.end()) &&
-           std::is_sorted(_dir2_mesh.begin(), _dir2_mesh.end());
+           std::ranges::is_sorted(_dir1_mesh) &&
+           std::ranges::is_sorted(_dir2_mesh);
 }
 
 MeshIndex ThermalMesh::get_number_of_pair_faces() const noexcept {
@@ -88,12 +90,12 @@ MeshIndex ThermalMesh::get_number_of_pair_faces() const noexcept {
 
 NodeNum ThermalMesh::node_of(MeshIndex i, MeshIndex j,
                              unsigned side) const noexcept {
-    const auto cell = static_cast<std::int64_t>(i) *
-                          static_cast<std::int64_t>(_dir2_mesh.size() - 1U) +
+    const auto cell = (static_cast<std::int64_t>(i) *
+                       static_cast<std::int64_t>(_dir2_mesh.size() - 1U)) +
                       static_cast<std::int64_t>(j);
     const std::int64_t start = side == 2U ? _node2_start : _node1_start;
     const std::int64_t step = side == 2U ? _node2_step : _node1_step;
-    return static_cast<NodeNum>(start + cell * step);
+    return static_cast<NodeNum>(start + (cell * step));
 }
 
 void ThermalMesh::validate() const {

@@ -25,7 +25,7 @@ namespace pycanha::gmm::test {
              dir2_idx + 1U < thermal_mesh.get_dir2_mesh().size(); ++dir2_idx) {
             // Even local face id = side 1 (front).
             const std::size_t linear_index =
-                dir1_idx * num_dir2_cells + dir2_idx;
+                (dir1_idx * num_dir2_cells) + dir2_idx;
             face_ids.insert(2U * static_cast<std::uint64_t>(linear_index));
         }
     }

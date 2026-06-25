@@ -13,7 +13,7 @@
 #include "pycanha-core/gmm/ops/transform.hpp"           // IWYU pragma: keep
 #include "pycanha-core/gmm/primitives/primitive.hpp"    // IWYU pragma: keep
 #include "pycanha-core/gmm/scene/coordinate_transformation.hpp"  // IWYU pragma: keep
-#include "pycanha-core/gmm/scene/geometry.hpp"          // IWYU pragma: keep
-#include "pycanha-core/gmm/scene/geometry_group.hpp"    // IWYU pragma: keep
+#include "pycanha-core/gmm/scene/geometry.hpp"        // IWYU pragma: keep
+#include "pycanha-core/gmm/scene/geometry_group.hpp"  // IWYU pragma: keep
 #include "pycanha-core/gmm/scene/geometry_group_cutted.hpp"  // IWYU pragma: keep
-#include "pycanha-core/gmm/scene/geometry_item.hpp"     // IWYU pragma: keep
+#include "pycanha-core/gmm/scene/geometry_item.hpp"  // IWYU pragma: keep

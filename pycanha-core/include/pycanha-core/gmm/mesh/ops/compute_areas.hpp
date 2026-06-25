@@ -11,8 +11,8 @@ namespace pycanha::gmm::mesh::ops {
 namespace detail {
 
 template <class Scalar>
-[[nodiscard]] Vector3D triangle_normal_unnormalized(
-    const TriMesh<Scalar>& mesh, Index tri_idx) {
+[[nodiscard]] Vector3D triangle_normal_unnormalized(const TriMesh<Scalar>& mesh,
+                                                    Index tri_idx) {
     const auto tri = mesh.triangles.row(tri_idx);
     const Vector3D p0 =
         mesh.vertices.row(static_cast<Index>(tri(0))).template cast<double>();
@@ -40,14 +40,13 @@ template <class Scalar>
     Eigen::MatrixX3d centroids(mesh.triangles.rows(), 3);
     for (Index tri_idx = 0; tri_idx < mesh.triangles.rows(); ++tri_idx) {
         const auto tri = mesh.triangles.row(tri_idx);
-        centroids.row(tri_idx) =
-            (mesh.vertices.row(static_cast<Index>(tri(0)))
-                 .template cast<double>() +
-             mesh.vertices.row(static_cast<Index>(tri(1)))
-                 .template cast<double>() +
-             mesh.vertices.row(static_cast<Index>(tri(2)))
-                 .template cast<double>()) /
-            3.0;
+        centroids.row(tri_idx) = (mesh.vertices.row(static_cast<Index>(tri(0)))
+                                      .template cast<double>() +
+                                  mesh.vertices.row(static_cast<Index>(tri(1)))
+                                      .template cast<double>() +
+                                  mesh.vertices.row(static_cast<Index>(tri(2)))
+                                      .template cast<double>()) /
+                                 3.0;
     }
     return centroids;
 }

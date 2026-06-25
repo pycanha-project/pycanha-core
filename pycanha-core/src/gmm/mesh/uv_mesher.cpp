@@ -67,9 +67,10 @@ struct QuantizedPointHash {
 };
 
 [[nodiscard]] QuantizedPoint quantize_point(const Point3D& point) {
-    return {static_cast<std::int64_t>(std::llround(point.x() / LENGTH_TOL)),
-            static_cast<std::int64_t>(std::llround(point.y() / LENGTH_TOL)),
-            static_cast<std::int64_t>(std::llround(point.z() / LENGTH_TOL))};
+    return {
+        .x = static_cast<std::int64_t>(std::llround(point.x() / LENGTH_TOL)),
+        .y = static_cast<std::int64_t>(std::llround(point.y() / LENGTH_TOL)),
+        .z = static_cast<std::int64_t>(std::llround(point.z() / LENGTH_TOL))};
 }
 
 [[nodiscard]] double triangle_area(const Point3D& p0, const Point3D& p1,
@@ -126,7 +127,7 @@ void append_triangle(std::vector<std::array<Eigen::Index, 3>>& triangles,
 }  // namespace
 
 double lerp(double start, double end, double t) noexcept {
-    return start + (end - start) * t;
+    return start + ((end - start) * t);
 }
 
 bool full_revolution(double start_angle, double end_angle) noexcept {
@@ -150,7 +151,7 @@ int solve_arc_segments(double radius, double angle_span,
     }
 
     const double cosine_argument =
-        std::clamp(1.0 - deviation_tolerance / radius, -1.0, 1.0);
+        std::clamp(1.0 - (deviation_tolerance / radius), -1.0, 1.0);
     const double denominator = 2.0 * std::acos(cosine_argument);
     if (denominator <= ANGLE_TOL) {
         return 1;
@@ -199,7 +200,7 @@ DirSampler make_linear_dir_sampler(std::span<const double> cuts) {
 }
 
 TriMeshD build_mesh_from_plan(const ThermalMesh& thermal_mesh,
-                             const SamplingPlan& plan) {
+                              const SamplingPlan& plan) {
     const auto dir1_cuts = thermal_mesh.get_dir1_mesh();
     const auto dir2_cuts = thermal_mesh.get_dir2_mesh();
     const std::size_t num_dir1_cells = dir1_cuts.size() - 1U;
@@ -223,7 +224,7 @@ TriMeshD build_mesh_from_plan(const ThermalMesh& thermal_mesh,
             // Even-numbered local face id = side 1 (front). Side parity is an
             // internal convention; node assignment happens later.
             const std::size_t linear_index =
-                dir1_idx * num_dir2_cells + dir2_idx;
+                (dir1_idx * num_dir2_cells) + dir2_idx;
             const auto face_id_value =
                 2U * static_cast<std::uint64_t>(linear_index);
 
@@ -233,7 +234,7 @@ TriMeshD build_mesh_from_plan(const ThermalMesh& thermal_mesh,
             const auto cell_vertex_index = [dir2_segments](int local_dir1,
                                                            int local_dir2) {
                 return static_cast<std::size_t>(
-                    local_dir1 * (dir2_segments + 1) + local_dir2);
+                    (local_dir1 * (dir2_segments + 1)) + local_dir2);
             };
 
             for (int local_dir1 = 0; local_dir1 <= dir1_segments;
@@ -274,8 +275,7 @@ TriMeshD build_mesh_from_plan(const ThermalMesh& thermal_mesh,
     TriMeshD mesh;
     mesh.vertices.resize(static_cast<Eigen::Index>(vertices.size()), 3);
     for (Eigen::Index vertex_idx = 0;
-         vertex_idx < static_cast<Eigen::Index>(vertices.size());
-         ++vertex_idx) {
+         std::cmp_less(vertex_idx, vertices.size()); ++vertex_idx) {
         mesh.vertices.row(vertex_idx) =
             vertices[static_cast<std::size_t>(vertex_idx)];
     }
@@ -283,16 +283,15 @@ TriMeshD build_mesh_from_plan(const ThermalMesh& thermal_mesh,
     mesh.triangles.resize(static_cast<Eigen::Index>(triangles.size()), 3);
     mesh.face_ids.resize(static_cast<Eigen::Index>(face_ids.size()));
     for (Eigen::Index triangle_idx = 0;
-         triangle_idx < static_cast<Eigen::Index>(triangles.size());
-         ++triangle_idx) {
+         std::cmp_less(triangle_idx, triangles.size()); ++triangle_idx) {
         const auto& triangle =
             triangles[static_cast<std::size_t>(triangle_idx)];
         mesh.triangles.row(triangle_idx)
             << static_cast<pycanha::MeshIndex>(triangle[0]),
             static_cast<pycanha::MeshIndex>(triangle[1]),
             static_cast<pycanha::MeshIndex>(triangle[2]);
-        mesh.face_ids[triangle_idx] =
-            face_ids[static_cast<std::size_t>(triangle_idx)];
+        mesh.face_ids[triangle_idx] = static_cast<pycanha::MeshIndex>(
+            face_ids[static_cast<std::size_t>(triangle_idx)]);
     }
 
     return mesh;

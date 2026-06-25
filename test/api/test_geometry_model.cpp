@@ -99,7 +99,8 @@ TEST_CASE("GeometryModel builds a world mesh with primitive provenance",
 TEST_CASE("GeometryGroupCutted reduces a target's area in the world mesh",
           "[api][geometrymodel]") {
     // Reference (uncut) panel area.
-    const double full_area = mesh_ops::compute_areas(make_panel()->mesh()).sum();
+    const double full_area =
+        mesh_ops::compute_areas(make_panel()->mesh()).sum();
 
     GeometryModel model("scene");
     auto cutter = std::make_shared<GeometryItem>(

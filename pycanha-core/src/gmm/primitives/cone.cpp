@@ -20,7 +20,7 @@ namespace {
         return cone.radius1();
     }
     return cone.radius1() +
-           (cone.radius2() - cone.radius1()) * (height / total_height);
+           ((cone.radius2() - cone.radius1()) * (height / total_height));
 }
 
 }  // namespace
@@ -126,7 +126,7 @@ double Cone::surface_area() const noexcept {
     const double height = cone_height(*this);
     const double radius_delta = _radius2 - _radius1;
     const double slant =
-        std::sqrt(height * height + radius_delta * radius_delta);
+        std::sqrt((height * height) + (radius_delta * radius_delta));
     return 0.5 * (_end_angle - _start_angle) * (_radius1 + _radius2) * slant;
 }
 

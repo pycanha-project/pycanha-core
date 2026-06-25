@@ -16,7 +16,6 @@
 namespace {
 
 using pycanha::gmm::CoordinateTransformation;
-using pycanha::gmm::Cylinder;
 using pycanha::gmm::Geometry;
 using pycanha::gmm::GeometryGroup;
 using pycanha::gmm::GeometryGroupCutted;
@@ -71,8 +70,7 @@ TEST_CASE("GeometryGroupCutted only accepts closed solid cutters",
           "[gmm][scene]") {
     auto target = make_panel("target");
     GeometryGroupCutted cut_group(
-        "trimmed",
-        std::vector<std::shared_ptr<Geometry>>{target},
+        "trimmed", std::vector<std::shared_ptr<Geometry>>{target},
         std::vector<std::shared_ptr<GeometryItem>>{});
 
     REQUIRE(cut_group.name() == "trimmed");

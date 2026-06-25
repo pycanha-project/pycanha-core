@@ -16,11 +16,14 @@
 #include <vector>
 
 #include "pycanha-core/globals.hpp"
+#include "pycanha-core/gmm/mesh/thermal_mesh.hpp"
+#include "pycanha-core/gmm/mesh/trimesh.hpp"
 #include "pycanha-core/gmm/primitives/cone.hpp"
 #include "pycanha-core/gmm/primitives/cube.hpp"
 #include "pycanha-core/gmm/primitives/cylinder.hpp"
 #include "pycanha-core/gmm/primitives/disc.hpp"
 #include "pycanha-core/gmm/primitives/paraboloid.hpp"
+#include "pycanha-core/gmm/primitives/primitive.hpp"
 #include "pycanha-core/gmm/primitives/quadrilateral.hpp"
 #include "pycanha-core/gmm/primitives/rectangle.hpp"
 #include "pycanha-core/gmm/primitives/sphere.hpp"
@@ -35,8 +38,8 @@ using VertexKey = std::array<std::int64_t, 3>;
 
 struct VertexKeyHash {
     [[nodiscard]] std::size_t operator()(const VertexKey& key) const noexcept {
-        return static_cast<std::size_t>(key[0] * 1315423911LL +
-                                        key[1] * 2654435761LL + key[2]);
+        return static_cast<std::size_t>((key[0] * 1315423911LL) +
+                                        (key[1] * 2654435761LL) + key[2]);
     }
 };
 
@@ -88,7 +91,7 @@ void compact_referenced_vertices(TriMeshD& mesh) {
 [[nodiscard]] std::size_t find_cell(std::span<const double> cuts,
                                     double normalized_value) {
     const double clamped = std::clamp(normalized_value, 0.0, 1.0);
-    const auto upper = std::upper_bound(cuts.begin(), cuts.end(), clamped);
+    const auto upper = std::ranges::upper_bound(cuts, clamped);
     if (upper == cuts.begin()) {
         return 0U;
     }
@@ -134,7 +137,7 @@ void compact_referenced_vertices(TriMeshD& mesh) {
         edge_2_along_v > LENGTH_TOL ? uv.y() / edge_2_along_v : 0.0;
     const double along_edge_1 =
         edge_1_length > LENGTH_TOL
-            ? (uv.x() - along_edge_2 * edge_2_along_u) / edge_1_length
+            ? (uv.x() - (along_edge_2 * edge_2_along_u)) / edge_1_length
             : 0.0;
 
     const double dir1 = std::clamp(along_edge_1 + along_edge_2, 0.0, 1.0);
@@ -185,7 +188,7 @@ void compact_referenced_vertices(TriMeshD& mesh) {
     const double total_height = (cone.p2() - cone.p1()).norm();
     const double height_fraction = normalize_linear(uv.y(), total_height);
     const double radius =
-        cone.radius1() + (cone.radius2() - cone.radius1()) * height_fraction;
+        cone.radius1() + ((cone.radius2() - cone.radius1()) * height_fraction);
     const double theta =
         radius > LENGTH_TOL ? uv.x() / radius : cone.start_angle();
     return {(clamp_periodic_angle(theta, cone.start_angle(), cone.end_angle()) -
@@ -300,7 +303,8 @@ void remove_degenerate_triangles(TriMeshD& mesh, double area_tolerance) {
     mesh.triangles.resize(static_cast<Eigen::Index>(kept_triangles.size()), 3);
     mesh.face_ids.resize(static_cast<Eigen::Index>(kept_face_ids.size()));
     for (Eigen::Index tri_idx = 0; tri_idx < mesh.triangles.rows(); ++tri_idx) {
-        const auto& triangle = kept_triangles[static_cast<std::size_t>(tri_idx)];
+        const auto& triangle =
+            kept_triangles[static_cast<std::size_t>(tri_idx)];
         mesh.triangles(tri_idx, 0) = triangle[0];
         mesh.triangles(tri_idx, 1) = triangle[1];
         mesh.triangles(tri_idx, 2) = triangle[2];
@@ -315,16 +319,16 @@ pycanha::MeshIndex classify_triangle_by_centroid(
     const TriMeshD& mesh, Eigen::Index triangle_index,
     const Primitive& primitive, const ThermalMesh& thermal_mesh) {
     const Point3D p0 =
-        mesh.vertices.row(static_cast<Eigen::Index>(
-                              mesh.triangles(triangle_index, 0)))
+        mesh.vertices
+            .row(static_cast<Eigen::Index>(mesh.triangles(triangle_index, 0)))
             .transpose();
     const Point3D p1 =
-        mesh.vertices.row(static_cast<Eigen::Index>(
-                              mesh.triangles(triangle_index, 1)))
+        mesh.vertices
+            .row(static_cast<Eigen::Index>(mesh.triangles(triangle_index, 1)))
             .transpose();
     const Point3D p2 =
-        mesh.vertices.row(static_cast<Eigen::Index>(
-                              mesh.triangles(triangle_index, 2)))
+        mesh.vertices
+            .row(static_cast<Eigen::Index>(mesh.triangles(triangle_index, 2)))
             .transpose();
     const Point3D centroid = (p0 + p1 + p2) / 3.0;
 
@@ -361,8 +365,8 @@ pycanha::MeshIndex classify_triangle_by_centroid(
     const std::size_t cell_i = find_cell(thermal_mesh.get_dir1_mesh(), dir1);
     const std::size_t cell_j = find_cell(thermal_mesh.get_dir2_mesh(), dir2);
     const std::size_t linear_index =
-        cell_i * (thermal_mesh.get_dir2_mesh().size() - 1U) + cell_j;
-    return static_cast<pycanha::MeshIndex>(2U * linear_index +
+        (cell_i * (thermal_mesh.get_dir2_mesh().size() - 1U)) + cell_j;
+    return static_cast<pycanha::MeshIndex>((2U * linear_index) +
                                            (is_back ? 1U : 0U));
 }
 

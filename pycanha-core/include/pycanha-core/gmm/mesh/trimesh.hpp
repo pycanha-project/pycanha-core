@@ -14,7 +14,8 @@ namespace pycanha::gmm {
 //   - TriMeshD (double) is the precise pipeline type used everywhere
 //     internally (per-item caches, per-cut-group caches, the model root mesh
 //     before conversion).
-//   - TriMeshF (float) is what the model root exposes via GeometryModel::mesh().
+//   - TriMeshF (float) is what the model root exposes via
+//   GeometryModel::mesh().
 //
 // face_ids index the per-side face identity: even = side 1, odd = side 2.
 // node_numbers is DENSE, indexed directly by face_id (gaps allowed after
@@ -25,11 +26,9 @@ template <class Scalar>
 class TriMesh {
   public:
     using VertexMatrix = Eigen::Matrix<Scalar, Eigen::Dynamic, 3>;
-    using TriangleMatrix =
-        Eigen::Matrix<pycanha::MeshIndex, Eigen::Dynamic, 3>;
+    using TriangleMatrix = Eigen::Matrix<pycanha::MeshIndex, Eigen::Dynamic, 3>;
     using FaceIdVector = Eigen::Matrix<pycanha::MeshIndex, Eigen::Dynamic, 1>;
-    using NodeNumberVector =
-        Eigen::Matrix<pycanha::NodeNum, Eigen::Dynamic, 1>;
+    using NodeNumberVector = Eigen::Matrix<pycanha::NodeNum, Eigen::Dynamic, 1>;
 
     struct PrimitiveRange {
         GeometryId geometry_id{};
@@ -37,10 +36,10 @@ class TriMesh {
         pycanha::MeshIndex last_face_id = 0;   // inclusive
     };
 
-    VertexMatrix vertices;            // Np x 3
-    TriangleMatrix triangles;         // Nt x 3
-    FaceIdVector face_ids;            // Nt
-    NodeNumberVector node_numbers;    // Nf (dense, indexed by face_id)
+    VertexMatrix vertices;                   // Np x 3
+    TriangleMatrix triangles;                // Nt x 3
+    FaceIdVector face_ids;                   // Nt
+    NodeNumberVector node_numbers;           // Nf (dense, indexed by face_id)
     std::vector<PrimitiveRange> primitives;  // sorted by first_face_id
 
     [[nodiscard]] pycanha::MeshIndex np() const noexcept {

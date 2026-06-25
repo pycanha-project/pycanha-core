@@ -11,13 +11,12 @@
 #include <utility>
 #include <vector>
 
-#include "pycanha-core/thermaldata/named_constants.hpp"
-
 #include "pycanha-core/globals.hpp"
 #include "pycanha-core/io/esatan.hpp"
 #include "pycanha-core/solvers/sslu.hpp"
 #include "pycanha-core/thermaldata/data_model.hpp"
 #include "pycanha-core/thermaldata/dense_time_series.hpp"
+#include "pycanha-core/thermaldata/named_constants.hpp"
 #include "pycanha-core/thermaldata/thermaldata.hpp"
 #include "pycanha-core/tmm/node.hpp"
 #include "pycanha-core/tmm/thermalmathematicalmodel.hpp"
@@ -295,9 +294,8 @@ TEST_CASE("read_tmd_transient imports user-defined named constants",
     REQUIRE(constants.int_values()(last, 1) == std::int64_t{0});
 
     // $CHARACTER constants (contiguous fixed-width storage).
-    REQUIRE(constants.char_names() == std::vector<std::string>{
-                                          "TIME_CHAR_CONST_1",
-                                          "TIME_CHAR_CONST_2"});
+    REQUIRE(constants.char_names() ==
+            std::vector<std::string>{"TIME_CHAR_CONST_1", "TIME_CHAR_CONST_2"});
     REQUIRE(constants.char_width() > 0);
     REQUIRE(trim_spaces(constants.char_value(0, 0)) == "XXX_XXX_XXX_XXX");
     REQUIRE(trim_spaces(constants.char_value(last, 0)) == "10000.000");

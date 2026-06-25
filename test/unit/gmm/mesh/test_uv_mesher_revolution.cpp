@@ -1,10 +1,8 @@
 #include <catch2/catch_test_macros.hpp>
-#include <cmath>
 #include <numbers>
 
 #include "pycanha-core/globals.hpp"
 #include "pycanha-core/gmm/mesh/mesh_options.hpp"
-#include "pycanha-core/gmm/mesh/ops/validate.hpp"
 #include "pycanha-core/gmm/mesh/thermal_mesh.hpp"
 #include "pycanha-core/gmm/mesh/uv_mesher.hpp"
 #include "pycanha-core/gmm/primitives/cone.hpp"
@@ -21,7 +19,6 @@ using pycanha::gmm::MeshOptions;
 using pycanha::gmm::Paraboloid;
 using pycanha::gmm::ThermalMesh;
 using pycanha::gmm::UvMesher;
-namespace mesh_ops = pycanha::gmm::mesh::ops;
 namespace gmm_test = pycanha::gmm::test;
 
 template <typename PrimitiveType>

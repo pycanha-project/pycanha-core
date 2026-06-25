@@ -19,8 +19,9 @@ TEST_CASE("Proxy shell builds a valid manifold from a rectangle mesh",
                     pycanha::gmm::ThermalMesh{}, pycanha::gmm::MeshOptions{});
 
     const auto proxy = pycanha::gmm::cutting::build_primitive_proxy(
-        mesh, {pycanha::gmm::GeometryId{}, 1.0e-3,
-               manifold::Manifold::ReserveIDs(3U)});
+        mesh, {.source_item_id = pycanha::gmm::GeometryId{},
+               .thickness = 1.0e-3,
+               .outer_original_id = manifold::Manifold::ReserveIDs(3U)});
 
     REQUIRE(proxy.Status() == manifold::Manifold::Error::NoError);
     REQUIRE(proxy.NumTri() > static_cast<std::size_t>(mesh.triangles.rows()));

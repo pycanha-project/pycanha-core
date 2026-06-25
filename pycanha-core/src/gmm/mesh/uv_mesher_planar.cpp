@@ -17,18 +17,19 @@ namespace {
     const ThermalMesh& thermal_mesh, SurfacePointFunction point_at) {
     const std::size_t num_dir1_cells = thermal_mesh.get_dir1_mesh().size() - 1U;
     const std::size_t num_dir2_cells = thermal_mesh.get_dir2_mesh().size() - 1U;
-    return {std::vector<int>(num_dir1_cells, 1),
-            std::vector<int>(num_dir2_cells, 1),
-            make_linear_dir_sampler(thermal_mesh.get_dir1_mesh()),
-            make_linear_dir_sampler(thermal_mesh.get_dir2_mesh()),
-            std::move(point_at)};
+    return {
+        .dir1_segments = std::vector<int>(num_dir1_cells, 1),
+        .dir2_segments = std::vector<int>(num_dir2_cells, 1),
+        .dir1_sample = make_linear_dir_sampler(thermal_mesh.get_dir1_mesh()),
+        .dir2_sample = make_linear_dir_sampler(thermal_mesh.get_dir2_mesh()),
+        .point_at = std::move(point_at)};
 }
 
 }  // namespace
 
 TriMeshD mesh_primitive(const Triangle& triangle,
-                       const ThermalMesh& thermal_mesh,
-                       const MeshOptions& /*options*/) {
+                        const ThermalMesh& thermal_mesh,
+                        const MeshOptions& /*options*/) {
     const auto plan = make_planar_sampling_plan(
         thermal_mesh, [&triangle](double dir1, double dir2) {
             return triangle_strip_point(triangle, dir1, dir2);
@@ -37,8 +38,8 @@ TriMeshD mesh_primitive(const Triangle& triangle,
 }
 
 TriMeshD mesh_primitive(const Rectangle& rectangle,
-                       const ThermalMesh& thermal_mesh,
-                       const MeshOptions& /*options*/) {
+                        const ThermalMesh& thermal_mesh,
+                        const MeshOptions& /*options*/) {
     const double u_extent = (rectangle.p2() - rectangle.p1()).norm();
     const double v_extent = rectangle.to_uv(rectangle.p3()).y();
     const auto plan = make_planar_sampling_plan(
@@ -50,8 +51,8 @@ TriMeshD mesh_primitive(const Rectangle& rectangle,
 }
 
 TriMeshD mesh_primitive(const Quadrilateral& quadrilateral,
-                       const ThermalMesh& thermal_mesh,
-                       const MeshOptions& /*options*/) {
+                        const ThermalMesh& thermal_mesh,
+                        const MeshOptions& /*options*/) {
     const double u_extent = (quadrilateral.p2() - quadrilateral.p1()).norm();
     const double v_extent = quadrilateral.to_uv(quadrilateral.p4()).y();
     const auto plan = make_planar_sampling_plan(

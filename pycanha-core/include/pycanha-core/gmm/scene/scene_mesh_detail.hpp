@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Eigen/Dense>
+#include <utility>
 
 #include "pycanha-core/globals.hpp"
 #include "pycanha-core/gmm/mesh/trimesh.hpp"
@@ -9,8 +10,8 @@
 namespace pycanha::gmm::detail {
 
 // Applies `transform` to every vertex of `mesh` in place (full-precision).
-inline void apply_transform_in_place(TriMeshD& mesh,
-                                     const CoordinateTransformation& transform) {
+inline void apply_transform_in_place(
+    TriMeshD& mesh, const CoordinateTransformation& transform) {
     if (transform.is_identity()) {
         return;
     }
@@ -26,14 +27,15 @@ inline void apply_transform_in_place(TriMeshD& mesh,
 // primitive ranges by `face_id_offset` and its triangle indices by the current
 // vertex count. Returns the next face_id offset (face_id_offset + src.nf()).
 // node_numbers is kept dense, indexed by global face_id.
-inline pycanha::MeshIndex concatenate_offset(TriMeshD& dest, const TriMeshD& src,
-                                             pycanha::MeshIndex face_id_offset) {
+inline pycanha::MeshIndex concatenate_offset(
+    TriMeshD& dest, const TriMeshD& src, pycanha::MeshIndex face_id_offset) {
     const pycanha::MeshIndex src_nf = src.nf();
     const Eigen::Index vertex_offset = dest.vertices.rows();
     const Eigen::Index tri_offset = dest.triangles.rows();
 
     if (src.vertices.rows() > 0) {
-        dest.vertices.conservativeResize(vertex_offset + src.vertices.rows(), 3);
+        dest.vertices.conservativeResize(vertex_offset + src.vertices.rows(),
+                                         3);
         dest.vertices.bottomRows(src.vertices.rows()) = src.vertices;
     }
 
@@ -52,7 +54,7 @@ inline pycanha::MeshIndex concatenate_offset(TriMeshD& dest, const TriMeshD& src
     if (src_nf > 0) {
         const pycanha::MeshIndex needed = face_id_offset + src_nf;
         const Eigen::Index old_size = dest.node_numbers.rows();
-        if (static_cast<Eigen::Index>(needed) > old_size) {
+        if (std::cmp_greater(needed, old_size)) {
             dest.node_numbers.conservativeResize(needed);
             dest.node_numbers
                 .segment(old_size, static_cast<Eigen::Index>(needed) - old_size)
@@ -66,10 +68,10 @@ inline pycanha::MeshIndex concatenate_offset(TriMeshD& dest, const TriMeshD& src
 
     dest.primitives.reserve(dest.primitives.size() + src.primitives.size());
     for (const auto& range : src.primitives) {
-        dest.primitives.push_back(
-            TriMeshD::PrimitiveRange{range.geometry_id,
-                                     range.first_face_id + face_id_offset,
-                                     range.last_face_id + face_id_offset});
+        dest.primitives.push_back(TriMeshD::PrimitiveRange{
+            .geometry_id = range.geometry_id,
+            .first_face_id = range.first_face_id + face_id_offset,
+            .last_face_id = range.last_face_id + face_id_offset});
     }
 
     return face_id_offset + src_nf;

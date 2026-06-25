@@ -332,7 +332,7 @@ std::vector<std::string> read_constant_names(const H5::Group& group,
         return names;
     }
 
-    H5::CompType mem_type(name_size);
+    H5::CompType const mem_type(name_size);
     mem_type.insertMember("name", 0, name_type);
 
     std::vector<char> buffer(num_names * name_size, '\0');
@@ -408,9 +408,9 @@ std::vector<char> read_char_matrix_2d(const H5::DataSet& dataset,
 }
 
 void populate_constants(const H5::Group& analysis_group,
-                             const H5::Group& data_group,
-                             const std::vector<double>& time_values,
-                             DataModel& model) {
+                        const H5::Group& data_group,
+                        const std::vector<double>& time_values,
+                        DataModel& model) {
     NamedConstants& constants = model.constants();
 
     const auto num_timesteps = static_cast<Index>(time_values.size());

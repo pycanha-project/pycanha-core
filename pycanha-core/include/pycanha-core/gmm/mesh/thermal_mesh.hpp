@@ -77,12 +77,8 @@ class ThermalMesh {
     [[nodiscard]] const Color& get_side2_color() const noexcept {
         return _side2_color;
     }
-    void set_side1_color(Color color) noexcept {
-        _side1_color = color;
-    }
-    void set_side2_color(Color color) noexcept {
-        _side2_color = color;
-    }
+    void set_side1_color(Color color) noexcept { _side1_color = color; }
+    void set_side2_color(Color color) noexcept { _side2_color = color; }
 
     [[nodiscard]] const std::shared_ptr<BulkMaterial>& get_side1_material()
         const noexcept {

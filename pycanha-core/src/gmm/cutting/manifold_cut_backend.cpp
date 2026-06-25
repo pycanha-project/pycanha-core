@@ -11,13 +11,13 @@
 #include <limits>
 #include <span>
 #include <stdexcept>
+#include <utility>
 #include <vector>
 
 #include "pycanha-core/globals.hpp"
 #include "pycanha-core/gmm/cutting/cut_mesh_ops.hpp"
 #include "pycanha-core/gmm/cutting/cutter_proxy.hpp"
 #include "pycanha-core/gmm/cutting/proxy_shell.hpp"
-#include "pycanha-core/gmm/ids.hpp"
 #include "pycanha-core/gmm/mesh/mesh_options.hpp"
 #include "pycanha-core/gmm/mesh/ops/compute_areas.hpp"
 #include "pycanha-core/gmm/mesh/trimesh.hpp"
@@ -71,7 +71,7 @@ namespace {
         std::array<pycanha::MeshIndex, 3> triangle{};
         for (int corner = 0; corner < 3; ++corner) {
             const auto source_vertex =
-                mesh.triVerts[tri * 3U + static_cast<std::size_t>(corner)];
+                mesh.triVerts[(tri * 3U) + static_cast<std::size_t>(corner)];
             auto& target_vertex = vertex_remap[source_vertex];
             if (target_vertex == std::numeric_limits<std::uint64_t>::max()) {
                 target_vertex = used_vertices.size();
@@ -84,23 +84,23 @@ namespace {
     }
 
     TriMeshD tri_mesh;
-    tri_mesh.vertices.resize(static_cast<Eigen::Index>(used_vertices.size()), 3);
+    tri_mesh.vertices.resize(static_cast<Eigen::Index>(used_vertices.size()),
+                             3);
     tri_mesh.triangles.resize(static_cast<Eigen::Index>(triangles.size()), 3);
     tri_mesh.face_ids.resize(static_cast<Eigen::Index>(triangles.size()));
 
     for (Eigen::Index vertex_idx = 0;
-         vertex_idx < static_cast<Eigen::Index>(used_vertices.size());
-         ++vertex_idx) {
+         std::cmp_less(vertex_idx, used_vertices.size()); ++vertex_idx) {
         const auto source_vertex =
             used_vertices[static_cast<std::size_t>(vertex_idx)];
         tri_mesh.vertices.row(vertex_idx) = Eigen::RowVector3d(
-            mesh.vertProperties[source_vertex * mesh.numProp + 0U],
-            mesh.vertProperties[source_vertex * mesh.numProp + 1U],
-            mesh.vertProperties[source_vertex * mesh.numProp + 2U]);
+            mesh.vertProperties[(source_vertex * mesh.numProp) + 0U],
+            mesh.vertProperties[(source_vertex * mesh.numProp) + 1U],
+            mesh.vertProperties[(source_vertex * mesh.numProp) + 2U]);
     }
 
-    for (Eigen::Index tri_idx = 0;
-         tri_idx < static_cast<Eigen::Index>(triangles.size()); ++tri_idx) {
+    for (Eigen::Index tri_idx = 0; std::cmp_less(tri_idx, triangles.size());
+         ++tri_idx) {
         const auto& triangle = triangles[static_cast<std::size_t>(tri_idx)];
         tri_mesh.triangles(tri_idx, 0) = triangle[0];
         tri_mesh.triangles(tri_idx, 1) = triangle[1];
@@ -136,14 +136,15 @@ TriMeshD ManifoldCutBackend::cut(
 
     const std::uint32_t outer_original_id = manifold::Manifold::ReserveIDs(3U);
     const manifold::Manifold proxy = build_primitive_proxy(
-        target_mesh, ProxyMeta{target.id(),
-                               proxy_thickness(target_mesh, options),
-                               outer_original_id});
+        target_mesh,
+        ProxyMeta{.source_item_id = target.id(),
+                  .thickness = proxy_thickness(target_mesh, options),
+                  .outer_original_id = outer_original_id});
 
     std::vector<manifold::Manifold> cutter_manifolds;
     cutter_manifolds.reserve(cutters.size());
-    std::transform(
-        cutters.begin(), cutters.end(), std::back_inserter(cutter_manifolds),
+    std::ranges::transform(
+        cutters, std::back_inserter(cutter_manifolds),
         [](const Primitive& cutter) { return build_cutter(cutter); });
 
     const manifold::Manifold cut_union =

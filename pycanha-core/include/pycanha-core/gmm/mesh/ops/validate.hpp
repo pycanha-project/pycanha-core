@@ -18,7 +18,7 @@ using ValidateEdge = std::array<std::uint32_t, 2>;
 struct ValidateEdgeHash {
     [[nodiscard]] std::size_t operator()(
         const ValidateEdge& edge) const noexcept {
-        return static_cast<std::size_t>(edge[0]) * 1315423911U +
+        return (static_cast<std::size_t>(edge[0]) * 1315423911U) +
                static_cast<std::size_t>(edge[1]);
     }
 };

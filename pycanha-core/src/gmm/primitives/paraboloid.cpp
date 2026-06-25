@@ -127,7 +127,7 @@ double Paraboloid::surface_area() const noexcept {
     const double radius_squared = _radius * _radius;
     const double full_surface_area =
         std::numbers::pi * _radius *
-        (std::pow(radius_squared + 4.0 * height * height, 1.5) -
+        (std::pow(radius_squared + (4.0 * height * height), 1.5) -
          std::pow(_radius, 3.0)) /
         (6.0 * height * height);
     return full_surface_area *

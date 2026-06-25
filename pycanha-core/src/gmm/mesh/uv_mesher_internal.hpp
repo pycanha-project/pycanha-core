@@ -43,36 +43,36 @@ struct SamplingPlan {
                                                 double deviation_tolerance);
 [[nodiscard]] DirSampler make_linear_dir_sampler(std::span<const double> cuts);
 [[nodiscard]] TriMeshD build_mesh_from_plan(const ThermalMesh& thermal_mesh,
-                                           const SamplingPlan& plan);
+                                            const SamplingPlan& plan);
 [[nodiscard]] Point3D triangle_strip_point(const Triangle& triangle,
                                            double dir1, double dir2);
 
 [[nodiscard]] TriMeshD mesh_primitive(const Triangle& triangle,
-                                     const ThermalMesh& thermal_mesh,
-                                     const MeshOptions& options);
+                                      const ThermalMesh& thermal_mesh,
+                                      const MeshOptions& options);
 [[nodiscard]] TriMeshD mesh_primitive(const Rectangle& rectangle,
-                                     const ThermalMesh& thermal_mesh,
-                                     const MeshOptions& options);
+                                      const ThermalMesh& thermal_mesh,
+                                      const MeshOptions& options);
 [[nodiscard]] TriMeshD mesh_primitive(const Quadrilateral& quadrilateral,
-                                     const ThermalMesh& thermal_mesh,
-                                     const MeshOptions& options);
+                                      const ThermalMesh& thermal_mesh,
+                                      const MeshOptions& options);
 [[nodiscard]] TriMeshD mesh_primitive(const Cylinder& cylinder,
-                                     const ThermalMesh& thermal_mesh,
-                                     const MeshOptions& options);
+                                      const ThermalMesh& thermal_mesh,
+                                      const MeshOptions& options);
 [[nodiscard]] TriMeshD mesh_primitive(const Cone& cone,
-                                     const ThermalMesh& thermal_mesh,
-                                     const MeshOptions& options);
+                                      const ThermalMesh& thermal_mesh,
+                                      const MeshOptions& options);
 [[nodiscard]] TriMeshD mesh_primitive(const Paraboloid& paraboloid,
-                                     const ThermalMesh& thermal_mesh,
-                                     const MeshOptions& options);
+                                      const ThermalMesh& thermal_mesh,
+                                      const MeshOptions& options);
 [[nodiscard]] TriMeshD mesh_primitive(const Disc& disc,
-                                     const ThermalMesh& thermal_mesh,
-                                     const MeshOptions& options);
+                                      const ThermalMesh& thermal_mesh,
+                                      const MeshOptions& options);
 [[nodiscard]] TriMeshD mesh_primitive(const Sphere& sphere,
-                                     const ThermalMesh& thermal_mesh,
-                                     const MeshOptions& options);
+                                      const ThermalMesh& thermal_mesh,
+                                      const MeshOptions& options);
 [[nodiscard]] TriMeshD mesh_primitive(const Cube& cube,
-                                     const ThermalMesh& thermal_mesh,
-                                     const MeshOptions& options);
+                                      const ThermalMesh& thermal_mesh,
+                                      const MeshOptions& options);
 
 }  // namespace pycanha::gmm::mesh::detail

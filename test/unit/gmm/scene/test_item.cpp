@@ -25,8 +25,7 @@ TEST_CASE(
     "GeometryItem stores name, primitive, thermal mesh, transform, override",
     "[gmm][scene]") {
     GeometryItem item(
-        "panel",
-        Rectangle({0.0, 0.0, 0.0}, {2.0, 0.0, 0.0}, {0.0, 1.0, 0.0}),
+        "panel", Rectangle({0.0, 0.0, 0.0}, {2.0, 0.0, 0.0}, {0.0, 1.0, 0.0}),
         ThermalMesh{},
         CoordinateTransformation::from_translation({1.0, 2.0, 3.0}));
 
@@ -58,8 +57,7 @@ TEST_CASE(
 
 TEST_CASE("GeometryItem builds and caches its own mesh", "[gmm][scene]") {
     GeometryItem item(
-        "panel",
-        Rectangle({0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}),
+        "panel", Rectangle({0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}),
         ThermalMesh{});
 
     REQUIRE(item.children().empty());

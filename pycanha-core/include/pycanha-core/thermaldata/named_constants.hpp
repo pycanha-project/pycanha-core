@@ -22,8 +22,8 @@ namespace pycanha {
 // the raw rows/columns directly.
 class NamedConstants {
   public:
-    using RealMatrix = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
-                                     Eigen::RowMajor>;
+    using RealMatrix =
+        Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
     using IntMatrix = Eigen::Matrix<std::int64_t, Eigen::Dynamic,
                                     Eigen::Dynamic, Eigen::RowMajor>;
 

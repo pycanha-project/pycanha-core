@@ -15,10 +15,9 @@ namespace pycanha::gmm {
 // children directly. Does NOT cache: mesh() recomputes by walking children.
 class GeometryGroup : public Geometry {
   public:
-    explicit GeometryGroup(
-        std::string name,
-        std::vector<std::shared_ptr<Geometry>> children = {},
-        CoordinateTransformation transform = {});
+    explicit GeometryGroup(std::string name,
+                           std::vector<std::shared_ptr<Geometry>> children = {},
+                           CoordinateTransformation transform = {});
 
     // Appends a child. Throws std::invalid_argument on nullptr, a node already
     // registered with a model (id() != 0), or a duplicate handle.

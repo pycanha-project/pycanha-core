@@ -47,7 +47,8 @@ class GeometryGroupCutted final : public Geometry {
 
     std::vector<std::shared_ptr<Geometry>> _targets;
     std::vector<std::shared_ptr<GeometryItem>> _cutters;
-    std::vector<std::shared_ptr<Geometry>> _all_children;  // targets then cutters
+    std::vector<std::shared_ptr<Geometry>>
+        _all_children;  // targets then cutters
     mutable std::optional<TriMeshD> _cached_mesh;
 };
 

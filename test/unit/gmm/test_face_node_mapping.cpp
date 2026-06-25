@@ -4,6 +4,7 @@
 #include <iterator>
 #include <memory>
 #include <span>
+#include <utility>
 #include <vector>
 
 #include "pycanha-core/gmm/geometrymodel.hpp"
@@ -23,11 +24,11 @@ using pycanha::gmm::ThermalMesh;
 [[nodiscard]] std::vector<std::uint32_t> as_raw(std::span<const FaceId> faces) {
     std::vector<std::uint32_t> values;
     values.reserve(faces.size());
-    std::transform(faces.begin(), faces.end(), std::back_inserter(values),
-                   [](const FaceId face_id) {
-                       return static_cast<std::uint32_t>(face_id);
-                   });
-    std::sort(values.begin(), values.end());
+    std::ranges::transform(faces, std::back_inserter(values),
+                           [](const FaceId face_id) {
+                               return static_cast<std::uint32_t>(face_id);
+                           });
+    std::ranges::sort(values);
     return values;
 }
 

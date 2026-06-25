@@ -1,10 +1,19 @@
 #include "pycanha-core/gmm/scene/geometry_item.hpp"
 
+#include <memory>
+#include <optional>
+#include <span>
+#include <string>
 #include <utility>
 
-#include "pycanha-core/globals.hpp"
 #include "pycanha-core/gmm/geometrymodel.hpp"
+#include "pycanha-core/gmm/mesh/mesh_options.hpp"
+#include "pycanha-core/gmm/mesh/thermal_mesh.hpp"
+#include "pycanha-core/gmm/mesh/trimesh.hpp"
 #include "pycanha-core/gmm/mesh/uv_mesher.hpp"
+#include "pycanha-core/gmm/primitives/primitive.hpp"
+#include "pycanha-core/gmm/scene/coordinate_transformation.hpp"
+#include "pycanha-core/gmm/scene/geometry.hpp"
 #include "pycanha-core/gmm/scene/scene_mesh_detail.hpp"
 
 namespace pycanha::gmm {
@@ -65,7 +74,9 @@ void GeometryItem::rebuild_mesh() const {
     // Stamp provenance: a single primitive range spanning this item's faces.
     built.primitives.assign(
         1, TriMeshD::PrimitiveRange{
-               _id, 0U, built.nf() > 0U ? built.nf() - 2U : 0U});
+               .geometry_id = _id,
+               .first_face_id = 0U,
+               .last_face_id = built.nf() > 0U ? built.nf() - 2U : 0U});
     detail::apply_transform_in_place(built, _transform);
     _cached_mesh = std::move(built);
 }

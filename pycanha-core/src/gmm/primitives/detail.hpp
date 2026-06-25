@@ -124,7 +124,7 @@ struct SphereFrame {
 [[nodiscard]] inline double interval_from_unit(double unit_value,
                                                double min_value,
                                                double max_value) {
-    return min_value + unit_value * (max_value - min_value);
+    return min_value + ((unit_value * (max_value - min_value)));
 }
 
 }  // namespace pycanha::gmm::detail

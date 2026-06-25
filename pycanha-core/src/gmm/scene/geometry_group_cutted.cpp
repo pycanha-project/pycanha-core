@@ -2,7 +2,10 @@
 
 #include <algorithm>
 #include <iterator>
+#include <memory>
+#include <span>
 #include <stdexcept>
+#include <string>
 #include <utility>
 #include <variant>
 #include <vector>
@@ -10,8 +13,19 @@
 #include "pycanha-core/globals.hpp"
 #include "pycanha-core/gmm/cutting/manifold_cut_backend.hpp"
 #include "pycanha-core/gmm/geometrymodel.hpp"
+#include "pycanha-core/gmm/ids.hpp"
+#include "pycanha-core/gmm/mesh/mesh_options.hpp"
 #include "pycanha-core/gmm/mesh/node_numbering.hpp"
+#include "pycanha-core/gmm/mesh/trimesh.hpp"
 #include "pycanha-core/gmm/ops/transform.hpp"
+#include "pycanha-core/gmm/primitives/cone.hpp"
+#include "pycanha-core/gmm/primitives/cube.hpp"
+#include "pycanha-core/gmm/primitives/cylinder.hpp"
+#include "pycanha-core/gmm/primitives/primitive.hpp"
+#include "pycanha-core/gmm/primitives/sphere.hpp"
+#include "pycanha-core/gmm/scene/coordinate_transformation.hpp"
+#include "pycanha-core/gmm/scene/geometry.hpp"
+#include "pycanha-core/gmm/scene/geometry_item.hpp"
 #include "pycanha-core/gmm/scene/scene_mesh_detail.hpp"
 
 namespace pycanha::gmm {
@@ -65,7 +79,7 @@ GeometryGroupCutted::GeometryGroupCutted(
 
 void GeometryGroupCutted::cut_with(std::shared_ptr<GeometryItem> cutter) {
     validate_cutter(cutter);
-    if (std::find(_cutters.begin(), _cutters.end(), cutter) != _cutters.end()) {
+    if (std::ranges::find(_cutters, cutter) != _cutters.end()) {
         throw std::invalid_argument("GeometryGroupCutted: duplicate cutter");
     }
     _all_children.push_back(cutter);
@@ -101,12 +115,11 @@ void GeometryGroupCutted::rebuild_mesh() const {
 
     std::vector<Primitive> cutter_primitives;
     cutter_primitives.reserve(_cutters.size());
-    std::transform(_cutters.begin(), _cutters.end(),
-                   std::back_inserter(cutter_primitives),
-                   [](const std::shared_ptr<GeometryItem>& cutter) {
-                       return ops::transform(cutter->primitive(),
-                                             cutter->transform());
-                   });
+    std::ranges::transform(_cutters, std::back_inserter(cutter_primitives),
+                           [](const std::shared_ptr<GeometryItem>& cutter) {
+                               return ops::transform(cutter->primitive(),
+                                                     cutter->transform());
+                           });
 
     TriMeshD combined;
     pycanha::MeshIndex offset = 0;
@@ -126,8 +139,9 @@ void GeometryGroupCutted::rebuild_mesh() const {
             mesh::fill_node_numbers(piece, item->thermal_mesh());
             piece.primitives.assign(
                 1, TriMeshD::PrimitiveRange{
-                       item->id(), 0U,
-                       piece.nf() > 0U ? piece.nf() - 2U : 0U});
+                       .geometry_id = item->id(),
+                       .first_face_id = 0U,
+                       .last_face_id = piece.nf() > 0U ? piece.nf() - 2U : 0U});
         }
         offset = detail::concatenate_offset(combined, piece, offset);
     }

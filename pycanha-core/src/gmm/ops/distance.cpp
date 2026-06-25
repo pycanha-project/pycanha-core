@@ -66,7 +66,7 @@ constexpr double full_turn = 2.0 * std::numbers::pi;
         return bp.norm();
     }
 
-    const double vc = d1 * d4 - d3 * d2;
+    const double vc = (d1 * d4) - (d3 * d2);
     if (vc <= 0.0 && d1 >= 0.0 && d3 <= 0.0) {
         const double v = d1 / (d1 - d3);
         return (point - (triangle.p1() + v * ab)).norm();
@@ -79,13 +79,13 @@ constexpr double full_turn = 2.0 * std::numbers::pi;
         return cp.norm();
     }
 
-    const double vb = d5 * d2 - d1 * d6;
+    const double vb = (d5 * d2) - (d1 * d6);
     if (vb <= 0.0 && d2 >= 0.0 && d6 <= 0.0) {
         const double w = d2 / (d2 - d6);
         return (point - (triangle.p1() + w * ac)).norm();
     }
 
-    const double va = d3 * d6 - d5 * d4;
+    const double va = (d3 * d6) - (d5 * d4);
     if (va <= 0.0 && (d4 - d3) >= 0.0 && (d5 - d6) >= 0.0) {
         const Vector3D bc = triangle.p3() - triangle.p2();
         const double w = (d4 - d3) / ((d4 - d3) + (d5 - d6));
@@ -272,8 +272,8 @@ template <typename Surface>
     double low = 0.0;
     double high = total_height;
     for (int iteration = 0; iteration < 48; ++iteration) {
-        const double left = low + (high - low) / 3.0;
-        const double right = high - (high - low) / 3.0;
+        const double left = low + ((high - low) / 3.0);
+        const double right = high - ((high - low) / 3.0);
         const double radius_left =
             paraboloid_radius_at_height(paraboloid, left);
         const double radius_right =

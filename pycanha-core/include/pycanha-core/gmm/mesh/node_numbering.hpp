@@ -33,7 +33,7 @@ inline void fill_node_numbers(TriMeshD& mesh, const ThermalMesh& thermal_mesh) {
         const pycanha::MeshIndex cell_j = cell % dir2_cells;
         mesh.node_numbers(static_cast<Eigen::Index>(2U * cell)) =
             thermal_mesh.node_of(cell_i, cell_j, 1U);
-        mesh.node_numbers(static_cast<Eigen::Index>(2U * cell + 1U)) =
+        mesh.node_numbers(static_cast<Eigen::Index>((2U * cell) + 1U)) =
             thermal_mesh.node_of(cell_i, cell_j, 2U);
     }
 }

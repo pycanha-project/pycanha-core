@@ -163,8 +163,8 @@ Vector3D Cube::normal_at_uv(const Point2D& uv) const noexcept {
 }
 
 double Cube::surface_area() const noexcept {
-    return 2.0 * (_extent.x() * _extent.y() + _extent.x() * _extent.z() +
-                  _extent.y() * _extent.z());
+    return 2.0 * ((_extent.x() * _extent.y()) + (_extent.x() * _extent.z()) +
+                  (_extent.y() * _extent.z()));
 }
 
 }  // namespace pycanha::gmm

@@ -143,8 +143,8 @@ TEST_CASE("GeometryModel structure version tracks structural changes",
     model.add(make_panel("panel"), "rig");
     REQUIRE(model.get_structure_version() == version_before + 2U);
     model.add(std::make_shared<GeometryGroupCutted>(
-                  "trim", std::vector<std::shared_ptr<Geometry>>{},
-                  std::vector<std::shared_ptr<GeometryItem>>{}));
+        "trim", std::vector<std::shared_ptr<Geometry>>{},
+        std::vector<std::shared_ptr<GeometryItem>>{}));
     REQUIRE(model.get_structure_version() == version_before + 3U);
 
     // Default mesh options do not bump the structure version.

@@ -73,114 +73,161 @@ struct EntityOps {
 using std::literals::string_view_literals::operator""sv;
 
 constexpr std::array<EntityOps, 9> entity_ops_table{{
-    {"T"sv, 1U, true,
-     [](ThermalNetwork& network, NodeNum node_1, NodeNum /*unused*/) {
-         return network.nodes().get_T(node_1);
-     },
-     [](ThermalNetwork& network, NodeNum node_1, NodeNum /*unused*/) {
-         return network.nodes().get_T_value_ref(node_1);
-     },
-     [](ThermalNetwork& network, NodeNum node_1, NodeNum /*unused*/,
-        double value) { return network.nodes().set_T(node_1, value); },
-     node_exists},
-    {"C"sv, 1U, true,
-     [](ThermalNetwork& network, NodeNum node_1, NodeNum /*unused*/) {
-         return network.nodes().get_C(node_1);
-     },
-     [](ThermalNetwork& network, NodeNum node_1, NodeNum /*unused*/) {
-         return network.nodes().get_C_value_ref(node_1);
-     },
-     [](ThermalNetwork& network, NodeNum node_1, NodeNum /*unused*/,
-        double value) { return network.nodes().set_C(node_1, value); },
-     node_exists},
-    {"QS"sv, 1U, true,
-     [](ThermalNetwork& network, NodeNum node_1, NodeNum /*unused*/) {
-         return network.nodes().get_qs(node_1);
-     },
-     [](ThermalNetwork& network, NodeNum node_1, NodeNum /*unused*/) {
-         return network.nodes().get_qs_value_ref(node_1);
-     },
-     [](ThermalNetwork& network, NodeNum node_1, NodeNum /*unused*/,
-        double value) { return network.nodes().set_qs(node_1, value); },
-     node_exists},
-    {"QA"sv, 1U, true,
-     [](ThermalNetwork& network, NodeNum node_1, NodeNum /*unused*/) {
-         return network.nodes().get_qa(node_1);
-     },
-     [](ThermalNetwork& network, NodeNum node_1, NodeNum /*unused*/) {
-         return network.nodes().get_qa_value_ref(node_1);
-     },
-     [](ThermalNetwork& network, NodeNum node_1, NodeNum /*unused*/,
-        double value) { return network.nodes().set_qa(node_1, value); },
-     node_exists},
-    {"QE"sv, 1U, true,
-     [](ThermalNetwork& network, NodeNum node_1, NodeNum /*unused*/) {
-         return network.nodes().get_qe(node_1);
-     },
-     [](ThermalNetwork& network, NodeNum node_1, NodeNum /*unused*/) {
-         return network.nodes().get_qe_value_ref(node_1);
-     },
-     [](ThermalNetwork& network, NodeNum node_1, NodeNum /*unused*/,
-        double value) { return network.nodes().set_qe(node_1, value); },
-     node_exists},
-    {"QI"sv, 1U, true,
-     [](ThermalNetwork& network, NodeNum node_1, NodeNum /*unused*/) {
-         return network.nodes().get_qi(node_1);
-     },
-     [](ThermalNetwork& network, NodeNum node_1, NodeNum /*unused*/) {
-         return network.nodes().get_qi_value_ref(node_1);
-     },
-     [](ThermalNetwork& network, NodeNum node_1, NodeNum /*unused*/,
-        double value) { return network.nodes().set_qi(node_1, value); },
-     node_exists},
-    {"QR"sv, 1U, true,
-     [](ThermalNetwork& network, NodeNum node_1, NodeNum /*unused*/) {
-         return network.nodes().get_qr(node_1);
-     },
-     [](ThermalNetwork& network, NodeNum node_1, NodeNum /*unused*/) {
-         return network.nodes().get_qr_value_ref(node_1);
-     },
-     [](ThermalNetwork& network, NodeNum node_1, NodeNum /*unused*/,
-        double value) { return network.nodes().set_qr(node_1, value); },
-     node_exists},
-    {"GL"sv, 2U, true,
-     [](ThermalNetwork& network, NodeNum node_1, NodeNum node_2) {
-         return network.conductive_couplings().get_coupling_value(node_1,
-                                                                  node_2);
-     },
-     [](ThermalNetwork& network, NodeNum node_1, NodeNum node_2) {
-         return network.conductive_couplings().get_coupling_value_ref(node_1,
+    {.token = "T"sv,
+     .node_count = 1U,
+     .writable = true,
+     .get_value =
+         [](ThermalNetwork& network, NodeNum node_1, NodeNum /*unused*/) {
+             return network.nodes().get_T(node_1);
+         },
+     .get_value_ref =
+         [](ThermalNetwork& network, NodeNum node_1, NodeNum /*unused*/) {
+             return network.nodes().get_T_value_ref(node_1);
+         },
+     .set_value =
+         [](ThermalNetwork& network, NodeNum node_1, NodeNum /*unused*/,
+            double value) { return network.nodes().set_T(node_1, value); },
+     .exists = node_exists},
+    {.token = "C"sv,
+     .node_count = 1U,
+     .writable = true,
+     .get_value =
+         [](ThermalNetwork& network, NodeNum node_1, NodeNum /*unused*/) {
+             return network.nodes().get_C(node_1);
+         },
+     .get_value_ref =
+         [](ThermalNetwork& network, NodeNum node_1, NodeNum /*unused*/) {
+             return network.nodes().get_C_value_ref(node_1);
+         },
+     .set_value =
+         [](ThermalNetwork& network, NodeNum node_1, NodeNum /*unused*/,
+            double value) { return network.nodes().set_C(node_1, value); },
+     .exists = node_exists},
+    {.token = "QS"sv,
+     .node_count = 1U,
+     .writable = true,
+     .get_value =
+         [](ThermalNetwork& network, NodeNum node_1, NodeNum /*unused*/) {
+             return network.nodes().get_qs(node_1);
+         },
+     .get_value_ref =
+         [](ThermalNetwork& network, NodeNum node_1, NodeNum /*unused*/) {
+             return network.nodes().get_qs_value_ref(node_1);
+         },
+     .set_value =
+         [](ThermalNetwork& network, NodeNum node_1, NodeNum /*unused*/,
+            double value) { return network.nodes().set_qs(node_1, value); },
+     .exists = node_exists},
+    {.token = "QA"sv,
+     .node_count = 1U,
+     .writable = true,
+     .get_value =
+         [](ThermalNetwork& network, NodeNum node_1, NodeNum /*unused*/) {
+             return network.nodes().get_qa(node_1);
+         },
+     .get_value_ref =
+         [](ThermalNetwork& network, NodeNum node_1, NodeNum /*unused*/) {
+             return network.nodes().get_qa_value_ref(node_1);
+         },
+     .set_value =
+         [](ThermalNetwork& network, NodeNum node_1, NodeNum /*unused*/,
+            double value) { return network.nodes().set_qa(node_1, value); },
+     .exists = node_exists},
+    {.token = "QE"sv,
+     .node_count = 1U,
+     .writable = true,
+     .get_value =
+         [](ThermalNetwork& network, NodeNum node_1, NodeNum /*unused*/) {
+             return network.nodes().get_qe(node_1);
+         },
+     .get_value_ref =
+         [](ThermalNetwork& network, NodeNum node_1, NodeNum /*unused*/) {
+             return network.nodes().get_qe_value_ref(node_1);
+         },
+     .set_value =
+         [](ThermalNetwork& network, NodeNum node_1, NodeNum /*unused*/,
+            double value) { return network.nodes().set_qe(node_1, value); },
+     .exists = node_exists},
+    {.token = "QI"sv,
+     .node_count = 1U,
+     .writable = true,
+     .get_value =
+         [](ThermalNetwork& network, NodeNum node_1, NodeNum /*unused*/) {
+             return network.nodes().get_qi(node_1);
+         },
+     .get_value_ref =
+         [](ThermalNetwork& network, NodeNum node_1, NodeNum /*unused*/) {
+             return network.nodes().get_qi_value_ref(node_1);
+         },
+     .set_value =
+         [](ThermalNetwork& network, NodeNum node_1, NodeNum /*unused*/,
+            double value) { return network.nodes().set_qi(node_1, value); },
+     .exists = node_exists},
+    {.token = "QR"sv,
+     .node_count = 1U,
+     .writable = true,
+     .get_value =
+         [](ThermalNetwork& network, NodeNum node_1, NodeNum /*unused*/) {
+             return network.nodes().get_qr(node_1);
+         },
+     .get_value_ref =
+         [](ThermalNetwork& network, NodeNum node_1, NodeNum /*unused*/) {
+             return network.nodes().get_qr_value_ref(node_1);
+         },
+     .set_value =
+         [](ThermalNetwork& network, NodeNum node_1, NodeNum /*unused*/,
+            double value) { return network.nodes().set_qr(node_1, value); },
+     .exists = node_exists},
+    {.token = "GL"sv,
+     .node_count = 2U,
+     .writable = true,
+     .get_value =
+         [](ThermalNetwork& network, NodeNum node_1, NodeNum node_2) {
+             return network.conductive_couplings().get_coupling_value(node_1,
                                                                       node_2);
-     },
-     [](ThermalNetwork& network, NodeNum node_1, NodeNum node_2, double value) {
-         if (network.conductive_couplings().get_coupling_value_ref(
-                 node_1, node_2) == nullptr) {
-             return false;
-         }
-         network.conductive_couplings().set_coupling_value(node_1, node_2,
-                                                           value);
-         return true;
-     },
-     conductive_coupling_exists},
-    {"GR"sv, 2U, true,
-     [](ThermalNetwork& network, NodeNum node_1, NodeNum node_2) {
-         return network.radiative_couplings().get_coupling_value(node_1,
-                                                                 node_2);
-     },
-     [](ThermalNetwork& network, NodeNum node_1, NodeNum node_2) {
-         return network.radiative_couplings().get_coupling_value_ref(node_1,
+         },
+     .get_value_ref =
+         [](ThermalNetwork& network, NodeNum node_1, NodeNum node_2) {
+             return network.conductive_couplings().get_coupling_value_ref(
+                 node_1, node_2);
+         },
+     .set_value =
+         [](ThermalNetwork& network, NodeNum node_1, NodeNum node_2,
+            double value) {
+             if (network.conductive_couplings().get_coupling_value_ref(
+                     node_1, node_2) == nullptr) {
+                 return false;
+             }
+             network.conductive_couplings().set_coupling_value(node_1, node_2,
+                                                               value);
+             return true;
+         },
+     .exists = conductive_coupling_exists},
+    {.token = "GR"sv,
+     .node_count = 2U,
+     .writable = true,
+     .get_value =
+         [](ThermalNetwork& network, NodeNum node_1, NodeNum node_2) {
+             return network.radiative_couplings().get_coupling_value(node_1,
                                                                      node_2);
-     },
-     [](ThermalNetwork& network, NodeNum node_1, NodeNum node_2, double value) {
-         if (network.radiative_couplings().get_coupling_value_ref(
-                 node_1, node_2) == nullptr) {
-             return false;
-         }
-         network.radiative_couplings().set_coupling_value(node_1, node_2,
-                                                          value);
-         return true;
-     },
-     radiative_coupling_exists},
+         },
+     .get_value_ref =
+         [](ThermalNetwork& network, NodeNum node_1, NodeNum node_2) {
+             return network.radiative_couplings().get_coupling_value_ref(
+                 node_1, node_2);
+         },
+     .set_value =
+         [](ThermalNetwork& network, NodeNum node_1, NodeNum node_2,
+            double value) {
+             if (network.radiative_couplings().get_coupling_value_ref(
+                     node_1, node_2) == nullptr) {
+                 return false;
+             }
+             network.radiative_couplings().set_coupling_value(node_1, node_2,
+                                                              value);
+             return true;
+         },
+     .exists = radiative_coupling_exists},
 }};
 
 [[nodiscard]] constexpr const EntityOps& entity_ops(EntityType type) {

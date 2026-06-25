@@ -103,7 +103,7 @@ class Instrumentor {
         }
 
         std::string name = result.name;
-        std::replace(name.begin(), name.end(), '"', '\'');
+        std::ranges::replace(name, '"', '\'');
 
         _output_stream << R"({"cat":"function",)";
         _output_stream << R"("name":")" << name << R"(",)";
@@ -155,7 +155,10 @@ class InstrumentationTimer {
                 .time_since_epoch()
                 .count();
         const std::thread::id thread_id = std::this_thread::get_id();
-        Instrumentor::get().write_event({_name, ts, 'B', thread_id});
+        Instrumentor::get().write_event({.name = _name,
+                                         .timestamp = ts,
+                                         .event_type = 'B',
+                                         .thread_id = thread_id});
     }
 
     void stop() {
@@ -166,7 +169,10 @@ class InstrumentationTimer {
                 .time_since_epoch()
                 .count();
         const std::thread::id thread_id = std::this_thread::get_id();
-        Instrumentor::get().write_event({_name, ts, 'E', thread_id});
+        Instrumentor::get().write_event({.name = _name,
+                                         .timestamp = ts,
+                                         .event_type = 'E',
+                                         .thread_id = thread_id});
         _stopped = true;
     }
 

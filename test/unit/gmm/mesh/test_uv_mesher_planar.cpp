@@ -1,10 +1,8 @@
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
-#include <cstdint>
 
 #include "pycanha-core/globals.hpp"
 #include "pycanha-core/gmm/mesh/mesh_options.hpp"
-#include "pycanha-core/gmm/mesh/ops/compute_areas.hpp"
 #include "pycanha-core/gmm/mesh/ops/validate.hpp"
 #include "pycanha-core/gmm/mesh/thermal_mesh.hpp"
 #include "pycanha-core/gmm/mesh/trimesh.hpp"
