@@ -14,11 +14,13 @@
 
 using namespace pycanha;  // NOLINT(build/namespaces)
 
+namespace {
 bool are_coupling_values_almost_equal(double val1, double val2) {
     return fabs(val1 - val2) <=
            ((fabs(val1) < fabs(val2) ? fabs(val2) : fabs(val1)) *
             ALMOST_EQUAL_COUPLING_EPSILON);
 }
+}  // namespace
 
 CouplingMatrices::CouplingMatrices() = default;
 
@@ -235,11 +237,12 @@ bool CouplingMatrices::coupling_exists_from_idxs(Index idx1, Index idx2) {
     return val_ptr != nullptr;
 }
 
-void CouplingMatrices::reserve(int nnz) {
+void CouplingMatrices::reserve([[maybe_unused]] int nnz) {
     // TODO
 }
 
-void CouplingMatrices::_move_node(Index to_idx, Index from_idx) {
+void CouplingMatrices::_move_node([[maybe_unused]] Index to_idx,
+                                  [[maybe_unused]] Index from_idx) {
     // TODO
 }
 

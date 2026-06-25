@@ -31,8 +31,7 @@ constexpr std::array<DataModelAttribute, 16> k_all_attributes = {
 };
 
 Index find_node_column(const std::vector<Index>& node_numbers, Index node_num) {
-    const auto iterator =
-        std::find(node_numbers.begin(), node_numbers.end(), node_num);
+    const auto iterator = std::ranges::find(node_numbers, node_num);
     if (iterator == node_numbers.end()) {
         throw std::invalid_argument(
             "Requested node is not present in DataModel");
@@ -104,7 +103,7 @@ std::vector<Index> build_time_row_selection(const DenseTimeSeries& temperature,
         find_floor_time_index(temperature.times(), start_time);
     const Index end_row = find_ceil_time_index(temperature.times(), end_time);
     std::vector<Index> rows(to_sizet(end_row - start_row + 1));
-    std::iota(rows.begin(), rows.end(), start_row);
+    std::ranges::iota(rows, start_row);
 
     return rows;
 }
@@ -140,11 +139,11 @@ std::vector<Index> build_sparse_row_selection(
     std::vector<Index> sparse_rows;
     sparse_rows.reserve(rows.size());
 
-    std::transform(rows.begin(), rows.end(), std::back_inserter(sparse_rows),
-                   [&](const Index row) {
-                       return find_matching_sparse_time_index(
-                           coupling, temperature.times()(row), series_name);
-                   });
+    std::ranges::transform(
+        rows, std::back_inserter(sparse_rows), [&](const Index row) {
+            return find_matching_sparse_time_index(
+                coupling, temperature.times()(row), series_name);
+        });
 
     return sparse_rows;
 }
@@ -215,8 +214,7 @@ Eigen::MatrixXd compute_flow_matrix(const DenseTimeSeries& temperature,
     Eigen::MatrixXd output(static_cast<Index>(temperature_rows.size()), 2);
 
     for (Index output_row = 0;
-         output_row < static_cast<Index>(temperature_rows.size());
-         ++output_row) {
+         std::cmp_less(output_row, temperature_rows.size()); ++output_row) {
         const Index temperature_row = temperature_rows.at(to_sizet(output_row));
         const Index sparse_row = sparse_rows.at(to_sizet(output_row));
         const auto& matrix = coupling.at(sparse_row);
@@ -237,10 +235,11 @@ std::vector<Index> resolve_node_columns(
     std::vector<Index> node_columns;
     node_columns.reserve(node_numbers.size());
 
-    std::transform(node_numbers.begin(), node_numbers.end(),
-                   std::back_inserter(node_columns), [&](const Index node_num) {
-                       return find_node_column(model.node_numbers(), node_num);
-                   });
+    std::ranges::transform(node_numbers, std::back_inserter(node_columns),
+                           [&](const Index node_num) {
+                               return find_node_column(model.node_numbers(),
+                                                       node_num);
+                           });
 
     return node_columns;
 }

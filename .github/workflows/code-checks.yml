@@ -8,7 +8,7 @@ on:
 jobs:
   check-code-cpplint:
     name: Check code with cpplint
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
     - name: Check out repo's default branch
       uses: actions/checkout@v3
@@ -21,7 +21,7 @@ jobs:
  
   check-code-clang-format:
     name: Check format with clang-format
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     strategy:
       matrix:
         path:
@@ -32,31 +32,40 @@ jobs:
     - name: Run clang-format style check.
       uses: jidicula/clang-format-action@v4.11.0
       with:
-        clang-format-version: '18'
+        clang-format-version: '22'
         check-path: ${{ matrix.path}}
         fallback-style: 'Google' # optional
         
   static_analysis:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
+    timeout-minutes: 120
 
     steps:
     - name: Check out repo's default branch
       uses: actions/checkout@v3
-    - name: Install conan, cmake and cppcheck
+    - name: Install conan, cmake, cppcheck and clang-tidy 22
       run: |
         pip install conan
         pip install cmake
-        sudo apt-get install cppcheck
+        sudo apt-get update
+        # clang-tidy-22: cmake/Tools.cmake requires clang-tidy 22 with no fallback.
+        # The runner image's generic clang-tidy is an older version, so install 22.
+        sudo apt-get install -y cppcheck clang-tidy-22
     - name: Install with conan
       run: |
         conan config install .conan
-        conan install . --build=missing  -pr:h=ubuntu-gcc14-amd64 -pr:h=build-debug -pr:h=options-ci  -pr:b=ubuntu-gcc14-amd64 -pr:b=build-debug -pr:b=options-ci
+        conan install . --build=missing  -pr:h=ubuntu-gcc15-amd64 -pr:h=build-debug -pr:h=options-ci  -pr:b=ubuntu-gcc15-amd64 -pr:b=build-debug -pr:b=options-ci
         cmake --preset=conan-debug
         
     - name: Run clang-tidy
       run: |
-        # clang-tidy is memory-hungry; cap parallelism to avoid hosted-runner crashes.
-        cmake --build build/Debug --parallel 2 --target tests_clangtidy pycanha-core_clangtidy
+        # Cap parallelism: bare --parallel passes unbounded -j to make, launching all ~43
+        # clang-tidy processes at once and exhausting the runner's RAM (job gets reclaimed
+        # with exit 143). The standard GitHub runner has 4 vCPUs, so cap at 4.
+        # -k (keep-going): each source file is an independent make target, so this keeps
+        # checking the rest after a file fails, surfacing every clang-tidy error in one run
+        # instead of stopping at the first. make still exits non-zero, so the job fails.
+        cmake --build build/Debug --parallel 4 --target tests_clangtidy pycanha-core_clangtidy -- -k
       
     - name: Run cppcheck
       run: cmake --build build/Debug  --target tests_lib_cppcheck

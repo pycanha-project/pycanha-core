@@ -164,17 +164,16 @@ void TSCNRLDS_JACOBIAN::collect_parameter_names() {
 
         const auto& dependencies = formula->parameter_dependencies();
 
-        std::copy_if(dependencies.begin(), dependencies.end(),
-                     std::back_inserter(_parameter_names),
-                     [&seen_parameters](const std::string& dependency) {
-                         return seen_parameters.insert(dependency).second;
-                     });
+        std::ranges::copy_if(
+            dependencies, std::back_inserter(_parameter_names),
+            [&seen_parameters](const std::string& dependency) {
+                return seen_parameters.insert(dependency).second;
+            });
     }
 
     for (const auto& parameter_name :
          tmm.formulas().parameters_with_derivatives().parameter_names()) {
-        const auto found = std::find(_parameter_names.begin(),
-                                     _parameter_names.end(), parameter_name);
+        const auto found = std::ranges::find(_parameter_names, parameter_name);
         if (found == _parameter_names.end()) {
             throw std::invalid_argument(
                 "Derivative parameter '" + parameter_name +

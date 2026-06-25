@@ -189,10 +189,10 @@ constexpr std::array<EntityOps, 9> entity_ops_table{{
 
 [[nodiscard]] inline std::optional<EntityType> lookup_entity_type(
     std::string_view token) {
-    for (std::size_t index = 0; index < entity_ops_table.size(); ++index) {
-        if (entity_ops_table[index].token == token) {
-            return static_cast<EntityType>(index);
-        }
+    const auto match =
+        std::ranges::find(entity_ops_table, token, &EntityOps::token);
+    if (match != entity_ops_table.end()) {
+        return static_cast<EntityType>(match - entity_ops_table.begin());
     }
     return std::nullopt;
 }

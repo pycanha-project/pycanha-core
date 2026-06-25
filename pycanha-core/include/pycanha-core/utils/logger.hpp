@@ -28,6 +28,22 @@ std::shared_ptr<spdlog::logger> get_profiling_logger();
 /// Pattern: [HH:MM:SS.mmm] [logger-name] [level] message
 std::shared_ptr<spdlog::logger> get_python_logger();
 
+/// Log an already-composed `message` through the main logger at `level` from a
+/// context that must not throw (e.g. a noexcept function).
+///
+/// spdlog already wraps message formatting in try/catch, so a std::format_error
+/// from formatting our arguments is swallowed. The leak is that spdlog's own
+/// catch handler composes its error string with an *unguarded* std::format,
+/// which is reachable through every formatting log call (SPDLOG_LOGGER_* and
+/// logger->info/warn/...). clang-tidy's bugprone-exception-escape sees that
+/// throw and therefore forbids any formatting log call inside a noexcept
+/// function. This routes a pre-composed message through the non-formatting
+/// spdlog::logger::log(level, string_view) overload, which never touches that
+/// std::format path. Compose the message at the call site (e.g. with string
+/// concatenation, not std::format, which would re-introduce the throw).
+void log_noexcept(spdlog::level::level_enum level,
+                  std::string_view message) noexcept;
+
 /// Create a logger that writes to the given ostream (useful for testing).
 std::shared_ptr<spdlog::logger> create_ostream_logger(
     std::string_view name, std::ostream& stream,

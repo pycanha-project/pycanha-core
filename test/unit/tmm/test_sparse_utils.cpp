@@ -153,14 +153,14 @@ void move_test() {
 
     constexpr int num_permutation = 100;
 
-    std::vector<int> rows_idxs(to_sizet(sparse.rows()));
-    std::vector<int> cols_idxs(to_sizet(sparse.cols()));
+    std::vector<std::size_t> rows_idxs(to_sizet(sparse.rows()));
+    std::vector<std::size_t> cols_idxs(to_sizet(sparse.cols()));
     // Initialize vectors in sequence
     for (std::size_t i = 0; i < rows_idxs.size(); ++i) {
-        rows_idxs[i] = static_cast<int>(i);
+        rows_idxs[i] = i;
     }
     for (std::size_t i = 0; i < cols_idxs.size(); ++i) {
-        cols_idxs[i] = static_cast<int>(i);
+        cols_idxs[i] = i;
     }
 
     random_generators::IntGenerator<Index> row_rand_gen(0, sparse.rows() - 1,
@@ -205,26 +205,30 @@ void move_test() {
 
     // Move rows again to the original position
     for (std::size_t i = 0; i < rows_idxs.size(); ++i) {
-        if (rows_idxs[i] != static_cast<int>(i)) {
-            for (std::size_t j = i + 1; j < rows_idxs.size(); ++j) {
-                if (rows_idxs[j] == static_cast<int>(i)) {
-                    std::swap(rows_idxs[i], rows_idxs[j]);
-                    move_rows(sparse, to_idx(i), to_idx(j));
-                    break;
-                }
+        if (rows_idxs[i] != i) {
+            const auto found = std::find(
+                rows_idxs.begin() + static_cast<std::ptrdiff_t>(i + 1),
+                rows_idxs.end(), i);
+            if (found != rows_idxs.end()) {
+                const auto j =
+                    static_cast<std::size_t>(found - rows_idxs.begin());
+                std::swap(rows_idxs[i], rows_idxs[j]);
+                move_rows(sparse, to_idx(i), to_idx(j));
             }
         }
     }
 
     // Move cols again to the original position
     for (std::size_t i = 0; i < cols_idxs.size(); ++i) {
-        if (cols_idxs[i] != static_cast<int>(i)) {
-            for (std::size_t j = i + 1; j < cols_idxs.size(); ++j) {
-                if (cols_idxs[j] == static_cast<int>(i)) {
-                    std::swap(cols_idxs[i], cols_idxs[j]);
-                    move_cols(sparse, to_idx(i), to_idx(j));
-                    break;
-                }
+        if (cols_idxs[i] != i) {
+            const auto found = std::find(
+                cols_idxs.begin() + static_cast<std::ptrdiff_t>(i + 1),
+                cols_idxs.end(), i);
+            if (found != cols_idxs.end()) {
+                const auto j =
+                    static_cast<std::size_t>(found - cols_idxs.begin());
+                std::swap(cols_idxs[i], cols_idxs[j]);
+                move_cols(sparse, to_idx(i), to_idx(j));
             }
         }
     }

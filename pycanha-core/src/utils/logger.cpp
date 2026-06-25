@@ -108,6 +108,14 @@ std::shared_ptr<spdlog::logger> get_python_logger() {
     return logger;
 }
 
+void log_noexcept(const spdlog::level::level_enum level,
+                  const std::string_view message) noexcept {
+    // Non-formatting overload: builds the log_msg directly from the
+    // string_view, bypassing spdlog's vformat_to / SPDLOG_LOGGER_CATCH path
+    // (see logger.hpp).
+    get_logger()->log(level, message);
+}
+
 std::shared_ptr<spdlog::logger> create_ostream_logger(
     std::string_view name, std::ostream& stream,
     const spdlog::level::level_enum level) {

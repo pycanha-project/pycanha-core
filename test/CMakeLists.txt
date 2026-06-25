@@ -119,6 +119,20 @@ target_set_warnings(
   AS_ERRORS
   ${PYCANHA_OPTION_WARNINGS_AS_ERRORS})
 
+# clang 22's -Wc2y-extensions (enabled by -Wpedantic) flags __COUNTER__, which
+# Catch2's TEST_CASE macro expands to. This is a test-only issue (the library
+# does not use __COUNTER__), so suppress it just for the test target rather than
+# in the library's warning set. See https://github.com/catchorg/Catch2/issues/3076
+# Carried on an INTERFACE target linked last so the -Wno- lands after the
+# library's propagated -Wpedantic on the compile line. Scoped to upstream
+# Clang >= 22: Apple Clang and older Clang reject the unknown flag under -Werror.
+add_library(catch2_warning_overrides INTERFACE)
+if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang"
+   AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 22)
+  target_compile_options(catch2_warning_overrides INTERFACE -Wno-c2y-extensions)
+endif()
+target_link_libraries(${TEST_TARGET_NAME} PRIVATE catch2_warning_overrides)
+
 target_set_warnings(
     TARGET
     ${TEST_TARGET_NAME}_lib
@@ -170,25 +184,11 @@ endif()
 
 catch_discover_tests(${TEST_TARGET_NAME} ADD_TAGS_AS_LABELS)
 
-if(PYCANHA_OPTION_COVERAGE)
-  set(COVERAGE_MAIN "coverage")
-  set(COVERAGE_EXCLUDES
-      "${PROJECT_SOURCE_DIR}/benchmarks/*"
-      "${PROJECT_SOURCE_DIR}/cmake/*"
-      "${PROJECT_SOURCE_DIR}/docs/*"
-      "${PROJECT_SOURCE_DIR}/external/*"
-      "${PROJECT_SOURCE_DIR}/test/*"
-      "${PROJECT_SOURCE_DIR}/build/*"
-      "/usr/include/*"
-      "11/*"
-      )
-      
-  setup_target_for_coverage_lcov(
-      NAME ${COVERAGE_MAIN}
-      EXECUTABLE ${TEST_TARGET_NAME}
-      DEPENDENCIES ${TEST_TARGET_NAME})
-endif()
-
+# Code coverage: with PYCANHA_OPTION_COVERAGE the tests are instrumented in the
+# top-level CMakeLists (Clang -fprofile-instr-generate -fcoverage-mapping). The
+# report is generated in .github/workflows/coverage.yml by running the tests and
+# processing the .profraw files with llvm-profdata/llvm-cov; no CMake target is
+# needed here.
 
 #CPPCHECK
 if (PYCANHA_OPTION_CPPCHECK)
@@ -214,6 +214,11 @@ if (PYCANHA_OPTION_CPPCHECK)
                 ${CPPCHECK} 
                 --project=${CMAKE_BINARY_DIR}/compile_commands.json
                 --enable=all
+                # Analyze all branches. Without this, cppcheck 2.15+ emits the
+                # 'normalCheckLevelMaxBranches' information message, which trips
+                # --error-exitcode and fails the target. Exhaustive does the
+                # deeper analysis the message recommends (no suppression needed).
+                --check-level=exhaustive
                 --suppress=unusedFunction --suppress=unmatchedSuppression
                 --suppress=missingIncludeSystem --suppress=toomanyconfigs
                 --suppress=constStatement          

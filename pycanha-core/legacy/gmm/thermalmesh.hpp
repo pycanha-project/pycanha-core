@@ -57,8 +57,8 @@ class ThermalMesh : public UniqueID {
     [[nodiscard]] double get_side1_thick() const { return _side1_thick; }
     [[nodiscard]] double get_side2_thick() const { return _side2_thick; }
 
-    [[nodiscard]] Color get_side1_color() const { return _side1_color; }
-    [[nodiscard]] Color get_side2_color() const { return _side2_color; }
+    [[nodiscard]] const Color& get_side1_color() const { return _side1_color; }
+    [[nodiscard]] const Color& get_side2_color() const { return _side2_color; }
 
     [[nodiscard]] std::shared_ptr<BulkMaterial> get_side1_material() const {
         return _side1_material;
@@ -74,7 +74,7 @@ class ThermalMesh : public UniqueID {
         return _side2_optical;
     }
 
-    [[nodiscard]] std::vector<double> get_dir1_mesh() const {
+    [[nodiscard]] const std::vector<double>& get_dir1_mesh() const {
         return _dir1_mesh;
     }
 
@@ -86,7 +86,7 @@ class ThermalMesh : public UniqueID {
         return to_meshidx(_dir1_mesh.size());
     }
 
-    [[nodiscard]] std::vector<double> get_dir2_mesh() const {
+    [[nodiscard]] const std::vector<double>& get_dir2_mesh() const {
         return _dir2_mesh;
     }
 

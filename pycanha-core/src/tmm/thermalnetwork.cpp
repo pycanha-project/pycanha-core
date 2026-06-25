@@ -102,8 +102,7 @@ void ThermalNetwork::add_node(Node& node) {
 
     if (type == 'D') {
         auto& diff_nodes = _nodes->_diff_node_num_vector;
-        const auto it = std::upper_bound(diff_nodes.begin(), diff_nodes.end(),
-                                         user_node_num);
+        const auto it = std::ranges::upper_bound(diff_nodes, user_node_num);
         insert_idx = to_idx(std::distance(diff_nodes.begin(), it));
 
         conductive_storage._add_node_diff(insert_idx);
@@ -113,8 +112,7 @@ void ThermalNetwork::add_node(Node& node) {
     } else if (type == 'B') {
         auto& bound_nodes = _nodes->_bound_node_num_vector;
         const auto diff_count = to_idx(_nodes->_diff_node_num_vector.size());
-        const auto it = std::upper_bound(bound_nodes.begin(), bound_nodes.end(),
-                                         user_node_num);
+        const auto it = std::ranges::upper_bound(bound_nodes, user_node_num);
         insert_idx = to_idx(std::distance(bound_nodes.begin(), it));
 
         conductive_storage._add_node_bound(insert_idx);

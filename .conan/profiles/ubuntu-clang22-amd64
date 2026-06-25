@@ -1,0 +1,20 @@
+[settings]
+arch = x86_64
+compiler = clang
+compiler.cppstd = 23
+compiler.libcxx = libc++
+compiler.version = 22
+os = Linux
+
+[buildenv]
+CC = /usr/bin/clang-22
+CXX = /usr/bin/clang++-22
+
+[conf]
+# Use lld for linking. With LTO enabled (options-ci) clang emits pure LLVM
+# bitcode; GNU ld.bfd cannot read it ("file format not recognized"), while lld
+# links bitcode natively without the gold plugin. The matching llvm-ar/ranlib
+# (auto-detected by CMake) build the static-library archive index. Both lld-22
+# and llvm-22 are installed in the CI workflow.
+tools.build:exelinkflags=["-fuse-ld=lld"]
+tools.build:sharedlinkflags=["-fuse-ld=lld"]

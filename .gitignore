@@ -1,15 +1,30 @@
-build
-CMakeUserPresets.json
-.vscode/*
-pycanha-core/include/pycanha-core/config.hpp
-pycanha-core/include/pycanha-core/.vscode/*
+/*
 
-# Ignore the current (provisional) tests of the mesh
-test/unit/gmm/mesh/test_export_meshes.cpp
-test/unit/gmm/mesh/test_cut_meshes.cpp
-mesh_exports/*
+!/.clang-format
+!/.clang-tidy
+!/.gitignore
+!/CMakeLists.txt
+!/codecov.yml
+!/conanfile.py
+!/CPPLINT.cfg
+!/LICENSE
+!/README.md
 
-# Dot folders (hidden directories) - ignore all except .github
-.*/
-!.github/
-!.conan/
+# Source/config directories that must stay tracked
+!/.conan/
+!/.github/
+!/cmake/
+!/docs/
+!/examples/
+!/pycanha-core/
+!/test/
+!/test_package/
+
+/build/
+/CMakeUserPresets.json
+test_package/build/
+test_package/CMakeUserPresets.json
+/.vscode/*
+/pycanha-core/include/pycanha-core/config.hpp
+/pycanha-core/include/pycanha-core/.vscode/*
+/pycanha-tmm/

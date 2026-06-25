@@ -311,19 +311,17 @@ void Nodes::add_node(Node& node) {
     // Update the node number mapping
     Index insert_idx = 0;
 
-    if (_usr_to_int_node_num.find(node_num) != _usr_to_int_node_num.end()) {
+    if (_usr_to_int_node_num.contains(node_num)) {
         SPDLOG_LOGGER_ERROR(pycanha::get_logger(), "Node {} already inserted.",
                             node_num);
         return;
     }
 
     if (type == 'D') {
-        auto it = std::upper_bound(_diff_node_num_vector.begin(),
-                                   _diff_node_num_vector.end(), node_num);
+        auto it = std::ranges::upper_bound(_diff_node_num_vector, node_num);
         insert_idx = to_idx(std::distance(_diff_node_num_vector.begin(), it));
     } else if (type == 'B') {
-        auto it = std::upper_bound(_bound_node_num_vector.begin(),
-                                   _bound_node_num_vector.end(), node_num);
+        auto it = std::ranges::upper_bound(_bound_node_num_vector, node_num);
         insert_idx = to_idx(std::distance(_bound_node_num_vector.begin(), it));
         insert_idx += to_idx(_diff_node_num_vector.size());
     } else {
@@ -651,8 +649,8 @@ void Nodes::insert_displace(Eigen::SparseVector<LiteralString>& sparse,
     Eigen::SparseVector<LiteralString> result(sparse.size() + 1);
     result.reserve(sparse.nonZeros() + (string.is_empty() ? 0 : 1));
 
-    for (typename Eigen::SparseVector<LiteralString>::InnerIterator it(sparse);
-         it; ++it) {
+    for (Eigen::SparseVector<LiteralString>::InnerIterator it(sparse); it;
+         ++it) {
         const Index target_index =
             it.index() >= index ? it.index() + 1 : it.index();
         result.coeffRef(target_index) = it.value();
@@ -676,8 +674,7 @@ void Nodes::insert_displace(Eigen::SparseVector<double>& sparse, Index index,
     const bool store_value = std::abs(value) > ZERO_THR_ATTR;
     result.reserve(sparse.nonZeros() + (store_value ? 1 : 0));
 
-    for (typename Eigen::SparseVector<double>::InnerIterator it(sparse); it;
-         ++it) {
+    for (Eigen::SparseVector<double>::InnerIterator it(sparse); it; ++it) {
         const Index target_index =
             it.index() >= index ? it.index() + 1 : it.index();
         result.coeffRef(target_index) = it.value();
@@ -694,8 +691,8 @@ void Nodes::delete_displace(Eigen::SparseVector<LiteralString>& sparse,
                             Index index) {
     std::vector<int> indices;
     std::vector<LiteralString> values;
-    for (typename Eigen::SparseVector<LiteralString>::InnerIterator it(sparse);
-         it; ++it) {
+    for (Eigen::SparseVector<LiteralString>::InnerIterator it(sparse); it;
+         ++it) {
         if (it.index() != index) {
             indices.push_back(it.index() > index ? it.index() - 1 : it.index());
             values.push_back(it.value());
@@ -730,7 +727,7 @@ void Nodes::remove_node(NodeNum node_num) {
         return;
     }
 
-    _usr_to_int_node_num.extract(node_num);
+    _usr_to_int_node_num.erase(node_num);
 
     T_vector.erase(T_vector.begin() + *idx);
     C_vector.erase(C_vector.begin() + *idx);

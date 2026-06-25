@@ -36,6 +36,11 @@ function(add_sanitizer_flags)
         if(PYCANHA_OPTION_SANITIZE_UNDEF)
             add_compile_options("-fsanitize=undefined")
             add_link_options("-fsanitize=undefined")
+            # By default UBSan is "recoverable": it prints a diagnostic and lets
+            # the program continue, so the process still exits 0 and CI stays
+            # green on real UB. Make UBSan findings abort (non-zero exit) so the
+            # test run actually fails on them, while keeping the diagnostic.
+            add_compile_options("-fno-sanitize-recover=undefined")
         endif()
     else()
         message("This sanitizer not supported in this environment")

@@ -116,6 +116,8 @@ class Parameters {
     struct ParameterSize;
 
     [[nodiscard]] static ThermalValue missing_parameter_value();
+    [[nodiscard]] std::optional<Index> find_idx(
+        const std::string& name) const noexcept;
     [[nodiscard]] ParameterSlot* find_slot(const std::string& name) noexcept;
     [[nodiscard]] const ParameterSlot* find_slot(
         const std::string& name) const noexcept;

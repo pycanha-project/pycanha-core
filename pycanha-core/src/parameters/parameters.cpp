@@ -5,7 +5,6 @@
 #include <algorithm>
 #include <bit>
 #include <cctype>
-#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <deque>
@@ -43,11 +42,9 @@ constexpr bool is_matrix_type_v = IsMatrixType<T>::value;
     std::string canonical;
     canonical.resize(name.size());
 
-    std::transform(name.begin(), name.end(), canonical.begin(),
-                   [](const char ch) {
-                       return static_cast<char>(
-                           std::tolower(static_cast<unsigned char>(ch)));
-                   });
+    std::ranges::transform(name, canonical.begin(), [](const char ch) {
+        return static_cast<char>(std::tolower(static_cast<unsigned char>(ch)));
+    });
 
     return canonical;
 }
@@ -82,9 +79,9 @@ struct Parameters::DataMemoryAddress {
     void* operator()(T& data) const noexcept {
         if constexpr (std::is_same_v<T, std::string> || is_matrix_type_v<T>) {
             return static_cast<void*>(data.data());
+        } else {
+            return static_cast<void*>(std::addressof(data));
         }
-
-        return static_cast<void*>(std::addressof(data));
     }
 };
 
@@ -93,9 +90,9 @@ struct Parameters::ConstDataMemoryAddress {
     const void* operator()(const T& data) const noexcept {
         if constexpr (std::is_same_v<T, std::string> || is_matrix_type_v<T>) {
             return static_cast<const void*>(data.data());
+        } else {
+            return static_cast<const void*>(std::addressof(data));
         }
-
-        return static_cast<const void*>(std::addressof(data));
     }
 };
 
@@ -107,9 +104,9 @@ struct Parameters::ParameterSize {
         } else if constexpr (is_matrix_type_v<T>) {
             return static_cast<std::size_t>(data.size()) *
                    sizeof(typename T::Scalar);
+        } else {
+            return sizeof(T);
         }
-
-        return sizeof(T);
     }
 };
 
@@ -277,8 +274,10 @@ void Parameters::add_parameter(std::string name, ThermalValue value) {
     }
 
     _name_to_slot.emplace(canonical_name, _slots.size());
-    _slots.push_back(
-        ParameterSlot{std::move(name), std::move(value), true, false});
+    _slots.push_back(ParameterSlot{.name = std::move(name),
+                                   .value = std::move(value),
+                                   .active = true,
+                                   .is_internal = false});
     ++_active_size;
     mark_structural_change();
 
@@ -296,8 +295,10 @@ void Parameters::add_internal_parameter(std::string name, ThermalValue value) {
     }
 
     _name_to_slot.emplace(canonical_name, _slots.size());
-    _slots.push_back(
-        ParameterSlot{std::move(name), std::move(value), true, true});
+    _slots.push_back(ParameterSlot{.name = std::move(name),
+                                   .value = std::move(value),
+                                   .active = true,
+                                   .is_internal = true});
     ++_active_size;
     mark_structural_change();
 
@@ -425,7 +426,7 @@ void Parameters::rename_parameter(const std::string& current_name,
 
 Parameters::Parameter Parameters::get_parameter_handle(
     const std::string& name) noexcept {
-    const auto index = get_idx(name);
+    const auto index = find_idx(name);
     if (!index.has_value()) {
         return {};
     }
@@ -663,22 +664,29 @@ std::uint64_t Parameters::get_memory_address(const std::string& name) const {
     return static_cast<std::uint64_t>(std::bit_cast<std::uintptr_t>(address));
 }
 
-std::optional<Index> Parameters::get_idx(const std::string& name) const {
+std::optional<Index> Parameters::find_idx(
+    const std::string& name) const noexcept {
     const auto iterator = _name_to_slot.find(canonicalize_parameter_key(name));
     if (iterator == _name_to_slot.end()) {
-        SPDLOG_LOGGER_INFO(pycanha::get_logger(),
-                           "Parameter '{}' doesn't exist", name);
         return std::nullopt;
     }
 
-    const auto* slot = find_slot(to_idx(iterator->second));
-    if (slot == nullptr) {
-        SPDLOG_LOGGER_INFO(pycanha::get_logger(),
-                           "Parameter '{}' doesn't exist", name);
+    const auto index = to_idx(iterator->second);
+    if (find_slot(index) == nullptr) {
         return std::nullopt;
     }
 
-    return to_idx(iterator->second);
+    return index;
+}
+
+std::optional<Index> Parameters::get_idx(const std::string& name) const {
+    const auto index = find_idx(name);
+    if (!index.has_value()) {
+        SPDLOG_LOGGER_INFO(pycanha::get_logger(),
+                           "Parameter '{}' doesn't exist", name);
+    }
+
+    return index;
 }
 
 bool Parameters::is_internal_parameter(const std::string& name) const noexcept {
@@ -723,8 +731,7 @@ std::uint64_t Parameters::get_structure_version() const noexcept {
 }
 
 bool Parameters::contains(const std::string& name) const noexcept {
-    return _name_to_slot.find(canonicalize_parameter_key(name)) !=
-           _name_to_slot.end();
+    return _name_to_slot.contains(canonicalize_parameter_key(name));
 }
 
 std::size_t Parameters::size() const noexcept { return _active_size; }

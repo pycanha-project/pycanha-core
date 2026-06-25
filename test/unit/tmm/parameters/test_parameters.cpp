@@ -314,19 +314,19 @@ TEST_CASE("Parameters refresh cached data and expose index accessors",
 
     const auto& snapshot = params.data();
     REQUIRE(snapshot.size() == 2U);
-    REQUIRE(snapshot.find("scalar") != snapshot.end());
-    REQUIRE(snapshot.find("time") != snapshot.end());
+    REQUIRE(snapshot.contains("scalar"));
+    REQUIRE(snapshot.contains("time"));
 
     params.rename_parameter("scalar", "renamed_scalar");
     const auto& renamed = params.data();
     REQUIRE(renamed.size() == 2U);
-    REQUIRE(renamed.find("scalar") == renamed.end());
-    REQUIRE(renamed.find("renamed_scalar") != renamed.end());
+    REQUIRE(!renamed.contains("scalar"));
+    REQUIRE(renamed.contains("renamed_scalar"));
 
     params.remove_internal_parameter("time");
     const auto& after_remove = params.data();
     REQUIRE(after_remove.size() == 1U);
-    REQUIRE(after_remove.find("time") == after_remove.end());
+    REQUIRE(!after_remove.contains("time"));
 
     REQUIRE(params.get_value_ptr(Index{99}) == nullptr);
     REQUIRE(std::as_const(params).get_value_ptr(Index{99}) == nullptr);

@@ -119,23 +119,25 @@ class ThermalMathematicalModel {
     [[nodiscard]] double flow_radiative(const std::vector<Index>& node_nums_1,
                                         const std::vector<Index>& node_nums_2);
     void add_time_variable(
-        const std::string& name, Eigen::VectorXd x_data, Eigen::VectorXd y_data,
+        const std::string& var_name, Eigen::VectorXd x_data,
+        Eigen::VectorXd y_data,
         InterpolationMethod interp = InterpolationMethod::Linear,
         ExtrapolationMethod extrap = ExtrapolationMethod::Constant);
-    void remove_time_variable(const std::string& name);
+    void remove_time_variable(const std::string& var_name);
     [[nodiscard]] bool has_time_variable(
-        const std::string& name) const noexcept;
+        const std::string& var_name) const noexcept;
     [[nodiscard]] const TimeVariable& get_time_variable(
-        const std::string& name) const;
+        const std::string& var_name) const;
     void add_temperature_variable(
-        const std::string& name, Eigen::VectorXd x_data, Eigen::VectorXd y_data,
+        const std::string& var_name, Eigen::VectorXd x_data,
+        Eigen::VectorXd y_data,
         InterpolationMethod interp = InterpolationMethod::Linear,
         ExtrapolationMethod extrap = ExtrapolationMethod::Constant);
-    void remove_temperature_variable(const std::string& name);
+    void remove_temperature_variable(const std::string& var_name);
     [[nodiscard]] bool has_temperature_variable(
-        const std::string& name) const noexcept;
+        const std::string& var_name) const noexcept;
     [[nodiscard]] const TemperatureVariable& get_temperature_variable(
-        const std::string& name) const;
+        const std::string& var_name) const;
 
     bool callbacks_active = true;
     bool internal_callbacks_active = true;

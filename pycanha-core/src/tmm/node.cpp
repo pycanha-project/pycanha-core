@@ -18,14 +18,14 @@
 using namespace pycanha;  // NOLINT(build/namespaces)
 
 Node::Node(NodeNum node_num)
-    : _node_num(node_num),
-      _local_storage_ptr(std::make_unique<LocalStorage>()) {}
+    : _local_storage_ptr(std::make_unique<LocalStorage>()),
+      _node_num(node_num) {}
 
 Node::Node(NodeNum node_num, const std::weak_ptr<Nodes>& parent_pointer)
-    : _node_num(node_num), _parent_pointer(parent_pointer) {}
+    : _parent_pointer(parent_pointer), _node_num(node_num) {}
 
 double Node::resolve_get_double(double (Nodes::*nodes_getter)(NodeNum),
-                                double LocalStorage::*local_member) {
+                                double LocalStorage::* local_member) {
     if (auto parent_nodes = _parent_pointer.lock()) {
         Nodes& nodes_ref = *parent_nodes;
         const double temp = (nodes_ref.*nodes_getter)(_node_num);
@@ -50,7 +50,7 @@ double Node::resolve_get_double(double (Nodes::*nodes_getter)(NodeNum),
 }
 
 void Node::resolve_set_double(bool (Nodes::*nodes_setter)(NodeNum, double),
-                              double LocalStorage::*local_member,
+                              double LocalStorage::* local_member,
                               double value) {
     if (auto parent_nodes = _parent_pointer.lock()) {
         Nodes& nodes_ref = *parent_nodes;
@@ -76,16 +76,16 @@ void Node::resolve_set_double(bool (Nodes::*nodes_setter)(NodeNum, double),
 
 // Move constructor
 Node::Node(Node&& other_node) noexcept
-    : _node_num(other_node._node_num),
-      _parent_pointer(std::move(other_node._parent_pointer)),
-      _local_storage_ptr(std::move(other_node._local_storage_ptr)) {
+    : _parent_pointer(std::move(other_node._parent_pointer)),
+      _local_storage_ptr(std::move(other_node._local_storage_ptr)),
+      _node_num(other_node._node_num) {
     SPDLOG_LOGGER_TRACE(pycanha::get_logger(), "Node: move constructor called");
 }
 
 // Copy constructor
 Node::Node(const Node& other_node)
-    : _node_num(other_node._node_num),
-      _parent_pointer(other_node._parent_pointer) {
+    : _parent_pointer(other_node._parent_pointer),
+      _node_num(other_node._node_num) {
     if (other_node._local_storage_ptr) {
         _local_storage_ptr =
             std::make_unique<LocalStorage>(*other_node._local_storage_ptr);

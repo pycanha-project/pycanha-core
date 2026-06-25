@@ -15,6 +15,8 @@ using namespace pycanha;  // NOLINT(build/namespaces)
 // NOLINTBEGIN(readability-function-cognitive-complexity,
 // bugprone-chained-comparison)
 
+namespace {
+
 // The seed is constant making the random number generator deterministic (which
 // is what we want for testing)
 // NOLINTBEGIN(cert-msc32-c,cert-msc51-cpp)
@@ -107,6 +109,8 @@ void assert_blank_nodes_attributes_are_trivial_zeros(
     assert_trivial_zeros(non_blank_internal_number, tns.aph_vector);
     assert_trivial_zeros(non_blank_internal_number, tns.literals_C);
 }
+
+}  // namespace
 
 // Test Node constructor with Nodes pointer
 TEST_CASE("Node Constructor with Nodes pointer", "[node]") {

@@ -135,7 +135,7 @@ TEST_CASE(
 
         const std::vector<pycanha::Index> hot_side{10, 2};
         const std::vector<pycanha::Index> cold_side{100};
-        const double expected_group = expected_pair + 2.0 * (250.0 - 280.0);
+        const double expected_group = expected_pair + (2.0 * (250.0 - 280.0));
         REQUIRE(tmm.flow_conductive(hot_side, cold_side) ==
                 Catch::Approx(expected_group));
     }

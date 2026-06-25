@@ -75,15 +75,16 @@ class OpticalMaterial : public NamedMaterial {
     OpticalMaterial()
         : _th_optical_properties({1.0, 0.0, 0.0, 1.0, 0.0, 0.0}) {}
 
-    explicit OpticalMaterial(std::array<double, 6> th_optical_properties)
+    explicit OpticalMaterial(const std::array<double, 6>& th_optical_properties)
         : _th_optical_properties(th_optical_properties) {}
 
-    [[nodiscard]] std::array<double, 6> get_th_optical_properties() const {
+    [[nodiscard]] const std::array<double, 6>& get_th_optical_properties()
+        const {
         return _th_optical_properties;
     }
 
     void set_th_optical_properties(
-        std::array<double, 6> th_optical_properties) {
+        const std::array<double, 6>& th_optical_properties) {
         _th_optical_properties = th_optical_properties;
     }
 };
@@ -107,7 +108,7 @@ class Color {
     /**
      * @brief Get the RGB values.
      */
-    ColorRGB get_rgb() { return _rgb; }
+    const ColorRGB& get_rgb() const { return _rgb; }
 
     static ColorRGB get_rgb_from_color_palette(const std::string& color_name) {
         static const std::map<std::string, ColorRGB> color_palette = {
