@@ -77,7 +77,7 @@ namespace {
                 target_vertex = used_vertices.size();
                 used_vertices.push_back(source_vertex);
             }
-            triangle[static_cast<std::size_t>(corner)] =
+            triangle.at(static_cast<std::size_t>(corner)) =
                 static_cast<pycanha::MeshIndex>(target_vertex);
         }
         triangles.push_back(triangle);

@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cctype>
 #include <cstdint>
+#include <iterator>
 #include <memory>
 #include <span>
 #include <stdexcept>
@@ -56,14 +57,20 @@ std::shared_ptr<Geometry> GeometryModel::find(const std::string& name) const {
 
 void GeometryModel::collect_subtree(
     const std::shared_ptr<Geometry>& object,
-    std::vector<std::shared_ptr<Geometry>>& out) const {
-    out.push_back(object);
-    for (const auto& child : object->children()) {
-        collect_subtree(child, out);
+    std::vector<std::shared_ptr<Geometry>>& out) {
+    std::vector<std::shared_ptr<Geometry>> pending{object};
+    while (!pending.empty()) {
+        const std::shared_ptr<Geometry> node = pending.back();
+        pending.pop_back();
+        out.push_back(node);
+        const auto child_nodes = node->children();
+        // Push children reversed so they pop left-to-right, preserving the
+        // original pre-order DFS ordering.
+        pending.insert(pending.end(), child_nodes.rbegin(), child_nodes.rend());
     }
 }
 
-void GeometryModel::add(std::shared_ptr<Geometry> object,
+void GeometryModel::add(const std::shared_ptr<Geometry>& object,
                         const std::string& parent_name) {
     if (object == nullptr) {
         throw std::invalid_argument("GeometryModel::add: null object");
@@ -82,11 +89,11 @@ void GeometryModel::add(std::shared_ptr<Geometry> object,
     std::vector<std::shared_ptr<Geometry>> nodes;
     collect_subtree(object, nodes);
 
-    for (const auto& node : nodes) {
-        if (node->id() != GeometryId{0}) {
-            throw std::invalid_argument(
-                "GeometryModel::add: a node is already registered");
-        }
+    if (std::ranges::any_of(nodes, [](const auto& node) {
+            return node->id() != GeometryId{0};
+        })) {
+        throw std::invalid_argument(
+            "GeometryModel::add: a node is already registered");
     }
 
     std::unordered_set<std::string> batch_names;
@@ -127,9 +134,12 @@ void GeometryModel::add(std::shared_ptr<Geometry> object,
 
         const auto as_group =
             std::dynamic_pointer_cast<GeometryGroup>(frame.node);
-        for (const auto& child : frame.node->children()) {
-            stack.push_back({.node = child, .parent_group = as_group});
-        }
+        const auto child_nodes = frame.node->children();
+        static_cast<void>(std::ranges::transform(
+            child_nodes, std::back_inserter(stack),
+            [&as_group](const std::shared_ptr<Geometry>& child) {
+                return Frame{.node = child, .parent_group = as_group};
+            }));
     }
 
     mark_structural_change();

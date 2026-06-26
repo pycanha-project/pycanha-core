@@ -25,10 +25,11 @@ inline void apply_transform_in_place(
 
 // Appends `src` into `dest`, shifting src's face_ids / node_numbers /
 // primitive ranges by `face_id_offset` and its triangle indices by the current
-// vertex count. Returns the next face_id offset (face_id_offset + src.nf()).
-// node_numbers is kept dense, indexed by global face_id.
-inline pycanha::MeshIndex concatenate_offset(
-    TriMeshD& dest, const TriMeshD& src, pycanha::MeshIndex face_id_offset) {
+// vertex count. Advances `face_id_offset` in place by src.nf() so it can be
+// threaded through successive calls. node_numbers is kept dense, indexed by
+// global face_id.
+inline void concatenate_offset(TriMeshD& dest, const TriMeshD& src,
+                               pycanha::MeshIndex& face_id_offset) {
     const pycanha::MeshIndex src_nf = src.nf();
     const Eigen::Index vertex_offset = dest.vertices.rows();
     const Eigen::Index tri_offset = dest.triangles.rows();
@@ -74,7 +75,7 @@ inline pycanha::MeshIndex concatenate_offset(
             .last_face_id = range.last_face_id + face_id_offset});
     }
 
-    return face_id_offset + src_nf;
+    face_id_offset += src_nf;
 }
 
 }  // namespace pycanha::gmm::detail

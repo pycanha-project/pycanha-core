@@ -43,7 +43,7 @@ class GeometryGroupCutted final : public Geometry {
 
   private:
     [[nodiscard]] MeshOptions effective_options() const;
-    void rebuild_mesh() const;
+    [[nodiscard]] TriMeshD build_mesh() const;
 
     std::vector<std::shared_ptr<Geometry>> _targets;
     std::vector<std::shared_ptr<GeometryItem>> _cutters;

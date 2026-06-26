@@ -56,10 +56,11 @@ std::span<const std::shared_ptr<Geometry>> GeometryGroup::children()
 
 const TriMeshD& GeometryGroup::mesh() const {
     _walk_result = TriMeshD{};
+    // Concatenate every child mesh into _walk_result, threading the running
+    // face-id offset through concatenate_offset.
     pycanha::MeshIndex offset = 0;
     for (const auto& child : _children) {
-        offset =
-            detail::concatenate_offset(_walk_result, child->mesh(), offset);
+        detail::concatenate_offset(_walk_result, child->mesh(), offset);
     }
     detail::apply_transform_in_place(_walk_result, _transform);
     return _walk_result;

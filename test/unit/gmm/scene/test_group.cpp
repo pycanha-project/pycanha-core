@@ -4,7 +4,6 @@
 #include <vector>
 
 #include "pycanha-core/gmm/mesh/thermal_mesh.hpp"
-#include "pycanha-core/gmm/primitives/cylinder.hpp"
 #include "pycanha-core/gmm/primitives/rectangle.hpp"
 #include "pycanha-core/gmm/primitives/sphere.hpp"
 #include "pycanha-core/gmm/scene/coordinate_transformation.hpp"

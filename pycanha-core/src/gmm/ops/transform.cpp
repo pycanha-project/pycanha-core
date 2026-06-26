@@ -97,6 +97,7 @@ Primitive transform(const Primitive& primitive,
                     const CoordinateTransformation& transformation) {
     return std::visit(
         [&transformation](const auto& concrete_primitive) {
+            // NOLINTNEXTLINE(build/include_what_you_use)
             return transform(concrete_primitive, transformation);
         },
         primitive);

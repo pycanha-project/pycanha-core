@@ -42,7 +42,7 @@ class GeometryItem final : public Geometry {
 
   private:
     [[nodiscard]] MeshOptions effective_options() const;
-    void rebuild_mesh() const;
+    [[nodiscard]] TriMeshD build_mesh() const;
 
     Primitive _primitive;
     ThermalMesh _thermal_mesh;

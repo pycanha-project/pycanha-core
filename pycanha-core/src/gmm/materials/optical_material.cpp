@@ -1,5 +1,6 @@
 #include "pycanha-core/gmm/materials/optical_material.hpp"
 
+#include <algorithm>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -13,12 +14,12 @@ OpticalMaterial::OpticalMaterial(std::string name, double emissivity_ir,
     validate(_properties);
 }
 
-OpticalMaterial::OpticalMaterial(std::string name, Properties properties)
+OpticalMaterial::OpticalMaterial(std::string name, const Properties& properties)
     : _name(std::move(name)), _properties(properties) {
     validate(_properties);
 }
 
-void OpticalMaterial::set_th_optical_properties(Properties properties) {
+void OpticalMaterial::set_th_optical_properties(const Properties& properties) {
     validate(properties);
     _properties = properties;
 }
@@ -38,11 +39,11 @@ void OpticalMaterial::set_absorptivity_solar(double absorptivity_solar) {
 }
 
 void OpticalMaterial::validate(const Properties& properties) {
-    for (const double value : properties) {
-        if (value < 0.0 || value > 1.0) {
-            throw std::invalid_argument(
-                "OpticalMaterial: every optical property must be in [0, 1]");
-        }
+    if (std::ranges::any_of(properties, [](const double value) {
+            return value < 0.0 || value > 1.0;
+        })) {
+        throw std::invalid_argument(
+            "OpticalMaterial: every optical property must be in [0, 1]");
     }
 }
 

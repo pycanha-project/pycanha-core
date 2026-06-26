@@ -24,6 +24,7 @@
 
 namespace pycanha::gmm {
 
+// cppcheck-suppress functionStatic
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
 TriMeshD UvMesher::mesh(const Primitive& primitive,
                         const ThermalMesh& thermal_mesh,

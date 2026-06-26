@@ -109,7 +109,7 @@ MeshOptions GeometryGroupCutted::effective_options() const {
     return MeshOptions{};
 }
 
-void GeometryGroupCutted::rebuild_mesh() const {
+TriMeshD GeometryGroupCutted::build_mesh() const {
     const MeshOptions options = effective_options();
     const cutting::ManifoldCutBackend backend;
 
@@ -143,21 +143,21 @@ void GeometryGroupCutted::rebuild_mesh() const {
                        .first_face_id = 0U,
                        .last_face_id = piece.nf() > 0U ? piece.nf() - 2U : 0U});
         }
-        offset = detail::concatenate_offset(combined, piece, offset);
+        detail::concatenate_offset(combined, piece, offset);
     }
 
     detail::apply_transform_in_place(combined, _transform);
-    _cached_mesh = std::move(combined);
+    return combined;
 }
 
 const TriMeshD& GeometryGroupCutted::mesh() const {
     if (!_cached_mesh.has_value()) {
-        rebuild_mesh();
+        _cached_mesh = build_mesh();
     }
     return *_cached_mesh;
 }
 
-void GeometryGroupCutted::create_mesh() { rebuild_mesh(); }
+void GeometryGroupCutted::create_mesh() { _cached_mesh = build_mesh(); }
 
 void GeometryGroupCutted::on_geometry_mutated() { _cached_mesh.reset(); }
 

@@ -39,7 +39,7 @@ class GeometryModel {
     // owning model, and indexes names. Throws std::invalid_argument on a null
     // object, an already-registered node, a name clash, or an unknown / non-
     // group parent.
-    void add(std::shared_ptr<Geometry> object,
+    void add(const std::shared_ptr<Geometry>& object,
              const std::string& parent_name = "");
 
     [[nodiscard]] bool contains(const std::string& name) const noexcept;
@@ -87,8 +87,8 @@ class GeometryModel {
   private:
     [[nodiscard]] static std::string canonicalize(const std::string& name);
     [[nodiscard]] std::shared_ptr<Geometry> find(const std::string& name) const;
-    void collect_subtree(const std::shared_ptr<Geometry>& object,
-                         std::vector<std::shared_ptr<Geometry>>& out) const;
+    static void collect_subtree(const std::shared_ptr<Geometry>& object,
+                                std::vector<std::shared_ptr<Geometry>>& out);
     void register_node(const std::shared_ptr<Geometry>& node);
     void unregister_node(const std::shared_ptr<Geometry>& node);
     void mark_structural_change() noexcept;

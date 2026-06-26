@@ -21,21 +21,19 @@ TEST_CASE("CoordinateTransformation supports rigid motion composition",
 
     const auto rotation = CoordinateTransformation::from_rotation(
         Eigen::AngleAxisd(std::numbers::pi / 2.0, Vector3D::UnitZ()));
-    const CoordinateTransformation transform({1.0, 2.0, 3.0},
-                                             rotation.rotation());
+    const CoordinateTransformation motion({1.0, 2.0, 3.0}, rotation.rotation());
 
-    REQUIRE(transform.translation().isApprox(Vector3D(1.0, 2.0, 3.0)));
-    REQUIRE(transform.apply(Point3D(1.0, 0.0, 0.0))
-                .isApprox(Point3D(1.0, 3.0, 3.0)));
-    REQUIRE(transform.apply_normal(Vector3D(1.0, 0.0, 0.0))
+    REQUIRE(motion.translation().isApprox(Vector3D(1.0, 2.0, 3.0)));
+    REQUIRE(
+        motion.apply(Point3D(1.0, 0.0, 0.0)).isApprox(Point3D(1.0, 3.0, 3.0)));
+    REQUIRE(motion.apply_normal(Vector3D(1.0, 0.0, 0.0))
                 .isApprox(Vector3D(0.0, 1.0, 0.0)));
 
-    const auto inverse = transform.inverse();
-    REQUIRE(inverse.apply(transform.apply(Point3D(2.0, 1.0, 0.0)))
+    const auto inverse = motion.inverse();
+    REQUIRE(inverse.apply(motion.apply(Point3D(2.0, 1.0, 0.0)))
                 .isApprox(Point3D(2.0, 1.0, 0.0)));
-    REQUIRE(
-        inverse.apply_normal(transform.apply_normal(Vector3D(0.0, 1.0, 0.0)))
-            .isApprox(Vector3D(0.0, 1.0, 0.0)));
+    REQUIRE(inverse.apply_normal(motion.apply_normal(Vector3D(0.0, 1.0, 0.0)))
+                .isApprox(Vector3D(0.0, 1.0, 0.0)));
 
     const auto translation =
         CoordinateTransformation::from_translation({1.0, 2.0, 0.0});

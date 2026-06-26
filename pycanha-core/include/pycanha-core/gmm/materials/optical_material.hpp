@@ -37,7 +37,7 @@ class OpticalMaterial {
                     double absorptivity_solar);
 
     /// Full six-DOF constructor.
-    OpticalMaterial(std::string name, Properties properties);
+    OpticalMaterial(std::string name, const Properties& properties);
 
     [[nodiscard]] const std::string& get_name() const noexcept { return _name; }
     [[nodiscard]] const Properties& get_th_optical_properties() const noexcept {
@@ -52,7 +52,7 @@ class OpticalMaterial {
     }
 
     void set_name(std::string name) noexcept { _name = std::move(name); }
-    void set_th_optical_properties(Properties properties);
+    void set_th_optical_properties(const Properties& properties);
     void set_emissivity_ir(double emissivity_ir);
     void set_absorptivity_solar(double absorptivity_solar);
 
