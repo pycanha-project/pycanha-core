@@ -298,7 +298,14 @@ class Recipe_pycanha_core(ConanFile):
         # -- Now this is not necessary. Because I'm using CMake install() to copy pycanha-core/include to the package/include folder
         #    So now the headers are in the include folder, and conan will find them automatically.
 
-        self.cpp_info.libs = ["pycanha-core"]
+        # Manifold is built from source (FetchContent) and installed into the
+        # package lib dir, but it is a separate static library that pycanha-core
+        # links against — its symbols are NOT merged into pycanha-core.lib. It
+        # must therefore be advertised to consumers (e.g. the Python bindings),
+        # otherwise linking a consumer fails with unresolved manifold::Manifold
+        # symbols. (Manifold is intentionally not a Conan requirement; it ships
+        # inside this package instead.)
+        self.cpp_info.libs = ["pycanha-core", "manifold"]
         self.cpp_info.requires = [
             "eigen::eigen3",
             "hdf5::hdf5",
