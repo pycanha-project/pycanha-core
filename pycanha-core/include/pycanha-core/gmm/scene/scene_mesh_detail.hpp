@@ -26,8 +26,8 @@ inline void apply_transform_in_place(
 // Appends `src` into `dest`, shifting src's face_ids / node_numbers /
 // primitive ranges by `face_id_offset` and its triangle indices by the current
 // vertex count. Advances `face_id_offset` in place by src.nf() so it can be
-// threaded through successive calls. node_numbers is kept dense, indexed by
-// global face_id.
+// threaded through successive calls. node_numbers is indexed by global
+// face_id; padding for absent face slots is NO_NODE ("no node assigned").
 inline void concatenate_offset(TriMeshD& dest, const TriMeshD& src,
                                pycanha::MeshIndex& face_id_offset) {
     const pycanha::MeshIndex src_nf = src.nf();
@@ -59,7 +59,7 @@ inline void concatenate_offset(TriMeshD& dest, const TriMeshD& src,
             dest.node_numbers.conservativeResize(needed);
             dest.node_numbers
                 .segment(old_size, static_cast<Eigen::Index>(needed) - old_size)
-                .setZero();
+                .setConstant(NO_NODE);
         }
         if (src.node_numbers.rows() > 0) {
             dest.node_numbers.segment(face_id_offset, src.node_numbers.rows()) =

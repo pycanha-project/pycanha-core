@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "pycanha-core/globals.hpp"
+#include "pycanha-core/gmm/ids.hpp"
 #include "pycanha-core/gmm/materials/bulk_material.hpp"
 #include "pycanha-core/gmm/materials/color.hpp"
 #include "pycanha-core/gmm/materials/optical_material.hpp"
@@ -116,7 +117,9 @@ class ThermalMesh {
     //   node_side1(k) = node1_start + k * node1_step
     //   node_side2(k) = node2_start + k * node2_step
     // node_step == 0 means every face on that side shares the same node.
-    // All four default to 0 ("no node assigned").
+    // The start fields default to NO_NODE (-1) and the steps to 0, so an
+    // unconfigured ThermalMesh maps every face to "no node assigned". Note 0
+    // is a legal user node number; only NO_NODE means unassigned.
     [[nodiscard]] std::int32_t get_node1_start() const noexcept {
         return _node1_start;
     }
@@ -135,8 +138,10 @@ class ThermalMesh {
     void set_node2_step(std::int32_t value) noexcept { _node2_step = value; }
 
     /// Node number for cell (i, j) on @p side (1 or 2).
+    /// Throws std::invalid_argument if side is not 1/2 or if (i, j) is outside
+    /// the cell grid ((dir1-1) x (dir2-1)).
     [[nodiscard]] NodeNum node_of(MeshIndex i, MeshIndex j,
-                                  unsigned side) const noexcept;
+                                  unsigned side) const;
 
   private:
     void validate() const;
@@ -150,22 +155,22 @@ class ThermalMesh {
     Color _side1_color{0, 127, 255};
     Color _side2_color{127, 0, 255};
 
-    std::shared_ptr<BulkMaterial> _side1_material =
-        std::make_shared<BulkMaterial>();
-    std::shared_ptr<BulkMaterial> _side2_material =
-        std::make_shared<BulkMaterial>();
+    // Materials are nullable: nullptr = "no material assigned". Presence is
+    // validated later by the thermal-analysis layer (a nullptr on an active
+    // side is an error there), not here. Keeps ThermalMesh{} cheap (no
+    // per-mesh material allocation) and makes "unassigned" explicit.
+    std::shared_ptr<BulkMaterial> _side1_material;
+    std::shared_ptr<BulkMaterial> _side2_material;
 
-    std::shared_ptr<OpticalMaterial> _side1_optical =
-        std::make_shared<OpticalMaterial>();
-    std::shared_ptr<OpticalMaterial> _side2_optical =
-        std::make_shared<OpticalMaterial>();
+    std::shared_ptr<OpticalMaterial> _side1_optical;
+    std::shared_ptr<OpticalMaterial> _side2_optical;
 
     std::vector<double> _dir1_mesh{0.0, 1.0};
     std::vector<double> _dir2_mesh{0.0, 1.0};
 
-    std::int32_t _node1_start = 0;
+    std::int32_t _node1_start = NO_NODE;
     std::int32_t _node1_step = 0;
-    std::int32_t _node2_start = 0;
+    std::int32_t _node2_start = NO_NODE;
     std::int32_t _node2_step = 0;
 };
 

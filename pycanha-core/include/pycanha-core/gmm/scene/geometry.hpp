@@ -53,15 +53,26 @@ class Geometry {
 
   protected:
     Geometry(std::string name, CoordinateTransformation transform)
-        : _name(std::move(name)), _transform(std::move(transform)) {}
+        : _name(std::move(name)),
+          _transform(std::move(transform)),
+          _id(next_geometry_id()) {}
 
-    // Hook invoked after a structural mutation; derived types clear their
-    // cache. Model-level invalidation (mutation propagation) lands in Phase E.
-    virtual void on_geometry_mutated() {}
+    // Hook invoked after any content mutation. Non-virtual: it clears the
+    // object's own cache (via the virtual invalidate_cache()) AND, if the
+    // object is registered, invalidates the owning model's caches (Option B
+    // mutation propagation). Defined in geometry.cpp (needs GeometryModel).
+    void on_geometry_mutated();
+
+    // Derived types override to reset their own cached mesh (no-op for a plain
+    // GeometryGroup, which does not cache).
+    virtual void invalidate_cache() {}
 
     std::string _name;
     CoordinateTransformation _transform;
-    GeometryId _id{};  // 0 = unregistered / unassigned
+    // Ephemeral, process-wide-unique runtime identity assigned at construction
+    // (regenerated on load; never persisted to foreign formats, never embedded
+    // in a name). Registration state is tracked by _owning_model, not by _id.
+    GeometryId _id;
     GeometryModel* _owning_model = nullptr;
 
     friend class GeometryModel;

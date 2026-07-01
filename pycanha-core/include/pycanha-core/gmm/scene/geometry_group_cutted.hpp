@@ -39,7 +39,7 @@ class GeometryGroupCutted final : public Geometry {
     void create_mesh() override;
 
   protected:
-    void on_geometry_mutated() override;
+    void invalidate_cache() override;
 
   private:
     [[nodiscard]] MeshOptions effective_options() const;

@@ -8,14 +8,14 @@
 
 namespace pycanha::gmm::mesh {
 
-// Populates mesh.node_numbers densely (indexed by face_id) from the
+// Populates mesh.node_numbers (indexed directly by face_id) from the
 // ThermalMesh per-side node assignment. face_ids encode cell k = face_id / 2,
 // side = face_id % 2 (even = side 1, odd = side 2). For every cell touched by
 // a face_id, both side slots [2k] and [2k+1] are filled. Slots for cells not
-// present in the mesh stay zero ("no node assigned").
+// present in the mesh (holes left by cuts) stay NO_NODE ("no node assigned").
 inline void fill_node_numbers(TriMeshD& mesh, const ThermalMesh& thermal_mesh) {
     const pycanha::MeshIndex slots = mesh.nf();
-    mesh.node_numbers.setZero(static_cast<Eigen::Index>(slots));
+    mesh.node_numbers.setConstant(static_cast<Eigen::Index>(slots), NO_NODE);
     if (slots == 0U) {
         return;
     }

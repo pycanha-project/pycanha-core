@@ -30,7 +30,9 @@ TEST_CASE(
         CoordinateTransformation::from_translation({1.0, 2.0, 3.0}));
 
     REQUIRE(item.name() == "panel");
-    REQUIRE(item.id() == GeometryId{0});  // unregistered until model.add()
+    // Id is assigned at construction; registration state is separate.
+    REQUIRE(item.id() != GeometryId{0});
+    REQUIRE(item.owning_model() == nullptr);  // unregistered until model.add()
     REQUIRE(std::holds_alternative<Rectangle>(item.primitive()));
     REQUIRE(item.transform()
                 .apply({0.0, 0.0, 0.0})

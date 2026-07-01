@@ -70,6 +70,11 @@ class GeometryModel {
 
     [[nodiscard]] std::uint64_t get_structure_version() const noexcept;
 
+    // Invalidation hook called by registered geometry after a content edit
+    // (Option B). Bumps the structure version and marks the mesh / reverse
+    // lookup dirty without rebuilding; the next mesh() read rebuilds lazily.
+    void notify_content_changed() noexcept;
+
     // Mesh access. mesh() returns the float32 world mesh (built from the root
     // group's float64 mesh via cast). create_mesh() forces a full rebuild.
     [[nodiscard]] const TriMeshF& mesh() const;
@@ -105,6 +110,10 @@ class GeometryModel {
         _parent_of;
 
     std::uint64_t _structure_version = 0;
+    // Per-model counter seeding auto-generated "geo_<k>" names. Not atomic
+    // (model mutation is single-threaded). Persisted natively; reseeded from
+    // existing geo_<N> names when loading a foreign format.
+    std::uint64_t _auto_name_counter = 0;
     MeshOptions _default_mesh_options{};
 
     mutable bool _mesh_dirty = true;

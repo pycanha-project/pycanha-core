@@ -20,6 +20,11 @@ enum class FaceId : pycanha::MeshIndex {};
 // NodeNum is the global pycanha::NodeNum (int32, see globals.hpp). The gmm
 // previously shadowed it as int64; that shadow has been removed.
 
+// Sentinel NodeNum meaning "no node associated" (face cut away, no thermal
+// mesh, or unassigned). Distinct from any real user node number (0 is a legal
+// node), and consistent with the tmm invalid-node convention (NodeNum{-1}).
+inline constexpr pycanha::NodeNum NO_NODE = -1;
+
 // Returns the next unused GeometryId from the process-wide atomic counter.
 [[nodiscard]] GeometryId next_geometry_id() noexcept;
 

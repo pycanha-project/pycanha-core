@@ -20,7 +20,8 @@ class GeometryGroup : public Geometry {
                            CoordinateTransformation transform = {});
 
     // Appends a child. Throws std::invalid_argument on nullptr, a node already
-    // registered with a model (id() != 0), or a duplicate handle.
+    // registered with a model (owning_model() != nullptr), or a duplicate
+    // handle.
     void add(std::shared_ptr<Geometry> child);
 
     // Removes `child` if present; returns true if it was a child.

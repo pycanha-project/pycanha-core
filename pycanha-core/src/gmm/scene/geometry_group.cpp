@@ -9,7 +9,6 @@
 #include <vector>
 
 #include "pycanha-core/globals.hpp"
-#include "pycanha-core/gmm/ids.hpp"
 #include "pycanha-core/gmm/mesh/trimesh.hpp"
 #include "pycanha-core/gmm/scene/coordinate_transformation.hpp"
 #include "pycanha-core/gmm/scene/geometry.hpp"
@@ -30,7 +29,7 @@ void GeometryGroup::add(std::shared_ptr<Geometry> child) {
     if (child == nullptr) {
         throw std::invalid_argument("GeometryGroup::add: null child");
     }
-    if (child->id() != GeometryId{0}) {
+    if (child->owning_model() != nullptr) {
         throw std::invalid_argument(
             "GeometryGroup::add: child is already registered with a model");
     }
@@ -38,6 +37,9 @@ void GeometryGroup::add(std::shared_ptr<Geometry> child) {
         throw std::invalid_argument("GeometryGroup::add: duplicate child");
     }
     _children.push_back(std::move(child));
+    // Invalidates the owning model's mesh if this group is registered (no-op
+    // for a standalone group, e.g. during construction).
+    on_geometry_mutated();
 }
 
 bool GeometryGroup::remove_child(const std::shared_ptr<Geometry>& child) {

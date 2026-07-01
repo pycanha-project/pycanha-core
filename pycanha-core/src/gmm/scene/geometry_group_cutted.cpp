@@ -13,7 +13,6 @@
 #include "pycanha-core/globals.hpp"
 #include "pycanha-core/gmm/cutting/manifold_cut_backend.hpp"
 #include "pycanha-core/gmm/geometrymodel.hpp"
-#include "pycanha-core/gmm/ids.hpp"
 #include "pycanha-core/gmm/mesh/mesh_options.hpp"
 #include "pycanha-core/gmm/mesh/node_numbering.hpp"
 #include "pycanha-core/gmm/mesh/trimesh.hpp"
@@ -43,7 +42,7 @@ void validate_cutter(const std::shared_ptr<GeometryItem>& cutter) {
     if (cutter == nullptr) {
         throw std::invalid_argument("GeometryGroupCutted: null cutter");
     }
-    if (cutter->id() != GeometryId{0}) {
+    if (cutter->owning_model() != nullptr) {
         throw std::invalid_argument(
             "GeometryGroupCutted: cutter is already registered with a model");
     }
@@ -65,7 +64,7 @@ GeometryGroupCutted::GeometryGroupCutted(
         if (target == nullptr) {
             throw std::invalid_argument("GeometryGroupCutted: null target");
         }
-        if (target->id() != GeometryId{0}) {
+        if (target->owning_model() != nullptr) {
             throw std::invalid_argument(
                 "GeometryGroupCutted: target is already registered");
         }
@@ -159,6 +158,6 @@ const TriMeshD& GeometryGroupCutted::mesh() const {
 
 void GeometryGroupCutted::create_mesh() { _cached_mesh = build_mesh(); }
 
-void GeometryGroupCutted::on_geometry_mutated() { _cached_mesh.reset(); }
+void GeometryGroupCutted::invalidate_cache() { _cached_mesh.reset(); }
 
 }  // namespace pycanha::gmm

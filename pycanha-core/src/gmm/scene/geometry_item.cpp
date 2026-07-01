@@ -90,6 +90,6 @@ const TriMeshD& GeometryItem::mesh() const {
 
 void GeometryItem::create_mesh() { _cached_mesh = build_mesh(); }
 
-void GeometryItem::on_geometry_mutated() { _cached_mesh.reset(); }
+void GeometryItem::invalidate_cache() { _cached_mesh.reset(); }
 
 }  // namespace pycanha::gmm

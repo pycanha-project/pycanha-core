@@ -88,8 +88,15 @@ MeshIndex ThermalMesh::get_number_of_pair_faces() const noexcept {
     return to_meshidx((_dir1_mesh.size() - 1U) * (_dir2_mesh.size() - 1U));
 }
 
-NodeNum ThermalMesh::node_of(MeshIndex i, MeshIndex j,
-                             unsigned side) const noexcept {
+NodeNum ThermalMesh::node_of(MeshIndex i, MeshIndex j, unsigned side) const {
+    if (side != 1U && side != 2U) {
+        throw std::invalid_argument(
+            "ThermalMesh::node_of: side must be 1 or 2");
+    }
+    if (i >= _dir1_mesh.size() - 1U || j >= _dir2_mesh.size() - 1U) {
+        throw std::invalid_argument(
+            "ThermalMesh::node_of: cell (i, j) is out of range");
+    }
     const auto cell = (static_cast<std::int64_t>(i) *
                        static_cast<std::int64_t>(_dir2_mesh.size() - 1U)) +
                       static_cast<std::int64_t>(j);

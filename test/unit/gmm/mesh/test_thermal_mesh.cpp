@@ -2,6 +2,7 @@
 #include <memory>
 #include <stdexcept>
 
+#include "pycanha-core/gmm/ids.hpp"
 #include "pycanha-core/gmm/materials/bulk_material.hpp"
 #include "pycanha-core/gmm/mesh/thermal_mesh.hpp"
 
@@ -46,9 +47,9 @@ TEST_CASE("ThermalMesh rejects invalid cut definitions", "[gmm][mesh]") {
 TEST_CASE("ThermalMesh node_of follows start + k * step", "[gmm][mesh]") {
     ThermalMesh mesh({0.0, 0.5, 1.0}, {0.0, 0.5, 1.0});  // 2x2 cells
 
-    // Defaults: every face maps to node 0.
-    REQUIRE(mesh.node_of(0U, 0U, 1U) == 0);
-    REQUIRE(mesh.node_of(1U, 1U, 2U) == 0);
+    // Defaults: every face maps to NO_NODE (unassigned).
+    REQUIRE(mesh.node_of(0U, 0U, 1U) == pycanha::gmm::NO_NODE);
+    REQUIRE(mesh.node_of(1U, 1U, 2U) == pycanha::gmm::NO_NODE);
 
     mesh.set_node1_start(100);
     mesh.set_node1_step(1);
@@ -62,6 +63,22 @@ TEST_CASE("ThermalMesh node_of follows start + k * step", "[gmm][mesh]") {
     // Side 2 with step 0: every face shares node 200.
     REQUIRE(mesh.node_of(0U, 0U, 2U) == 200);
     REQUIRE(mesh.node_of(1U, 1U, 2U) == 200);
+}
+
+TEST_CASE("ThermalMesh node_of validates side and cell range", "[gmm][mesh]") {
+    const ThermalMesh mesh({0.0, 0.5, 1.0}, {0.0, 1.0});  // 2x1 cells
+    REQUIRE_THROWS_AS(mesh.node_of(0U, 0U, 0U), std::invalid_argument);
+    REQUIRE_THROWS_AS(mesh.node_of(0U, 0U, 3U), std::invalid_argument);
+    REQUIRE_THROWS_AS(mesh.node_of(2U, 0U, 1U), std::invalid_argument);
+    REQUIRE_THROWS_AS(mesh.node_of(0U, 1U, 1U), std::invalid_argument);
+}
+
+TEST_CASE("ThermalMesh materials default to nullptr", "[gmm][mesh]") {
+    const ThermalMesh mesh;
+    REQUIRE(mesh.get_side1_material() == nullptr);
+    REQUIRE(mesh.get_side2_material() == nullptr);
+    REQUIRE(mesh.get_side1_optical() == nullptr);
+    REQUIRE(mesh.get_side2_optical() == nullptr);
 }
 
 TEST_CASE("ThermalMesh materials are shared by reference", "[gmm][mesh]") {

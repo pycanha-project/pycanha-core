@@ -90,7 +90,7 @@ void GeometryModel::add(const std::shared_ptr<Geometry>& object,
     collect_subtree(object, nodes);
 
     if (std::ranges::any_of(nodes, [](const auto& node) {
-            return node->id() != GeometryId{0};
+            return node->owning_model() != nullptr;
         })) {
         throw std::invalid_argument(
             "GeometryModel::add: a node is already registered");
@@ -121,11 +121,21 @@ void GeometryModel::add(const std::shared_ptr<Geometry>& object,
         const Frame frame = stack.back();
         stack.pop_back();
 
-        const GeometryId id = next_geometry_id();
-        frame.node->_id = id;
+        // The id is assigned at construction; registration only wires the
+        // owning model and indexes the (possibly auto-generated) name.
+        const GeometryId id = frame.node->_id;
         frame.node->_owning_model = this;
         if (frame.node->_name.empty()) {
-            frame.node->_name = "geometry_" + std::to_string(raw(id));
+            // Auto-name from the per-model counter, probing past any existing
+            // name (e.g. a "geo_<N>" carried in from a loaded file). The
+            // counter is never driven by parsed external input, so it cannot
+            // be pushed to overflow.
+            std::string candidate =
+                "geo_" + std::to_string(_auto_name_counter++);
+            while (_name_to_id.contains(canonicalize(candidate))) {
+                candidate = "geo_" + std::to_string(_auto_name_counter++);
+            }
+            frame.node->_name = std::move(candidate);
         }
         _name_to_id.emplace(canonicalize(frame.node->_name), id);
         _id_to_name.emplace(raw(id), frame.node->_name);
@@ -151,7 +161,7 @@ bool GeometryModel::contains(const std::string& name) const noexcept {
 
 bool GeometryModel::contains(
     const std::shared_ptr<Geometry>& object) const noexcept {
-    if (object == nullptr || object->id() == GeometryId{0}) {
+    if (object == nullptr || object->owning_model() == nullptr) {
         return false;
     }
     const auto it = _by_id.find(raw(object->id()));
@@ -183,7 +193,8 @@ void GeometryModel::unregister_node(const std::shared_ptr<Geometry>& node) {
     _id_to_name.erase(key);
     _by_id.erase(key);
     _parent_of.erase(key);
-    node->_id = GeometryId{0};
+    // _id is the object's permanent runtime identity; it is NOT reset here.
+    // Registration state is tracked solely by _owning_model.
     node->_owning_model = nullptr;
 }
 
@@ -212,7 +223,7 @@ void GeometryModel::remove(const std::shared_ptr<Geometry>& object) {
     std::vector<std::shared_ptr<Geometry>> nodes;
     collect_subtree(object, nodes);
     for (const auto& node : nodes) {
-        if (node->id() != GeometryId{0}) {
+        if (node->owning_model() != nullptr) {
             unregister_node(node);
         }
     }
@@ -320,6 +331,10 @@ void GeometryModel::mark_structural_change() noexcept {
     _faces_of_node_dirty = true;
 }
 
+void GeometryModel::notify_content_changed() noexcept {
+    mark_structural_change();
+}
+
 void GeometryModel::rebuild_mesh() const {
     _cached_mesh = _root->mesh().cast<float>();
     _mesh_dirty = false;
@@ -358,7 +373,7 @@ void GeometryModel::rebuild_faces_of_node() const {
     const auto& node_numbers = _cached_mesh.node_numbers;
     for (Eigen::Index slot = 0; slot < node_numbers.rows(); ++slot) {
         const NodeNum node_num = node_numbers(slot);
-        if (node_num != 0) {
+        if (node_num != NO_NODE) {
             _cached_faces_of_node[node_num].push_back(
                 static_cast<FaceId>(static_cast<pycanha::MeshIndex>(slot)));
         }
