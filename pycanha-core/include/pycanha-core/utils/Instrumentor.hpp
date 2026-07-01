@@ -49,7 +49,8 @@
 // used by the macros at the bottom of this file.
 #ifdef PYCANHA_PROFILING
 #ifndef PROFILING
-#define PROFILING
+// NOLINTNEXTLINE(bugprone-macro-parentheses)
+#define PROFILING 1
 #endif
 #endif
 
@@ -102,7 +103,7 @@ class Instrumentor {
         }
 
         std::string name = result.name;
-        std::replace(name.begin(), name.end(), '"', '\'');
+        std::ranges::replace(name, '"', '\'');
 
         _output_stream << R"({"cat":"function",)";
         _output_stream << R"("name":")" << name << R"(",)";
@@ -154,7 +155,10 @@ class InstrumentationTimer {
                 .time_since_epoch()
                 .count();
         const std::thread::id thread_id = std::this_thread::get_id();
-        Instrumentor::get().write_event({_name, ts, 'B', thread_id});
+        Instrumentor::get().write_event({.name = _name,
+                                         .timestamp = ts,
+                                         .event_type = 'B',
+                                         .thread_id = thread_id});
     }
 
     void stop() {
@@ -165,7 +169,10 @@ class InstrumentationTimer {
                 .time_since_epoch()
                 .count();
         const std::thread::id thread_id = std::this_thread::get_id();
-        Instrumentor::get().write_event({_name, ts, 'E', thread_id});
+        Instrumentor::get().write_event({.name = _name,
+                                         .timestamp = ts,
+                                         .event_type = 'E',
+                                         .thread_id = thread_id});
         _stopped = true;
     }
 
@@ -177,11 +184,13 @@ class InstrumentationTimer {
 };
 
 #ifdef PROFILING
+// NOLINTBEGIN(bugprone-macro-parentheses)
 #define PROFILE_SCOPE(name) const InstrumentationTimer timer##__LINE__(name)
 #define PROFILE_FUNCTION() PROFILE_SCOPE(__FUNCTION__)
 #else
 #define PROFILE_SCOPE(name)
 #define PROFILE_FUNCTION()
 #endif
+// NOLINTEND(bugprone-macro-parentheses)
 
 }  // namespace pycanha

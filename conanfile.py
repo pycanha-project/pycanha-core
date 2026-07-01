@@ -18,7 +18,7 @@ class Recipe_pycanha_core(ConanFile):
 
     # This is the version used everywhere. Right now is set manually,
     # but it could be set automatically from the git tag for example.
-    version = "0.14"
+    version = "0.15"
 
     # I've followed the instructions from https://docs.conan.io/2/tutorial/creating_packages/other_types_of_packages/header_only_packages.html
     # but without adding the "header-only" keyword to the recipe, it doesn't work. The use of the "header-only" is from here:
@@ -41,7 +41,7 @@ class Recipe_pycanha_core(ConanFile):
     # Includes both Conan dependencies and tooling hints used by CMake/docs.
     DEPENDENCY_VERSIONS = {
         "eigen": "5.0.1",
-        "cdt": "1.4.4",
+        "manifold": "3.4.1",
         "mkl": "2025.3.1",
         "catch2": "3.13.0",
         "hdf5": "1.14.6",
@@ -109,10 +109,8 @@ class Recipe_pycanha_core(ConanFile):
             transitive_libs=True,
         )
         # transitive_headers=True is used when the dependencies of the library are headers needed by the consumer.
-
-        # self.requires(f"cdt/{versions['cdt']}")
-        # CDT is currently fetched in CMake with FetchContent. We still keep
-        # its version centralized here and pass it to CMake in generate().
+        # Manifold is intentionally not a Conan requirement yet.
+        # We fetch the pinned version from CMake until a suitable Conan recipe is available.
 
         # Test dependencies
         self.test_requires(f"catch2/{versions['catch2']}")
@@ -192,9 +190,9 @@ class Recipe_pycanha_core(ConanFile):
         tc.cache_variables["CONAN_PROJECT_VERSION"] = self.version
 
         # Export centrally managed version hints for CMake and docs tooling.
-        tc.cache_variables["PYCANHA_OPTION_CDT_VERSION"] = self.DEPENDENCY_VERSIONS[
-            "cdt"
-        ]
+        tc.cache_variables["PYCANHA_OPTION_MANIFOLD_VERSION"] = (
+            self.DEPENDENCY_VERSIONS["manifold"]
+        )
         tc.cache_variables["PYCANHA_OPTION_DOXYGEN_VERSION"] = self.DEPENDENCY_VERSIONS[
             "doxygen"
         ]
@@ -300,7 +298,14 @@ class Recipe_pycanha_core(ConanFile):
         # -- Now this is not necessary. Because I'm using CMake install() to copy pycanha-core/include to the package/include folder
         #    So now the headers are in the include folder, and conan will find them automatically.
 
-        self.cpp_info.libs = ["pycanha-core"]
+        # Manifold is built from source (FetchContent) and installed into the
+        # package lib dir, but it is a separate static library that pycanha-core
+        # links against — its symbols are NOT merged into pycanha-core.lib. It
+        # must therefore be advertised to consumers (e.g. the Python bindings),
+        # otherwise linking a consumer fails with unresolved manifold::Manifold
+        # symbols. (Manifold is intentionally not a Conan requirement; it ships
+        # inside this package instead.)
+        self.cpp_info.libs = ["pycanha-core", "manifold"]
         self.cpp_info.requires = [
             "eigen::eigen3",
             "hdf5::hdf5",

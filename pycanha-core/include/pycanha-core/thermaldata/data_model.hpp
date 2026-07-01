@@ -6,6 +6,7 @@
 #include "pycanha-core/globals.hpp"
 #include "pycanha-core/thermaldata/dense_matrix_time_series.hpp"
 #include "pycanha-core/thermaldata/dense_time_series.hpp"
+#include "pycanha-core/thermaldata/named_constants.hpp"
 #include "pycanha-core/thermaldata/sparse_time_series.hpp"
 
 namespace pycanha {
@@ -86,6 +87,9 @@ class DataModel {
     [[nodiscard]] std::vector<Index>& node_numbers() noexcept;
     [[nodiscard]] const std::vector<Index>& node_numbers() const noexcept;
 
+    [[nodiscard]] NamedConstants& constants() noexcept;
+    [[nodiscard]] const NamedConstants& constants() const noexcept;
+
     [[nodiscard]] std::vector<DataModelAttribute> populated_attributes() const;
 
     [[nodiscard]] Eigen::MatrixXd flow_conductive(Index node_num_1,
@@ -148,6 +152,7 @@ class DataModel {
     DenseMatrixTimeSeries _jacobian;
 
     std::vector<Index> _node_numbers;
+    NamedConstants _constants;
 };
 
 }  // namespace pycanha

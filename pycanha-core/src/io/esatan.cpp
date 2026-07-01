@@ -13,11 +13,13 @@
 #include <iterator>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <unordered_set>
 #include <utility>
 #include <vector>
 
 #include "pycanha-core/thermaldata/data_model.hpp"
+#include "pycanha-core/thermaldata/named_constants.hpp"
 #include "pycanha-core/thermaldata/thermaldata.hpp"
 #include "pycanha-core/tmm/node.hpp"
 #include "pycanha-core/tmm/thermalmathematicalmodel.hpp"
@@ -292,6 +294,191 @@ std::vector<int> map_index_links_to_node_numbers(
     return out;
 }
 
+bool link_exists(const H5::Group& group, const char* name) {
+    return H5Lexists(group.getId(), name, H5P_DEFAULT) > 0;
+}
+
+// Extracts a logical string from a fixed-width buffer slice: stops at the
+// first NUL terminator and strips ESATAN trailing-space padding.
+std::string extract_fixed_string(std::string_view raw) {
+    if (const auto nul = raw.find('\0'); nul != std::string_view::npos) {
+        raw = raw.substr(0, nul);
+    }
+    while (!raw.empty() && (raw.back() == ' ')) {
+        raw.remove_suffix(1);
+    }
+    return std::string(raw);
+}
+
+// Reads the "name" field of a compound (name, modelId) dataset such as
+// userConstantsReal, returning one trimmed name per entry.
+std::vector<std::string> read_constant_names(const H5::Group& group,
+                                             const std::string& dataset_name) {
+    const H5::DataSet dataset = group.openDataSet(dataset_name);
+
+    const H5::DataSpace file_space = dataset.getSpace();
+    hsize_t num_names = 0;
+    file_space.getSimpleExtentDims(&num_names, nullptr);
+
+    const H5::CompType file_type = dataset.getCompType();
+    const auto name_member_index =
+        static_cast<unsigned>(file_type.getMemberIndex("name"));
+    const H5::StrType name_type = file_type.getMemberStrType(name_member_index);
+    const std::size_t name_size = name_type.getSize();
+
+    std::vector<std::string> names;
+    names.reserve(num_names);
+    if ((num_names == 0) || (name_size == 0)) {
+        return names;
+    }
+
+    H5::CompType const mem_type(name_size);
+    mem_type.insertMember("name", 0, name_type);
+
+    std::vector<char> buffer(num_names * name_size, '\0');
+    dataset.read(buffer.data(), mem_type);
+
+    for (hsize_t i = 0; i < num_names; ++i) {
+        names.emplace_back(
+            extract_fixed_string({&buffer[i * name_size], name_size}));
+    }
+    return names;
+}
+
+std::vector<double> read_double_matrix_2d(const H5::DataSet& dataset,
+                                          const std::string& dataset_name,
+                                          hsize_t& num_rows,
+                                          hsize_t& num_cols) {
+    require_rank(dataset, 2, dataset_name);
+
+    const H5::DataSpace file_space = dataset.getSpace();
+    std::array<hsize_t, 2> dims{0, 0};
+    file_space.getSimpleExtentDims(dims.data(), nullptr);
+    num_rows = dims[0];
+    num_cols = dims[1];
+
+    std::vector<double> out(num_rows * num_cols);
+    if (!out.empty()) {
+        dataset.read(out.data(), H5::PredType::NATIVE_DOUBLE);
+    }
+    return out;
+}
+
+std::vector<std::int64_t> read_int64_matrix_2d(const H5::DataSet& dataset,
+                                               const std::string& dataset_name,
+                                               hsize_t& num_rows,
+                                               hsize_t& num_cols) {
+    require_rank(dataset, 2, dataset_name);
+
+    const H5::DataSpace file_space = dataset.getSpace();
+    std::array<hsize_t, 2> dims{0, 0};
+    file_space.getSimpleExtentDims(dims.data(), nullptr);
+    num_rows = dims[0];
+    num_cols = dims[1];
+
+    std::vector<std::int64_t> out(num_rows * num_cols);
+    if (!out.empty()) {
+        dataset.read(out.data(), H5::PredType::NATIVE_INT64);
+    }
+    return out;
+}
+
+// Reads a fixed-width string matrix into a contiguous (rows*cols*width) buffer,
+// row-major by (row, column). Returns the per-element width via out param.
+std::vector<char> read_char_matrix_2d(const H5::DataSet& dataset,
+                                      const std::string& dataset_name,
+                                      hsize_t& num_rows, hsize_t& num_cols,
+                                      std::size_t& width) {
+    require_rank(dataset, 2, dataset_name);
+
+    const H5::DataSpace file_space = dataset.getSpace();
+    std::array<hsize_t, 2> dims{0, 0};
+    file_space.getSimpleExtentDims(dims.data(), nullptr);
+    num_rows = dims[0];
+    num_cols = dims[1];
+
+    const H5::StrType string_type = dataset.getStrType();
+    width = string_type.getSize();
+
+    std::vector<char> out(num_rows * num_cols * width, '\0');
+    if (!out.empty()) {
+        dataset.read(out.data(), string_type);
+    }
+    return out;
+}
+
+void populate_constants(const H5::Group& analysis_group,
+                        const H5::Group& data_group,
+                        const std::vector<double>& time_values,
+                        DataModel& model) {
+    NamedConstants& constants = model.constants();
+
+    const auto num_timesteps = static_cast<Index>(time_values.size());
+    if (num_timesteps > 0) {
+        constants.times() = Eigen::Map<const Eigen::VectorXd>(
+            time_values.data(), num_timesteps);
+    }
+
+    if (link_exists(analysis_group, "userConstantsReal") &&
+        link_exists(data_group, "userConstantsRealData")) {
+        constants.real_names() =
+            read_constant_names(analysis_group, "userConstantsReal");
+        hsize_t rows = 0;
+        hsize_t cols = 0;
+        const auto values = read_double_matrix_2d(
+            data_group.openDataSet("userConstantsRealData"),
+            "userConstantsRealData", rows, cols);
+        if (cols != constants.real_names().size()) {
+            throw std::runtime_error(
+                "Mismatch between userConstantsReal names and data.");
+        }
+        if (!values.empty()) {
+            constants.real_values() =
+                Eigen::Map<const NamedConstants::RealMatrix>(
+                    values.data(), static_cast<Index>(rows),
+                    static_cast<Index>(cols));
+        }
+    }
+
+    if (link_exists(analysis_group, "userConstantsInteger") &&
+        link_exists(data_group, "userConstantsIntegerData")) {
+        constants.int_names() =
+            read_constant_names(analysis_group, "userConstantsInteger");
+        hsize_t rows = 0;
+        hsize_t cols = 0;
+        const auto values = read_int64_matrix_2d(
+            data_group.openDataSet("userConstantsIntegerData"),
+            "userConstantsIntegerData", rows, cols);
+        if (cols != constants.int_names().size()) {
+            throw std::runtime_error(
+                "Mismatch between userConstantsInteger names and data.");
+        }
+        if (!values.empty()) {
+            constants.int_values() =
+                Eigen::Map<const NamedConstants::IntMatrix>(
+                    values.data(), static_cast<Index>(rows),
+                    static_cast<Index>(cols));
+        }
+    }
+
+    if (link_exists(analysis_group, "userConstantsString") &&
+        link_exists(data_group, "userConstantsStringData")) {
+        constants.char_names() =
+            read_constant_names(analysis_group, "userConstantsString");
+        hsize_t rows = 0;
+        hsize_t cols = 0;
+        std::size_t width = 0;
+        auto values = read_char_matrix_2d(
+            data_group.openDataSet("userConstantsStringData"),
+            "userConstantsStringData", rows, cols, width);
+        if (cols != constants.char_names().size()) {
+            throw std::runtime_error(
+                "Mismatch between userConstantsString names and data.");
+        }
+        constants.set_char_storage(width, std::move(values));
+    }
+}
+
 }  // namespace
 
 std::vector<Index> read_tmd_transient(
@@ -358,6 +545,8 @@ std::vector<Index> read_tmd_transient(
             series.values().array() += tabs;
         }
     }
+
+    populate_constants(analysis_group, data_group, time_values, model);
 
     thermal_data.models().add_model(model_name, std::move(model));
 

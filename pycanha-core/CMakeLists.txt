@@ -26,29 +26,52 @@ find_package(spdlog REQUIRED CONFIG)
 find_package(HDF5 REQUIRED COMPONENTS CXX)
 find_package(symengine REQUIRED CONFIG)
 
+if(PYCANHA_USE_FETCHCONTENT_MANIFOLD)
+    include(FetchContent)
 
-# CDT: https://github.com/artem-ogre/CDT
-# CDT is a header-only library, so we can use FetchContent
-include(FetchContent)
-if(NOT DEFINED CACHE{PYCANHA_OPTION_CDT_VERSION})
-    message(FATAL_ERROR
-        "PYCANHA_OPTION_CDT_VERSION is not defined. Configure with Conan so "
-        "all dependency versions are provided from conanfile.py.")
-endif()
-FetchContent_Declare(
-    cdt
-    GIT_REPOSITORY
-    https://github.com/artem-ogre/CDT.git
-    GIT_TAG
-    ${PYCANHA_OPTION_CDT_VERSION}
-) 
-FetchContent_GetProperties(cdt)
-if(NOT cdt_POPULATED)
-  FetchContent_Populate(cdt)
-  add_subdirectory(${cdt_SOURCE_DIR}/CDT ${cdt_BINARY_DIR}/CDT)
+    set(MANIFOLD_TEST OFF CACHE BOOL "" FORCE)
+    set(MANIFOLD_CROSS_SECTION OFF CACHE BOOL "" FORCE)
+    set(MANIFOLD_PAR OFF CACHE BOOL "" FORCE)
+    set(MANIFOLD_PYBIND OFF CACHE BOOL "" FORCE)
+
+    # Manifold's own CMakeLists defaults BUILD_SHARED_LIBS to ON, so it would
+    # build a shared library (manifold.dll / libmanifold.so / libmanifold.dylib).
+    # We want a *static* manifold that gets archived into the package and linked
+    # statically into consumers (see the package_info() note in conanfile.py):
+    #  - conanfile.py only packages *.a / *.lib, so a shared manifold is not
+    #    installed on Linux/macOS and the consumer's find_package() fails with
+    #    "Library 'manifold' not found in package".
+    #  - a static manifold also removes the need to bundle the manifold runtime
+    #    (manifold.dll) alongside the Python bindings.
+    # Build manifold with PIC so it can be linked into shared consumers (the
+    # nanobind extension); Conan sets CMAKE_POSITION_INDEPENDENT_CODE from fPIC.
+    set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+
+    FetchContent_Declare(
+        manifold
+        GIT_REPOSITORY https://github.com/elalish/manifold.git
+        GIT_TAG v${PYCANHA_OPTION_MANIFOLD_VERSION}
+        GIT_SHALLOW TRUE)
+    FetchContent_MakeAvailable(manifold)
+    set(PYCANHA_MANIFOLD_TARGET manifold)
+else()
+    find_package(manifold REQUIRED CONFIG)
+    set(PYCANHA_MANIFOLD_TARGET manifold::manifold)
 endif()
 
-#find_package(CDT REQUIRED CONFIG) # Use this if managed by conan
+# Normalize MANIFOLD_PAR for clang-tidy/tooling.
+# TODO: Check if needed
+get_target_property(_pycanha_manifold_compile_options
+                    ${PYCANHA_MANIFOLD_TARGET}
+                    INTERFACE_COMPILE_OPTIONS)
+if(_pycanha_manifold_compile_options)
+    list(TRANSFORM _pycanha_manifold_compile_options
+         REPLACE "^-DMANIFOLD_PAR=-1$" "-DMANIFOLD_PAR=(-1)")
+    set_target_properties(${PYCANHA_MANIFOLD_TARGET}
+                          PROPERTIES
+                          INTERFACE_COMPILE_OPTIONS
+                          "${_pycanha_manifold_compile_options}")
+endif()
 
 
 # MyLib Library
@@ -61,8 +84,39 @@ endif()
 
 # Change from INTERFACE to STATIC or SHARED, depending on your needs
 # Add all source files after the library name
-add_library(${LIB_NAME} STATIC 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/triangulation.cpp
+add_library(${LIB_NAME} STATIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/ids.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/geometrymodel.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/cutting/cutter_proxy.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/cutting/manifold_cut_backend.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/cutting/cut_mesh_ops.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/cutting/proxy_shell.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/mesh/thermal_mesh.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/mesh/uv_mesher.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/mesh/uv_mesher_cube.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/mesh/uv_mesher_disc.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/mesh/uv_mesher_planar.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/mesh/uv_mesher_revolution.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/mesh/uv_mesher_sphere.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/ops/distance.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/ops/transform.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/primitives/cone.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/primitives/cube.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/primitives/cylinder.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/primitives/disc.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/primitives/paraboloid.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/primitives/quadrilateral.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/primitives/rectangle.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/primitives/sphere.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/primitives/triangle.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/scene/coordinate_transformation.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/scene/geometry.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/scene/geometry_item.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/scene/geometry_group.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/scene/geometry_group_cutted.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/materials/bulk_material.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/materials/optical_material.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/materials/color.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/io/esatan.cpp
 
@@ -70,6 +124,7 @@ add_library(${LIB_NAME} STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/thermaldata/dense_matrix_time_series.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/thermaldata/dense_time_series.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/thermaldata/lookup_table.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/thermaldata/named_constants.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/thermaldata/sparse_time_series.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/parameters/formula.cpp
@@ -121,7 +176,7 @@ target_link_libraries( ${LIB_NAME}
     symengine
     PRIVATE
     HDF5::HDF5
-    CDT::CDT
+    ${PYCANHA_MANIFOLD_TARGET}
 )
 
 # ============================================================================

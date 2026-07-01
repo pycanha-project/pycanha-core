@@ -1,12 +1,36 @@
 
 set(UNIT_TEST_SOURCES
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/dependencies/test_conan_dependencies.cpp"
-  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/test_primitives.cpp"
-  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/test_trimesh.cpp"
-  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/test_geometryutils.cpp"
-  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/test_transformations.cpp"
-  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/test_geometry.cpp"
-  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/test_geometrymodel.cpp"
+#  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/mesh/test_export_meshes.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/materials/test_materials.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/mesh/test_mesh_ops.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/mesh/test_thermal_mesh.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/mesh/test_uv_mesher_cube.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/mesh/test_uv_mesher_disc.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/mesh/test_uv_mesher_planar.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/mesh/test_uv_mesher_revolution.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/mesh/test_uv_mesher_sphere.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/cutting/test_manifold_dependency.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/cutting/test_cutter_proxy.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/cutting/test_manifold_cut_backend.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/cutting/test_proxy_shell.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/ops/test_distance.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/ops/test_transform.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/primitives/test_cone.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/primitives/test_cube.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/primitives/test_cylinder.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/primitives/test_disc.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/primitives/test_paraboloid.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/primitives/test_quadrilateral.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/primitives/test_rectangle.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/primitives/test_sphere.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/primitives/test_triangle.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/scene/test_coordinate_transformation.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/scene/test_group.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/scene/test_item.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/test_face_node_mapping.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/test_geometry_model.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/test_primitive_variant.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/parameters/test_formula.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/parameters/test_variable.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/parameters/test_smart_formula.cpp"
@@ -39,6 +63,7 @@ set(UNIT_TEST_SOURCES
 
 set(API_TEST_SOURCES
   "${CMAKE_CURRENT_SOURCE_DIR}/api/test_overview.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/api/test_geometry_model.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/api/test_thermal_network.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/api/test_parameters.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/api/test_formulas.cpp"
@@ -77,6 +102,11 @@ target_link_libraries(${TEST_TARGET_NAME} PRIVATE ${LIB_NAME})
 target_link_libraries(${TEST_TARGET_NAME} PRIVATE Catch2::Catch2WithMain)
 target_link_libraries(${TEST_TARGET_NAME} PRIVATE HDF5::HDF5)
 target_link_libraries(${TEST_TARGET_NAME} PRIVATE symengine)
+if(TARGET manifold::manifold)
+  target_link_libraries(${TEST_TARGET_NAME} PRIVATE manifold::manifold)
+elseif(TARGET manifold)
+  target_link_libraries(${TEST_TARGET_NAME} PRIVATE manifold)
+endif()
 if(UNIX AND NOT APPLE)
   target_link_libraries(${TEST_TARGET_NAME} PRIVATE m)
 endif()
@@ -192,13 +222,10 @@ if (PYCANHA_OPTION_CPPCHECK)
                 --suppress=unusedFunction --suppress=unmatchedSuppression
                 --suppress=missingIncludeSystem --suppress=toomanyconfigs
                 --suppress=constStatement          
+                --suppress=*:${CMAKE_BINARY_DIR}/_deps/manifold-src/*
                 --inline-suppr
-                # Supress some warnings here about nomenclature                   
-                --suppress=shadowFunction:*/gmm/primitives.hpp
-                # Supress test files manually if you find bad warnings.
-                --suppress=*:${CMAKE_CURRENT_SOURCE_DIR}/mytest1.cpp
-                # Supress CDT library
-                --suppress=*:${CMAKE_BINARY_DIR}/_deps/cdt-src/*
+                # Ignore third-party Manifold sources pulled by FetchContent.
+                -i${CMAKE_BINARY_DIR}/_deps/manifold-src
                 ${CPP_CHECK_WARNING_AS_ERRORS}
             USES_TERMINAL)
     else()

@@ -1,15 +1,14 @@
 #pragma once
 
-#include <chrono>
-#include <string>
-#include <string_view>
-
 // Forward-declare the profiling logger accessor to avoid pulling in spdlog
 // headers when profiling is disabled.
 #ifdef PYCANHA_PROFILING
 #include <spdlog/logger.h>
 
+#include <chrono>
 #include <memory>
+#include <string>
+#include <string_view>
 
 #include "pycanha-core/utils/logger.hpp"
 #endif
@@ -50,18 +49,22 @@ class ProfileScope {
 
 // Profiling macros — zero overhead when PYCANHA_PROFILING is not defined.
 #ifdef PYCANHA_PROFILING
-// NOLINTBEGIN(cppcoreguidelines-macro-usage)
 // The __LINE__ token-paste trick requires a two-level macro expansion.
 // NOLINTNEXTLINE(bugprone-reserved-identifier)
+// NOLINTNEXTLINE(cppcoreguidelines-macro-usage,bugprone-macro-parentheses)
 #define PYCANHA_PROFILING_CONCAT_(a, b) a##b
 // NOLINTNEXTLINE(bugprone-reserved-identifier)
+// NOLINTNEXTLINE(cppcoreguidelines-macro-usage,bugprone-macro-parentheses)
 #define PYCANHA_PROFILING_CONCAT(a, b) PYCANHA_PROFILING_CONCAT_(a, b)
+// NOLINTNEXTLINE(cppcoreguidelines-macro-usage,bugprone-macro-parentheses)
 #define PYCANHA_PROFILE_SCOPE(name)                                        \
     const ::pycanha::ProfileScope PYCANHA_PROFILING_CONCAT(_pycanha_prof_, \
                                                            __LINE__)(name)
+// NOLINTNEXTLINE(cppcoreguidelines-macro-usage,bugprone-macro-parentheses)
 #define PYCANHA_PROFILE_FUNCTION() PYCANHA_PROFILE_SCOPE(__func__)
-// NOLINTEND(cppcoreguidelines-macro-usage)
 #else
+// NOLINTNEXTLINE(cppcoreguidelines-macro-usage,bugprone-macro-parentheses)
 #define PYCANHA_PROFILE_SCOPE(name)
+// NOLINTNEXTLINE(cppcoreguidelines-macro-usage,bugprone-macro-parentheses)
 #define PYCANHA_PROFILE_FUNCTION()
 #endif

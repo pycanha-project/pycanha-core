@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <limits>
 #include <stdexcept>
+#include <utility>
 #include <vector>
 
 namespace pycanha {
@@ -75,7 +76,7 @@ using IntAddress = std::uint64_t;  // Unsigned 64 bit integer to pass memory
 
 [[nodiscard]] constexpr MeshIndex to_meshidx(Index index) noexcept {
     assert(index >= 0 &&
-           index <= static_cast<Index>(std::numeric_limits<MeshIndex>::max()));
+           std::cmp_less_equal(index, std::numeric_limits<MeshIndex>::max()));
     return static_cast<MeshIndex>(index);
 }
 
@@ -140,7 +141,7 @@ using IntAddress = std::uint64_t;  // Unsigned 64 bit integer to pass memory
 
 [[nodiscard]] constexpr MeshIndex to_meshidx_safe(Index index) {
     if (index < 0 ||
-        index > static_cast<Index>(std::numeric_limits<MeshIndex>::max())) {
+        std::cmp_greater(index, std::numeric_limits<MeshIndex>::max())) {
         throw std::out_of_range(
             "to_meshidx_safe: Index out of MeshIndex range");
     }
