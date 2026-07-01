@@ -34,6 +34,19 @@ if(PYCANHA_USE_FETCHCONTENT_MANIFOLD)
     set(MANIFOLD_PAR OFF CACHE BOOL "" FORCE)
     set(MANIFOLD_PYBIND OFF CACHE BOOL "" FORCE)
 
+    # Manifold's own CMakeLists defaults BUILD_SHARED_LIBS to ON, so it would
+    # build a shared library (manifold.dll / libmanifold.so / libmanifold.dylib).
+    # We want a *static* manifold that gets archived into the package and linked
+    # statically into consumers (see the package_info() note in conanfile.py):
+    #  - conanfile.py only packages *.a / *.lib, so a shared manifold is not
+    #    installed on Linux/macOS and the consumer's find_package() fails with
+    #    "Library 'manifold' not found in package".
+    #  - a static manifold also removes the need to bundle the manifold runtime
+    #    (manifold.dll) alongside the Python bindings.
+    # Build manifold with PIC so it can be linked into shared consumers (the
+    # nanobind extension); Conan sets CMAKE_POSITION_INDEPENDENT_CODE from fPIC.
+    set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+
     FetchContent_Declare(
         manifold
         GIT_REPOSITORY https://github.com/elalish/manifold.git
