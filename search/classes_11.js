@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['valueformula_0',['ValueFormula',['../classpycanha_1_1ValueFormula.html',1,'pycanha']]]
+  ['uvmesher_0',['UvMesher',['../classpycanha_1_1gmm_1_1UvMesher.html',1,'pycanha::gmm']]]
 ];

@@ -1,6 +1,5 @@
 var searchData=
 [
-  ['namedmaterial_0',['NamedMaterial',['../classpycanha_1_1gmm_1_1NamedMaterial.html',1,'pycanha::gmm']]],
-  ['node_1',['Node',['../classpycanha_1_1Node.html',1,'pycanha']]],
-  ['nodes_2',['Nodes',['../classpycanha_1_1Nodes.html',1,'pycanha']]]
+  ['manifoldcutbackend_0',['ManifoldCutBackend',['../classpycanha_1_1gmm_1_1cutting_1_1ManifoldCutBackend.html',1,'pycanha::gmm::cutting']]],
+  ['meshoptions_1',['MeshOptions',['../structpycanha_1_1gmm_1_1MeshOptions.html',1,'pycanha::gmm']]]
 ];

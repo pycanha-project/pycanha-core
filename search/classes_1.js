@@ -10,5 +10,7 @@ var searchData=
   ['coupling_7',['Coupling',['../classpycanha_1_1Coupling.html',1,'pycanha']]],
   ['couplingmatrices_8',['CouplingMatrices',['../classpycanha_1_1CouplingMatrices.html',1,'pycanha']]],
   ['couplings_9',['Couplings',['../classpycanha_1_1Couplings.html',1,'pycanha']]],
-  ['cylinder_10',['Cylinder',['../classpycanha_1_1gmm_1_1Cylinder.html',1,'pycanha::gmm']]]
+  ['cube_10',['Cube',['../classpycanha_1_1gmm_1_1Cube.html',1,'pycanha::gmm']]],
+  ['cutbackend_11',['CutBackend',['../classpycanha_1_1gmm_1_1cutting_1_1CutBackend.html',1,'pycanha::gmm::cutting']]],
+  ['cylinder_12',['Cylinder',['../classpycanha_1_1gmm_1_1Cylinder.html',1,'pycanha::gmm']]]
 ];

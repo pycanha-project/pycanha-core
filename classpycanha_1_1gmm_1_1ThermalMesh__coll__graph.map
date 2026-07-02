@@ -1,7 +1,5 @@
 <map id="pycanha::gmm::ThermalMesh" name="pycanha::gmm::ThermalMesh">
-<area shape="rect" id="Node000001" title=" " alt="" coords="89,108,305,133"/>
-<area shape="rect" id="Node000002" href="$classpycanha_1_1gmm_1_1UniqueID.html" title="Provides a unique integer id." alt="" coords="5,5,192,31"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="121,39,188,106,184,110,118,42"/>
-<area shape="rect" id="Node000003" href="$classpycanha_1_1gmm_1_1Color.html" title=" " alt="" coords="217,5,378,31"/>
-<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="278,42,211,110,207,106,274,39"/>
+<area shape="rect" id="Node000001" title="Per&#45;primitive thermal discretization with full legacy parity." alt="" coords="5,128,221,156"/>
+<area shape="rect" id="Node000002" href="$classpycanha_1_1gmm_1_1Color.html" title="A 3&#45;channel (RGB) color." alt="" coords="33,5,193,33"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="115,47,116,128,110,127,111,50"/>
 </map>

@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['workflow_0',['Development workflow',['../md_docs_2workflow.html',1,'']]]
+  ['how_20it_20works_0',['How it works',['../index.html#autotoc_md3',1,'']]]
 ];

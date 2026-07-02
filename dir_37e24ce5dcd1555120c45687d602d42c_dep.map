@@ -1,4 +1,10 @@
 <map id="pycanha&#45;core/include/pycanha&#45;core/gmm" name="pycanha&#45;core/include/pycanha&#45;core/gmm">
-<area shape="rect" id="node1" href="dir_37e24ce5dcd1555120c45687d602d42c.html" title="gmm" alt="" coords="43,52,99,77"/>
-<area shape="rect" id="clust1" href="dir_a2f717626c362acf43911c0282344e42.html" title="pycanha&#45;core" alt="" coords="16,16,127,88"/>
+<area shape="rect" id="node2" href="dir_6efb211dc5bc8b2f31e84c4b2b3e4503.html" title="cutting" alt="" coords="118,65,184,93"/>
+<area shape="rect" id="node3" href="dir_6108908ac4ef0508b413023f562dae7d.html" title="materials" alt="" coords="208,65,291,93"/>
+<area shape="rect" id="node4" href="dir_2ede6cb264c20d14672624d9c142493d.html" title="mesh" alt="" coords="315,65,373,93"/>
+<area shape="rect" id="node5" href="dir_4db0b56cfd69345b3e3e10bfa5a26575.html" title="ops" alt="" coords="396,65,441,93"/>
+<area shape="rect" id="node6" href="dir_2d0c52cb84672e47a8037b3a062a857c.html" title="primitives" alt="" coords="464,65,552,93"/>
+<area shape="rect" id="node7" href="dir_3ded70940ab4434f157f12f510a658c1.html" title="scene" alt="" coords="576,65,635,93"/>
+<area shape="rect" id="clust2" href="dir_37e24ce5dcd1555120c45687d602d42c.html" alt="" coords="27,54,645,103"/>
+<area shape="rect" id="clust1" href="dir_a2f717626c362acf43911c0282344e42.html" title="pycanha&#45;core" alt="" coords="16,16,656,114"/>
 </map>

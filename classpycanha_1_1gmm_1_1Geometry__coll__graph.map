@@ -1,5 +1,11 @@
 <map id="pycanha::gmm::Geometry" name="pycanha::gmm::Geometry">
-<area shape="rect" id="Node000001" title="Base class for geometric items." alt="" coords="5,79,197,104"/>
-<area shape="rect" id="Node000002" href="$classpycanha_1_1gmm_1_1UniqueID.html" title="Provides a unique integer id." alt="" coords="8,5,195,31"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="104,44,104,79,99,79,99,44"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="63,241,254,268"/>
+<area shape="rect" id="Node000002" href="$classpycanha_1_1gmm_1_1CoordinateTransformation.html" title=" " alt="" coords="5,123,203,168"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="123,179,155,240,149,240,120,184"/>
+<area shape="rect" id="Node000003" href="$classpycanha_1_1gmm_1_1GeometryModel.html" title=" " alt="" coords="227,132,458,159"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="311,167,225,219,183,243,181,238,223,214,305,168"/>
+<area shape="rect" id="Node000004" href="$structpycanha_1_1gmm_1_1MeshOptions.html" title=" " alt="" coords="128,14,339,42"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="228,54,229,78,235,98,254,116,279,131,274,131,251,120,231,100,223,79,225,59"/>
+<area shape="rect" id="Node000005" href="$classpycanha_1_1gmm_1_1TriMesh.html" title=" " alt="" coords="362,5,539,50"/>
+<area shape="poly" id="edge4_Node000003_Node000005" title=" " alt="" coords="430,61,399,101,362,133,359,129,395,97,425,64"/>
 </map>

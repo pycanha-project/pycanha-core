@@ -1,9 +1,11 @@
 <map id="pycanha::DataModel" name="pycanha::DataModel">
-<area shape="rect" id="Node000001" title=" " alt="" coords="252,255,408,280"/>
-<area shape="rect" id="Node000002" href="$classpycanha_1_1DenseTimeSeries.html" title=" " alt="" coords="5,13,204,38"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="125,47,197,128,292,229,318,253,315,257,288,233,193,132,121,50"/>
-<area shape="rect" id="Node000003" href="$classpycanha_1_1SparseTimeSeries.html" title=" " alt="" coords="229,13,431,38"/>
-<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="333,52,333,255,327,255,327,52"/>
-<area shape="rect" id="Node000004" href="$classpycanha_1_1DenseMatrixTimeSeries.html" title=" " alt="" coords="456,5,657,45"/>
-<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="558,59,552,99,541,146,521,193,506,214,489,233,456,248,409,258,407,253,455,243,486,229,502,211,516,190,536,144,547,98,552,59"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="410,345,565,373"/>
+<area shape="rect" id="Node000002" href="$classpycanha_1_1DenseTimeSeries.html" title=" " alt="" coords="7,237,205,265"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="220,250,304,260,346,270,387,283,412,296,436,312,474,345,469,345,433,316,410,301,385,288,345,275,303,265,221,255"/>
+<area shape="rect" id="Node000003" href="$classpycanha_1_1SparseTimeSeries.html" title=" " alt="" coords="5,313,207,341"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="222,334,412,351,407,354,223,339"/>
+<area shape="rect" id="Node000004" href="$classpycanha_1_1DenseMatrixTimeSeries.html" title=" " alt="" coords="6,365,206,409"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="221,389,302,388,385,381,435,374,441,373,386,387,303,393,222,394"/>
+<area shape="rect" id="Node000005" href="$classpycanha_1_1NamedConstants.html" title=" " alt="" coords="8,433,204,461"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="219,447,302,439,344,432,385,420,431,397,467,374,472,372,434,402,387,425,345,437,302,445,220,452"/>
 </map>

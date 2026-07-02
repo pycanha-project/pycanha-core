@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['opticalmaterial_0',['OpticalMaterial',['../classpycanha_1_1gmm_1_1OpticalMaterial.html#a1fae797b73766b74f7d1e93f60ca0168',1,'pycanha::gmm::OpticalMaterial']]]
+  ['remove_5fnode_0',['remove_node',['../classpycanha_1_1Nodes.html#a2d55736636b1f4ac3f7aa49ed4ec247d',1,'pycanha::Nodes']]]
 ];

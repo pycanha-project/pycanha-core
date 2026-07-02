@@ -1,13 +1,21 @@
 var hierarchy =
 [
+    [ "pycanha::gmm::BulkMaterial", "classpycanha_1_1gmm_1_1BulkMaterial.html", null ],
     [ "pycanha::CallbackContext", "classpycanha_1_1CallbackContext.html", null ],
     [ "pycanha::CallbackRegistry", "classpycanha_1_1CallbackRegistry.html", null ],
     [ "pycanha::gmm::Color", "classpycanha_1_1gmm_1_1Color.html", null ],
     [ "pycanha::ConductiveCouplings", "classpycanha_1_1ConductiveCouplings.html", null ],
+    [ "pycanha::gmm::Cone", "classpycanha_1_1gmm_1_1Cone.html", null ],
     [ "pycanha::Parameters::ConstDataMemoryAddress", "structpycanha_1_1Parameters_1_1ConstDataMemoryAddress.html", null ],
+    [ "pycanha::gmm::CoordinateTransformation", "classpycanha_1_1gmm_1_1CoordinateTransformation.html", null ],
     [ "pycanha::Coupling", "classpycanha_1_1Coupling.html", null ],
     [ "pycanha::CouplingMatrices", "classpycanha_1_1CouplingMatrices.html", null ],
     [ "pycanha::Couplings", "classpycanha_1_1Couplings.html", null ],
+    [ "pycanha::gmm::Cube", "classpycanha_1_1gmm_1_1Cube.html", null ],
+    [ "pycanha::gmm::cutting::CutBackend", "classpycanha_1_1gmm_1_1cutting_1_1CutBackend.html", [
+      [ "pycanha::gmm::cutting::ManifoldCutBackend", "classpycanha_1_1gmm_1_1cutting_1_1ManifoldCutBackend.html", null ]
+    ] ],
+    [ "pycanha::gmm::Cylinder", "classpycanha_1_1gmm_1_1Cylinder.html", null ],
     [ "pycanha::Parameters::DataMemoryAddress", "structpycanha_1_1Parameters_1_1DataMemoryAddress.html", null ],
     [ "pycanha::DataModel", "classpycanha_1_1DataModel.html", null ],
     [ "pycanha::DataModelStore", "classpycanha_1_1DataModelStore.html", null ],
@@ -15,9 +23,7 @@ var hierarchy =
     [ "pycanha::DenseMatrixTimeSeries", "classpycanha_1_1DenseMatrixTimeSeries.html", null ],
     [ "pycanha::DenseTimeSeries", "classpycanha_1_1DenseTimeSeries.html", null ],
     [ "pycanha::DerivativeParameterRegistry", "classpycanha_1_1DerivativeParameterRegistry.html", null ],
-    [ "std::enable_shared_from_this", null, [
-      [ "pycanha::gmm::GeometryModel", "classpycanha_1_1gmm_1_1GeometryModel.html", null ]
-    ] ],
+    [ "pycanha::gmm::Disc", "classpycanha_1_1gmm_1_1Disc.html", null ],
     [ "pycanha::EntitiesHelper", "classpycanha_1_1EntitiesHelper.html", null ],
     [ "pycanha::Entity", "classpycanha_1_1Entity.html", null ],
     [ "pycanha::detail::EntityOps", "structpycanha_1_1detail_1_1EntityOps.html", null ],
@@ -29,38 +35,43 @@ var hierarchy =
     ] ],
     [ "pycanha::Solver::FormulaExecutionGuard", "classpycanha_1_1Solver_1_1FormulaExecutionGuard.html", null ],
     [ "pycanha::Formulas", "classpycanha_1_1Formulas.html", null ],
-    [ "pycanha::gmm::GeometryUpdateCallback", "classpycanha_1_1gmm_1_1GeometryUpdateCallback.html", [
-      [ "pycanha::gmm::Primitive", "classpycanha_1_1gmm_1_1Primitive.html", [
-        [ "pycanha::gmm::Cone", "classpycanha_1_1gmm_1_1Cone.html", null ],
-        [ "pycanha::gmm::Cylinder", "classpycanha_1_1gmm_1_1Cylinder.html", null ],
-        [ "pycanha::gmm::Disc", "classpycanha_1_1gmm_1_1Disc.html", null ],
-        [ "pycanha::gmm::Quadrilateral", "classpycanha_1_1gmm_1_1Quadrilateral.html", null ],
-        [ "pycanha::gmm::Rectangle", "classpycanha_1_1gmm_1_1Rectangle.html", null ],
-        [ "pycanha::gmm::Sphere", "classpycanha_1_1gmm_1_1Sphere.html", null ],
-        [ "pycanha::gmm::Triangle", "classpycanha_1_1gmm_1_1Triangle.html", null ]
-      ] ]
+    [ "pycanha::gmm::Geometry", "classpycanha_1_1gmm_1_1Geometry.html", [
+      [ "pycanha::gmm::GeometryGroup", "classpycanha_1_1gmm_1_1GeometryGroup.html", null ],
+      [ "pycanha::gmm::GeometryGroupCutted", "classpycanha_1_1gmm_1_1GeometryGroupCutted.html", null ],
+      [ "pycanha::gmm::GeometryItem", "classpycanha_1_1gmm_1_1GeometryItem.html", null ]
     ] ],
+    [ "pycanha::gmm::GeometryModel", "classpycanha_1_1gmm_1_1GeometryModel.html", null ],
     [ "pycanha::Entity::Hash", "structpycanha_1_1Entity_1_1Hash.html", null ],
     [ "pycanha::Formula::Hash", "structpycanha_1_1Formula_1_1Hash.html", null ],
     [ "pycanha::InstrumentationSession", "structpycanha_1_1InstrumentationSession.html", null ],
     [ "pycanha::InstrumentationTimer", "classpycanha_1_1InstrumentationTimer.html", null ],
     [ "pycanha::Instrumentor", "classpycanha_1_1Instrumentor.html", null ],
     [ "pycanha::detail::InterpLocation", "structpycanha_1_1detail_1_1InterpLocation.html", null ],
-    [ "pycanha::random_generators::IntGenerator< RandT >", "classpycanha_1_1random__generators_1_1IntGenerator.html", null ],
+    [ "pycanha::random_generators::IntGenerator&lt; RandT &gt;", "classpycanha_1_1random__generators_1_1IntGenerator.html", null ],
     [ "pycanha::IntPairHash", "structpycanha_1_1IntPairHash.html", null ],
     [ "pycanha::LiteralString", "classpycanha_1_1LiteralString.html", null ],
     [ "pycanha::Node::LocalStorage", "structpycanha_1_1Node_1_1LocalStorage.html", null ],
     [ "pycanha::LookupTable1D", "classpycanha_1_1LookupTable1D.html", null ],
     [ "pycanha::LookupTableVec1D", "classpycanha_1_1LookupTableVec1D.html", null ],
+    [ "pycanha::gmm::MeshOptions", "structpycanha_1_1gmm_1_1MeshOptions.html", null ],
+    [ "pycanha::NamedConstants", "classpycanha_1_1NamedConstants.html", null ],
     [ "pycanha::Node", "classpycanha_1_1Node.html", null ],
     [ "pycanha::Nodes", "classpycanha_1_1Nodes.html", null ],
+    [ "pycanha::gmm::OpticalMaterial", "classpycanha_1_1gmm_1_1OpticalMaterial.html", null ],
+    [ "pycanha::gmm::Paraboloid", "classpycanha_1_1gmm_1_1Paraboloid.html", null ],
     [ "pycanha::Parameters::Parameter", "classpycanha_1_1Parameters_1_1Parameter.html", null ],
     [ "pycanha::Parameters", "classpycanha_1_1Parameters.html", null ],
     [ "pycanha::Parameters::ParameterSize", "structpycanha_1_1Parameters_1_1ParameterSize.html", null ],
     [ "pycanha::Parameters::ParameterSlot", "structpycanha_1_1Parameters_1_1ParameterSlot.html", null ],
+    [ "pycanha::gmm::detail::PlaneBasis", "structpycanha_1_1gmm_1_1detail_1_1PlaneBasis.html", null ],
+    [ "pycanha::gmm::TriMesh&lt; Scalar &gt;::PrimitiveRange", "structpycanha_1_1gmm_1_1TriMesh_1_1PrimitiveRange.html", null ],
     [ "pycanha::ProfileResult", "structpycanha_1_1ProfileResult.html", null ],
+    [ "pycanha::gmm::cutting::ProxyMeta", "structpycanha_1_1gmm_1_1cutting_1_1ProxyMeta.html", null ],
+    [ "pycanha::gmm::Quadrilateral", "classpycanha_1_1gmm_1_1Quadrilateral.html", null ],
     [ "pycanha::RadiativeCouplings", "classpycanha_1_1RadiativeCouplings.html", null ],
-    [ "pycanha::random_generators::RealGenerator< RandT >", "classpycanha_1_1random__generators_1_1RealGenerator.html", null ],
+    [ "pycanha::random_generators::RealGenerator&lt; RandT &gt;", "classpycanha_1_1random__generators_1_1RealGenerator.html", null ],
+    [ "pycanha::gmm::Rectangle", "classpycanha_1_1gmm_1_1Rectangle.html", null ],
+    [ "pycanha::gmm::mesh::detail::SamplingPlan", "structpycanha_1_1gmm_1_1mesh_1_1detail_1_1SamplingPlan.html", null ],
     [ "pycanha::Solver", "classpycanha_1_1Solver.html", [
       [ "pycanha::SteadyStateSolver", "classpycanha_1_1SteadyStateSolver.html", [
         [ "pycanha::SSLU", "classpycanha_1_1SSLU.html", null ]
@@ -78,31 +89,18 @@ var hierarchy =
     [ "pycanha::SolverOutputConfig", "structpycanha_1_1SolverOutputConfig.html", null ],
     [ "pycanha::SolverRegistry", "classpycanha_1_1SolverRegistry.html", null ],
     [ "pycanha::SparseTimeSeries", "classpycanha_1_1SparseTimeSeries.html", null ],
+    [ "pycanha::gmm::Sphere", "classpycanha_1_1gmm_1_1Sphere.html", null ],
+    [ "pycanha::gmm::detail::SphereFrame", "structpycanha_1_1gmm_1_1detail_1_1SphereFrame.html", null ],
     [ "pycanha::ExpressionFormula::SymbolBinding", "structpycanha_1_1ExpressionFormula_1_1SymbolBinding.html", null ],
     [ "pycanha::TemperatureVariable", "classpycanha_1_1TemperatureVariable.html", null ],
     [ "pycanha::ThermalData", "classpycanha_1_1ThermalData.html", null ],
     [ "pycanha::ThermalMathematicalModel", "classpycanha_1_1ThermalMathematicalModel.html", null ],
+    [ "pycanha::gmm::ThermalMesh", "classpycanha_1_1gmm_1_1ThermalMesh.html", null ],
     [ "pycanha::ThermalModel", "classpycanha_1_1ThermalModel.html", null ],
     [ "pycanha::ThermalNetwork", "classpycanha_1_1ThermalNetwork.html", null ],
     [ "pycanha::TimeVariable", "classpycanha_1_1TimeVariable.html", null ],
-    [ "pycanha::gmm::TriMesh", "classpycanha_1_1gmm_1_1TriMesh.html", null ],
-    [ "pycanha::gmm::TriMeshModel", "classpycanha_1_1gmm_1_1TriMeshModel.html", null ],
-    [ "pycanha::gmm::UniqueID", "classpycanha_1_1gmm_1_1UniqueID.html", [
-      [ "pycanha::gmm::CoordinateTransformation", "classpycanha_1_1gmm_1_1CoordinateTransformation.html", null ],
-      [ "pycanha::gmm::Geometry", "classpycanha_1_1gmm_1_1Geometry.html", [
-        [ "pycanha::gmm::GeometryGroup", "classpycanha_1_1gmm_1_1GeometryGroup.html", [
-          [ "pycanha::gmm::GeometryGroupCutted", "classpycanha_1_1gmm_1_1GeometryGroupCutted.html", null ]
-        ] ],
-        [ "pycanha::gmm::GeometryItem", "classpycanha_1_1gmm_1_1GeometryItem.html", [
-          [ "pycanha::gmm::GeometryMeshedItem", "classpycanha_1_1gmm_1_1GeometryMeshedItem.html", null ]
-        ] ]
-      ] ],
-      [ "pycanha::gmm::GeometryModel", "classpycanha_1_1gmm_1_1GeometryModel.html", null ],
-      [ "pycanha::gmm::NamedMaterial", "classpycanha_1_1gmm_1_1NamedMaterial.html", [
-        [ "pycanha::gmm::BulkMaterial", "classpycanha_1_1gmm_1_1BulkMaterial.html", null ],
-        [ "pycanha::gmm::OpticalMaterial", "classpycanha_1_1gmm_1_1OpticalMaterial.html", null ]
-      ] ],
-      [ "pycanha::gmm::Primitive", "classpycanha_1_1gmm_1_1Primitive.html", null ],
-      [ "pycanha::gmm::ThermalMesh", "classpycanha_1_1gmm_1_1ThermalMesh.html", null ]
-    ] ]
+    [ "pycanha::gmm::Triangle", "classpycanha_1_1gmm_1_1Triangle.html", null ],
+    [ "pycanha::gmm::TriMesh&lt; Scalar &gt;", "classpycanha_1_1gmm_1_1TriMesh.html", null ],
+    [ "pycanha::gmm::UvMesher", "classpycanha_1_1gmm_1_1UvMesher.html", null ],
+    [ "pycanha::gmm::mesh::ops::detail::ValidateEdgeHash", "structpycanha_1_1gmm_1_1mesh_1_1ops_1_1detail_1_1ValidateEdgeHash.html", null ]
 ];

@@ -59,7 +59,7 @@ var NAVTREE =
       [ "Documentation", "md_docs_2workflow.html#autotoc_md26", null ]
     ] ],
     [ "CI/CD", "md_docs_2cicd.html", [
-      [ "Continuous validation on <tt>main</tt> and pull requests", "md_docs_2cicd.html#autotoc_md28", [
+      [ "Continuous validation on <span class=\"tt\">main</span> and pull requests", "md_docs_2cicd.html#autotoc_md28", [
         [ "Code Checks", "md_docs_2cicd.html#autotoc_md29", null ],
         [ "CI", "md_docs_2cicd.html#autotoc_md30", null ],
         [ "Coverage", "md_docs_2cicd.html#autotoc_md31", null ],
@@ -80,14 +80,13 @@ var NAVTREE =
         [ "Functions", "namespacemembers_func.html", null ]
       ] ]
     ] ],
-    [ "Concepts", "concepts.html", "concepts" ],
     [ "Classes", "annotated.html", [
       [ "Class List", "annotated.html", "annotated_dup" ],
       [ "Class Index", "classes.html", null ],
       [ "Class Hierarchy", "hierarchy.html", "hierarchy" ],
       [ "Class Members", "functions.html", [
-        [ "All", "functions.html", "functions_dup" ],
-        [ "Functions", "functions_func.html", "functions_func" ],
+        [ "All", "functions.html", null ],
+        [ "Functions", "functions_func.html", null ],
         [ "Variables", "functions_vars.html", null ]
       ] ]
     ] ],
@@ -100,10 +99,10 @@ var NAVTREE =
 var NAVTREEINDEX =
 [
 "Instrumentor_8hpp_source.html",
-"classpycanha_1_1Nodes.html#a8d8912db5a0af3c70592927d12d6fcf0",
-"classpycanha_1_1gmm_1_1Disc.html#ae7c301a1540bb7dbbbc30fa31efb4609",
-"classpycanha_1_1gmm_1_1TriMeshModel.html#a73cc43c95a5036b5880e2b64b6c9779e"
+"classpycanha_1_1Nodes.html#a8ac3e23668604c12945a21eb6b081b02",
+"md_docs_2index.html"
 ];
 
-var SYNCONMSG = 'click to disable panel synchronisation';
-var SYNCOFFMSG = 'click to enable panel synchronisation';
+var SYNCONMSG = 'click to disable panel synchronization';
+var SYNCOFFMSG = 'click to enable panel synchronization';
+var LISTOFALLMEMBERS = 'List of all members';

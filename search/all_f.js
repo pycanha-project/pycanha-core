@@ -5,5 +5,5 @@ var searchData=
   ['qi_5fvector_2',['qi_vector',['../classpycanha_1_1Nodes.html#a9bb7d595e8083804ea2f27f24c19d80e',1,'pycanha::Nodes']]],
   ['qr_5fvector_3',['qr_vector',['../classpycanha_1_1Nodes.html#a8ac3e23668604c12945a21eb6b081b02',1,'pycanha::Nodes']]],
   ['qs_5fvector_4',['qs_vector',['../classpycanha_1_1Nodes.html#af28cf045462f0f1c4e9c176701392bd9',1,'pycanha::Nodes']]],
-  ['quadrilateral_5',['quadrilateral',['../classpycanha_1_1gmm_1_1Quadrilateral.html',1,'pycanha::gmm::Quadrilateral'],['../classpycanha_1_1gmm_1_1Quadrilateral.html#a7fffabde9d7ce27eafd258e24547d956',1,'pycanha::gmm::Quadrilateral::Quadrilateral()']]]
+  ['quadrilateral_5',['Quadrilateral',['../classpycanha_1_1gmm_1_1Quadrilateral.html',1,'pycanha::gmm']]]
 ];

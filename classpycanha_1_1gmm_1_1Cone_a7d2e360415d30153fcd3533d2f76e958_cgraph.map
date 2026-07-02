@@ -1,5 +1,0 @@
-<map id="pycanha::gmm::Cone::create_mesh" name="pycanha::gmm::Cone::create_mesh">
-<area shape="rect" id="Node000001" title="Creates the triangular mesh from the primitive." alt="" coords="5,5,165,45"/>
-<area shape="rect" id="Node000002" href="$classpycanha_1_1gmm_1_1Cone.html#a84b7db6c1af17dba1e699af61e2dab71" title="2D coordinates of a point ON the primitive surface from 3D coordinates. Note: It is assumed that the ..." alt="" coords="213,5,373,45"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="165,23,199,23,199,28,165,28"/>
-</map>
