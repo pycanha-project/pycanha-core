@@ -30,6 +30,8 @@ set(UNIT_TEST_SOURCES
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/scene/test_item.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/test_face_node_mapping.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/test_geometry_model.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/test_material_table.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/test_mesh_parts.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/test_primitive_variant.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/parameters/test_formula.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/parameters/test_variable.cpp"

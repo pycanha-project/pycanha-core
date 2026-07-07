@@ -16,6 +16,8 @@
 #include "pycanha-core/gmm/scene/geometry_group.hpp"
 #include "pycanha-core/gmm/scene/geometry_group_cutted.hpp"
 #include "pycanha-core/gmm/scene/geometry_item.hpp"
+#include "pycanha-core/radiative/materials.hpp"
+#include "pycanha-core/radiative/scene_part.hpp"
 
 namespace pycanha::gmm {
 
@@ -88,6 +90,26 @@ class GeometryModel {
 
     // Reverse node -> face_ids lookup, rebuilt from node_numbers at mesh build.
     [[nodiscard]] std::span<const FaceId> faces_of_node(NodeNum node_num) const;
+
+    // Splits the model mesh into rigid parts for the raytracer: one part per
+    // named geometry in `split` (group, cut group or item — its whole subtree
+    // becomes the part, expressed in that geometry's local frame with
+    // `transform` = its world placement) plus one remainder part in the world
+    // frame (identity transform, omitted when empty). Face ids stay GLOBAL:
+    // the parts' face_id sets partition the unified mesh()'s, bit-identical
+    // vertices included. part_id is the emission order (remainder first).
+    // Throws std::invalid_argument on an unknown split name, a name nested
+    // inside a cut group, or a duplicate.
+    [[nodiscard]] std::vector<radiative::ScenePart> mesh_parts(
+        std::span<const std::string> split = {}) const;
+
+    // Builds the per-face-slot material/activity tables from the per-side
+    // ThermalMesh data (side1/side2 optical material + activity), indexed by
+    // global face slot (even/odd = side 1/2). Materials are deduplicated by
+    // object identity; slots of items without an optical material get -1
+    // (logged warning, one per item). Slots absent from the mesh (gaps after
+    // cuts) are -1 and inactive.
+    [[nodiscard]] radiative::MaterialTable material_table() const;
 
   private:
     [[nodiscard]] static std::string canonicalize(const std::string& name);

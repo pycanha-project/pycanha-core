@@ -87,6 +87,7 @@ endif()
 add_library(${LIB_NAME} STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/ids.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/geometrymodel.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/mesh_parts.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/cutting/cutter_proxy.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/cutting/manifold_cut_backend.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/cutting/cut_mesh_ops.cpp
