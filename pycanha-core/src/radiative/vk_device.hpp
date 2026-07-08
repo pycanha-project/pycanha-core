@@ -1,7 +1,8 @@
 #pragma once
 
-// src-private: volk / VMA / all Vk* usage stays below src/radiative (D3).
-// Public headers must never include this file.
+// src-private: volk / VMA / all Vk* usage stays below src/radiative so the
+// public API exposes no Vulkan types (keeps a future non-Vulkan backend a
+// pure implementation swap). Public headers must never include this file.
 
 // This header is the module's Vulkan gateway: it exports the Vulkan API to
 // every radiative TU. volk MUST precede any Vulkan-including header (it
@@ -27,15 +28,16 @@ namespace pycanha::radiative::detail {
 // kept alive for the process lifetime: volk's global dispatch table is
 // loaded from this instance, so destroying/recreating instances would
 // invalidate every loaded function pointer. Returns VK_NULL_HANDLE when no
-// Vulkan driver is present (the D2 "no Vulkan" probe).
+// Vulkan driver is present — the one place that detects "no Vulkan".
 [[nodiscard]] VkInstance shared_instance();
 
 // One physical device with its capability verdict. `info.ray_tracing` is
-// true only when the device passes the FULL requirement set of the roadmap
-// (09 §1): Vulkan >= 1.3; extensions acceleration_structure + ray_query +
+// true only when the device supports everything the kernels need:
+// Vulkan >= 1.3; extensions acceleration_structure + ray_query +
 // deferred_host_operations; features shaderInt64, bufferDeviceAddress,
-// scalarBlockLayout, timelineSemaphore, shaderBufferInt64Atomics,
-// synchronization2, maintenance4, accelerationStructure, rayQuery.
+// scalarBlockLayout, timelineSemaphore, shaderBufferInt64Atomics (the
+// fixed-point accumulator cells), synchronization2, maintenance4,
+// accelerationStructure, rayQuery.
 struct PhysicalDeviceCheck {
     VkPhysicalDevice physical_device = VK_NULL_HANDLE;
     DeviceInfo info;

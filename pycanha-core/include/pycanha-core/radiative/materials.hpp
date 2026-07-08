@@ -5,8 +5,9 @@
 
 namespace pycanha::radiative {
 
-// Named radiation bands (D8). Band is a data-model dimension: containers and
-// kernel dispatch key on it, so adding bands later is additive.
+// Named radiation bands. Band is a data-model dimension: containers and
+// kernel dispatch key on it, so adding bands later is additive rather than
+// a redesign.
 enum class Band : std::uint8_t { IR = 0, Solar = 1 };
 
 // Per-face optical material / activity tables consumed by the raytracer.

@@ -51,8 +51,9 @@ class Recipe_pycanha_core(ConanFile):
         "vulkan-headers": "1.4.350.0",
         "volk": "1.4.350.0",
         "vulkan-memory-allocator": "3.3.0",
-        # slangc prebuilt release fetched by CMake (P1 kernels; see
-        # roadmap/16-p0-spike-report.md for the pinned URLs + SHA256):
+        "spirv-tools": "1.4.350.0",  # tool_requires: spirv-val build check
+        # slangc prebuilt release fetched by CMake (no Conan recipe exists;
+        # the per-version SHA256 pins live in cmake/Slang.cmake):
         "slang": "2026.12.2",
         "doxygen": "1.9.4",  # Tested version, but this is just a hint for CMake
         "doxygen_awesome_css": "v2.2.0",
@@ -121,8 +122,9 @@ class Recipe_pycanha_core(ConanFile):
         # Manifold is intentionally not a Conan requirement yet.
         # We fetch the pinned version from CMake until a suitable Conan recipe is available.
 
-        # Raytracing dependencies (D2/D3): vulkan-headers + volk only — no
-        # link-time Vulkan loader (volk dlopens the driver at Device::create).
+        # Raytracing dependencies: vulkan-headers + volk only — no link-time
+        # Vulkan loader (volk dlopens the driver at Device::create, so the
+        # library loads fine on machines without any Vulkan driver).
         # VMA handles device-memory allocation. volk is a static library, so
         # it must propagate to consumers of this static package.
         if self.options.PYCANHA_OPTION_RAYTRACING:
@@ -131,6 +133,9 @@ class Recipe_pycanha_core(ConanFile):
             self.requires(
                 f"vulkan-memory-allocator/{versions['vulkan-memory-allocator']}"
             )
+            # spirv-val for the kernel build check (cmake/Slang.cmake); the
+            # check is skipped quietly when the tool is absent.
+            self.tool_requires(f"spirv-tools/{versions['spirv-tools']}")
 
         # Test dependencies
         self.test_requires(f"catch2/{versions['catch2']}")
@@ -172,9 +177,21 @@ class Recipe_pycanha_core(ConanFile):
                 "IWYU (Include what you use) is broken right now. Set to OFF."
             )
 
+        if self.settings.os == "Macos" and self.options.PYCANHA_OPTION_RAYTRACING:
+            raise ConanInvalidConfiguration(
+                "PYCANHA_OPTION_RAYTRACING is not supported on macOS (no "
+                "Vulkan). It is forced OFF there until a Metal backend "
+                "exists."
+            )
+
     def config_options(self):
         if self.settings.os == "Windows":
             self.options.rm_safe("fPIC")
+        if self.settings.os == "Macos":
+            # No Vulkan on macOS: the raytracer is unavailable there until a
+            # Metal backend exists. The stub build keeps is_available()
+            # linkable (returning false) so downstream code is unaffected.
+            self.options.PYCANHA_OPTION_RAYTRACING = False
 
     def configure(self):
         # For static libraries, propagate fPIC to dependencies
@@ -218,6 +235,11 @@ class Recipe_pycanha_core(ConanFile):
         ]
         tc.cache_variables["PYCANHA_OPTION_DOXYGEN_AWESOME_CSS_VERSION"] = (
             self.DEPENDENCY_VERSIONS["doxygen_awesome_css"]
+        )
+        # Pinned slangc release fetched by cmake/Slang.cmake (SHA256 pins
+        # live there, keyed by this version).
+        tc.cache_variables["PYCANHA_OPTION_SLANG_VERSION"] = (
+            self.DEPENDENCY_VERSIONS["slang"]
         )
 
         # Enable compile commands export for Debug builds (useful for IDE integration)

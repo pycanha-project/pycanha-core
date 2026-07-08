@@ -21,7 +21,8 @@ namespace {
 using detail::PhysicalDeviceCheck;
 
 // Selection order for the default pick: discrete > integrated > other
-// hardware > software (D2: lavapipe is a valid last resort).
+// hardware > software (a software rasterizer like lavapipe is a valid last
+// resort — same SPIR-V, just slow).
 [[nodiscard]] int selection_score(const PhysicalDeviceCheck& check) {
     if (check.info.software) {
         return 0;

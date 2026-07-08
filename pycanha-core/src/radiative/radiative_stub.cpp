@@ -1,6 +1,6 @@
 // Built when PYCANHA_OPTION_RAYTRACING is OFF: the whole radiative module is
 // excluded, but the availability probe and the Device symbols still exist so
-// downstream code links against one stable surface (D2).
+// downstream code links against one stable surface on every platform.
 
 #include <cstdint>
 #include <memory>

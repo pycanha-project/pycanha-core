@@ -26,7 +26,8 @@ struct DeviceInfo {
 };
 
 // Cheap and safe on machines with no Vulkan driver at all: no driver means
-// false / an empty list — never an exception (D2).
+// false / an empty list — never an exception. The rest of the library works
+// without any GPU; only constructing radiative objects requires one.
 [[nodiscard]] bool is_available();
 [[nodiscard]] std::vector<DeviceInfo> enumerate_devices();
 
@@ -51,7 +52,7 @@ class Device {
 
     // DEVICE_LOCAL bytes currently available for new allocations on the
     // largest device heap (VK_EXT_memory_budget when present, otherwise 80%
-    // of the heap size). Input to the accumulator memory policy (D29).
+    // of the heap size). Callers size accumulator buffers against this.
     [[nodiscard]] std::uint64_t memory_budget() const;
 
     // Engine-internal accessor (opaque outside the library's own sources).

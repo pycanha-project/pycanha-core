@@ -26,12 +26,16 @@ find_package(spdlog REQUIRED CONFIG)
 find_package(HDF5 REQUIRED COMPONENTS CXX)
 find_package(symengine REQUIRED CONFIG)
 
-# Raytracing (D2/D3): vulkan-headers + volk (runtime loader, no link-time
-# Vulkan dependency) + VMA. Off => only the stub (is_available() == false).
+# Raytracing: vulkan-headers + volk (runtime loader, no link-time Vulkan
+# dependency) + VMA. Off => only the stub (is_available() == false).
+# macOS builds with the option OFF (forced in conanfile.py) until a Metal
+# backend exists.
 if(PYCANHA_OPTION_RAYTRACING)
     find_package(volk REQUIRED CONFIG)
     find_package(VulkanHeaders REQUIRED CONFIG)
     find_package(VulkanMemoryAllocator REQUIRED CONFIG)
+    include(Slang)
+    pycanha_fetch_slang()
     set(PYCANHA_RADIATIVE_SOURCES
         ${CMAKE_CURRENT_SOURCE_DIR}/src/radiative/device.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/radiative/vk_device.cpp
@@ -199,7 +203,7 @@ target_link_libraries( ${LIB_NAME}
 )
 
 if(PYCANHA_OPTION_RAYTRACING)
-    # PRIVATE: public headers expose no Vulkan types (D3).
+    # PRIVATE: public headers expose no Vulkan types.
     target_link_libraries(${LIB_NAME} PRIVATE
         volk::volk
         Vulkan::Headers
@@ -210,6 +214,15 @@ if(PYCANHA_OPTION_RAYTRACING)
         VMA_STATIC_VULKAN_FUNCTIONS=0
         VMA_DYNAMIC_VULKAN_FUNCTIONS=1
     )
+
+    # Slang kernels: compiled to SPIR-V, validated, and embedded as generated
+    # headers on every build (compilation IS the shader syntax check).
+    pycanha_add_slang_kernel(vf
+        SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/src/radiative/kernels/vf.slang
+        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/radiative/kernels/common.slang
+    )
+    add_dependencies(${LIB_NAME} pycanha_kernel_vf)
+    target_include_directories(${LIB_NAME} PRIVATE ${PYCANHA_KERNEL_EMBED_DIR})
 endif()
 
 # ============================================================================

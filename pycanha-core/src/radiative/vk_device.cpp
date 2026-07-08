@@ -20,7 +20,8 @@ namespace pycanha::radiative::detail {
 
 namespace {
 
-// Workgroup x-size of every kernel (09 §5); bounds rays per dispatch.
+// Workgroup x-size every compute kernel is built with; together with the
+// device's max workgroup count it bounds the rays per dispatch.
 constexpr std::uint64_t workgroup_size = 64;
 
 constexpr std::array<const char*, 3> required_device_extensions = {
@@ -372,7 +373,8 @@ std::uint64_t DeviceImpl::memory_budget() const {
                 : 0;
         return static_cast<std::uint64_t>(available);
     }
-    // Fallback: 80% of the largest DEVICE_LOCAL heap (09 §16).
+    // Without the budget extension: assume 80% of the largest DEVICE_LOCAL
+    // heap is usable (leaves headroom for the driver and other processes).
     return static_cast<std::uint64_t>(largest_size) * 8 / 10;
 }
 

@@ -9,8 +9,8 @@
 
 namespace pycanha::radiative {
 
-// Every result carries its own statistics (D9) so callers can judge
-// Monte-Carlo convergence without re-tracing.
+// Every result carries its own statistics so callers can judge Monte-Carlo
+// convergence without re-tracing.
 struct TraceStats {
     std::uint64_t total_rays = 0;
     // Cumulative across accumulate() calls.
@@ -27,8 +27,8 @@ struct TraceStats {
 
 // Matrix rows/cols are face slots (global, both sides). 1 - row_sum of a VF
 // row is the view factor to space; exchange matrices likewise leave "to
-// space" implicit as the row deficit (the Python layer materializes it as
-// couplings to the space node, D14).
+// space" implicit as the row deficit (the consumer materializes it as
+// couplings to a space node).
 struct VfResult {
     SparseF64 vf;
     Eigen::VectorXd row_sums;
@@ -41,7 +41,7 @@ struct ExchangeResult {
     TraceStats stats;
 };
 
-// Per-face-slot vectors (D10); the solar kernel is O(Nf), no matrix.
+// Per-face-slot vectors; the solar kernel is O(Nf) and needs no matrix.
 struct SolarResult {
     Eigen::VectorXd direct;  // W/m^2 absorbed, direct illumination
     Eigen::VectorXd total;   // W/m^2 absorbed incl. reflections
