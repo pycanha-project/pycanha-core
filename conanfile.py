@@ -47,6 +47,13 @@ class Recipe_pycanha_core(ConanFile):
         "hdf5": "1.14.6",
         "symengine": "0.14.0",
         "spdlog": "1.17.0",
+        # Raytracing (PYCANHA_OPTION_RAYTRACING). One coherent SDK version:
+        "vulkan-headers": "1.4.350.0",
+        "volk": "1.4.350.0",
+        "vulkan-memory-allocator": "3.3.0",
+        # slangc prebuilt release fetched by CMake (P1 kernels; see
+        # roadmap/16-p0-spike-report.md for the pinned URLs + SHA256):
+        "slang": "2026.12.2",
         "doxygen": "1.9.4",  # Tested version, but this is just a hint for CMake
         "doxygen_awesome_css": "v2.2.0",
     }
@@ -67,6 +74,7 @@ class Recipe_pycanha_core(ConanFile):
         "PYCANHA_OPTION_ACTIVATE_ALL_LOGS_OVERRIDE": [True, False],
         "PYCANHA_OPTION_SANITIZE_ADDR": [True, False],
         "PYCANHA_OPTION_SANITIZE_UNDEF": [True, False],
+        "PYCANHA_OPTION_RAYTRACING": [True, False],
     }
 
     default_options = {
@@ -86,6 +94,7 @@ class Recipe_pycanha_core(ConanFile):
         "PYCANHA_OPTION_ACTIVATE_ALL_LOGS_OVERRIDE": True,
         "PYCANHA_OPTION_SANITIZE_ADDR": False,
         "PYCANHA_OPTION_SANITIZE_UNDEF": False,
+        "PYCANHA_OPTION_RAYTRACING": True,
         "spdlog/*:use_std_fmt": True,
     }
 
@@ -111,6 +120,17 @@ class Recipe_pycanha_core(ConanFile):
         # transitive_headers=True is used when the dependencies of the library are headers needed by the consumer.
         # Manifold is intentionally not a Conan requirement yet.
         # We fetch the pinned version from CMake until a suitable Conan recipe is available.
+
+        # Raytracing dependencies (D2/D3): vulkan-headers + volk only — no
+        # link-time Vulkan loader (volk dlopens the driver at Device::create).
+        # VMA handles device-memory allocation. volk is a static library, so
+        # it must propagate to consumers of this static package.
+        if self.options.PYCANHA_OPTION_RAYTRACING:
+            self.requires(f"vulkan-headers/{versions['vulkan-headers']}")
+            self.requires(f"volk/{versions['volk']}")
+            self.requires(
+                f"vulkan-memory-allocator/{versions['vulkan-memory-allocator']}"
+            )
 
         # Test dependencies
         self.test_requires(f"catch2/{versions['catch2']}")
@@ -312,6 +332,14 @@ class Recipe_pycanha_core(ConanFile):
             "spdlog::libspdlog",
             "symengine::symengine",
         ]
+        if self.options.PYCANHA_OPTION_RAYTRACING:
+            self.cpp_info.requires.extend(
+                [
+                    "vulkan-headers::vulkan-headers",
+                    "volk::volk",
+                    "vulkan-memory-allocator::vulkan-memory-allocator",
+                ]
+            )
 
         # Public formula headers include <symengine/...>. The current Conan
         # symengine package resolves the library target correctly, but does not

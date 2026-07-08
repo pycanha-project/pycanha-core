@@ -26,6 +26,23 @@ find_package(spdlog REQUIRED CONFIG)
 find_package(HDF5 REQUIRED COMPONENTS CXX)
 find_package(symengine REQUIRED CONFIG)
 
+# Raytracing (D2/D3): vulkan-headers + volk (runtime loader, no link-time
+# Vulkan dependency) + VMA. Off => only the stub (is_available() == false).
+if(PYCANHA_OPTION_RAYTRACING)
+    find_package(volk REQUIRED CONFIG)
+    find_package(VulkanHeaders REQUIRED CONFIG)
+    find_package(VulkanMemoryAllocator REQUIRED CONFIG)
+    set(PYCANHA_RADIATIVE_SOURCES
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/radiative/device.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/radiative/vk_device.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/radiative/vma_impl.cpp
+    )
+else()
+    set(PYCANHA_RADIATIVE_SOURCES
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/radiative/radiative_stub.cpp
+    )
+endif()
+
 if(PYCANHA_USE_FETCHCONTENT_MANIFOLD)
     include(FetchContent)
 
@@ -157,6 +174,7 @@ add_library(${LIB_NAME} STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/tscnrlds.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/tscnrlds_jacobian.cpp
 
+    ${PYCANHA_RADIATIVE_SOURCES}
 )
 target_include_directories(${LIB_NAME}
     PUBLIC
@@ -170,8 +188,8 @@ target_include_directories(${LIB_NAME}
 target_include_directories(${LIB_NAME} SYSTEM PRIVATE
     $<BUILD_INTERFACE:${cdt_SOURCE_DIR}>)
 
-target_link_libraries( ${LIB_NAME} 
-    PUBLIC 
+target_link_libraries( ${LIB_NAME}
+    PUBLIC
     Eigen3::Eigen
     spdlog::spdlog
     symengine
@@ -179,6 +197,20 @@ target_link_libraries( ${LIB_NAME}
     HDF5::HDF5
     ${PYCANHA_MANIFOLD_TARGET}
 )
+
+if(PYCANHA_OPTION_RAYTRACING)
+    # PRIVATE: public headers expose no Vulkan types (D3).
+    target_link_libraries(${LIB_NAME} PRIVATE
+        volk::volk
+        Vulkan::Headers
+        GPUOpen::VulkanMemoryAllocator
+    )
+    # VMA sources its Vulkan entry points from volk (one config for all TUs).
+    target_compile_definitions(${LIB_NAME} PRIVATE
+        VMA_STATIC_VULKAN_FUNCTIONS=0
+        VMA_DYNAMIC_VULKAN_FUNCTIONS=1
+    )
+endif()
 
 # ============================================================================
 # Intel MKL Configuration
