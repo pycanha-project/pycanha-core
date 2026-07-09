@@ -18,7 +18,7 @@ class Recipe_pycanha_core(ConanFile):
 
     # This is the version used everywhere. Right now is set manually,
     # but it could be set automatically from the git tag for example.
-    version = "0.15"
+    version = "0.16"
 
     # I've followed the instructions from https://docs.conan.io/2/tutorial/creating_packages/other_types_of_packages/header_only_packages.html
     # but without adding the "header-only" keyword to the recipe, it doesn't work. The use of the "header-only" is from here:
@@ -238,9 +238,9 @@ class Recipe_pycanha_core(ConanFile):
         )
         # Pinned slangc release fetched by cmake/Slang.cmake (SHA256 pins
         # live there, keyed by this version).
-        tc.cache_variables["PYCANHA_OPTION_SLANG_VERSION"] = (
-            self.DEPENDENCY_VERSIONS["slang"]
-        )
+        tc.cache_variables["PYCANHA_OPTION_SLANG_VERSION"] = self.DEPENDENCY_VERSIONS[
+            "slang"
+        ]
 
         # Enable compile commands export for Debug builds (useful for IDE integration)
         if self.settings.build_type == "Debug":

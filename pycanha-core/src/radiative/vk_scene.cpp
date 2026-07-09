@@ -17,6 +17,7 @@
 
 #include "pycanha-core/globals.hpp"
 #include "pycanha-core/gmm/mesh/ops/compute_areas.hpp"
+#include "pycanha-core/gmm/mesh/trimesh.hpp"
 #include "pycanha-core/gmm/scene/coordinate_transformation.hpp"
 #include "pycanha-core/radiative/kernels/vf_spv.h"
 #include "pycanha-core/radiative/materials.hpp"
