@@ -142,6 +142,13 @@ class SceneImpl {
     // Points descriptor `binding` of the scene's set at `buffer`. Only valid
     // while no submitted work uses the set (every dispatch here is waited).
     void write_storage_descriptor(std::uint32_t binding, VkBuffer buffer) const;
+    // Traces settings.rays_per_face rays for `emitters` (all within
+    // [row_offset, row_offset + accumulator rows)) into `acc_buffer`, split
+    // into watchdog-safe chunks.
+    void dispatch_vf_rows(VkBuffer acc_buffer,
+                          std::span<const std::uint32_t> emitters,
+                          std::uint32_t row_offset,
+                          const TraceSettings& settings);
 
     DeviceImpl& _device;
     MaterialTable _materials;

@@ -7,6 +7,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+#include <iterator>
 #include <limits>
 #include <span>
 #include <stdexcept>
@@ -872,30 +873,61 @@ void SceneImpl::accumulate_vf(VfAccumImpl& acc, const TraceSettings& settings,
             "counting range; reset the accumulator or use fewer rays");
     }
 
+    if (acc.layout() == AccumLayout::Dense) {
+        dispatch_vf_rows(acc.buffer(), list, 0, settings);
+    } else {
+        // Row blocks of tile_rows emitters; the scratch buffer is zeroed and
+        // absorbed into the host accumulation per block. Chunking/tiling
+        // never changes results: the RNG is keyed on (slot, ray, seed).
+        const std::uint32_t tile_rows = acc.tile_rows();
+        for (std::uint32_t row_offset = 0; row_offset < num_slots;
+             row_offset += tile_rows) {
+            std::vector<std::uint32_t> block;
+            std::ranges::copy_if(
+                list, std::back_inserter(block),
+                [row_offset, tile_rows](const std::uint32_t slot) {
+                    return slot >= row_offset && slot < row_offset + tile_rows;
+                });
+            if (block.empty()) {
+                continue;
+            }
+            acc.clear_block_scratch();
+            dispatch_vf_rows(acc.buffer(), block, row_offset, settings);
+            acc.absorb_block(block, row_offset);
+        }
+    }
+
+    acc.record_batch(list, settings.rays_per_face);
+}
+
+void SceneImpl::dispatch_vf_rows(VkBuffer acc_buffer,
+                                 std::span<const std::uint32_t> emitters,
+                                 std::uint32_t row_offset,
+                                 const TraceSettings& settings) {
     // (Re)upload the emitter list, growing the buffer when needed.
-    const VkDeviceSize needed = list.size() * sizeof(std::uint32_t);
+    const VkDeviceSize needed = emitters.size() * sizeof(std::uint32_t);
     if (_emitters_buf.buffer == VK_NULL_HANDLE || _emitters_buf.size < needed) {
         destroy_buffer(_emitters_buf);
         _emitters_buf = create_buffer(
             needed, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, /*host_visible=*/true);
     }
-    std::memcpy(checked_mapped(_emitters_buf), list.data(), needed);
+    std::memcpy(checked_mapped(_emitters_buf), emitters.data(), needed);
     vmaFlushAllocation(_device.allocator, _emitters_buf.allocation, 0,
                        VK_WHOLE_SIZE);
 
     write_storage_descriptor(5, _emitters_buf.buffer);
-    write_storage_descriptor(10, acc.buffer());
+    write_storage_descriptor(10, acc_buffer);
 
     const float ray_tmin_scale = _ray_tmin_scale;
     PushConstants push{
-        .row_offset = 0,  // dense accumulator: rows are absolute slots
-        .num_emitters = static_cast<std::uint32_t>(list.size()),
+        .row_offset = row_offset,
+        .num_emitters = static_cast<std::uint32_t>(emitters.size()),
         .rays_this_chunk = 0,   // set per chunk below
         .ray_index_offset = 0,  // set per chunk below
         .batch_seed = settings.seed,
         .max_bounces = settings.max_bounces,
         .flags = 0,
-        .num_face_slots = num_slots,
+        .num_face_slots = _num_slots,
         .energy_threshold = settings.energy_threshold,
         .fp_scale = 1.0F,  // VF counts are unscaled integers
         .inv_fp_scale = 1.0F,
@@ -904,7 +936,7 @@ void SceneImpl::accumulate_vf(VfAccumImpl& acc, const TraceSettings& settings,
         .pad = 0.0F};
 
     const std::uint64_t rays_per_chunk =
-        std::max<std::uint64_t>(1, max_rays_per_chunk_total / list.size());
+        std::max<std::uint64_t>(1, max_rays_per_chunk_total / emitters.size());
     std::uint64_t done = 0;
     while (done < settings.rays_per_face) {
         const std::uint64_t chunk =
@@ -936,8 +968,6 @@ void SceneImpl::accumulate_vf(VfAccumImpl& acc, const TraceSettings& settings,
         });
         done += chunk;
     }
-
-    acc.record_batch(list, settings.rays_per_face);
 }
 
 }  // namespace pycanha::radiative::detail

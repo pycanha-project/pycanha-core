@@ -18,13 +18,19 @@ namespace pycanha::radiative::detail {
 
 VfAccumImpl::VfAccumImpl(SceneImpl& scene, AccumConfig config)
     : _scene(scene), _config(config) {
-    if (_config.layout != AccumLayout::Dense) {
-        throw std::invalid_argument(
-            "pycanha::radiative: only the Dense accumulator layout is "
-            "implemented so far");
-    }
     const std::uint64_t slots = _scene.num_face_slots();
-    _counts = _scene.create_buffer(slots * slots * sizeof(std::uint32_t),
+    std::uint64_t buffer_rows = slots;
+    if (_config.layout == AccumLayout::Tiled) {
+        if (_config.tile_rows == 0) {
+            throw std::invalid_argument(
+                "pycanha::radiative: the Tiled layout needs tile_rows > 0");
+        }
+        _config.tile_rows = static_cast<std::uint32_t>(
+            std::min<std::uint64_t>(_config.tile_rows, slots));
+        buffer_rows = _config.tile_rows;
+        _host_rows.resize(slots);
+    }
+    _counts = _scene.create_buffer(buffer_rows * slots * sizeof(std::uint32_t),
                                    VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
                                    /*host_visible=*/true);
     _rays_per_row.assign(slots, 0);
@@ -34,12 +40,39 @@ VfAccumImpl::VfAccumImpl(SceneImpl& scene, AccumConfig config)
 VfAccumImpl::~VfAccumImpl() { _scene.destroy_buffer(_counts); }
 
 void VfAccumImpl::reset() {
-    std::memset(checked_mapped(_counts), 0, _counts.size);
-    vmaFlushAllocation(_scene.device().allocator, _counts.allocation, 0,
-                       VK_WHOLE_SIZE);
+    clear_block_scratch();
+    for (auto& row : _host_rows) {
+        row.clear();
+    }
     std::ranges::fill(_rays_per_row, 0);
     _rays_per_face = 0;
     _total_rays = 0;
+}
+
+void VfAccumImpl::clear_block_scratch() {
+    std::memset(checked_mapped(_counts), 0, _counts.size);
+    vmaFlushAllocation(_scene.device().allocator, _counts.allocation, 0,
+                       VK_WHOLE_SIZE);
+}
+
+void VfAccumImpl::absorb_block(std::span<const std::uint32_t> block_emitters,
+                               std::uint32_t row_offset) {
+    vmaInvalidateAllocation(_scene.device().allocator, _counts.allocation, 0,
+                            VK_WHOLE_SIZE);
+    const std::size_t slots = _scene.num_face_slots();
+    const std::span<const std::uint32_t> scratch(
+        static_cast<const std::uint32_t*>(checked_mapped(_counts)),
+        static_cast<std::size_t>(_config.tile_rows) * slots);
+    for (const std::uint32_t slot : block_emitters) {
+        const std::size_t row = slot - row_offset;
+        auto& host_row = _host_rows[slot];
+        for (std::size_t col = 0; col < slots; ++col) {
+            const std::uint32_t cell = scratch[(row * slots) + col];
+            if (cell != 0) {
+                host_row[static_cast<std::uint32_t>(col)] += cell;
+            }
+        }
+    }
 }
 
 void VfAccumImpl::record_batch(std::span<const std::uint32_t> emitters,
@@ -51,13 +84,25 @@ void VfAccumImpl::record_batch(std::span<const std::uint32_t> emitters,
     _total_rays += rays_per_face * emitters.size();
 }
 
+std::uint64_t VfAccumImpl::count_at(std::size_t row, std::size_t col) const {
+    if (_config.layout == AccumLayout::Dense) {
+        const std::size_t slots = _scene.num_face_slots();
+        const std::span<const std::uint32_t> counts(
+            static_cast<const std::uint32_t*>(checked_mapped(_counts)),
+            slots * slots);
+        return counts[(row * slots) + col];
+    }
+    const auto& host_row = _host_rows[row];
+    const auto it = host_row.find(static_cast<std::uint32_t>(col));
+    return it == host_row.end() ? 0 : it->second;
+}
+
 VfResult VfAccumImpl::build_result() const {
-    vmaInvalidateAllocation(_scene.device().allocator, _counts.allocation, 0,
-                            VK_WHOLE_SIZE);
+    if (_config.layout == AccumLayout::Dense) {
+        vmaInvalidateAllocation(_scene.device().allocator, _counts.allocation,
+                                0, VK_WHOLE_SIZE);
+    }
     const std::size_t slots = _scene.num_face_slots();
-    const std::span<const std::uint32_t> counts(
-        static_cast<const std::uint32_t*>(checked_mapped(_counts)),
-        slots * slots);
     const std::span<const double> areas = _scene.face_areas();
 
     VfResult result;
@@ -76,8 +121,10 @@ VfResult VfAccumImpl::build_result() const {
         const std::uint64_t rays_row = _rays_per_row[row];
         if (rays_row > 0) {
             double row_sum = 0.0;
+            // Ascending column order in both layouts, so the CSR (and every
+            // derived statistic) is bit-identical between Dense and Tiled.
             for (std::size_t col = 0; col < slots; ++col) {
-                const std::uint32_t count = counts[(row * slots) + col];
+                const std::uint64_t count = count_at(row, col);
                 if (count == 0) {
                     continue;
                 }
@@ -116,11 +163,15 @@ VfResult VfAccumImpl::build_result() const {
             if (_rays_per_row[col] == 0) {
                 continue;
             }
-            const double forward =
-                areas[row] * static_cast<double>(counts[(row * slots) + col]) /
-                static_cast<double>(_rays_per_row[row]);
+            const double forward = areas[row] *
+                                   static_cast<double>(count_at(row, col)) /
+                                   static_cast<double>(_rays_per_row[row]);
+            // Transposed lookup: the reverse-direction view factor.
+            const std::size_t transposed_row = col;
+            const std::size_t transposed_col = row;
             const double backward =
-                areas[col] * static_cast<double>(counts[(col * slots) + row]) /
+                areas[col] *
+                static_cast<double>(count_at(transposed_row, transposed_col)) /
                 static_cast<double>(_rays_per_row[col]);
             const double larger = std::max(forward, backward);
             if (larger > 0.0) {

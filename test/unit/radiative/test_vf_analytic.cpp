@@ -68,6 +68,17 @@ namespace {
     return 0.0;
 }
 
+// Bit-exact equality of two VF results (integer counting cells make this a
+// hard guarantee, not a tolerance check).
+void require_bit_identical(const rad::VfResult& result,
+                           const rad::VfResult& reference) {
+    REQUIRE(result.vf.nnz() == reference.vf.nnz());
+    REQUIRE(result.vf.values.cwiseEqual(reference.vf.values).all());
+    REQUIRE(result.vf.indices.cwiseEqual(reference.vf.indices).all());
+    REQUIRE(result.row_sums.size() == reference.row_sums.size());
+    REQUIRE(result.row_sums.cwiseEqual(reference.row_sums).all());
+}
+
 }  // namespace
 
 TEST_CASE("radiative vf: parallel plates match the analytic value",
@@ -123,13 +134,7 @@ TEST_CASE("radiative vf: same seed reproduces bit-identical results",
     rad::VfAccumulator second(scene);
     scene.accumulate_vf(second, settings);
 
-    const rad::VfResult result_a = first.result();
-    const rad::VfResult result_b = second.result();
-    REQUIRE(result_a.vf.nnz() == result_b.vf.nnz());
-    for (Eigen::Index k = 0; k < result_a.vf.nnz(); ++k) {
-        REQUIRE(result_a.vf.values(k) == result_b.vf.values(k));
-        REQUIRE(result_a.vf.indices(k) == result_b.vf.indices(k));
-    }
+    require_bit_identical(second.result(), first.result());
 }
 
 TEST_CASE("radiative vf: identity instances match the monolithic scene",
@@ -160,12 +165,37 @@ TEST_CASE("radiative vf: identity instances match the monolithic scene",
     rad::VfAccumulator acc_inst(instanced);
     instanced.accumulate_vf(acc_inst, settings, emitters);
 
-    const rad::VfResult mono = acc_mono.result();
-    const rad::VfResult inst = acc_inst.result();
-    REQUIRE(mono.vf.nnz() == inst.vf.nnz());
-    for (Eigen::Index k = 0; k < mono.vf.nnz(); ++k) {
-        REQUIRE(mono.vf.values(k) == inst.vf.values(k));
-        REQUIRE(mono.vf.indices(k) == inst.vf.indices(k));
+    require_bit_identical(acc_inst.result(), acc_mono.result());
+}
+
+TEST_CASE("radiative vf: tiled layout is bit-identical to dense",
+          "[radiative][gpu][vf]") {
+    if (!rad::is_available()) {
+        SUCCEED("no RT-capable Vulkan device: skipped");
+        return;
+    }
+    const auto model = make_parallel_plates();
+    rad::Device device = rad::Device::create();
+    rad::RadiativeScene scene(device, model->mesh_parts(),
+                              model->material_table());
+
+    rad::TraceSettings settings;
+    settings.rays_per_face = 5'000;
+    settings.seed = 11;
+
+    rad::VfAccumulator dense(scene);
+    scene.accumulate_vf(dense, settings);
+    const rad::VfResult reference = dense.result();
+
+    // Several tile sizes, including 1 row and num_slots - 1 (a block split
+    // that exercises the row_offset bookkeeping hardest).
+    for (const std::uint32_t tile_rows : {1U, 2U, 3U}) {
+        rad::VfAccumulator tiled(
+            scene, rad::AccumConfig{.layout = rad::AccumLayout::Tiled,
+                                    .tile_rows = tile_rows,
+                                    .sparse_threshold = 0.0});
+        scene.accumulate_vf(tiled, settings);
+        require_bit_identical(tiled.result(), reference);
     }
 }
 

@@ -19,9 +19,10 @@ class VfAccumImpl;
 // bit-deterministic for a given seed regardless of dispatch shape.
 class VfAccumulator {
   public:
-    // Dense layout allocates the full num_slots x num_slots u32 buffer up
-    // front. TODO(radiative): Tiled layout (streamed row blocks + CPU
-    // sparsification) is not implemented yet and throws.
+    // Dense allocates the full num_slots x num_slots buffer up front (the
+    // small-model fast path); Tiled bounds GPU memory to tile_rows x
+    // num_slots and streams row blocks into host-side sparse storage. Both
+    // produce bit-identical results for the same seed.
     explicit VfAccumulator(const RadiativeScene& scene,
                            AccumConfig config = {});
     ~VfAccumulator();

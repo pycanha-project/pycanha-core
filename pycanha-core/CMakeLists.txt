@@ -181,6 +181,8 @@ add_library(${LIB_NAME} STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/tscnrlds.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/tscnrlds_jacobian.cpp
 
+    # Pure-CPU radiative services, built regardless of the raytracing option.
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/radiative/aggregate.cpp
     ${PYCANHA_RADIATIVE_SOURCES}
 )
 target_include_directories(${LIB_NAME}

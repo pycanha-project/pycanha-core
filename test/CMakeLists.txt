@@ -33,6 +33,7 @@ set(UNIT_TEST_SOURCES
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/test_material_table.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/test_mesh_parts.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/test_primitive_variant.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/radiative/test_aggregate.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/radiative/test_device.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/radiative/test_types.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/radiative/test_vf_analytic.cpp"
