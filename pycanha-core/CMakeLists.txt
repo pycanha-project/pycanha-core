@@ -38,7 +38,10 @@ if(PYCANHA_OPTION_RAYTRACING)
     pycanha_fetch_slang()
     set(PYCANHA_RADIATIVE_SOURCES
         ${CMAKE_CURRENT_SOURCE_DIR}/src/radiative/device.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/radiative/scene.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/radiative/vk_accum.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/radiative/vk_device.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/radiative/vk_scene.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/radiative/vma_impl.cpp
     )
 else()

@@ -55,8 +55,25 @@ public struct InstanceData {
     public uint64_t tri_face_addr;  // devaddr uint[] (even side-1 slot / tri)
     public uint part_id;
     public uint flags;              // bit0: is_planet_part
-    public float4x3 transform;      // part -> world (rows: rotation, last: t)
+    // Part -> world as three explicit row vectors (xyz = rotation row,
+    // w = translation component). An array of float4 has an unambiguous
+    // memory layout, unlike matrix types whose row/column-major storage
+    // depends on compiler settings.
+    public float4 tf_rows[3];
 };
+
+// world = R * p + t, with R rows / t components taken from tf_rows.
+public float3 transform_point(InstanceData inst, float3 p) {
+    return float3(dot(inst.tf_rows[0].xyz, p) + inst.tf_rows[0].w,
+                  dot(inst.tf_rows[1].xyz, p) + inst.tf_rows[1].w,
+                  dot(inst.tf_rows[2].xyz, p) + inst.tf_rows[2].w);
+}
+
+// Rotation only (directions/normals; rigid transforms preserve lengths).
+public float3 transform_direction(InstanceData inst, float3 d) {
+    return float3(dot(inst.tf_rows[0].xyz, d), dot(inst.tf_rows[1].xyz, d),
+                  dot(inst.tf_rows[2].xyz, d));
+}
 
 [[vk::binding(0, 0)]] public RaytracingAccelerationStructure tlas;
 [[vk::binding(1, 0)]] public StructuredBuffer<InstanceData> instance_data;
@@ -197,12 +214,12 @@ public EmittedRay emit_from_face(uint face_slot, inout Rng rng) {
     float b1 = s * (1.0 - u2);
     float b2 = s * u2;
     float3 p_local = b0 * v0 + b1 * v1 + b2 * v2;
-    float3 p_world = mul(float4(p_local, 1.0), inst.transform);
+    float3 p_world = transform_point(inst, p_local);
 
     // 3. Geometric normal, world-rotated. Winding: n points off side 1
     //    (even slot); odd slots (side 2) flip.
     float3 n_local = normalize(cross(v1 - v0, v2 - v0));
-    float3 n = normalize(mul(float4(n_local, 0.0), inst.transform));
+    float3 n = normalize(transform_direction(inst, n_local));
     if ((face_slot & 1u) != 0u) {
         n = -n;
     }
@@ -271,7 +288,7 @@ public Hit trace_ray(float3 origin, float3 direction) {
     float3 n_local = normalize(
         cross(vertices[tri.y] - vertices[tri.x],
               vertices[tri.z] - vertices[tri.x]));
-    float3 n = normalize(mul(float4(n_local, 0.0), inst.transform));
+    float3 n = normalize(transform_direction(inst, n_local));
     // Flip toward the incoming ray (same convention as the parity above:
     // front face <=> side 1 <=> winding normal against the ray).
     hit.normal = dot(n, direction) < 0.0 ? n : -n;

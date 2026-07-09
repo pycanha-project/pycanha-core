@@ -35,6 +35,7 @@ set(UNIT_TEST_SOURCES
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/test_primitive_variant.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/radiative/test_device.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/radiative/test_types.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/radiative/test_vf_analytic.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/parameters/test_formula.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/parameters/test_variable.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/parameters/test_smart_formula.cpp"
