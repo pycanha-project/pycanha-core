@@ -35,6 +35,24 @@ template <class Scalar>
     return areas;
 }
 
+// Per-face-SLOT areas, indexed by global face id (size nf()). Triangle areas
+// accumulate on the triangle's side-1 (even) slot and are mirrored onto the
+// odd side-2 slot: the two sides of a face pair share the pair area. Slots
+// with no triangles (gaps after cuts) stay 0.
+template <class Scalar>
+[[nodiscard]] Eigen::VectorXd compute_face_slot_areas(
+    const TriMesh<Scalar>& mesh) {
+    Eigen::VectorXd areas = Eigen::VectorXd::Zero(mesh.nf());
+    for (Index tri_idx = 0; tri_idx < mesh.triangles.rows(); ++tri_idx) {
+        const auto slot = static_cast<Index>(mesh.face_ids(tri_idx));
+        const double area =
+            0.5 * detail::triangle_normal_unnormalized(mesh, tri_idx).norm();
+        areas[slot] += area;
+        areas[slot + 1] += area;
+    }
+    return areas;
+}
+
 template <class Scalar>
 [[nodiscard]] Eigen::MatrixX3d compute_centroids(const TriMesh<Scalar>& mesh) {
     Eigen::MatrixX3d centroids(mesh.triangles.rows(), 3);

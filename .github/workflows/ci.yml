@@ -84,6 +84,18 @@ jobs:
         sudo apt-get install -y libc++-22-dev libc++abi-22-dev lld-22 llvm-22
         clang-22 --version
 
+    - name: Install Mesa lavapipe (software Vulkan for the radiative tests)
+      if: matrix.config.os == 'ubuntu'
+      run: |
+        sudo apt-get update
+        # lavapipe (llvmpipe Vulkan) executes the raytracing kernel tests on
+        # CPU-only runners; Ubuntu 26.04's Mesa 26.0.x supports ray queries
+        # and 64-bit buffer atomics. Pinning the ICD keeps device selection
+        # deterministic. Without a capable device the tests skip gracefully,
+        # so this step upgrades coverage, not correctness.
+        sudo apt-get install -y mesa-vulkan-drivers
+        echo "VK_ICD_FILENAMES=$(ls /usr/share/vulkan/icd.d/lvp_icd*.json | head -1)" >> $GITHUB_ENV
+
     - name: Install conan profiles
       run: |
         conan config install .conan

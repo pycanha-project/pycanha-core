@@ -12,7 +12,11 @@ os = Windows
 # with Ninja (its own cmake 3.31 + MSVC via vcvars). This is scoped to hdf5
 # only and is invisible to consumers: pycanha-core and the bindings keep using
 # the Visual Studio generator and just link hdf5's artifacts.
+# spirv-tools (tool_requires when PYCANHA_OPTION_RAYTRACING is on) hits the
+# same generator gap with conan's tool-require cmake — same Ninja fix.
 hdf5/*: ninja/[>=1.11]
+spirv-tools/*: ninja/[>=1.11]
 
 [conf]
 hdf5/*:tools.cmake.cmaketoolchain:generator=Ninja
+spirv-tools/*:tools.cmake.cmaketoolchain:generator=Ninja

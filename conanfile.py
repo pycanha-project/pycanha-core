@@ -18,7 +18,7 @@ class Recipe_pycanha_core(ConanFile):
 
     # This is the version used everywhere. Right now is set manually,
     # but it could be set automatically from the git tag for example.
-    version = "0.15"
+    version = "0.16"
 
     # I've followed the instructions from https://docs.conan.io/2/tutorial/creating_packages/other_types_of_packages/header_only_packages.html
     # but without adding the "header-only" keyword to the recipe, it doesn't work. The use of the "header-only" is from here:
@@ -47,6 +47,14 @@ class Recipe_pycanha_core(ConanFile):
         "hdf5": "1.14.6",
         "symengine": "0.14.0",
         "spdlog": "1.17.0",
+        # Raytracing (PYCANHA_OPTION_RAYTRACING). One coherent SDK version:
+        "vulkan-headers": "1.4.350.0",
+        "volk": "1.4.350.0",
+        "vulkan-memory-allocator": "3.3.0",
+        "spirv-tools": "1.4.350.0",  # tool_requires: spirv-val build check
+        # slangc prebuilt release fetched by CMake (no Conan recipe exists;
+        # the per-version SHA256 pins live in cmake/Slang.cmake):
+        "slang": "2026.12.2",
         "doxygen": "1.9.4",  # Tested version, but this is just a hint for CMake
         "doxygen_awesome_css": "v2.2.0",
     }
@@ -67,6 +75,7 @@ class Recipe_pycanha_core(ConanFile):
         "PYCANHA_OPTION_ACTIVATE_ALL_LOGS_OVERRIDE": [True, False],
         "PYCANHA_OPTION_SANITIZE_ADDR": [True, False],
         "PYCANHA_OPTION_SANITIZE_UNDEF": [True, False],
+        "PYCANHA_OPTION_RAYTRACING": [True, False],
     }
 
     default_options = {
@@ -86,6 +95,7 @@ class Recipe_pycanha_core(ConanFile):
         "PYCANHA_OPTION_ACTIVATE_ALL_LOGS_OVERRIDE": True,
         "PYCANHA_OPTION_SANITIZE_ADDR": False,
         "PYCANHA_OPTION_SANITIZE_UNDEF": False,
+        "PYCANHA_OPTION_RAYTRACING": True,
         "spdlog/*:use_std_fmt": True,
     }
 
@@ -111,6 +121,21 @@ class Recipe_pycanha_core(ConanFile):
         # transitive_headers=True is used when the dependencies of the library are headers needed by the consumer.
         # Manifold is intentionally not a Conan requirement yet.
         # We fetch the pinned version from CMake until a suitable Conan recipe is available.
+
+        # Raytracing dependencies: vulkan-headers + volk only — no link-time
+        # Vulkan loader (volk dlopens the driver at Device::create, so the
+        # library loads fine on machines without any Vulkan driver).
+        # VMA handles device-memory allocation. volk is a static library, so
+        # it must propagate to consumers of this static package.
+        if self.options.PYCANHA_OPTION_RAYTRACING:
+            self.requires(f"vulkan-headers/{versions['vulkan-headers']}")
+            self.requires(f"volk/{versions['volk']}")
+            self.requires(
+                f"vulkan-memory-allocator/{versions['vulkan-memory-allocator']}"
+            )
+            # spirv-val for the kernel build check (cmake/Slang.cmake); the
+            # check is skipped quietly when the tool is absent.
+            self.tool_requires(f"spirv-tools/{versions['spirv-tools']}")
 
         # Test dependencies
         self.test_requires(f"catch2/{versions['catch2']}")
@@ -152,9 +177,21 @@ class Recipe_pycanha_core(ConanFile):
                 "IWYU (Include what you use) is broken right now. Set to OFF."
             )
 
+        if self.settings.os == "Macos" and self.options.PYCANHA_OPTION_RAYTRACING:
+            raise ConanInvalidConfiguration(
+                "PYCANHA_OPTION_RAYTRACING is not supported on macOS (no "
+                "Vulkan). It is forced OFF there until a Metal backend "
+                "exists."
+            )
+
     def config_options(self):
         if self.settings.os == "Windows":
             self.options.rm_safe("fPIC")
+        if self.settings.os == "Macos":
+            # No Vulkan on macOS: the raytracer is unavailable there until a
+            # Metal backend exists. The stub build keeps is_available()
+            # linkable (returning false) so downstream code is unaffected.
+            self.options.PYCANHA_OPTION_RAYTRACING = False
 
     def configure(self):
         # For static libraries, propagate fPIC to dependencies
@@ -199,6 +236,11 @@ class Recipe_pycanha_core(ConanFile):
         tc.cache_variables["PYCANHA_OPTION_DOXYGEN_AWESOME_CSS_VERSION"] = (
             self.DEPENDENCY_VERSIONS["doxygen_awesome_css"]
         )
+        # Pinned slangc release fetched by cmake/Slang.cmake (SHA256 pins
+        # live there, keyed by this version).
+        tc.cache_variables["PYCANHA_OPTION_SLANG_VERSION"] = self.DEPENDENCY_VERSIONS[
+            "slang"
+        ]
 
         # Enable compile commands export for Debug builds (useful for IDE integration)
         if self.settings.build_type == "Debug":
@@ -312,6 +354,14 @@ class Recipe_pycanha_core(ConanFile):
             "spdlog::libspdlog",
             "symengine::symengine",
         ]
+        if self.options.PYCANHA_OPTION_RAYTRACING:
+            self.cpp_info.requires.extend(
+                [
+                    "vulkan-headers::vulkan-headers",
+                    "volk::volk",
+                    "vulkan-memory-allocator::vulkan-memory-allocator",
+                ]
+            )
 
         # Public formula headers include <symengine/...>. The current Conan
         # symengine package resolves the library target correctly, but does not
