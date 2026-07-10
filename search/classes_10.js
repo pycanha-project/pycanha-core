@@ -1,19 +1,17 @@
 var searchData=
 [
-  ['temperaturevariable_0',['TemperatureVariable',['../classpycanha_1_1TemperatureVariable.html',1,'pycanha']]],
-  ['thermaldata_1',['ThermalData',['../classpycanha_1_1ThermalData.html',1,'pycanha']]],
-  ['thermalmathematicalmodel_2',['ThermalMathematicalModel',['../classpycanha_1_1ThermalMathematicalModel.html',1,'pycanha']]],
-  ['thermalmesh_3',['ThermalMesh',['../classpycanha_1_1gmm_1_1ThermalMesh.html',1,'pycanha::gmm']]],
-  ['thermalmodel_4',['ThermalModel',['../classpycanha_1_1ThermalModel.html',1,'pycanha']]],
-  ['thermalnetwork_5',['ThermalNetwork',['../classpycanha_1_1ThermalNetwork.html',1,'pycanha']]],
-  ['timevariable_6',['TimeVariable',['../classpycanha_1_1TimeVariable.html',1,'pycanha']]],
-  ['transientsolver_7',['TransientSolver',['../classpycanha_1_1TransientSolver.html',1,'pycanha']]],
-  ['triangle_8',['Triangle',['../classpycanha_1_1gmm_1_1Triangle.html',1,'pycanha::gmm']]],
-  ['trimesh_9',['TriMesh',['../classpycanha_1_1gmm_1_1TriMesh.html',1,'pycanha::gmm']]],
-  ['trimesh_3c_20double_20_3e_10',['TriMesh&lt; double &gt;',['../classpycanha_1_1gmm_1_1TriMesh.html',1,'pycanha::gmm']]],
-  ['trimesh_3c_20float_20_3e_11',['TriMesh&lt; float &gt;',['../classpycanha_1_1gmm_1_1TriMesh.html',1,'pycanha::gmm']]],
-  ['tscn_12',['TSCN',['../classpycanha_1_1TSCN.html',1,'pycanha']]],
-  ['tscnrl_13',['TSCNRL',['../classpycanha_1_1TSCNRL.html',1,'pycanha']]],
-  ['tscnrlds_14',['TSCNRLDS',['../classpycanha_1_1TSCNRLDS.html',1,'pycanha']]],
-  ['tscnrlds_5fjacobian_15',['TSCNRLDS_JACOBIAN',['../classpycanha_1_1TSCNRLDS__JACOBIAN.html',1,'pycanha']]]
+  ['samplingplan_0',['SamplingPlan',['../structpycanha_1_1gmm_1_1mesh_1_1detail_1_1SamplingPlan.html',1,'pycanha::gmm::mesh::detail']]],
+  ['sceneimpl_1',['SceneImpl',['../classpycanha_1_1radiative_1_1detail_1_1SceneImpl.html',1,'pycanha::radiative::detail']]],
+  ['scenepart_2',['ScenePart',['../structpycanha_1_1radiative_1_1ScenePart.html',1,'pycanha::radiative']]],
+  ['solarresult_3',['SolarResult',['../structpycanha_1_1radiative_1_1SolarResult.html',1,'pycanha::radiative']]],
+  ['solver_4',['Solver',['../classpycanha_1_1Solver.html',1,'pycanha']]],
+  ['solveroutputconfig_5',['SolverOutputConfig',['../structpycanha_1_1SolverOutputConfig.html',1,'pycanha']]],
+  ['solverregistry_6',['SolverRegistry',['../classpycanha_1_1SolverRegistry.html',1,'pycanha']]],
+  ['sparsef64_7',['SparseF64',['../structpycanha_1_1radiative_1_1SparseF64.html',1,'pycanha::radiative']]],
+  ['sparsetimeseries_8',['SparseTimeSeries',['../classpycanha_1_1SparseTimeSeries.html',1,'pycanha']]],
+  ['sphere_9',['Sphere',['../classpycanha_1_1gmm_1_1Sphere.html',1,'pycanha::gmm']]],
+  ['sphereframe_10',['SphereFrame',['../structpycanha_1_1gmm_1_1detail_1_1SphereFrame.html',1,'pycanha::gmm::detail']]],
+  ['sslu_11',['SSLU',['../classpycanha_1_1SSLU.html',1,'pycanha']]],
+  ['steadystatesolver_12',['SteadyStateSolver',['../classpycanha_1_1SteadyStateSolver.html',1,'pycanha']]],
+  ['symbolbinding_13',['SymbolBinding',['../structpycanha_1_1ExpressionFormula_1_1SymbolBinding.html',1,'pycanha::ExpressionFormula']]]
 ];

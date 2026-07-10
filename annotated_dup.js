@@ -48,6 +48,32 @@ var annotated_dup =
         [ "EntityOps", "structpycanha_1_1detail_1_1EntityOps.html", null ],
         [ "InterpLocation", "structpycanha_1_1detail_1_1InterpLocation.html", null ]
       ] ],
+      [ "radiative", null, [
+        [ "detail", null, [
+          [ "DeviceImpl", "classpycanha_1_1radiative_1_1detail_1_1DeviceImpl.html", null ],
+          [ "SceneImpl", "classpycanha_1_1radiative_1_1detail_1_1SceneImpl.html", "classpycanha_1_1radiative_1_1detail_1_1SceneImpl" ],
+          [ "VfAccumImpl", "classpycanha_1_1radiative_1_1detail_1_1VfAccumImpl.html", null ],
+          [ "PhysicalDeviceCheck", "structpycanha_1_1radiative_1_1detail_1_1PhysicalDeviceCheck.html", null ],
+          [ "GpuBuffer", "structpycanha_1_1radiative_1_1detail_1_1GpuBuffer.html", null ],
+          [ "InstanceDataGpu", "structpycanha_1_1radiative_1_1detail_1_1InstanceDataGpu.html", null ],
+          [ "PushConstants", "structpycanha_1_1radiative_1_1detail_1_1PushConstants.html", null ]
+        ] ],
+        [ "VfAccumulator", "classpycanha_1_1radiative_1_1VfAccumulator.html", null ],
+        [ "DeviceInfo", "structpycanha_1_1radiative_1_1DeviceInfo.html", null ],
+        [ "Device", "classpycanha_1_1radiative_1_1Device.html", null ],
+        [ "MaterialTable", "structpycanha_1_1radiative_1_1MaterialTable.html", null ],
+        [ "MemoryEstimate", "structpycanha_1_1radiative_1_1MemoryEstimate.html", null ],
+        [ "TraceStats", "structpycanha_1_1radiative_1_1TraceStats.html", null ],
+        [ "VfResult", "structpycanha_1_1radiative_1_1VfResult.html", null ],
+        [ "ExchangeResult", "structpycanha_1_1radiative_1_1ExchangeResult.html", null ],
+        [ "SolarResult", "structpycanha_1_1radiative_1_1SolarResult.html", null ],
+        [ "RadiativeScene", "classpycanha_1_1radiative_1_1RadiativeScene.html", null ],
+        [ "ScenePart", "structpycanha_1_1radiative_1_1ScenePart.html", null ],
+        [ "TraceSettings", "structpycanha_1_1radiative_1_1TraceSettings.html", null ],
+        [ "AccumConfig", "structpycanha_1_1radiative_1_1AccumConfig.html", null ],
+        [ "SparseF64", "structpycanha_1_1radiative_1_1SparseF64.html", null ],
+        [ "PhysicalDeviceCheck", "structpycanha_1_1radiative_1_1PhysicalDeviceCheck.html", null ]
+      ] ],
       [ "random_generators", null, [
         [ "RealGenerator", "classpycanha_1_1random__generators_1_1RealGenerator.html", null ],
         [ "IntGenerator", "classpycanha_1_1random__generators_1_1IntGenerator.html", null ]

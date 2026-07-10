@@ -1,6 +1,9 @@
 var searchData=
 [
-  ['formula_0',['Formula',['../classpycanha_1_1Formula.html',1,'pycanha']]],
-  ['formulaexecutionguard_1',['FormulaExecutionGuard',['../classpycanha_1_1Solver_1_1FormulaExecutionGuard.html',1,'pycanha::Solver']]],
-  ['formulas_2',['Formulas',['../classpycanha_1_1Formulas.html',1,'pycanha']]]
+  ['entitieshelper_0',['EntitiesHelper',['../classpycanha_1_1EntitiesHelper.html',1,'pycanha']]],
+  ['entity_1',['Entity',['../classpycanha_1_1Entity.html',1,'pycanha']]],
+  ['entityops_2',['EntityOps',['../structpycanha_1_1detail_1_1EntityOps.html',1,'pycanha::detail']]],
+  ['esatanreader_3',['ESATANReader',['../classpycanha_1_1ESATANReader.html',1,'pycanha']]],
+  ['exchangeresult_4',['ExchangeResult',['../structpycanha_1_1radiative_1_1ExchangeResult.html',1,'pycanha::radiative']]],
+  ['expressionformula_5',['ExpressionFormula',['../classpycanha_1_1ExpressionFormula.html',1,'pycanha']]]
 ];

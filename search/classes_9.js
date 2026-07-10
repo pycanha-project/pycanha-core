@@ -1,5 +1,7 @@
 var searchData=
 [
-  ['manifoldcutbackend_0',['ManifoldCutBackend',['../classpycanha_1_1gmm_1_1cutting_1_1ManifoldCutBackend.html',1,'pycanha::gmm::cutting']]],
-  ['meshoptions_1',['MeshOptions',['../structpycanha_1_1gmm_1_1MeshOptions.html',1,'pycanha::gmm']]]
+  ['literalstring_0',['LiteralString',['../classpycanha_1_1LiteralString.html',1,'pycanha']]],
+  ['localstorage_1',['LocalStorage',['../structpycanha_1_1Node_1_1LocalStorage.html',1,'pycanha::Node']]],
+  ['lookuptable1d_2',['LookupTable1D',['../classpycanha_1_1LookupTable1D.html',1,'pycanha']]],
+  ['lookuptablevec1d_3',['LookupTableVec1D',['../classpycanha_1_1LookupTableVec1D.html',1,'pycanha']]]
 ];

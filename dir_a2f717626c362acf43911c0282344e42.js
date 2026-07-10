@@ -3,6 +3,7 @@ var dir_a2f717626c362acf43911c0282344e42 =
     [ "gmm", "dir_37e24ce5dcd1555120c45687d602d42c.html", "dir_37e24ce5dcd1555120c45687d602d42c" ],
     [ "io", "dir_2a8023b44ee7e02d8be2a4be5bb0ce69.html", "dir_2a8023b44ee7e02d8be2a4be5bb0ce69" ],
     [ "parameters", "dir_38e744f1b1570ffe99ebd8a1ea02c141.html", "dir_38e744f1b1570ffe99ebd8a1ea02c141" ],
+    [ "radiative", "dir_b8db710d5dc12a2d2572476c8141f174.html", "dir_b8db710d5dc12a2d2572476c8141f174" ],
     [ "solvers", "dir_cf6903a50be261f50493fb244e14dd7b.html", "dir_cf6903a50be261f50493fb244e14dd7b" ],
     [ "thermaldata", "dir_47d5238960759f3fd994e4871e9518b2.html", "dir_47d5238960759f3fd994e4871e9518b2" ],
     [ "tmm", "dir_f6b94fe11cd60cfd454090eabbf79651.html", "dir_f6b94fe11cd60cfd454090eabbf79651" ],

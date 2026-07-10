@@ -99,8 +99,8 @@ var NAVTREE =
 var NAVTREEINDEX =
 [
 "Instrumentor_8hpp_source.html",
-"classpycanha_1_1Nodes.html#a8ac3e23668604c12945a21eb6b081b02",
-"md_docs_2index.html"
+"classpycanha_1_1Nodes.html#a8950054692801b40ae073d18f8d01ed7",
+"md_docs_2cicd.html"
 ];
 
 var SYNCONMSG = 'click to disable panel synchronization';

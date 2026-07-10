@@ -6,5 +6,6 @@ var searchData=
   ['entityops_3',['EntityOps',['../structpycanha_1_1detail_1_1EntityOps.html',1,'pycanha::detail']]],
   ['eps_5fvector_4',['eps_vector',['../classpycanha_1_1Nodes.html#a40f2dd0b0c26104bd4520bb05513be10',1,'pycanha::Nodes']]],
   ['esatanreader_5',['ESATANReader',['../classpycanha_1_1ESATANReader.html',1,'pycanha']]],
-  ['expressionformula_6',['ExpressionFormula',['../classpycanha_1_1ExpressionFormula.html',1,'pycanha']]]
+  ['exchangeresult_6',['ExchangeResult',['../structpycanha_1_1radiative_1_1ExchangeResult.html',1,'pycanha::radiative']]],
+  ['expressionformula_7',['ExpressionFormula',['../classpycanha_1_1ExpressionFormula.html',1,'pycanha']]]
 ];

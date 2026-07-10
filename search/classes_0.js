@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['bulkmaterial_0',['BulkMaterial',['../classpycanha_1_1gmm_1_1BulkMaterial.html',1,'pycanha::gmm']]]
+  ['accumconfig_0',['AccumConfig',['../structpycanha_1_1radiative_1_1AccumConfig.html',1,'pycanha::radiative']]]
 ];

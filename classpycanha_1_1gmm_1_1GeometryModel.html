@@ -28,7 +28,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.15</span>
+   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.16</span>
    </div>
    <div id="projectbrief">The C++ core of pycanha</div>
   </td>
@@ -160,6 +160,10 @@ const TriMeshD &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>root_
 const std::shared_ptr&lt; <a class="el" href="classpycanha_1_1gmm_1_1GeometryGroup.html">GeometryGroup</a> &gt; &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>root_group</b> () const noexcept</td></tr>
 <tr class="memitem:a0288d06c31a02d07f7541833286993f0" id="r_a0288d06c31a02d07f7541833286993f0"><td class="memItemLeft" align="right" valign="top"><a id="a0288d06c31a02d07f7541833286993f0" name="a0288d06c31a02d07f7541833286993f0"></a>
 std::span&lt; const FaceId &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>faces_of_node</b> (NodeNum node_num) const</td></tr>
+<tr class="memitem:a82bb0323c384c4fb83710bd9c98f503b" id="r_a82bb0323c384c4fb83710bd9c98f503b"><td class="memItemLeft" align="right" valign="top"><a id="a82bb0323c384c4fb83710bd9c98f503b" name="a82bb0323c384c4fb83710bd9c98f503b"></a>
+std::vector&lt; <a class="el" href="structpycanha_1_1radiative_1_1ScenePart.html">radiative::ScenePart</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>mesh_parts</b> (std::span&lt; const std::string &gt; split={}) const</td></tr>
+<tr class="memitem:a46042b8d5f05415be8bee4732e79e7c6" id="r_a46042b8d5f05415be8bee4732e79e7c6"><td class="memItemLeft" align="right" valign="top"><a id="a46042b8d5f05415be8bee4732e79e7c6" name="a46042b8d5f05415be8bee4732e79e7c6"></a>
+<a class="el" href="structpycanha_1_1radiative_1_1MaterialTable.html">radiative::MaterialTable</a>&#160;</td><td class="memItemRight" valign="bottom"><b>material_table</b> () const</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pri-methods" class="groupheader"><a id="pri-methods" name="pri-methods"></a>
 Private Member Functions</h2></td></tr>
@@ -215,6 +219,7 @@ std::unordered_map&lt; NodeNum, std::vector&lt; FaceId &gt; &gt;&#160;</td><td c
 <hr/>The documentation for this class was generated from the following files:<ul>
 <li>pycanha-core/include/pycanha-core/gmm/<a class="el" href="geometrymodel_8hpp_source.html">geometrymodel.hpp</a></li>
 <li>pycanha-core/src/gmm/<b>geometrymodel.cpp</b></li>
+<li>pycanha-core/src/gmm/<b>mesh_parts.cpp</b></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->

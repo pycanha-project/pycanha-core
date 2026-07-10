@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=11"/>
 <meta name="generator" content="Doxygen 1.15.0"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>pycanha-core: pycanha-core/include/pycanha-core/gmm/materials/materials.hpp Source File</title>
+<title>pycanha-core: pycanha::radiative::detail::GpuBuffer Struct Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -28,7 +28,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.15</span>
+   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.16</span>
    </div>
    <div id="projectbrief">The C++ core of pycanha</div>
   </td>
@@ -65,7 +65,7 @@ $(function() {
   </div>
 </div>
 <script type="text/javascript">
-$(function(){initNavTree('materials_8hpp_source.html','',''); });
+$(function(){initNavTree('structpycanha_1_1radiative_1_1detail_1_1GpuBuffer.html','','structpycanha_1_1radiative_1_1detail_1_1GpuBuffer-members'); });
 </script>
 <div id="container">
 <div id="doc-content">
@@ -91,22 +91,38 @@ $(function(){initNavTree('materials_8hpp_source.html','',''); });
 </div>
 
 <div class="header">
-  <div class="headertitle"><div class="title">materials.hpp</div></div>
+  <div class="headertitle"><div class="title">pycanha::radiative::detail::GpuBuffer Struct Reference</div></div>
 </div><!--header-->
 <div class="contents">
-<div class="fragment"><div class="line"><a id="l00001" name="l00001"></a><span class="lineno">    1</span><span class="preprocessor">#pragma once</span></div>
-<div class="line"><a id="l00002" name="l00002"></a><span class="lineno">    2</span> </div>
-<div class="line"><a id="l00003" name="l00003"></a><span class="lineno">    3</span><span class="comment">// Umbrella include for the gmm material types.</span></div>
-<div class="line"><a id="l00004" name="l00004"></a><span class="lineno">    4</span><span class="preprocessor">#include &quot;pycanha-core/gmm/materials/bulk_material.hpp&quot;</span>     <span class="comment">// IWYU pragma: keep</span></div>
-<div class="line"><a id="l00005" name="l00005"></a><span class="lineno">    5</span><span class="preprocessor">#include &quot;pycanha-core/gmm/materials/color.hpp&quot;</span>             <span class="comment">// IWYU pragma: keep</span></div>
-<div class="line"><a id="l00006" name="l00006"></a><span class="lineno">    6</span><span class="preprocessor">#include &quot;pycanha-core/gmm/materials/optical_material.hpp&quot;</span>  <span class="comment">// IWYU pragma: keep</span></div>
-</div><!-- fragment --></div><!-- contents -->
+<table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 id="header-pub-attribs" class="groupheader"><a id="pub-attribs" name="pub-attribs"></a>
+Public Attributes</h2></td></tr>
+<tr class="memitem:ae6f5d8f82d5104828d4de574dd20c940" id="r_ae6f5d8f82d5104828d4de574dd20c940"><td class="memItemLeft" align="right" valign="top"><a id="ae6f5d8f82d5104828d4de574dd20c940" name="ae6f5d8f82d5104828d4de574dd20c940"></a>
+VkBuffer&#160;</td><td class="memItemRight" valign="bottom"><b>buffer</b> = VK_NULL_HANDLE</td></tr>
+<tr class="memitem:aefc6b8c183386200b9b92d4e6a270631" id="r_aefc6b8c183386200b9b92d4e6a270631"><td class="memItemLeft" align="right" valign="top"><a id="aefc6b8c183386200b9b92d4e6a270631" name="aefc6b8c183386200b9b92d4e6a270631"></a>
+VmaAllocation&#160;</td><td class="memItemRight" valign="bottom"><b>allocation</b> = VK_NULL_HANDLE</td></tr>
+<tr class="memitem:a8a4e36143c1266bb312b3fa09192ff59" id="r_a8a4e36143c1266bb312b3fa09192ff59"><td class="memItemLeft" align="right" valign="top"><a id="a8a4e36143c1266bb312b3fa09192ff59" name="a8a4e36143c1266bb312b3fa09192ff59"></a>
+void *&#160;</td><td class="memItemRight" valign="bottom"><b>mapped</b> = nullptr</td></tr>
+<tr class="memitem:afcc712017ee08aa67141d8136ab0eb14" id="r_afcc712017ee08aa67141d8136ab0eb14"><td class="memItemLeft" align="right" valign="top"><a id="afcc712017ee08aa67141d8136ab0eb14" name="afcc712017ee08aa67141d8136ab0eb14"></a>
+VkDeviceSize&#160;</td><td class="memItemRight" valign="bottom"><b>size</b> = 0</td></tr>
+</table>
+<hr/>The documentation for this struct was generated from the following file:<ul>
+<li>pycanha-core/src/radiative/<a class="el" href="vk__scene_8hpp_source.html">vk_scene.hpp</a></li>
+</ul>
+</div><!-- contents -->
 </div><!-- doc-content -->
+<div id="page-nav" class="page-nav-panel">
+<div id="page-nav-resize-handle"></div>
+<div id="page-nav-tree">
+<div id="page-nav-contents">
+</div><!-- page-nav-contents -->
+</div><!-- page-nav-tree -->
+</div><!-- page-nav -->
 </div><!-- container -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><b>pycanha-core</b></li><li class="navelem"><b>include</b></li><li class="navelem"><b>pycanha-core</b></li><li class="navelem"><b>gmm</b></li><li class="navelem"><b>materials</b></li><li class="navelem"><b>materials.hpp</b></li>
+    <li class="navelem"><a href="namespacepycanha.html">pycanha</a></li><li class="navelem"><b>radiative</b></li><li class="navelem"><b>detail</b></li><li class="navelem"><a href="structpycanha_1_1radiative_1_1detail_1_1GpuBuffer.html">GpuBuffer</a></li>
     <li class="footer">Generated by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.15.0 </li>
   </ul>
 </div>

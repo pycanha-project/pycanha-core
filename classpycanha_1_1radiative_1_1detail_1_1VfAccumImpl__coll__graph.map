@@ -1,0 +1,16 @@
+<map id="pycanha::radiative::detail::VfAccumImpl" name="pycanha::radiative::detail::VfAccumImpl">
+<area shape="rect" id="Node000001" title=" " alt="" coords="813,404,975,449"/>
+<area shape="rect" id="Node000002" href="$classpycanha_1_1radiative_1_1detail_1_1SceneImpl.html" title=" " alt="" coords="569,207,711,252"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="683,258,866,403,861,404,681,263"/>
+<area shape="rect" id="Node000003" href="$classpycanha_1_1radiative_1_1detail_1_1DeviceImpl.html" title=" " alt="" coords="229,12,377,57"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="391,27,431,30,471,37,510,49,547,68,580,99,605,136,623,174,635,207,630,206,618,176,600,139,576,102,543,73,508,54,470,42,430,35,393,32"/>
+<area shape="rect" id="Node000004" href="$structpycanha_1_1radiative_1_1DeviceInfo.html" title=" " alt="" coords="5,12,148,57"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="162,32,230,33,226,36,165,37"/>
+<area shape="rect" id="Node000005" href="$structpycanha_1_1radiative_1_1MaterialTable.html" title=" " alt="" coords="232,82,374,126"/>
+<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="389,98,468,106,508,116,546,131,571,146,593,166,626,207,621,206,589,169,568,151,544,136,506,121,467,111,390,103"/>
+<area shape="rect" id="Node000006" href="$structpycanha_1_1radiative_1_1detail_1_1GpuBuffer.html" title=" " alt="" coords="232,382,374,426"/>
+<area shape="poly" id="edge7_Node000001_Node000006" title=" " alt="" coords="389,405,401,405,815,422,811,426,401,410,390,410"/>
+<area shape="poly" id="edge5_Node000002_Node000006" title=" " alt="" coords="389,403,479,400,518,394,544,385,576,356,601,320,619,282,631,254,635,250,624,285,606,322,580,359,546,389,519,399,480,405,390,409"/>
+<area shape="rect" id="Node000007" href="$structpycanha_1_1radiative_1_1AccumConfig.html" title=" " alt="" coords="569,475,711,520"/>
+<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="726,482,789,468,842,450,847,449,790,473,727,488"/>
+</map>

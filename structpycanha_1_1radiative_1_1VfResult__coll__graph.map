@@ -1,0 +1,7 @@
+<map id="pycanha::radiative::VfResult" name="pycanha::radiative::VfResult">
+<area shape="rect" id="Node000001" title=" " alt="" coords="88,123,230,168"/>
+<area shape="rect" id="Node000002" href="$structpycanha_1_1radiative_1_1SparseF64.html" title=" " alt="" coords="5,5,148,50"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="102,60,146,122,141,123,99,65"/>
+<area shape="rect" id="Node000003" href="$structpycanha_1_1radiative_1_1TraceStats.html" title=" " alt="" coords="172,5,314,50"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="221,62,177,124,173,121,216,64"/>
+</map>

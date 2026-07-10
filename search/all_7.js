@@ -49,5 +49,6 @@ var searchData=
   ['get_5ft_46',['get_T',['../classpycanha_1_1Node.html#a341fecda21eb1508e112ecd8c693385f',1,'pycanha::Node::get_T()'],['../classpycanha_1_1Nodes.html#a10ec85737e6be55ce7a96b448bbe29f3',1,'pycanha::Nodes::get_T(NodeNum node_num)']]],
   ['get_5ft_5fvalue_5fref_47',['get_T_value_ref',['../classpycanha_1_1Nodes.html#a8d8912db5a0af3c70592927d12d6fcf0',1,'pycanha::Nodes']]],
   ['get_5ftype_48',['get_type',['../classpycanha_1_1Node.html#a55a4679e85533618ff220014344cc15b',1,'pycanha::Node::get_type()'],['../classpycanha_1_1Nodes.html#a1209e3f11ac0c65a3c5544d23aad9109',1,'pycanha::Nodes::get_type()']]],
-  ['graphviz_20doxygen_20awesome_20css_49',['Doxygen + graphviz + Doxygen Awesome CSS',['../md_docs_2tools.html#autotoc_md19',1,'']]]
+  ['gpubuffer_49',['GpuBuffer',['../structpycanha_1_1radiative_1_1detail_1_1GpuBuffer.html',1,'pycanha::radiative::detail']]],
+  ['graphviz_20doxygen_20awesome_20css_50',['Doxygen + graphviz + Doxygen Awesome CSS',['../md_docs_2tools.html#autotoc_md19',1,'']]]
 ];
