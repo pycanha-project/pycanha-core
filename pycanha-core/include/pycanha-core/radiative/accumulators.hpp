@@ -11,6 +11,8 @@ class RadiativeScene;
 
 namespace detail {
 class VfAccumImpl;
+class ExchangeAccumImpl;
+class SolarAccumImpl;
 }  // namespace detail
 
 // Owns the GPU-side counting buffer plus the bookkeeping needed to turn raw
@@ -40,6 +42,54 @@ class VfAccumulator {
 
   private:
     std::unique_ptr<detail::VfAccumImpl> _impl;
+};
+
+// Exchange-factor accumulator: u64 fixed-point energy cells plus per-row
+// space/lost balances. The band is fixed at construction (mixing bands in
+// one matrix would be meaningless). Same Dense/Tiled layout semantics and
+// bit-determinism guarantees as VfAccumulator.
+class ExchangeAccumulator {
+  public:
+    explicit ExchangeAccumulator(const RadiativeScene& scene, Band band,
+                                 AccumConfig config = {});
+    ~ExchangeAccumulator();
+    ExchangeAccumulator(ExchangeAccumulator&&) noexcept;
+    ExchangeAccumulator& operator=(ExchangeAccumulator&&) noexcept;
+    ExchangeAccumulator(const ExchangeAccumulator&) = delete;
+    ExchangeAccumulator& operator=(const ExchangeAccumulator&) = delete;
+
+    void reset();
+    [[nodiscard]] ExchangeResult result() const;
+    // Max over rows of |deposits + space + lost - rays * scale| in raw
+    // fixed-point units (wrapping u64 arithmetic). Zero by construction —
+    // the kernel flushes every ray's remaining balance into a bucket — so a
+    // nonzero value means a broken kernel, not Monte-Carlo noise.
+    [[nodiscard]] std::uint64_t conservation_error() const;
+
+    [[nodiscard]] detail::ExchangeAccumImpl& impl() noexcept;
+
+  private:
+    std::unique_ptr<detail::ExchangeAccumImpl> _impl;
+};
+
+// Solar-absorption accumulator: per-face-slot direct/total energy vectors
+// (the solar kernel is O(Nf); there is no matrix and no layout distinction).
+class SolarAccumulator {
+  public:
+    explicit SolarAccumulator(const RadiativeScene& scene);
+    ~SolarAccumulator();
+    SolarAccumulator(SolarAccumulator&&) noexcept;
+    SolarAccumulator& operator=(SolarAccumulator&&) noexcept;
+    SolarAccumulator(const SolarAccumulator&) = delete;
+    SolarAccumulator& operator=(const SolarAccumulator&) = delete;
+
+    void reset();
+    [[nodiscard]] SolarResult result() const;
+
+    [[nodiscard]] detail::SolarAccumImpl& impl() noexcept;
+
+  private:
+    std::unique_ptr<detail::SolarAccumImpl> _impl;
 };
 
 }  // namespace pycanha::radiative

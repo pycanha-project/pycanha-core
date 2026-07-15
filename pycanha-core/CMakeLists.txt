@@ -183,6 +183,7 @@ add_library(${LIB_NAME} STATIC
 
     # Pure-CPU radiative services, built regardless of the raytracing option.
     ${CMAKE_CURRENT_SOURCE_DIR}/src/radiative/aggregate.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/radiative/gebhart.cpp
     ${PYCANHA_RADIATIVE_SOURCES}
 )
 target_include_directories(${LIB_NAME}
@@ -226,7 +227,16 @@ if(PYCANHA_OPTION_RAYTRACING)
         SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/src/radiative/kernels/vf.slang
         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/radiative/kernels/common.slang
     )
-    add_dependencies(${LIB_NAME} pycanha_kernel_vf)
+    pycanha_add_slang_kernel(exchange
+        SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/src/radiative/kernels/exchange.slang
+        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/radiative/kernels/common.slang
+    )
+    pycanha_add_slang_kernel(solar
+        SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/src/radiative/kernels/solar.slang
+        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/radiative/kernels/common.slang
+    )
+    add_dependencies(${LIB_NAME} pycanha_kernel_vf pycanha_kernel_exchange
+        pycanha_kernel_solar)
     target_include_directories(${LIB_NAME} PRIVATE ${PYCANHA_KERNEL_EMBED_DIR})
 endif()
 
@@ -344,7 +354,8 @@ if (PYCANHA_OPTION_CLANG_TIDY)
   # be missing when clang-tidy parses the radiative sources. Force the kernels
   # to be generated first.
   if (PYCANHA_OPTION_RAYTRACING AND TARGET ${LIB_NAME}_clangtidy)
-    add_dependencies(${LIB_NAME}_clangtidy pycanha_kernel_vf)
+    add_dependencies(${LIB_NAME}_clangtidy pycanha_kernel_vf
+        pycanha_kernel_exchange pycanha_kernel_solar)
   endif()
 endif()
 

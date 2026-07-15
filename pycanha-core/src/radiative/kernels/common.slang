@@ -37,6 +37,10 @@ public struct Push {
 public Push pc;
 
 public static const uint FLAG_NORMAL_EMISSION = 1u;
+// Selects the solar property triplet (alpha_sol/spec_sol/tau_sol) instead of
+// the IR one. A push-constant flag keeps one exchange pipeline for both
+// bands; the branch is dispatch-uniform, so it costs nothing on the GPU.
+public static const uint FLAG_SOLAR_BAND = 2u;
 
 // ---------------------------------------------------------------------------
 // Shared scene bindings (set 0, bindings 0-9). Kernel-specific accumulator
@@ -131,6 +135,41 @@ public void fp_add(RWStructuredBuffer<uint64_t> buf, uint idx, float value) {
     InterlockedAdd(buf[idx], uint64_t(value * pc.fp_scale + 0.5));
 }
 
+// Fixed-point representation of a remaining-energy float. Monotone
+// non-decreasing in `energy` (f32 multiply, +0.5 and the u64 truncation all
+// preserve order), which is what lets deposits be computed as differences of
+// consecutive values without ever underflowing.
+public uint64_t to_fp(float energy) {
+    return uint64_t(energy * pc.fp_scale + 0.5);
+}
+
+// Raw integer add for pre-converted fixed-point amounts (deposit
+// differences and terminal balance flushes). u64 arithmetic wraps, which the
+// exchange kernel exploits for the Russian-roulette boost withdrawal.
+public void fp_add_raw(RWStructuredBuffer<uint64_t> buf, uint idx,
+                       uint64_t value) {
+    InterlockedAdd(buf[idx], value);
+}
+
+// Band-selected optical triplet of a face slot: absorptivity, specular
+// reflectance, transmittance. The band comes from pc.flags (FLAG_SOLAR_BAND).
+// Slots without a material (-1) are blackbodies: a=1, s=t=0, returns false.
+public bool band_properties(uint slot, out float a, out float s, out float t) {
+    int material_index = face_material[slot];
+    if (material_index < 0) {
+        a = 1.0;
+        s = 0.0;
+        t = 0.0;
+        return false;
+    }
+    uint base = uint(material_index) * 6u +
+                (((pc.flags & FLAG_SOLAR_BAND) != 0u) ? 3u : 0u);
+    a = materials[base];
+    s = materials[base + 1u];
+    t = materials[base + 2u];
+    return true;
+}
+
 // ---------------------------------------------------------------------------
 // Geometry helpers (published reference implementations — do not re-derive).
 // ---------------------------------------------------------------------------
@@ -179,7 +218,17 @@ public struct EmittedRay {
     public float3 direction;
 };
 
-public EmittedRay emit_from_face(uint face_slot, inout Rng rng) {
+// A uniformly-sampled surface point with the side-resolved normal. The
+// position is NOT offset yet — callers push it out with offset_origin along
+// whatever side they trace from.
+public struct SurfaceSample {
+    public float3 position;
+    public float3 normal;
+};
+
+// Draws u0 (triangle pick) + u1/u2 (barycentric point) — the first three
+// draws of the frozen emission order.
+public SurfaceSample sample_face_point(uint face_slot, inout Rng rng) {
     uint pair_base = face_slot & ~1u;  // even side-1 slot of the pair
 
     // 1. Area-weighted triangle pick: binary search u0 in the face's
@@ -224,16 +273,25 @@ public EmittedRay emit_from_face(uint face_slot, inout Rng rng) {
         n = -n;
     }
 
+    SurfaceSample sample;
+    sample.position = p_world;
+    sample.normal = n;
+    return sample;
+}
+
+public EmittedRay emit_from_face(uint face_slot, inout Rng rng) {
+    SurfaceSample sample = sample_face_point(face_slot, rng);
+
     // 4. Direction: cosine hemisphere (2 draws) or the normal itself.
     float3 dir;
     if ((pc.flags & FLAG_NORMAL_EMISSION) != 0u) {
-        dir = n;
+        dir = sample.normal;
     } else {
-        dir = cosine_hemisphere(n, rng);
+        dir = cosine_hemisphere(sample.normal, rng);
     }
 
     EmittedRay ray;
-    ray.origin = offset_origin(p_world, n);
+    ray.origin = offset_origin(sample.position, sample.normal);
     ray.direction = dir;
     return ray;
 }
