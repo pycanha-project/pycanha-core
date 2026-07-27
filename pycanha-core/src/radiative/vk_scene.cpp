@@ -44,7 +44,8 @@ constexpr std::uint32_t workgroup_size_x = 64;
 // accumulator buffers (kernels that use fewer leave the rest on a dummy).
 constexpr std::uint32_t num_bindings = 13;
 
-// Host mirror of the kernel flag bits in common.slang.
+// Host mirrors of the kernel flag bits in common.slang.
+constexpr std::uint32_t flag_normal_emission = 1;
 constexpr std::uint32_t flag_solar_band = 2;
 
 // Tolerated float slack when validating that absorptivity + specular +
@@ -148,7 +149,7 @@ void validate_material_properties(const MaterialTable& materials) {
 }  // namespace
 
 GpuBuffer SceneImpl::create_buffer(VkDeviceSize size, VkBufferUsageFlags usage,
-                                   bool host_visible) const {
+                                   bool host_visible) {
     GpuBuffer out;
     out.size = size;
     const VkBufferCreateInfo buffer_info{
@@ -180,18 +181,20 @@ GpuBuffer SceneImpl::create_buffer(VkDeviceSize size, VkBufferUsageFlags usage,
                                        &out.allocation, &result_info),
           "buffer allocation");
     out.mapped = result_info.pMappedData;
+    _allocated_bytes += size;
     return out;
 }
 
-void SceneImpl::destroy_buffer(GpuBuffer& buffer) const noexcept {
+void SceneImpl::destroy_buffer(GpuBuffer& buffer) noexcept {
     if (buffer.buffer != VK_NULL_HANDLE) {
         vmaDestroyBuffer(_device.allocator, buffer.buffer, buffer.allocation);
+        _allocated_bytes -= buffer.size;
         buffer = GpuBuffer{};
     }
 }
 
 GpuBuffer SceneImpl::upload_to_new_buffer(const void* data, std::size_t bytes,
-                                          VkBufferUsageFlags usage) const {
+                                          VkBufferUsageFlags usage) {
     GpuBuffer buffer = create_buffer(std::max<std::size_t>(bytes, 4), usage,
                                      /*host_visible=*/true);
     if (bytes > 0) {
@@ -300,6 +303,7 @@ SceneImpl::SceneImpl(DeviceImpl& device, std::vector<ScenePart> parts,
     write_instance_buffers();
     build_tlas_first();
     create_pipelines();
+    _scene_bytes = _allocated_bytes;
 
     SPDLOG_LOGGER_INFO(pycanha::get_logger(),
                        "radiative: scene built ({} parts, {} face slots)",
@@ -970,6 +974,7 @@ void SceneImpl::accumulate_vf(VfAccumImpl& acc, const TraceSettings& settings,
 
     KernelDispatch kernel;
     kernel.pipeline = _vf_pipeline;
+    kernel.flags = settings.normal_emission ? flag_normal_emission : 0U;
     write_storage_descriptor(10, acc.buffer());
     write_storage_descriptor(11, _dummy_buf.buffer);
     write_storage_descriptor(12, _dummy_buf.buffer);
@@ -1015,10 +1020,13 @@ void SceneImpl::accumulate_exchange(ExchangeAccumImpl& acc,
     KernelDispatch kernel;
     kernel.pipeline = _exchange_pipeline;
     kernel.flags = acc.band() == Band::Solar ? flag_solar_band : 0U;
+    if (settings.normal_emission) {
+        kernel.flags |= flag_normal_emission;
+    }
     kernel.fp_scale = fp_scale;
     write_storage_descriptor(10, acc.buffer());
-    write_storage_descriptor(11, acc.space_buffer());
-    write_storage_descriptor(12, acc.lost_buffer());
+    write_storage_descriptor(11, _dummy_buf.buffer);
+    write_storage_descriptor(12, _dummy_buf.buffer);
 
     if (acc.layout() == AccumLayout::Dense) {
         dispatch_rows(kernel, list, settings);

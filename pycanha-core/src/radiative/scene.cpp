@@ -3,6 +3,7 @@
 
 #include "pycanha-core/radiative/scene.hpp"
 
+#include <algorithm>
 #include <cstdint>
 #include <memory>
 #include <span>
@@ -13,6 +14,7 @@
 #include "pycanha-core/radiative/accumulators.hpp"
 #include "pycanha-core/radiative/device.hpp"
 #include "pycanha-core/radiative/materials.hpp"
+#include "pycanha-core/radiative/memory.hpp"
 #include "pycanha-core/radiative/results.hpp"
 #include "pycanha-core/radiative/scene_part.hpp"
 #include "pycanha-core/radiative/settings.hpp"
@@ -124,5 +126,26 @@ void SolarAccumulator::reset() { _impl->reset(); }
 SolarResult SolarAccumulator::result() const { return _impl->build_result(); }
 
 detail::SolarAccumImpl& SolarAccumulator::impl() noexcept { return *_impl; }
+
+MemoryEstimate estimate_memory(const RadiativeScene& scene,
+                               const AccumConfig& config) {
+    const std::uint64_t slots = scene.num_face_slots();
+    const std::uint64_t cols =
+        slots + static_cast<std::uint64_t>(num_virtual_columns);
+    // Sized for the u64 exchange cells — the worst case (vf uses u32).
+    constexpr std::uint64_t cell_bytes = sizeof(std::uint64_t);
+
+    MemoryEstimate out;
+    out.gpu_bytes_dense = slots * cols * cell_bytes;
+    out.gpu_bytes_per_tile_row = cols * cell_bytes;
+    out.gpu_bytes_scene = scene.impl().scene_bytes();
+    const std::uint64_t block_rows =
+        config.layout == AccumLayout::Tiled
+            ? std::min<std::uint64_t>(
+                  std::max<std::uint64_t>(config.tile_rows, 1), slots)
+            : slots;
+    out.host_bytes_block = out.gpu_bytes_per_tile_row * block_rows;
+    return out;
+}
 
 }  // namespace pycanha::radiative

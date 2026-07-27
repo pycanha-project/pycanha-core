@@ -11,6 +11,7 @@
 
 #include "pycanha-core/radiative/accumulators.hpp"
 #include "pycanha-core/radiative/device.hpp"
+#include "pycanha-core/radiative/memory.hpp"
 #include "pycanha-core/radiative/scene.hpp"
 
 namespace pycanha::radiative {
@@ -139,5 +140,10 @@ SolarAccumulator& SolarAccumulator::operator=(SolarAccumulator&&) noexcept =
 void SolarAccumulator::reset() { throw_unavailable(); }
 SolarResult SolarAccumulator::result() const { throw_unavailable(); }
 detail::SolarAccumImpl& SolarAccumulator::impl() noexcept { return *_impl; }
+
+MemoryEstimate estimate_memory(const RadiativeScene& /*scene*/,
+                               const AccumConfig& /*config*/) {
+    throw_unavailable();
+}
 
 }  // namespace pycanha::radiative

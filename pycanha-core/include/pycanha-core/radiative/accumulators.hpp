@@ -60,10 +60,11 @@ class ExchangeAccumulator {
 
     void reset();
     [[nodiscard]] ExchangeResult result() const;
-    // Max over rows of |deposits + space + lost - rays * scale| in raw
-    // fixed-point units (wrapping u64 arithmetic). Zero by construction —
-    // the kernel flushes every ray's remaining balance into a bucket — so a
-    // nonzero value means a broken kernel, not Monte-Carlo noise.
+    // Max over rows of |full row sum - rays * scale| in raw fixed-point
+    // units (wrapping u64 arithmetic, virtual bucket columns included).
+    // Zero by construction — the kernel flushes every ray's remaining
+    // balance into a column — so a nonzero value means a broken kernel,
+    // not Monte-Carlo noise.
     [[nodiscard]] std::uint64_t conservation_error() const;
 
     [[nodiscard]] detail::ExchangeAccumImpl& impl() noexcept;

@@ -5,22 +5,24 @@
 // specular/transmission/diffuse choice is stochastic. Normalization on the
 // CPU: B[i][j] = deposited[i][j] / rays_i.
 //
+// The accumulator row stride is num_face_slots + 3: after the real face
+// columns come the virtual space / inactive / lost columns, so every
+// termination has an explicit, node-mappable destination.
+//
 // Exact energy accounting: every ray also carries its remaining energy as a
 // fixed-point integer, deposits are the DIFFERENCE of consecutive
 // fixed-point values and every termination path flushes the remaining
-// balance into a bucket (acc / space_vec / lost_vec). Per row,
-// deposits + space + lost == rays * fp_scale holds exactly in wrapping u64
-// arithmetic — the CI conservation assert. Russian-roulette boosts withdraw
-// their fixed-point gain from lost_vec (wrapping subtraction) and kills
-// deposit the balance there, so the identity survives RR while the estimate
-// stays unbiased (the two adjustments cancel in expectation, which is why
-// lost_vec is read back as a SIGNED total).
+// balance into a column. Per row, the sum over ALL columns equals
+// rays * fp_scale exactly in wrapping u64 arithmetic — the CI conservation
+// assert. Russian-roulette boosts withdraw their fixed-point gain from the
+// lost column (wrapping subtraction) and kills deposit the balance there,
+// so the identity survives RR while the estimate stays unbiased (the two
+// adjustments cancel in expectation, which is why the lost column is read
+// back as a SIGNED total).
 
 import common;
 
 [[vk::binding(10, 0)]] RWStructuredBuffer<uint64_t> acc;
-[[vk::binding(11, 0)]] RWStructuredBuffer<uint64_t> space_vec;
-[[vk::binding(12, 0)]] RWStructuredBuffer<uint64_t> lost_vec;
 
 [shader("compute")]
 [numthreads(64, 1, 1)]
@@ -36,7 +38,12 @@ void csMain(uint3 gid: SV_DispatchThreadID) {
     uint face_slot = emitters[e];
     uint ray_index = pc.ray_index_offset + ray_local;
     Rng rng = rng_init(face_slot, ray_index, pc.batch_seed);
-    uint row = face_slot - pc.row_offset;  // block-relative accumulator row
+    uint stride = pc.num_face_slots + 3u;
+    // Block-relative accumulator row base.
+    uint row_base = (face_slot - pc.row_offset) * stride;
+    uint space_col = pc.num_face_slots;
+    uint inactive_col = pc.num_face_slots + 1u;
+    uint lost_col = pc.num_face_slots + 2u;
 
     EmittedRay ray = emit_from_face(face_slot, rng);
     float3 origin = ray.origin;
@@ -49,18 +56,19 @@ void csMain(uint3 gid: SV_DispatchThreadID) {
     for (uint bounce = 0u; bounce < pc.max_bounces; ++bounce) {
         Hit hit = trace_ray(origin, dir);
         if (hit.miss) {
-            fp_add_raw(space_vec, row, fp_remaining);  // escaped to space
+            fp_add_raw(acc, row_base + space_col, fp_remaining);
             return;
         }
-        uint cell = row * pc.num_face_slots + hit.slot;
         if ((face_flags[hit.slot] & FACE_FLAG_PLANET) != 0u) {
             // The planet absorbs every band; its radiance is CPU
             // post-processing over the VF matrix, not a kernel concern.
-            fp_add_raw(acc, cell, fp_remaining);
+            fp_add_raw(acc, row_base + hit.slot, fp_remaining);
             return;
         }
         if ((face_flags[hit.slot] & FACE_FLAG_ACTIVE) == 0u) {
-            fp_add_raw(lost_vec, row, fp_remaining);  // modeling convention
+            // Non-radiative face: absorbed, but scored apart so the
+            // consumer can decide what that energy means.
+            fp_add_raw(acc, row_base + inactive_col, fp_remaining);
             return;
         }
 
@@ -69,7 +77,7 @@ void csMain(uint3 gid: SV_DispatchThreadID) {
         float t;
         if (!band_properties(hit.slot, a, s, t)) {
             // No material assigned: blackbody, absorbs the remainder.
-            fp_add_raw(acc, cell, fp_remaining);
+            fp_add_raw(acc, row_base + hit.slot, fp_remaining);
             return;
         }
         // Diffuse reflectance is the clamped remainder; never renormalize
@@ -80,7 +88,7 @@ void csMain(uint3 gid: SV_DispatchThreadID) {
         // would bias the estimate).
         float energy_after = energy * (1.0 - a);
         uint64_t fp_after = to_fp(energy_after);
-        fp_add_raw(acc, cell, fp_remaining - fp_after);
+        fp_add_raw(acc, row_base + hit.slot, fp_remaining - fp_after);
         fp_remaining = fp_after;
         energy = energy_after;
         if (fp_remaining == uint64_t(0)) {
@@ -93,13 +101,13 @@ void csMain(uint3 gid: SV_DispatchThreadID) {
             if (u_rr * pc.energy_threshold < energy) {
                 uint64_t fp_boost = to_fp(pc.energy_threshold);
                 // Wrapping subtraction: the boost's fixed-point gain is
-                // withdrawn from the lost bucket to keep the row balance
+                // withdrawn from the lost column to keep the row balance
                 // exact.
-                fp_add_raw(lost_vec, row, fp_remaining - fp_boost);
+                fp_add_raw(acc, row_base + lost_col, fp_remaining - fp_boost);
                 fp_remaining = fp_boost;
                 energy = pc.energy_threshold;
             } else {
-                fp_add_raw(lost_vec, row, fp_remaining);
+                fp_add_raw(acc, row_base + lost_col, fp_remaining);
                 return;
             }
         }
@@ -119,5 +127,5 @@ void csMain(uint3 gid: SV_DispatchThreadID) {
         }
     }
     // The max_bounces safety bound killed the ray.
-    fp_add_raw(lost_vec, row, fp_remaining);
+    fp_add_raw(acc, row_base + lost_col, fp_remaining);
 }

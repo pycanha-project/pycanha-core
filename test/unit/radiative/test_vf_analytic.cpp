@@ -68,6 +68,15 @@ namespace {
     return 0.0;
 }
 
+// The explicit space column closes every emitted row to exactly one.
+void require_closed_row(const rad::VfResult& result, std::int64_t row,
+                        std::int32_t space_col, double expected_space) {
+    REQUIRE(csr_value(result.vf, row, space_col) ==
+            Catch::Approx(expected_space).margin(1e-12));
+    REQUIRE(result.row_sums(static_cast<Eigen::Index>(row)) ==
+            Catch::Approx(1.0).margin(1e-12));
+}
+
 // Bit-exact equality of two VF results (integer counting cells make this a
 // hard guarantee, not a tolerance check).
 void require_bit_identical(const rad::VfResult& result,
@@ -107,8 +116,9 @@ TEST_CASE("radiative vf: parallel plates match the analytic value",
         4.0 * std::sqrt(expected * (1.0 - expected) / 20'000.0);
     REQUIRE(vf == Catch::Approx(expected).margin(tolerance));
     // Every first hit from plate A lands on plate B's facing side (slot 2)
-    // or escapes to space: the row sum equals the plate-to-plate factor.
-    REQUIRE(result.row_sums(0) == Catch::Approx(vf));
+    // or scores the virtual space column: the row closes to exactly one.
+    require_closed_row(
+        result, 0, static_cast<std::int32_t>(scene.num_face_slots()), 1.0 - vf);
     REQUIRE(result.stats.rays_per_face == 20'000);
     REQUIRE(result.stats.total_rays == 20'000);
     REQUIRE(result.stats.max_stderr > 0.0);
@@ -219,6 +229,6 @@ TEST_CASE("radiative vf: batches accumulate", "[radiative][gpu][vf]") {
 
     const rad::VfResult result = acc.result();
     REQUIRE(result.stats.rays_per_face == 4'000);
-    REQUIRE(result.row_sums(0) > 0.0);
-    REQUIRE(result.row_sums(0) <= 1.0);
+    // The explicit space column closes every emitted row exactly.
+    REQUIRE(result.row_sums(0) == Catch::Approx(1.0).margin(1e-12));
 }

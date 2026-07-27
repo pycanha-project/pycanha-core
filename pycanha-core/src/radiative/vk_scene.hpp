@@ -108,17 +108,24 @@ class SceneImpl {
         return _face_areas;
     }
     [[nodiscard]] DeviceImpl& device() const noexcept { return _device; }
+    // GPU bytes resident after construction (geometry, acceleration
+    // structures, tables) — the fixed cost of the scene for the memory
+    // estimate; accumulators come on top.
+    [[nodiscard]] std::uint64_t scene_bytes() const noexcept {
+        return _scene_bytes;
+    }
 
     // Buffer helpers shared with the accumulator implementations.
     [[nodiscard]] GpuBuffer create_buffer(VkDeviceSize size,
                                           VkBufferUsageFlags usage,
-                                          bool host_visible) const;
-    void destroy_buffer(GpuBuffer& buffer) const noexcept;
+                                          bool host_visible);
+    void destroy_buffer(GpuBuffer& buffer) noexcept;
     // Creates a host-visible buffer, copies `bytes` of `data` into it and
     // flushes. Empty inputs get a minimal valid buffer (Vulkan forbids
     // zero-sized ones).
-    [[nodiscard]] GpuBuffer upload_to_new_buffer(
-        const void* data, std::size_t bytes, VkBufferUsageFlags usage) const;
+    [[nodiscard]] GpuBuffer upload_to_new_buffer(const void* data,
+                                                 std::size_t bytes,
+                                                 VkBufferUsageFlags usage);
 
   private:
     struct PartGpu {
@@ -181,6 +188,10 @@ class SceneImpl {
     std::vector<double> _face_areas;
     std::vector<std::uint32_t> _default_emitters;
     float _ray_tmin_scale = 1e-4F;
+    // Live sum of create_buffer allocations; snapshotted into _scene_bytes
+    // at the end of construction (build scratch is already freed by then).
+    std::uint64_t _allocated_bytes = 0;
+    std::uint64_t _scene_bytes = 0;
 
     std::vector<PartGpu> _parts;
     std::vector<InstanceDataGpu> _instances_host;  // updated by transforms

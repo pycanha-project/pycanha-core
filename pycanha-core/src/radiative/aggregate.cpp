@@ -61,16 +61,45 @@ SparseF64 aggregate_matrix(const SparseF64& face_matrix,
                            std::span<const double> face_areas) {
     const auto slots = static_cast<std::size_t>(face_matrix.rows);
     check_sizes(slots, node_numbers, face_areas);
+    const auto cols = static_cast<std::size_t>(face_matrix.cols);
+    if (cols < slots) {
+        throw std::invalid_argument(
+            "pycanha::radiative: the face matrix cannot have fewer columns "
+            "than rows");
+    }
+    // Columns beyond the row labels (the virtual space/inactive/lost
+    // buckets of the matrix results) are dropped here; the row/column
+    // overload maps them explicitly.
+    std::vector<NodeNum> col_nodes(node_numbers.begin(), node_numbers.end());
+    col_nodes.resize(cols, NO_NODE);
+    return aggregate_matrix(face_matrix, node_numbers, col_nodes, face_areas);
+}
 
-    const std::vector<NodeNum> nodes = aggregate_nodes(node_numbers);
-    const std::vector<std::int64_t> node_of =
-        slot_to_node_index(node_numbers, nodes);
+SparseF64 aggregate_matrix(const SparseF64& face_matrix,
+                           std::span<const NodeNum> row_node_numbers,
+                           std::span<const NodeNum> col_node_numbers,
+                           std::span<const double> face_areas) {
+    const auto slots = static_cast<std::size_t>(face_matrix.rows);
+    check_sizes(slots, row_node_numbers, face_areas);
+    if (col_node_numbers.size() != static_cast<std::size_t>(face_matrix.cols)) {
+        throw std::invalid_argument(
+            "pycanha::radiative: col_node_numbers size must match the "
+            "matrix column count (real face slots plus the virtual bucket "
+            "columns)");
+    }
+
+    const std::vector<NodeNum> row_nodes = aggregate_nodes(row_node_numbers);
+    const std::vector<NodeNum> col_nodes = aggregate_nodes(col_node_numbers);
+    const std::vector<std::int64_t> row_node_of =
+        slot_to_node_index(row_node_numbers, row_nodes);
+    const std::vector<std::int64_t> col_node_of =
+        slot_to_node_index(col_node_numbers, col_nodes);
 
     // Accumulate into ordered per-row maps: node counts are small next to
     // face counts, so this stays cheap and yields sorted CSR columns.
-    std::vector<std::map<std::int64_t, double>> rows(nodes.size());
+    std::vector<std::map<std::int64_t, double>> rows(row_nodes.size());
     for (std::size_t face_row = 0; face_row < slots; ++face_row) {
-        const std::int64_t node_row = node_of[face_row];
+        const std::int64_t node_row = row_node_of[face_row];
         if (node_row < 0) {
             continue;
         }
@@ -81,7 +110,7 @@ SparseF64 aggregate_matrix(const SparseF64& face_matrix,
              ++k) {
             const auto face_col = static_cast<std::size_t>(
                 face_matrix.indices(static_cast<Eigen::Index>(k)));
-            const std::int64_t node_col = node_of[face_col];
+            const std::int64_t node_col = col_node_of[face_col];
             if (node_col < 0) {
                 continue;
             }
@@ -91,9 +120,9 @@ SparseF64 aggregate_matrix(const SparseF64& face_matrix,
     }
 
     SparseF64 out;
-    out.rows = static_cast<std::int64_t>(nodes.size());
-    out.cols = static_cast<std::int64_t>(nodes.size());
-    out.indptr.resize(static_cast<Eigen::Index>(nodes.size()) + 1);
+    out.rows = static_cast<std::int64_t>(row_nodes.size());
+    out.cols = static_cast<std::int64_t>(col_nodes.size());
+    out.indptr.resize(static_cast<Eigen::Index>(row_nodes.size()) + 1);
     std::vector<std::int32_t> indices;
     std::vector<double> values;
     out.indptr(0) = 0;

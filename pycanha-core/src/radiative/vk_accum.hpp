@@ -25,6 +25,14 @@
 
 namespace pycanha::radiative::detail {
 
+// Running per-entry statistics while scanning accumulator rows into a CSR.
+struct EntryStats {
+    double stderr_sum = 0.0;
+    double stderr_max = 0.0;
+    std::size_t entries = 0;
+    double lost_energy = 0.0;  // exchange only (signed)
+};
+
 class VfAccumImpl {
   public:
     VfAccumImpl(SceneImpl& scene, AccumConfig config);
@@ -61,6 +69,11 @@ class VfAccumImpl {
     // Integer count of cell (row, col) regardless of layout.
     [[nodiscard]] std::uint64_t count_at(std::size_t row,
                                          std::size_t col) const;
+    // Appends one row's thresholded entries and statistics; returns the
+    // pre-threshold row sum.
+    double scan_row(std::size_t row, std::uint64_t rays_row,
+                    std::vector<std::int32_t>& indices,
+                    std::vector<double>& values, EntryStats& stats) const;
 
     SceneImpl& _scene;
     AccumConfig _config;
@@ -95,18 +108,14 @@ class ExchangeAccumImpl {
         return _config.tile_rows;
     }
     [[nodiscard]] VkBuffer buffer() const noexcept { return _cells.buffer; }
-    [[nodiscard]] VkBuffer space_buffer() const noexcept {
-        return _space.buffer;
-    }
-    [[nodiscard]] VkBuffer lost_buffer() const noexcept { return _lost.buffer; }
     // Fixes the fixed-point scale on the first batch (a power of two with
     // headroom for follow-up batches) and guards the cumulative ray budget
     // against cell overflow. Returns the scale for the push constants.
     [[nodiscard]] float prepare_batch(std::uint64_t rays_per_face);
-    // Tiled only: zeroes the block scratch (cells + space/lost rows).
+    // Tiled only: zeroes the block scratch before a new row block.
     void clear_block_scratch();
     // Tiled only: adds the scratch rows of `block_emitters` into the host
-    // maps and balance vectors (block-relative row = slot - row_offset).
+    // maps (block-relative row = slot - row_offset).
     void absorb_block(std::span<const std::uint32_t> block_emitters,
                       std::uint32_t row_offset);
     void record_batch(std::span<const std::uint32_t> emitters,
@@ -114,21 +123,21 @@ class ExchangeAccumImpl {
     [[nodiscard]] SceneImpl& scene() const noexcept { return _scene; }
 
   private:
-    // Fixed-point cell / balance values of a row regardless of layout.
+    // Fixed-point value of cell (row, col) regardless of layout; columns
+    // include the virtual space/inactive/lost buckets.
     [[nodiscard]] std::uint64_t cell_at(std::size_t row, std::size_t col) const;
-    [[nodiscard]] std::uint64_t space_at(std::size_t row) const;
-    [[nodiscard]] std::uint64_t lost_at(std::size_t row) const;
+    // Appends one row's thresholded entries and statistics (including the
+    // signed lost-column energy).
+    void scan_row(std::size_t row, std::uint64_t rays_row,
+                  std::vector<std::int32_t>& indices,
+                  std::vector<double>& values, EntryStats& stats) const;
 
     SceneImpl& _scene;
     Band _band;
     AccumConfig _config;
-    GpuBuffer _cells;  // u64 fixed-point deposits
-    GpuBuffer _space;  // u64 per-row to-space balance
-    GpuBuffer _lost;   // u64 per-row lost balance (signed via wrap)
-    // Tiled layout: host-side accumulation (Dense reads the GPU buffers).
+    GpuBuffer _cells;  // u64 fixed-point deposits, row stride slots + 3
+    // Tiled layout: host-side accumulation (Dense reads the GPU buffer).
     std::vector<std::unordered_map<std::uint32_t, std::uint64_t>> _host_rows;
-    std::vector<std::uint64_t> _host_space;
-    std::vector<std::uint64_t> _host_lost;
     std::vector<std::uint64_t> _rays_per_row;
     // Power of two chosen on the first batch; 0 = not chosen yet. Kept as
     // double for exact integer arithmetic on the host (f32 in the shader).

@@ -58,6 +58,12 @@ void invalidate_host_visible(const SceneImpl& scene, const GpuBuffer& buffer) {
                             VK_WHOLE_SIZE);
 }
 
+// Matrix row stride: the real face columns plus the virtual
+// space/inactive/lost bucket columns.
+[[nodiscard]] std::size_t matrix_columns(std::size_t slots) {
+    return slots + static_cast<std::size_t>(num_virtual_columns);
+}
+
 }  // namespace
 
 VfAccumImpl::VfAccumImpl(SceneImpl& scene, AccumConfig config)
@@ -74,9 +80,10 @@ VfAccumImpl::VfAccumImpl(SceneImpl& scene, AccumConfig config)
         buffer_rows = _config.tile_rows;
         _host_rows.resize(slots);
     }
-    _counts = _scene.create_buffer(buffer_rows * slots * sizeof(std::uint32_t),
-                                   VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                                   /*host_visible=*/true);
+    _counts = _scene.create_buffer(
+        buffer_rows * matrix_columns(slots) * sizeof(std::uint32_t),
+        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+        /*host_visible=*/true);
     _rays_per_row.assign(slots, 0);
     reset();
 }
@@ -98,15 +105,15 @@ void VfAccumImpl::clear_block_scratch() { clear_host_visible(_scene, _counts); }
 void VfAccumImpl::absorb_block(std::span<const std::uint32_t> block_emitters,
                                std::uint32_t row_offset) {
     invalidate_host_visible(_scene, _counts);
-    const std::size_t slots = _scene.num_face_slots();
+    const std::size_t cols = matrix_columns(_scene.num_face_slots());
     const std::span<const std::uint32_t> scratch(
         static_cast<const std::uint32_t*>(checked_mapped(_counts)),
-        static_cast<std::size_t>(_config.tile_rows) * slots);
+        static_cast<std::size_t>(_config.tile_rows) * cols);
     for (const std::uint32_t slot : block_emitters) {
         const std::size_t row = slot - row_offset;
         auto& host_row = _host_rows[slot];
-        for (std::size_t col = 0; col < slots; ++col) {
-            const std::uint32_t cell = scratch[(row * slots) + col];
+        for (std::size_t col = 0; col < cols; ++col) {
+            const std::uint32_t cell = scratch[(row * cols) + col];
             if (cell != 0) {
                 host_row[static_cast<std::uint32_t>(col)] += cell;
             }
@@ -126,14 +133,51 @@ void VfAccumImpl::record_batch(std::span<const std::uint32_t> emitters,
 std::uint64_t VfAccumImpl::count_at(std::size_t row, std::size_t col) const {
     if (_config.layout == AccumLayout::Dense) {
         const std::size_t slots = _scene.num_face_slots();
+        const std::size_t cols = matrix_columns(slots);
         const std::span<const std::uint32_t> counts(
             static_cast<const std::uint32_t*>(checked_mapped(_counts)),
-            slots * slots);
-        return counts[(row * slots) + col];
+            slots * cols);
+        return counts[(row * cols) + col];
     }
     const auto& host_row = _host_rows[row];
     const auto it = host_row.find(static_cast<std::uint32_t>(col));
     return it == host_row.end() ? 0 : it->second;
+}
+
+double VfAccumImpl::scan_row(std::size_t row, std::uint64_t rays_row,
+                             std::vector<std::int32_t>& indices,
+                             std::vector<double>& values,
+                             EntryStats& stats) const {
+    const std::size_t slots = _scene.num_face_slots();
+    const std::size_t cols = matrix_columns(slots);
+    double row_sum = 0.0;
+    // Ascending column order in both layouts, so the CSR (and every derived
+    // statistic) is bit-identical between Dense and Tiled.
+    for (std::size_t col = 0; col < cols; ++col) {
+        const std::uint64_t count = count_at(row, col);
+        if (count == 0) {
+            continue;
+        }
+        const double vf =
+            static_cast<double>(count) / static_cast<double>(rays_row);
+        // Row statistics come BEFORE thresholding, so dropping tiny entries
+        // never corrupts the closure accounting.
+        row_sum += vf;
+        if (col < slots) {
+            // Binomial standard error of the per-entry estimate (real face
+            // columns only).
+            const double entry_stderr = std::sqrt(
+                vf * std::max(1.0 - vf, 0.0) / static_cast<double>(rays_row));
+            stats.stderr_sum += entry_stderr;
+            stats.stderr_max = std::max(stats.stderr_max, entry_stderr);
+            ++stats.entries;
+        }
+        if (vf > _config.sparse_threshold) {
+            indices.push_back(static_cast<std::int32_t>(col));
+            values.push_back(vf);
+        }
+    }
+    return row_sum;
 }
 
 VfResult VfAccumImpl::build_result() const {
@@ -145,40 +189,20 @@ VfResult VfAccumImpl::build_result() const {
 
     VfResult result;
     result.vf.rows = static_cast<std::int64_t>(slots);
-    result.vf.cols = static_cast<std::int64_t>(slots);
+    result.vf.cols = static_cast<std::int64_t>(matrix_columns(slots));
     result.vf.indptr.resize(static_cast<Eigen::Index>(slots) + 1);
     result.row_sums = Eigen::VectorXd::Zero(static_cast<Eigen::Index>(slots));
 
     std::vector<std::int32_t> indices;
     std::vector<double> values;
-    double stderr_sum = 0.0;
-    double stderr_max = 0.0;
+    EntryStats stats;
 
     result.vf.indptr(0) = 0;
     for (std::size_t row = 0; row < slots; ++row) {
         const std::uint64_t rays_row = _rays_per_row[row];
         if (rays_row > 0) {
-            double row_sum = 0.0;
-            // Ascending column order in both layouts, so the CSR (and every
-            // derived statistic) is bit-identical between Dense and Tiled.
-            for (std::size_t col = 0; col < slots; ++col) {
-                const std::uint64_t count = count_at(row, col);
-                if (count == 0) {
-                    continue;
-                }
-                const double vf =
-                    static_cast<double>(count) / static_cast<double>(rays_row);
-                indices.push_back(static_cast<std::int32_t>(col));
-                values.push_back(vf);
-                row_sum += vf;
-                // Binomial standard error of the per-entry estimate.
-                const double entry_stderr =
-                    std::sqrt(vf * std::max(1.0 - vf, 0.0) /
-                              static_cast<double>(rays_row));
-                stderr_sum += entry_stderr;
-                stderr_max = std::max(stderr_max, entry_stderr);
-            }
-            result.row_sums(static_cast<Eigen::Index>(row)) = row_sum;
+            result.row_sums(static_cast<Eigen::Index>(row)) =
+                scan_row(row, rays_row, indices, values, stats);
         }
         result.vf.indptr(static_cast<Eigen::Index>(row) + 1) =
             static_cast<std::int64_t>(values.size());
@@ -222,8 +246,10 @@ VfResult VfAccumImpl::build_result() const {
     result.stats.total_rays = _total_rays;
     result.stats.rays_per_face = _rays_per_face;
     result.stats.mean_stderr =
-        values.empty() ? 0.0 : stderr_sum / static_cast<double>(values.size());
-    result.stats.max_stderr = stderr_max;
+        stats.entries > 0
+            ? stats.stderr_sum / static_cast<double>(stats.entries)
+            : 0.0;
+    result.stats.max_stderr = stats.stderr_max;
     result.stats.reciprocity_residual = reciprocity;
     // TODO(radiative): fill gpu_time from timestamp queries around each
     // dispatch chunk.
@@ -244,35 +270,22 @@ ExchangeAccumImpl::ExchangeAccumImpl(SceneImpl& scene, Band band,
             std::min<std::uint64_t>(_config.tile_rows, slots));
         buffer_rows = _config.tile_rows;
         _host_rows.resize(slots);
-        _host_space.assign(slots, 0);
-        _host_lost.assign(slots, 0);
     }
-    _cells = _scene.create_buffer(buffer_rows * slots * sizeof(std::uint64_t),
-                                  VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                                  /*host_visible=*/true);
-    _space = _scene.create_buffer(buffer_rows * sizeof(std::uint64_t),
-                                  VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                                  /*host_visible=*/true);
-    _lost = _scene.create_buffer(buffer_rows * sizeof(std::uint64_t),
-                                 VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                                 /*host_visible=*/true);
+    _cells = _scene.create_buffer(
+        buffer_rows * matrix_columns(slots) * sizeof(std::uint64_t),
+        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+        /*host_visible=*/true);
     _rays_per_row.assign(slots, 0);
     reset();
 }
 
-ExchangeAccumImpl::~ExchangeAccumImpl() {
-    _scene.destroy_buffer(_cells);
-    _scene.destroy_buffer(_space);
-    _scene.destroy_buffer(_lost);
-}
+ExchangeAccumImpl::~ExchangeAccumImpl() { _scene.destroy_buffer(_cells); }
 
 void ExchangeAccumImpl::reset() {
     clear_block_scratch();
     for (auto& row : _host_rows) {
         row.clear();
     }
-    std::ranges::fill(_host_space, 0);
-    std::ranges::fill(_host_lost, 0);
     std::ranges::fill(_rays_per_row, 0);
     _fp_scale = 0.0;
     _rays_per_face = 0;
@@ -281,38 +294,26 @@ void ExchangeAccumImpl::reset() {
 
 void ExchangeAccumImpl::clear_block_scratch() {
     clear_host_visible(_scene, _cells);
-    clear_host_visible(_scene, _space);
-    clear_host_visible(_scene, _lost);
 }
 
 void ExchangeAccumImpl::absorb_block(
     std::span<const std::uint32_t> block_emitters, std::uint32_t row_offset) {
     invalidate_host_visible(_scene, _cells);
-    invalidate_host_visible(_scene, _space);
-    invalidate_host_visible(_scene, _lost);
-    const std::size_t slots = _scene.num_face_slots();
+    const std::size_t cols = matrix_columns(_scene.num_face_slots());
     const std::span<const std::uint64_t> scratch(
         static_cast<const std::uint64_t*>(checked_mapped(_cells)),
-        static_cast<std::size_t>(_config.tile_rows) * slots);
-    const std::span<const std::uint64_t> space(
-        static_cast<const std::uint64_t*>(checked_mapped(_space)),
-        _config.tile_rows);
-    const std::span<const std::uint64_t> lost(
-        static_cast<const std::uint64_t*>(checked_mapped(_lost)),
-        _config.tile_rows);
+        static_cast<std::size_t>(_config.tile_rows) * cols);
     for (const std::uint32_t slot : block_emitters) {
         const std::size_t row = slot - row_offset;
         auto& host_row = _host_rows[slot];
-        for (std::size_t col = 0; col < slots; ++col) {
-            const std::uint64_t cell = scratch[(row * slots) + col];
+        // Cells add with wrap: the lost column may carry negative (wrapped)
+        // Russian-roulette adjustments.
+        for (std::size_t col = 0; col < cols; ++col) {
+            const std::uint64_t cell = scratch[(row * cols) + col];
             if (cell != 0) {
                 host_row[static_cast<std::uint32_t>(col)] += cell;
             }
         }
-        // Balances add with wrap: lost may carry negative (wrapped)
-        // Russian-roulette adjustments.
-        _host_space[slot] += space[row];
-        _host_lost[slot] += lost[row];
     }
 }
 
@@ -342,86 +343,89 @@ std::uint64_t ExchangeAccumImpl::cell_at(std::size_t row,
                                          std::size_t col) const {
     if (_config.layout == AccumLayout::Dense) {
         const std::size_t slots = _scene.num_face_slots();
+        const std::size_t cols = matrix_columns(slots);
         const std::span<const std::uint64_t> cells(
             static_cast<const std::uint64_t*>(checked_mapped(_cells)),
-            slots * slots);
-        return cells[(row * slots) + col];
+            slots * cols);
+        return cells[(row * cols) + col];
     }
     const auto& host_row = _host_rows[row];
     const auto it = host_row.find(static_cast<std::uint32_t>(col));
     return it == host_row.end() ? 0 : it->second;
 }
 
-std::uint64_t ExchangeAccumImpl::space_at(std::size_t row) const {
-    if (_config.layout == AccumLayout::Dense) {
-        const std::span<const std::uint64_t> space(
-            static_cast<const std::uint64_t*>(checked_mapped(_space)),
-            _scene.num_face_slots());
-        return space[row];
+void ExchangeAccumImpl::scan_row(std::size_t row, std::uint64_t rays_row,
+                                 std::vector<std::int32_t>& indices,
+                                 std::vector<double>& values,
+                                 EntryStats& stats) const {
+    const std::size_t slots = _scene.num_face_slots();
+    const std::size_t cols = matrix_columns(slots);
+    const std::size_t lost_col =
+        slots + static_cast<std::size_t>(lost_column_offset);
+    const double inv_scale = 1.0 / _fp_scale;
+    // Ascending column order in both layouts, so the CSR (and every derived
+    // statistic) is bit-identical between Dense and Tiled.
+    for (std::size_t col = 0; col < cols; ++col) {
+        const std::uint64_t cell = cell_at(row, col);
+        if (cell == 0) {
+            continue;
+        }
+        // The lost column is signed: Russian-roulette boost withdrawals may
+        // push it (slightly) negative. The fixed-point value converts FIRST
+        // (exact for full deposits), THEN divides by the rays — the same
+        // rounding path as the vf counts, so blackbody exchange factors are
+        // bit-identical to view factors.
+        const double energy =
+            col == lost_col
+                ? static_cast<double>(static_cast<std::int64_t>(cell)) *
+                      inv_scale
+                : static_cast<double>(cell) * inv_scale;
+        const double factor = energy / static_cast<double>(rays_row);
+        if (col == lost_col) {
+            stats.lost_energy += energy;
+        }
+        if (col < slots) {
+            // Conservative per-entry standard error: a ray's deposit into
+            // one cell is in [0, 1], so the Bernoulli bound dominates the
+            // true variance.
+            const double entry_stderr =
+                std::sqrt(factor * std::max(1.0 - factor, 0.0) /
+                          static_cast<double>(rays_row));
+            stats.stderr_sum += entry_stderr;
+            stats.stderr_max = std::max(stats.stderr_max, entry_stderr);
+            ++stats.entries;
+        }
+        // Row statistics come before thresholding; the threshold only
+        // prunes what is stored.
+        if (std::abs(factor) > _config.sparse_threshold) {
+            indices.push_back(static_cast<std::int32_t>(col));
+            values.push_back(factor);
+        }
     }
-    return _host_space[row];
-}
-
-std::uint64_t ExchangeAccumImpl::lost_at(std::size_t row) const {
-    if (_config.layout == AccumLayout::Dense) {
-        const std::span<const std::uint64_t> lost(
-            static_cast<const std::uint64_t*>(checked_mapped(_lost)),
-            _scene.num_face_slots());
-        return lost[row];
-    }
-    return _host_lost[row];
 }
 
 ExchangeResult ExchangeAccumImpl::build_result() const {
     if (_config.layout == AccumLayout::Dense) {
         invalidate_host_visible(_scene, _cells);
-        invalidate_host_visible(_scene, _lost);
     }
     const std::size_t slots = _scene.num_face_slots();
-    const double inv_scale = _fp_scale > 0.0 ? 1.0 / _fp_scale : 0.0;
 
     ExchangeResult result;
     result.band = _band;
     result.factors.rows = static_cast<std::int64_t>(slots);
-    result.factors.cols = static_cast<std::int64_t>(slots);
+    result.factors.cols = static_cast<std::int64_t>(matrix_columns(slots));
     result.factors.indptr.resize(static_cast<Eigen::Index>(slots) + 1);
 
     std::vector<std::int32_t> indices;
     std::vector<double> values;
-    double stderr_sum = 0.0;
-    double stderr_max = 0.0;
-    double lost_energy = 0.0;
+    EntryStats stats;
     double emitted_energy = 0.0;
 
     result.factors.indptr(0) = 0;
     for (std::size_t row = 0; row < slots; ++row) {
         const std::uint64_t rays_row = _rays_per_row[row];
-        if (rays_row > 0) {
-            const double row_norm = inv_scale / static_cast<double>(rays_row);
-            // Ascending column order in both layouts, so the CSR (and every
-            // derived statistic) is bit-identical between Dense and Tiled.
-            for (std::size_t col = 0; col < slots; ++col) {
-                const std::uint64_t cell = cell_at(row, col);
-                if (cell == 0) {
-                    continue;
-                }
-                const double factor = static_cast<double>(cell) * row_norm;
-                indices.push_back(static_cast<std::int32_t>(col));
-                values.push_back(factor);
-                // Conservative per-entry standard error: a ray's deposit
-                // into one cell is in [0, 1], so the Bernoulli bound
-                // dominates the true variance.
-                const double entry_stderr =
-                    std::sqrt(factor * std::max(1.0 - factor, 0.0) /
-                              static_cast<double>(rays_row));
-                stderr_sum += entry_stderr;
-                stderr_max = std::max(stderr_max, entry_stderr);
-            }
-            // The lost balance is signed: Russian-roulette boost
-            // withdrawals may push a row (transiently) negative.
-            lost_energy +=
-                static_cast<double>(static_cast<std::int64_t>(lost_at(row))) *
-                inv_scale;
+        if (rays_row > 0 && _fp_scale > 0.0) {
+            scan_row(row, rays_row, indices, values, stats);
             emitted_energy += static_cast<double>(rays_row);
         }
         result.factors.indptr(static_cast<Eigen::Index>(row) + 1) =
@@ -436,10 +440,12 @@ ExchangeResult ExchangeAccumImpl::build_result() const {
     result.stats.total_rays = _total_rays;
     result.stats.rays_per_face = _rays_per_face;
     result.stats.mean_stderr =
-        values.empty() ? 0.0 : stderr_sum / static_cast<double>(values.size());
-    result.stats.max_stderr = stderr_max;
+        stats.entries > 0
+            ? stats.stderr_sum / static_cast<double>(stats.entries)
+            : 0.0;
+    result.stats.max_stderr = stats.stderr_max;
     result.stats.lost_energy_fraction =
-        emitted_energy > 0.0 ? lost_energy / emitted_energy : 0.0;
+        emitted_energy > 0.0 ? stats.lost_energy / emitted_energy : 0.0;
     return result;
 }
 
@@ -449,10 +455,9 @@ std::uint64_t ExchangeAccumImpl::conservation_error() const {
     }
     if (_config.layout == AccumLayout::Dense) {
         invalidate_host_visible(_scene, _cells);
-        invalidate_host_visible(_scene, _space);
-        invalidate_host_visible(_scene, _lost);
     }
     const std::size_t slots = _scene.num_face_slots();
+    const std::size_t cols = matrix_columns(slots);
     const auto scale = static_cast<std::uint64_t>(_fp_scale);
     std::uint64_t max_error = 0;
     for (std::size_t row = 0; row < slots; ++row) {
@@ -460,8 +465,10 @@ std::uint64_t ExchangeAccumImpl::conservation_error() const {
             continue;
         }
         // Everything wraps mod 2^64 — the identity the kernel maintains.
-        std::uint64_t balance = space_at(row) + lost_at(row);
-        for (std::size_t col = 0; col < slots; ++col) {
+        // The virtual columns are part of the balance, so the full row
+        // accounts for every parcel of emitted energy.
+        std::uint64_t balance = 0;
+        for (std::size_t col = 0; col < cols; ++col) {
             balance += cell_at(row, col);
         }
         const std::uint64_t expected = _rays_per_row[row] * scale;
@@ -575,22 +582,23 @@ SolarResult SolarAccumImpl::build_result() const {
         if (area <= 0.0) {
             continue;  // no geometry on this slot, nothing was deposited
         }
-        // Deposits carry the emitting face's area; dividing by the
-        // receiving area turns the accumulated energy into a flux fraction
-        // of the irradiance.
-        const double direct_fraction =
-            static_cast<double>(direct[index]) * norm / area;
-        const double total_fraction =
-            static_cast<double>(total[index]) * norm / area;
-        result.direct(slot) = _sun.irradiance * direct_fraction;
-        result.total(slot) = _sun.irradiance * total_fraction;
-        if (total_fraction > 0.0) {
+        // Deposits already carry the emitting face's area, so the
+        // accumulated cells ARE the absorbed watts (per unit irradiance).
+        const double direct_watts =
+            _sun.irradiance * static_cast<double>(direct[index]) * norm;
+        const double total_watts =
+            _sun.irradiance * static_cast<double>(total[index]) * norm;
+        result.direct(slot) = direct_watts;
+        result.total(slot) = total_watts;
+        if (total_watts > 0.0) {
             // Advisory precision estimate: the Bernoulli bound on the flux
-            // fraction (exact only without concentration above 1 sun).
+            // fraction (exact only without concentration above 1 sun),
+            // scaled back to watts.
+            const double flux_fraction = total_watts / (_sun.irradiance * area);
             const double entry_stderr =
-                _sun.irradiance *
-                std::sqrt(std::min(total_fraction, 1.0) *
-                          std::max(1.0 - total_fraction, 0.0) / rays);
+                _sun.irradiance * area *
+                std::sqrt(std::min(flux_fraction, 1.0) *
+                          std::max(1.0 - flux_fraction, 0.0) / rays);
             stderr_sum += entry_stderr;
             stderr_max = std::max(stderr_max, entry_stderr);
             ++stderr_entries;

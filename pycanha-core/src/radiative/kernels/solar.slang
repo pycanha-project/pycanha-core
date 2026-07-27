@@ -9,10 +9,10 @@
 //
 // E0 = cos(theta) * face_area: every face traces the same rays_per_face
 // regardless of its size, so a sample of face i represents area_i / rays
-// square meters of collector — deposits carry that area weight (a cell
-// receives energy from MANY faces' rays) and the CPU divides by the
-// receiving face's area: flux_j [W/m^2] =
-// irradiance * cell_j / (fp_scale * rays * area_j).
+// square meters of collector. A ray's deposits are therefore its WATT
+// content (per unit irradiance): a cell receives energy from MANY faces'
+// rays and reads back directly as absorbed power,
+// watts_j = irradiance * cell_j / (fp_scale * rays).
 //
 // Outputs are per-face vectors (direct absorbed, total absorbed incl.
 // reflections); there is no row/matrix concept and no exact-conservation

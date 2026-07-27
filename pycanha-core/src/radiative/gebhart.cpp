@@ -20,6 +20,7 @@
 #include "pycanha-core/globals.hpp"
 #include "pycanha-core/gmm/ids.hpp"
 #include "pycanha-core/radiative/aggregate.hpp"
+#include "pycanha-core/radiative/results.hpp"
 #include "pycanha-core/radiative/sparse.hpp"
 
 namespace pycanha::radiative {
@@ -35,9 +36,13 @@ constexpr std::int64_t max_dense_slots = 20'000;
 void validate_gebhart_inputs(const SparseF64& vf,
                              const Eigen::VectorXd& emissivity,
                              double space_fraction_policy) {
-    if (vf.rows != vf.cols) {
+    // Traced VF results carry the virtual space/inactive/lost columns; a
+    // hand-built plain square matrix is equally fine. Columns beyond the
+    // face slots never re-emit, so both shapes solve the same system.
+    if (vf.cols != vf.rows && vf.cols != vf.rows + num_virtual_columns) {
         throw std::invalid_argument(
-            "pycanha::radiative: the VF matrix must be square");
+            "pycanha::radiative: the VF matrix must be square or carry "
+            "exactly the virtual bucket columns");
     }
     if (emissivity.rows() != vf.rows) {
         throw std::invalid_argument(
@@ -61,14 +66,19 @@ void validate_gebhart_inputs(const SparseF64& vf,
 // Per-row multipliers implementing the space policy: with policy p, each
 // row is divided by row_sum + p * (1 - row_sum) — p = 1 keeps the matrix
 // as-is (the deficit is a real view to space), p = 0 renormalizes rows to
-// one (the deficit is Monte-Carlo noise on a closed enclosure).
+// one (the deficit is Monte-Carlo noise on a closed enclosure). Only real
+// face columns count toward row_sum: the virtual bucket columns ARE the
+// deficit.
 [[nodiscard]] std::vector<double> row_scales(const SparseF64& vf,
                                              double space_fraction_policy) {
     std::vector<double> scales(static_cast<std::size_t>(vf.rows), 1.0);
     for (Eigen::Index row = 0; row < vf.rows; ++row) {
         double row_sum = 0.0;
         for (std::int64_t k = vf.indptr(row); k < vf.indptr(row + 1); ++k) {
-            row_sum += vf.values(static_cast<Eigen::Index>(k));
+            const auto entry = static_cast<Eigen::Index>(k);
+            if (vf.indices(entry) < vf.rows) {
+                row_sum += vf.values(entry);
+            }
         }
         const double denominator =
             row_sum + (space_fraction_policy * (1.0 - row_sum));
@@ -126,7 +136,9 @@ SparseF64 gebhart_factors(const SparseF64& vf,
         const double scale = scales[static_cast<std::size_t>(row)];
         for (std::int64_t k = vf.indptr(row); k < vf.indptr(row + 1); ++k) {
             const auto entry = static_cast<Eigen::Index>(k);
-            f(row, vf.indices(entry)) = vf.values(entry) * scale;
+            if (vf.indices(entry) < n) {  // bucket columns never re-emit
+                f(row, vf.indices(entry)) = vf.values(entry) * scale;
+            }
         }
     }
 
@@ -183,6 +195,9 @@ SparseF64 gebhart_node_factors(const SparseF64& vf,
         for (std::int64_t k = vf.indptr(row); k < vf.indptr(row + 1); ++k) {
             const auto entry = static_cast<Eigen::Index>(k);
             const Eigen::Index col = vf.indices(entry);
+            if (col >= n) {
+                continue;  // bucket columns never re-emit
+            }
             const double f_entry = vf.values(entry) * scale;
             triplets.emplace_back(row, col, -f_entry * (1.0 - emissivity(col)));
             const Eigen::Index node_col =

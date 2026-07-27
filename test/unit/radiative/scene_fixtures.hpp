@@ -79,6 +79,36 @@ make_mirror_bench() {
     return model;
 }
 
+// Closed unit-cube enclosure: six unit plates with side 1 facing inward
+// (slots 0/1 floor, 2/3 ceiling, 4/5 wall x=0, 6/7 wall x=1, 8/9 wall y=0,
+// 10/11 wall y=1). Nothing escapes to space.
+[[nodiscard]] inline std::unique_ptr<pycanha::gmm::GeometryModel>
+make_box_enclosure() {
+    using pycanha::gmm::GeometryItem;
+    using pycanha::gmm::Rectangle;
+    using pycanha::gmm::ThermalMesh;
+    auto model = std::make_unique<pycanha::gmm::GeometryModel>("box");
+    model->add(std::make_shared<GeometryItem>(
+        "floor", Rectangle({0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}),
+        ThermalMesh{}));
+    model->add(std::make_shared<GeometryItem>(
+        "ceiling", Rectangle({0.0, 0.0, 1.0}, {0.0, 1.0, 1.0}, {1.0, 0.0, 1.0}),
+        ThermalMesh{}));
+    model->add(std::make_shared<GeometryItem>(
+        "wall_x0", Rectangle({0.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}),
+        ThermalMesh{}));
+    model->add(std::make_shared<GeometryItem>(
+        "wall_x1", Rectangle({1.0, 0.0, 0.0}, {1.0, 0.0, 1.0}, {1.0, 1.0, 0.0}),
+        ThermalMesh{}));
+    model->add(std::make_shared<GeometryItem>(
+        "wall_y0", Rectangle({0.0, 0.0, 0.0}, {0.0, 0.0, 1.0}, {1.0, 0.0, 0.0}),
+        ThermalMesh{}));
+    model->add(std::make_shared<GeometryItem>(
+        "wall_y1", Rectangle({0.0, 1.0, 0.0}, {1.0, 1.0, 0.0}, {0.0, 1.0, 1.0}),
+        ThermalMesh{}));
+    return model;
+}
+
 // A material table with one row per entry of `rows` (kernel DOF order
 // [eps_ir, spec_ir, tau_ir, alpha_sol, spec_sol, tau_sol]); both slots of
 // face pair p map to row pair_rows[p]. Every slot starts active.

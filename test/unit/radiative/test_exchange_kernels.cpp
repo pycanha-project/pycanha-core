@@ -254,12 +254,20 @@ TEST_CASE("radiative exchange: inactive faces absorb into the lost bucket",
     scene.accumulate_exchange(acc, settings, emitters);
     const rad::ExchangeResult result = acc.result();
 
-    // Everything that would have been absorbed at slot 2 is lost instead;
-    // conservation stays exact because lost is a real bucket.
+    // Everything that would have been absorbed at slot 2 lands in the
+    // virtual inactive column instead; conservation stays exact because
+    // the bucket is part of the row.
+    const auto slots = static_cast<std::int32_t>(scene.num_face_slots());
+    const auto inactive_col =
+        static_cast<std::int32_t>(slots + rad::inactive_column_offset);
+    const auto lost_col =
+        static_cast<std::int32_t>(slots + rad::lost_column_offset);
     REQUIRE(csr_value(result.factors, 0, 2) == 0.0);
     // The plate-to-plate view factor at gap 1 is about 0.2.
-    REQUIRE(result.stats.lost_energy_fraction > 0.1);
-    REQUIRE(result.stats.lost_energy_fraction < 0.3);
+    REQUIRE(csr_value(result.factors, 0, inactive_col) ==
+            Catch::Approx(0.2).margin(0.1));
+    // Black emitter, single-segment paths: nothing is mathematically lost.
+    REQUIRE(csr_value(result.factors, 0, lost_col) == 0.0);
     REQUIRE(acc.conservation_error() == 0);
 }
 
