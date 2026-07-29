@@ -18,6 +18,9 @@ struct TraceSettings {
     float energy_threshold = 1e-4F;
     // Hard safety bound on the bounce loop.
     std::uint32_t max_bounces = 64;
+    // Emit along the face normal instead of the cosine-weighted hemisphere
+    // (the legacy `_Nodes` debugging mode; vf/exchange kernels only).
+    bool normal_emission = false;
 };
 
 // Accumulator buffer layout. Kernels are identical in both layouts and cells
@@ -32,9 +35,9 @@ struct AccumConfig {
     AccumLayout layout = AccumLayout::Dense;
     // Tiled only; 0 = invalid, must be set (the Python policy derives it).
     std::uint32_t tile_rows = 0;
-    // Drop entries <= threshold when sparsifying a readback block; row sums
-    // and space deficits are computed BEFORE thresholding, so conservation
-    // checks stay exact. 0 keeps any nonzero.
+    // Entries with |value| <= threshold are dropped from the result CSR;
+    // row sums and every other statistic are computed BEFORE thresholding,
+    // so closure/conservation accounting stays exact. 0 keeps any nonzero.
     double sparse_threshold = 0.0;
 };
 

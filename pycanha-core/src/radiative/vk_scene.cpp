@@ -19,8 +19,11 @@
 #include "pycanha-core/gmm/mesh/ops/compute_areas.hpp"
 #include "pycanha-core/gmm/mesh/trimesh.hpp"
 #include "pycanha-core/gmm/scene/coordinate_transformation.hpp"
+#include "pycanha-core/radiative/kernels/exchange_spv.h"
+#include "pycanha-core/radiative/kernels/solar_spv.h"
 #include "pycanha-core/radiative/kernels/vf_spv.h"
 #include "pycanha-core/radiative/materials.hpp"
+#include "pycanha-core/radiative/scene.hpp"
 #include "pycanha-core/radiative/scene_part.hpp"
 #include "pycanha-core/radiative/settings.hpp"
 #include "pycanha-core/utils/logger.hpp"
@@ -37,7 +40,17 @@ namespace {
 constexpr std::uint64_t max_rays_per_chunk_total = 1U << 22U;
 
 constexpr std::uint32_t workgroup_size_x = 64;
-constexpr std::uint32_t vf_num_bindings = 11;
+// Bindings 0-9 are the shared scene tables; 10-12 are the per-kernel
+// accumulator buffers (kernels that use fewer leave the rest on a dummy).
+constexpr std::uint32_t num_bindings = 13;
+
+// Host mirrors of the kernel flag bits in common.slang.
+constexpr std::uint32_t flag_normal_emission = 1;
+constexpr std::uint32_t flag_solar_band = 2;
+
+// Tolerated float slack when validating that absorptivity + specular +
+// transmission of a band does not exceed one.
+constexpr float property_sum_slack = 1e-6F;
 
 // Enum names that do not fit the line-length limit where they are needed.
 constexpr VkStructureType stype_triangles_data =
@@ -96,10 +109,47 @@ VkTransformMatrixKHR to_vk_transform(const InstanceDataGpu& instance) {
     return out;
 }
 
+// The kernels assume physically-consistent rows (the shaders never
+// renormalize), so reject impossible tables up front for both bands.
+void validate_material_properties(const MaterialTable& materials) {
+    for (Eigen::Index row = 0; row < materials.properties.rows(); ++row) {
+        for (int band_offset = 0; band_offset < 6; band_offset += 3) {
+            const float a = materials.properties(row, band_offset);
+            const float s = materials.properties(row, band_offset + 1);
+            const float t = materials.properties(row, band_offset + 2);
+            if (a < 0.0F || s < 0.0F || t < 0.0F ||
+                a + s + t > 1.0F + property_sum_slack) {
+                throw std::invalid_argument(
+                    "pycanha::radiative: material row " + std::to_string(row) +
+                    " has an invalid " +
+                    (band_offset == 0 ? std::string("IR")
+                                      : std::string("solar")) +
+                    " property triplet (each in [0, 1], sum <= 1)");
+            }
+        }
+    }
+}
+
+// Packs the 6-DOF property rows into the tightly-packed float layout the
+// shaders index by flat offset.
+[[nodiscard]] std::vector<float> pack_material_rows(
+    const MaterialTable& materials) {
+    std::vector<float> rows(
+        static_cast<std::size_t>(materials.properties.rows()) * 6);
+    for (Eigen::Index row = 0; row < materials.properties.rows(); ++row) {
+        const std::size_t base = static_cast<std::size_t>(row) * 6;
+        for (int dof = 0; dof < 6; ++dof) {
+            rows[base + static_cast<std::size_t>(dof)] =
+                materials.properties(row, dof);
+        }
+    }
+    return rows;
+}
+
 }  // namespace
 
 GpuBuffer SceneImpl::create_buffer(VkDeviceSize size, VkBufferUsageFlags usage,
-                                   bool host_visible) const {
+                                   bool host_visible) {
     GpuBuffer out;
     out.size = size;
     const VkBufferCreateInfo buffer_info{
@@ -118,22 +168,33 @@ GpuBuffer SceneImpl::create_buffer(VkDeviceSize size, VkBufferUsageFlags usage,
                            VMA_ALLOCATION_CREATE_MAPPED_BIT;
     }
     VmaAllocationInfo result_info{};
-    check(vmaCreateBuffer(_device.allocator, &buffer_info, &alloc_info,
-                          &out.buffer, &out.allocation, &result_info),
+    // Minimum 16-byte placement: several buffers hold u64 cells the kernels
+    // InterlockedAdd into, and a 64-bit atomic at a 4-byte-aligned device
+    // offset silently misbehaves on some hardware (observed on AMD: the add
+    // lands 4 bytes low, so readbacks see the value shifted by 32 bits).
+    // The driver-reported requirement can be as small as 4, and odd-sized
+    // neighbors (emitter lists, per-face tables) would otherwise leave
+    // follow-up allocations on such offsets.
+    constexpr VkDeviceSize min_alignment = 16;
+    check(vmaCreateBufferWithAlignment(_device.allocator, &buffer_info,
+                                       &alloc_info, min_alignment, &out.buffer,
+                                       &out.allocation, &result_info),
           "buffer allocation");
     out.mapped = result_info.pMappedData;
+    _allocated_bytes += size;
     return out;
 }
 
-void SceneImpl::destroy_buffer(GpuBuffer& buffer) const noexcept {
+void SceneImpl::destroy_buffer(GpuBuffer& buffer) noexcept {
     if (buffer.buffer != VK_NULL_HANDLE) {
         vmaDestroyBuffer(_device.allocator, buffer.buffer, buffer.allocation);
+        _allocated_bytes -= buffer.size;
         buffer = GpuBuffer{};
     }
 }
 
 GpuBuffer SceneImpl::upload_to_new_buffer(const void* data, std::size_t bytes,
-                                          VkBufferUsageFlags usage) const {
+                                          VkBufferUsageFlags usage) {
     GpuBuffer buffer = create_buffer(std::max<std::size_t>(bytes, 4), usage,
                                      /*host_visible=*/true);
     if (bytes > 0) {
@@ -202,6 +263,7 @@ SceneImpl::SceneImpl(DeviceImpl& device, std::vector<ScenePart> parts,
             "pycanha::radiative: material table has no face slots (build it "
             "from the same model as the parts)");
     }
+    validate_material_properties(_materials);
     for (std::size_t i = 0; i < parts.size(); ++i) {
         if (parts[i].part_id != i) {
             throw std::invalid_argument(
@@ -240,7 +302,8 @@ SceneImpl::SceneImpl(DeviceImpl& device, std::vector<ScenePart> parts,
     build_blas(parts);
     write_instance_buffers();
     build_tlas_first();
-    create_pipeline();
+    create_pipelines();
+    _scene_bytes = _allocated_bytes;
 
     SPDLOG_LOGGER_INFO(pycanha::get_logger(),
                        "radiative: scene built ({} parts, {} face slots)",
@@ -251,6 +314,12 @@ SceneImpl::~SceneImpl() {
     vkDeviceWaitIdle(_device.device);
     if (_vf_pipeline != VK_NULL_HANDLE) {
         vkDestroyPipeline(_device.device, _vf_pipeline, nullptr);
+    }
+    if (_exchange_pipeline != VK_NULL_HANDLE) {
+        vkDestroyPipeline(_device.device, _exchange_pipeline, nullptr);
+    }
+    if (_solar_pipeline != VK_NULL_HANDLE) {
+        vkDestroyPipeline(_device.device, _solar_pipeline, nullptr);
     }
     if (_pipeline_layout != VK_NULL_HANDLE) {
         vkDestroyPipelineLayout(_device.device, _pipeline_layout, nullptr);
@@ -281,11 +350,13 @@ SceneImpl::~SceneImpl() {
     destroy_buffer(_materials_buf);
     destroy_buffer(_face_material_buf);
     destroy_buffer(_face_flags_buf);
+    destroy_buffer(_face_areas_buf);
     destroy_buffer(_emit_tri_offset_buf);
     destroy_buffer(_emit_tri_part_buf);
     destroy_buffer(_emit_tri_prim_buf);
     destroy_buffer(_emit_cum_area_buf);
     destroy_buffer(_emitters_buf);
+    destroy_buffer(_dummy_buf);
     if (_fence != VK_NULL_HANDLE) {
         vkDestroyFence(_device.device, _fence, nullptr);
     }
@@ -382,15 +453,7 @@ void SceneImpl::upload_part(const ScenePart& part, std::size_t index,
 void SceneImpl::build_face_tables(const std::vector<ScenePart>& parts) {
     // Global per-slot tables. Missing material (-1) is tolerated (treated
     // as blackbody by the exchange kernels); inactive slots never emit.
-    std::vector<float> material_rows(
-        static_cast<std::size_t>(_materials.properties.rows()) * 6);
-    for (Eigen::Index row = 0; row < _materials.properties.rows(); ++row) {
-        const std::size_t base = static_cast<std::size_t>(row) * 6;
-        for (int dof = 0; dof < 6; ++dof) {
-            material_rows[base + static_cast<std::size_t>(dof)] =
-                _materials.properties(row, dof);
-        }
-    }
+    const std::vector<float> material_rows = pack_material_rows(_materials);
     std::vector<std::int32_t> face_material(_num_slots);
     std::vector<std::uint32_t> face_flags(_num_slots, 0);
     for (std::uint32_t slot = 0; slot < _num_slots; ++slot) {
@@ -421,6 +484,13 @@ void SceneImpl::build_face_tables(const std::vector<ScenePart>& parts) {
         table_usage);
     _face_flags_buf = upload_to_new_buffer(
         face_flags.data(), face_flags.size() * sizeof(std::uint32_t),
+        table_usage);
+    std::vector<float> face_areas_f32(_num_slots);
+    for (std::uint32_t slot = 0; slot < _num_slots; ++slot) {
+        face_areas_f32[slot] = static_cast<float>(_face_areas[slot]);
+    }
+    _face_areas_buf = upload_to_new_buffer(
+        face_areas_f32.data(), face_areas_f32.size() * sizeof(float),
         table_usage);
 
     // Default emitter list: active, non-planet slots with geometry.
@@ -706,8 +776,44 @@ void SceneImpl::commit() {
     rebuild_tlas();
 }
 
-void SceneImpl::create_pipeline() {
-    std::array<VkDescriptorSetLayoutBinding, vf_num_bindings> bindings{};
+VkPipeline SceneImpl::build_compute_pipeline(
+    std::span<const std::uint32_t> spirv, const char* what) const {
+    const VkShaderModuleCreateInfo module_info{
+        .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
+        .pNext = nullptr,
+        .flags = 0,
+        .codeSize = spirv.size_bytes(),
+        .pCode = spirv.data()};
+    VkShaderModule module = VK_NULL_HANDLE;
+    check(vkCreateShaderModule(_device.device, &module_info, nullptr, &module),
+          what);
+
+    const VkPipelineShaderStageCreateInfo stage_info{
+        .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+        .pNext = nullptr,
+        .flags = 0,
+        .stage = VK_SHADER_STAGE_COMPUTE_BIT,
+        .module = module,
+        .pName = "main",  // slangc renames the entry point
+        .pSpecializationInfo = nullptr};
+    const VkComputePipelineCreateInfo pipeline_info{
+        .sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
+        .pNext = nullptr,
+        .flags = 0,
+        .stage = stage_info,
+        .layout = _pipeline_layout,
+        .basePipelineHandle = VK_NULL_HANDLE,
+        .basePipelineIndex = 0};
+    VkPipeline pipeline = VK_NULL_HANDLE;
+    const VkResult pipeline_result = vkCreateComputePipelines(
+        _device.device, VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &pipeline);
+    vkDestroyShaderModule(_device.device, module, nullptr);
+    check(pipeline_result, what);
+    return pipeline;
+}
+
+void SceneImpl::create_pipelines() {
+    std::array<VkDescriptorSetLayoutBinding, num_bindings> bindings{};
     std::uint32_t binding_index = 0;
     for (VkDescriptorSetLayoutBinding& binding : bindings) {
         binding = VkDescriptorSetLayoutBinding{
@@ -725,7 +831,7 @@ void SceneImpl::create_pipeline() {
         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
         .pNext = nullptr,
         .flags = 0,
-        .bindingCount = vf_num_bindings,
+        .bindingCount = num_bindings,
         .pBindings = bindings.data()};
     check(vkCreateDescriptorSetLayout(_device.device, &layout_info, nullptr,
                                       &_set_layout),
@@ -747,44 +853,19 @@ void SceneImpl::create_pipeline() {
                                  &_pipeline_layout),
           "pipeline layout creation");
 
-    const VkShaderModuleCreateInfo module_info{
-        .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
-        .pNext = nullptr,
-        .flags = 0,
-        .codeSize = sizeof(kernels::vf_spv),
-        .pCode = static_cast<const std::uint32_t*>(kernels::vf_spv)};
-    VkShaderModule module = VK_NULL_HANDLE;
-    check(vkCreateShaderModule(_device.device, &module_info, nullptr, &module),
-          "VF shader module creation");
-
-    const VkPipelineShaderStageCreateInfo stage_info{
-        .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
-        .pNext = nullptr,
-        .flags = 0,
-        .stage = VK_SHADER_STAGE_COMPUTE_BIT,
-        .module = module,
-        .pName = "main",  // slangc renames the entry point
-        .pSpecializationInfo = nullptr};
-    const VkComputePipelineCreateInfo pipeline_info{
-        .sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
-        .pNext = nullptr,
-        .flags = 0,
-        .stage = stage_info,
-        .layout = _pipeline_layout,
-        .basePipelineHandle = VK_NULL_HANDLE,
-        .basePipelineIndex = 0};
-    const VkResult pipeline_result =
-        vkCreateComputePipelines(_device.device, VK_NULL_HANDLE, 1,
-                                 &pipeline_info, nullptr, &_vf_pipeline);
-    vkDestroyShaderModule(_device.device, module, nullptr);
-    check(pipeline_result, "VF pipeline creation");
+    _vf_pipeline =
+        build_compute_pipeline(kernels::vf_spv, "VF pipeline creation");
+    _exchange_pipeline = build_compute_pipeline(kernels::exchange_spv,
+                                                "exchange pipeline creation");
+    _solar_pipeline =
+        build_compute_pipeline(kernels::solar_spv, "solar pipeline creation");
 
     const std::array<VkDescriptorPoolSize, 2> pool_sizes{
         VkDescriptorPoolSize{
             .type = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR,
             .descriptorCount = 1},
         VkDescriptorPoolSize{.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-                             .descriptorCount = vf_num_bindings - 1}};
+                             .descriptorCount = num_bindings - 1}};
     const VkDescriptorPoolCreateInfo pool_info{
         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
         .pNext = nullptr,
@@ -820,15 +901,22 @@ void SceneImpl::create_pipeline() {
     vkUpdateDescriptorSets(_device.device, 1, &tlas_write, 0, nullptr);
 
     // Static bindings (1-4, 6-9) are written once; the emitter list (5) and
-    // the accumulator (10) are (re)written per accumulate call.
+    // the accumulator bindings (10-12) are (re)written per accumulate call.
+    // The dummy keeps every binding valid until then.
+    _dummy_buf = create_buffer(4, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                               /*host_visible=*/false);
     write_storage_descriptor(1, _instance_ssbo.buffer);
     write_storage_descriptor(2, _materials_buf.buffer);
     write_storage_descriptor(3, _face_material_buf.buffer);
     write_storage_descriptor(4, _face_flags_buf.buffer);
+    write_storage_descriptor(5, _dummy_buf.buffer);
     write_storage_descriptor(6, _emit_tri_offset_buf.buffer);
     write_storage_descriptor(7, _emit_tri_part_buf.buffer);
     write_storage_descriptor(8, _emit_tri_prim_buf.buffer);
     write_storage_descriptor(9, _emit_cum_area_buf.buffer);
+    write_storage_descriptor(10, _dummy_buf.buffer);
+    write_storage_descriptor(11, _dummy_buf.buffer);
+    write_storage_descriptor(12, _dummy_buf.buffer);
 }
 
 void SceneImpl::write_storage_descriptor(std::uint32_t binding,
@@ -849,15 +937,15 @@ void SceneImpl::write_storage_descriptor(std::uint32_t binding,
     vkUpdateDescriptorSets(_device.device, 1, &write, 0, nullptr);
 }
 
-void SceneImpl::accumulate_vf(VfAccumImpl& acc, const TraceSettings& settings,
-                              std::span<const std::uint32_t> emitters) {
-    const std::vector<std::uint32_t>& all = _default_emitters;
+std::vector<std::uint32_t> SceneImpl::resolve_emitters(
+    std::span<const std::uint32_t> emitters,
+    const TraceSettings& settings) const {
+    if (settings.rays_per_face == 0) {
+        return {};
+    }
     std::vector<std::uint32_t> list(emitters.begin(), emitters.end());
     if (list.empty()) {
-        list = all;
-    }
-    if (list.empty() || settings.rays_per_face == 0) {
-        return;
+        list = _default_emitters;
     }
     const std::uint32_t num_slots = _num_slots;
     if (std::ranges::any_of(list, [num_slots](const std::uint32_t slot) {
@@ -865,6 +953,16 @@ void SceneImpl::accumulate_vf(VfAccumImpl& acc, const TraceSettings& settings,
         })) {
         throw std::invalid_argument(
             "pycanha::radiative: emitter slot out of range");
+    }
+    return list;
+}
+
+void SceneImpl::accumulate_vf(VfAccumImpl& acc, const TraceSettings& settings,
+                              std::span<const std::uint32_t> emitters) {
+    const std::vector<std::uint32_t> list =
+        resolve_emitters(emitters, settings);
+    if (list.empty()) {
+        return;
     }
     // u32 counting cells: the CUMULATIVE per-face ray count must stay below
     // 2^31 or cells could overflow.
@@ -874,14 +972,21 @@ void SceneImpl::accumulate_vf(VfAccumImpl& acc, const TraceSettings& settings,
             "counting range; reset the accumulator or use fewer rays");
     }
 
+    KernelDispatch kernel;
+    kernel.pipeline = _vf_pipeline;
+    kernel.flags = settings.normal_emission ? flag_normal_emission : 0U;
+    write_storage_descriptor(10, acc.buffer());
+    write_storage_descriptor(11, _dummy_buf.buffer);
+    write_storage_descriptor(12, _dummy_buf.buffer);
+
     if (acc.layout() == AccumLayout::Dense) {
-        dispatch_vf_rows(acc.buffer(), list, 0, settings);
+        dispatch_rows(kernel, list, settings);
     } else {
         // Row blocks of tile_rows emitters; the scratch buffer is zeroed and
         // absorbed into the host accumulation per block. Chunking/tiling
         // never changes results: the RNG is keyed on (slot, ray, seed).
         const std::uint32_t tile_rows = acc.tile_rows();
-        for (std::uint32_t row_offset = 0; row_offset < num_slots;
+        for (std::uint32_t row_offset = 0; row_offset < _num_slots;
              row_offset += tile_rows) {
             std::vector<std::uint32_t> block;
             std::ranges::copy_if(
@@ -893,7 +998,8 @@ void SceneImpl::accumulate_vf(VfAccumImpl& acc, const TraceSettings& settings,
                 continue;
             }
             acc.clear_block_scratch();
-            dispatch_vf_rows(acc.buffer(), block, row_offset, settings);
+            kernel.row_offset = row_offset;
+            dispatch_rows(kernel, block, settings);
             acc.absorb_block(block, row_offset);
         }
     }
@@ -901,10 +1007,113 @@ void SceneImpl::accumulate_vf(VfAccumImpl& acc, const TraceSettings& settings,
     acc.record_batch(list, settings.rays_per_face);
 }
 
-void SceneImpl::dispatch_vf_rows(VkBuffer acc_buffer,
-                                 std::span<const std::uint32_t> emitters,
-                                 std::uint32_t row_offset,
+void SceneImpl::accumulate_exchange(ExchangeAccumImpl& acc,
+                                    const TraceSettings& settings,
+                                    std::span<const std::uint32_t> emitters) {
+    const std::vector<std::uint32_t> list =
+        resolve_emitters(emitters, settings);
+    if (list.empty()) {
+        return;
+    }
+    const float fp_scale = acc.prepare_batch(settings.rays_per_face);
+
+    KernelDispatch kernel;
+    kernel.pipeline = _exchange_pipeline;
+    kernel.flags = acc.band() == Band::Solar ? flag_solar_band : 0U;
+    if (settings.normal_emission) {
+        kernel.flags |= flag_normal_emission;
+    }
+    kernel.fp_scale = fp_scale;
+    write_storage_descriptor(10, acc.buffer());
+    write_storage_descriptor(11, _dummy_buf.buffer);
+    write_storage_descriptor(12, _dummy_buf.buffer);
+
+    if (acc.layout() == AccumLayout::Dense) {
+        dispatch_rows(kernel, list, settings);
+    } else {
+        const std::uint32_t tile_rows = acc.tile_rows();
+        for (std::uint32_t row_offset = 0; row_offset < _num_slots;
+             row_offset += tile_rows) {
+            std::vector<std::uint32_t> block;
+            std::ranges::copy_if(
+                list, std::back_inserter(block),
+                [row_offset, tile_rows](const std::uint32_t slot) {
+                    return slot >= row_offset && slot < row_offset + tile_rows;
+                });
+            if (block.empty()) {
+                continue;
+            }
+            acc.clear_block_scratch();
+            kernel.row_offset = row_offset;
+            dispatch_rows(kernel, block, settings);
+            acc.absorb_block(block, row_offset);
+        }
+    }
+
+    acc.record_batch(list, settings.rays_per_face);
+}
+
+void SceneImpl::accumulate_solar(const SolarState& sun, SolarAccumImpl& acc,
                                  const TraceSettings& settings) {
+    // Every active non-planet face receives its rays_per_face sun samples;
+    // there is no emitter-subset variant (the kernel is O(Nf) already).
+    const std::vector<std::uint32_t> list = resolve_emitters({}, settings);
+    if (list.empty()) {
+        return;
+    }
+    const SolarAccumImpl::BatchSetup setup =
+        acc.prepare_batch(sun, settings.rays_per_face);
+
+    KernelDispatch kernel;
+    kernel.pipeline = _solar_pipeline;
+    kernel.flags = flag_solar_band;
+    kernel.fp_scale = setup.fp_scale;
+    kernel.sun_dir = setup.sun_dir;
+    write_storage_descriptor(10, acc.direct_buffer());
+    write_storage_descriptor(11, acc.total_buffer());
+    write_storage_descriptor(12, _face_areas_buf.buffer);
+    dispatch_rows(kernel, list, settings);
+
+    acc.record_batch(settings.rays_per_face, list.size());
+}
+
+void SceneImpl::update_materials(const MaterialTable& materials) {
+    if (materials.face_material.rows() != _materials.face_material.rows() ||
+        (materials.face_material.array() != _materials.face_material.array())
+            .any()) {
+        throw std::invalid_argument(
+            "pycanha::radiative: update_materials must keep the same "
+            "face_material mapping; changing it needs a scene rebuild");
+    }
+    if (materials.face_active.rows() != _materials.face_active.rows() ||
+        (materials.face_active.array() != _materials.face_active.array())
+            .any()) {
+        throw std::invalid_argument(
+            "pycanha::radiative: update_materials must keep the same "
+            "face activity; changing it needs a scene rebuild");
+    }
+    if (materials.properties.rows() != _materials.properties.rows()) {
+        throw std::invalid_argument(
+            "pycanha::radiative: update_materials must keep the same number "
+            "of material rows (face_material indexes into them)");
+    }
+    validate_material_properties(materials);
+
+    // Overwrite the mapped property rows in place — geometry, acceleration
+    // structures and every other table stay untouched.
+    const std::vector<float> material_rows = pack_material_rows(materials);
+    if (!material_rows.empty()) {
+        std::memcpy(checked_mapped(_materials_buf), material_rows.data(),
+                    material_rows.size() * sizeof(float));
+        vmaFlushAllocation(_device.allocator, _materials_buf.allocation, 0,
+                           VK_WHOLE_SIZE);
+    }
+    _materials.properties = materials.properties;
+}
+
+void SceneImpl::dispatch_rows(const KernelDispatch& kernel,
+                              std::span<const std::uint32_t> emitters,
+                              const TraceSettings& settings) {
     // (Re)upload the emitter list, growing the buffer when needed.
     const VkDeviceSize needed = emitters.size() * sizeof(std::uint32_t);
     if (_emitters_buf.buffer == VK_NULL_HANDLE || _emitters_buf.size < needed) {
@@ -917,23 +1126,21 @@ void SceneImpl::dispatch_vf_rows(VkBuffer acc_buffer,
                        VK_WHOLE_SIZE);
 
     write_storage_descriptor(5, _emitters_buf.buffer);
-    write_storage_descriptor(10, acc_buffer);
 
-    const float ray_tmin_scale = _ray_tmin_scale;
     PushConstants push{
-        .row_offset = row_offset,
+        .row_offset = kernel.row_offset,
         .num_emitters = static_cast<std::uint32_t>(emitters.size()),
         .rays_this_chunk = 0,   // set per chunk below
         .ray_index_offset = 0,  // set per chunk below
         .batch_seed = settings.seed,
         .max_bounces = settings.max_bounces,
-        .flags = 0,
+        .flags = kernel.flags,
         .num_face_slots = _num_slots,
         .energy_threshold = settings.energy_threshold,
-        .fp_scale = 1.0F,  // VF counts are unscaled integers
-        .inv_fp_scale = 1.0F,
-        .ray_tmin_scale = ray_tmin_scale,
-        .sun_dir = {0.0F, 0.0F, 0.0F},
+        .fp_scale = kernel.fp_scale,
+        .inv_fp_scale = 1.0F / kernel.fp_scale,
+        .ray_tmin_scale = _ray_tmin_scale,
+        .sun_dir = kernel.sun_dir,
         .pad = 0.0F};
 
     const std::uint64_t rays_per_chunk =
@@ -947,9 +1154,9 @@ void SceneImpl::dispatch_vf_rows(VkBuffer acc_buffer,
         const auto groups_x = static_cast<std::uint32_t>(
             (chunk + workgroup_size_x - 1) / workgroup_size_x);
 
-        submit_once([this, &push, groups_x](VkCommandBuffer cmd) {
+        submit_once([this, &kernel, &push, groups_x](VkCommandBuffer cmd) {
             vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE,
-                              _vf_pipeline);
+                              kernel.pipeline);
             vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_COMPUTE,
                                     _pipeline_layout, 0, 1, &_descriptor_set, 0,
                                     nullptr);

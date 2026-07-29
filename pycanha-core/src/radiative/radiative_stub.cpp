@@ -11,6 +11,7 @@
 
 #include "pycanha-core/radiative/accumulators.hpp"
 #include "pycanha-core/radiative/device.hpp"
+#include "pycanha-core/radiative/memory.hpp"
 #include "pycanha-core/radiative/scene.hpp"
 
 namespace pycanha::radiative {
@@ -29,6 +30,8 @@ namespace detail {
 class DeviceImpl {};
 class SceneImpl {};
 class VfAccumImpl {};
+class ExchangeAccumImpl {};
+class SolarAccumImpl {};
 }  // namespace detail
 
 bool is_available() { return false; }
@@ -73,6 +76,20 @@ void RadiativeScene::accumulate_vf(VfAccumulator& /*acc*/,
                                    /*emitters*/) {
     throw_unavailable();
 }
+void RadiativeScene::accumulate_exchange(ExchangeAccumulator& /*acc*/,
+                                         const TraceSettings& /*settings*/,
+                                         std::span<const std::uint32_t>
+                                         /*emitters*/) {
+    throw_unavailable();
+}
+void RadiativeScene::accumulate_solar(const SolarState& /*sun*/,
+                                      SolarAccumulator& /*acc*/,
+                                      const TraceSettings& /*settings*/) {
+    throw_unavailable();
+}
+void RadiativeScene::update_materials(const MaterialTable& /*materials*/) {
+    throw_unavailable();
+}
 std::uint32_t RadiativeScene::num_face_slots() const noexcept { return 0; }
 const MaterialTable& RadiativeScene::materials() const noexcept {
     static const MaterialTable none;
@@ -93,5 +110,40 @@ VfAccumulator& VfAccumulator::operator=(VfAccumulator&&) noexcept = default;
 void VfAccumulator::reset() { throw_unavailable(); }
 VfResult VfAccumulator::result() const { throw_unavailable(); }
 detail::VfAccumImpl& VfAccumulator::impl() noexcept { return *_impl; }
+
+ExchangeAccumulator::ExchangeAccumulator(const RadiativeScene& /*scene*/,
+                                         Band /*band*/,
+                                         AccumConfig /*config*/) {
+    throw_unavailable();
+}
+ExchangeAccumulator::~ExchangeAccumulator() = default;
+ExchangeAccumulator::ExchangeAccumulator(ExchangeAccumulator&&) noexcept =
+    default;
+ExchangeAccumulator& ExchangeAccumulator::operator=(
+    ExchangeAccumulator&&) noexcept = default;
+void ExchangeAccumulator::reset() { throw_unavailable(); }
+ExchangeResult ExchangeAccumulator::result() const { throw_unavailable(); }
+std::uint64_t ExchangeAccumulator::conservation_error() const {
+    throw_unavailable();
+}
+detail::ExchangeAccumImpl& ExchangeAccumulator::impl() noexcept {
+    return *_impl;
+}
+
+SolarAccumulator::SolarAccumulator(const RadiativeScene& /*scene*/) {
+    throw_unavailable();
+}
+SolarAccumulator::~SolarAccumulator() = default;
+SolarAccumulator::SolarAccumulator(SolarAccumulator&&) noexcept = default;
+SolarAccumulator& SolarAccumulator::operator=(SolarAccumulator&&) noexcept =
+    default;
+void SolarAccumulator::reset() { throw_unavailable(); }
+SolarResult SolarAccumulator::result() const { throw_unavailable(); }
+detail::SolarAccumImpl& SolarAccumulator::impl() noexcept { return *_impl; }
+
+MemoryEstimate estimate_memory(const RadiativeScene& /*scene*/,
+                               const AccumConfig& /*config*/) {
+    throw_unavailable();
+}
 
 }  // namespace pycanha::radiative

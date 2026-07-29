@@ -7,6 +7,7 @@
 #include "pycanha-core/globals.hpp"
 #include "pycanha-core/gmm/ids.hpp"
 #include "pycanha-core/radiative/aggregate.hpp"
+#include "pycanha-core/radiative/results.hpp"
 #include "pycanha-core/radiative/sparse.hpp"
 
 namespace rad = pycanha::radiative;
@@ -74,6 +75,61 @@ TEST_CASE("radiative aggregate: area-weighted node matrix", "[radiative]") {
     REQUIRE(node_value(node_matrix, 0, 1) == Catch::Approx(1.0));
     REQUIRE(node_value(node_matrix, 1, 2) == Catch::Approx(2.5));
     REQUIRE(node_value(node_matrix, 2, 0) == Catch::Approx(3.0));
+}
+
+namespace {
+
+// A 2-row matrix in the traced-result shape: 2 real columns plus the
+// space/inactive/lost buckets. Row r: 0.25 to the other face, 0.5 to space,
+// 0.25 to inactive.
+[[nodiscard]] rad::SparseF64 make_bucket_matrix() {
+    rad::SparseF64 matrix;
+    matrix.rows = 2;
+    matrix.cols = 2 + rad::num_virtual_columns;
+    matrix.indptr.resize(3);
+    matrix.indices.resize(6);
+    matrix.values.resize(6);
+    for (Eigen::Index row = 0; row < 2; ++row) {
+        matrix.indptr(row) = 3 * row;
+        matrix.indices(3 * row) = static_cast<std::int32_t>(1 - row);
+        matrix.values(3 * row) = 0.25;
+        matrix.indices((3 * row) + 1) =
+            static_cast<std::int32_t>(2 + rad::space_column_offset);
+        matrix.values((3 * row) + 1) = 0.5;
+        matrix.indices((3 * row) + 2) =
+            static_cast<std::int32_t>(2 + rad::inactive_column_offset);
+        matrix.values((3 * row) + 2) = 0.25;
+    }
+    matrix.indptr(2) = 6;
+    return matrix;
+}
+
+}  // namespace
+
+TEST_CASE("radiative aggregate: virtual bucket columns map to nodes",
+          "[radiative]") {
+    const rad::SparseF64 matrix = make_bucket_matrix();
+    const std::array<NodeNum, 2> row_nodes = {10, 20};
+    const std::array<double, 2> face_areas = {2.0, 4.0};
+
+    // Default overload: buckets are simply dropped.
+    const rad::SparseF64 dropped =
+        rad::aggregate_matrix(matrix, row_nodes, face_areas);
+    REQUIRE(dropped.rows == 2);
+    REQUIRE(dropped.cols == 2);
+    REQUIRE(node_value(dropped, 0, 1) == Catch::Approx(0.5));
+    REQUIRE(node_value(dropped, 1, 0) == Catch::Approx(1.0));
+
+    // Column overload: the user maps space to a real node (99), keeps
+    // inactive/lost unassigned.
+    const std::array<NodeNum, 5> col_nodes = {10, 20, 99, NO_NODE, NO_NODE};
+    const rad::SparseF64 mapped =
+        rad::aggregate_matrix(matrix, row_nodes, col_nodes, face_areas);
+    REQUIRE(mapped.rows == 2);
+    REQUIRE(mapped.cols == 3);  // {10, 20, 99}
+    REQUIRE(node_value(mapped, 0, 2) == Catch::Approx(2.0 * 0.5));
+    REQUIRE(node_value(mapped, 1, 2) == Catch::Approx(4.0 * 0.5));
+    REQUIRE(node_value(mapped, 0, 1) == Catch::Approx(0.5));
 }
 
 TEST_CASE("radiative aggregate: flux to watts per node", "[radiative]") {

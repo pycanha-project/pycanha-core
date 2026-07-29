@@ -5,6 +5,7 @@
 #include <span>
 #include <vector>
 
+#include "pycanha-core/globals.hpp"
 #include "pycanha-core/gmm/scene/coordinate_transformation.hpp"
 #include "pycanha-core/radiative/materials.hpp"
 #include "pycanha-core/radiative/scene_part.hpp"
@@ -14,10 +15,21 @@ namespace pycanha::radiative {
 
 class Device;
 class VfAccumulator;
+class ExchangeAccumulator;
+class SolarAccumulator;
 
 namespace detail {
 class SceneImpl;
 }  // namespace detail
+
+// One solar-illumination snapshot: a parallel sun. Everything above a single
+// snapshot (orbits, dates, eclipse sequencing) is the Python layer's job.
+struct SolarState {
+    // World frame, pointing sun -> spacecraft (normalized internally).
+    Vector3D direction;
+    // W/m^2 at the spacecraft (the solar "constant" for this snapshot).
+    double irradiance = 0.0;
+};
 
 // The stateful heart of the engine ("build once, compute many"):
 // construction uploads geometry + materials, builds one bottom-level
@@ -50,6 +62,23 @@ class RadiativeScene {
     // (non-planet) faces emit; otherwise only the listed face slots.
     void accumulate_vf(VfAccumulator& acc, const TraceSettings& settings,
                        std::span<const std::uint32_t> emitters = {});
+
+    // Multi-bounce MCRT exchange factors for the accumulator's band (chosen
+    // at accumulator construction). Same emitter semantics as accumulate_vf.
+    void accumulate_exchange(ExchangeAccumulator& acc,
+                             const TraceSettings& settings,
+                             std::span<const std::uint32_t> emitters = {});
+
+    // Direct + reflected solar absorption for one sun snapshot. Every batch
+    // added to `acc` must use the same SolarState (only the seed varies);
+    // a different sun needs a fresh accumulator.
+    void accumulate_solar(const SolarState& sun, SolarAccumulator& acc,
+                          const TraceSettings& settings);
+
+    // Replace the optical properties WITHOUT rebuilding geometry (BOL/EOL
+    // and sensitivity overrides): the new table must keep the same
+    // face_material mapping and activity — only the property rows change.
+    void update_materials(const MaterialTable& materials);
 
     // Total face slots (rows/cols of every result matrix).
     [[nodiscard]] std::uint32_t num_face_slots() const noexcept;

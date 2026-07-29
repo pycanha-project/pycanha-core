@@ -5,6 +5,7 @@
 #include "pycanha-core/radiative/accumulators.hpp"  // IWYU pragma: export
 #include "pycanha-core/radiative/aggregate.hpp"     // IWYU pragma: export
 #include "pycanha-core/radiative/device.hpp"        // IWYU pragma: export
+#include "pycanha-core/radiative/gebhart.hpp"       // IWYU pragma: export
 #include "pycanha-core/radiative/materials.hpp"     // IWYU pragma: export
 #include "pycanha-core/radiative/memory.hpp"        // IWYU pragma: export
 #include "pycanha-core/radiative/results.hpp"       // IWYU pragma: export

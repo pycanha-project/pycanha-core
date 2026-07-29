@@ -1,9 +1,8 @@
 #pragma once
 
 // src-private scene implementation: geometry/material upload, emission
-// tables, acceleration structures, the VF pipeline and dispatch.
-// TODO(radiative): split into vk_accel / vk_pipeline / vk_dispatch once the
-// exchange and solar kernels land and the shared shapes are clear.
+// tables, acceleration structures, the compute pipelines (vf / exchange /
+// solar) and their chunked dispatch.
 
 #include <Eigen/Geometry>
 #include <array>
@@ -15,6 +14,7 @@
 
 #include "pycanha-core/gmm/scene/coordinate_transformation.hpp"
 #include "pycanha-core/radiative/materials.hpp"
+#include "pycanha-core/radiative/scene.hpp"
 #include "pycanha-core/radiative/scene_part.hpp"
 #include "pycanha-core/radiative/settings.hpp"
 #include "vk_device.hpp"
@@ -22,6 +22,8 @@
 namespace pycanha::radiative::detail {
 
 class VfAccumImpl;
+class ExchangeAccumImpl;
+class SolarAccumImpl;
 
 // Minimal RAII-by-owner buffer: created/destroyed by SceneImpl helpers.
 struct GpuBuffer {
@@ -89,6 +91,12 @@ class SceneImpl {
 
     void accumulate_vf(VfAccumImpl& acc, const TraceSettings& settings,
                        std::span<const std::uint32_t> emitters);
+    void accumulate_exchange(ExchangeAccumImpl& acc,
+                             const TraceSettings& settings,
+                             std::span<const std::uint32_t> emitters);
+    void accumulate_solar(const SolarState& sun, SolarAccumImpl& acc,
+                          const TraceSettings& settings);
+    void update_materials(const MaterialTable& materials);
 
     [[nodiscard]] std::uint32_t num_face_slots() const noexcept {
         return _num_slots;
@@ -100,17 +108,24 @@ class SceneImpl {
         return _face_areas;
     }
     [[nodiscard]] DeviceImpl& device() const noexcept { return _device; }
+    // GPU bytes resident after construction (geometry, acceleration
+    // structures, tables) — the fixed cost of the scene for the memory
+    // estimate; accumulators come on top.
+    [[nodiscard]] std::uint64_t scene_bytes() const noexcept {
+        return _scene_bytes;
+    }
 
     // Buffer helpers shared with the accumulator implementations.
     [[nodiscard]] GpuBuffer create_buffer(VkDeviceSize size,
                                           VkBufferUsageFlags usage,
-                                          bool host_visible) const;
-    void destroy_buffer(GpuBuffer& buffer) const noexcept;
+                                          bool host_visible);
+    void destroy_buffer(GpuBuffer& buffer) noexcept;
     // Creates a host-visible buffer, copies `bytes` of `data` into it and
     // flushes. Empty inputs get a minimal valid buffer (Vulkan forbids
     // zero-sized ones).
-    [[nodiscard]] GpuBuffer upload_to_new_buffer(
-        const void* data, std::size_t bytes, VkBufferUsageFlags usage) const;
+    [[nodiscard]] GpuBuffer upload_to_new_buffer(const void* data,
+                                                 std::size_t bytes,
+                                                 VkBufferUsageFlags usage);
 
   private:
     struct PartGpu {
@@ -138,17 +153,34 @@ class SceneImpl {
     void build_tlas_first();
     void rebuild_tlas();
     void write_instance_buffers();
-    void create_pipeline();
+    void create_pipelines();
+    [[nodiscard]] VkPipeline build_compute_pipeline(
+        std::span<const std::uint32_t> spirv, const char* what) const;
     // Points descriptor `binding` of the scene's set at `buffer`. Only valid
     // while no submitted work uses the set (every dispatch here is waited).
     void write_storage_descriptor(std::uint32_t binding, VkBuffer buffer) const;
+    // Everything about one kernel launch that is not the emitter list or the
+    // trace settings. The caller has already pointed descriptors 10-12 at
+    // the right accumulator buffers.
+    struct KernelDispatch {
+        VkPipeline pipeline = VK_NULL_HANDLE;
+        std::uint32_t row_offset = 0;
+        std::uint32_t flags = 0;
+        float fp_scale = 1.0F;
+        std::array<float, 3> sun_dir = {0.0F, 0.0F, 0.0F};
+    };
     // Traces settings.rays_per_face rays for `emitters` (all within
-    // [row_offset, row_offset + accumulator rows)) into `acc_buffer`, split
-    // into watchdog-safe chunks.
-    void dispatch_vf_rows(VkBuffer acc_buffer,
-                          std::span<const std::uint32_t> emitters,
-                          std::uint32_t row_offset,
-                          const TraceSettings& settings);
+    // [row_offset, row_offset + accumulator rows)), split into watchdog-safe
+    // chunks.
+    void dispatch_rows(const KernelDispatch& kernel,
+                       std::span<const std::uint32_t> emitters,
+                       const TraceSettings& settings);
+    // Shared argument validation of the accumulate_* entry points; returns
+    // the effective emitter list (the default list when `emitters` is
+    // empty). An empty return means there is nothing to trace.
+    [[nodiscard]] std::vector<std::uint32_t> resolve_emitters(
+        std::span<const std::uint32_t> emitters,
+        const TraceSettings& settings) const;
 
     DeviceImpl& _device;
     MaterialTable _materials;
@@ -156,6 +188,10 @@ class SceneImpl {
     std::vector<double> _face_areas;
     std::vector<std::uint32_t> _default_emitters;
     float _ray_tmin_scale = 1e-4F;
+    // Live sum of create_buffer allocations; snapshotted into _scene_bytes
+    // at the end of construction (build scratch is already freed by then).
+    std::uint64_t _allocated_bytes = 0;
+    std::uint64_t _scene_bytes = 0;
 
     std::vector<PartGpu> _parts;
     std::vector<InstanceDataGpu> _instances_host;  // updated by transforms
@@ -169,15 +205,21 @@ class SceneImpl {
     GpuBuffer _materials_buf;
     GpuBuffer _face_material_buf;
     GpuBuffer _face_flags_buf;
+    GpuBuffer _face_areas_buf;  // f32 pair areas (solar kernel weighting)
     GpuBuffer _emit_tri_offset_buf;
     GpuBuffer _emit_tri_part_buf;
     GpuBuffer _emit_tri_prim_buf;
     GpuBuffer _emit_cum_area_buf;
     GpuBuffer _emitters_buf;  // grown on demand per accumulate call
+    // Placeholder behind accumulator bindings a kernel does not use — the
+    // descriptor set always holds valid buffers.
+    GpuBuffer _dummy_buf;
 
     VkDescriptorSetLayout _set_layout = VK_NULL_HANDLE;
     VkPipelineLayout _pipeline_layout = VK_NULL_HANDLE;
     VkPipeline _vf_pipeline = VK_NULL_HANDLE;
+    VkPipeline _exchange_pipeline = VK_NULL_HANDLE;
+    VkPipeline _solar_pipeline = VK_NULL_HANDLE;
     VkDescriptorPool _descriptor_pool = VK_NULL_HANDLE;
     VkDescriptorSet _descriptor_set = VK_NULL_HANDLE;
 
