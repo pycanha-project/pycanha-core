@@ -146,7 +146,11 @@ public float rng_next(inout Rng r) {
 // and branchless is faster.
 // ---------------------------------------------------------------------------
 public void fp_add(RWStructuredBuffer<uint64_t> buf, uint idx, float value) {
+#if defined(PYCANHA_METAL_BACKEND)
+    buf[idx] += uint64_t(value * pc.fp_scale + 0.5);
+#else
     InterlockedAdd(buf[idx], uint64_t(value * pc.fp_scale + 0.5));
+#endif
 }
 
 // Fixed-point representation of a remaining-energy float. Monotone
@@ -162,7 +166,11 @@ public uint64_t to_fp(float energy) {
 // exchange kernel exploits for the Russian-roulette boost withdrawal.
 public void fp_add_raw(RWStructuredBuffer<uint64_t> buf, uint idx,
                        uint64_t value) {
+#if defined(PYCANHA_METAL_BACKEND)
+    buf[idx] += value;
+#else
     InterlockedAdd(buf[idx], value);
+#endif
 }
 
 // Band-selected optical triplet of a face slot: absorptivity, specular
@@ -323,6 +331,14 @@ public struct Hit {
     public float3 position;
 };
 
+public bool triangle_front_face(float3 tri_normal, float3 ray_direction) {
+    // Portable equivalent of the ray-query front-face API. A hit is considered
+    // front-facing when the incoming ray travels opposite to the triangle's
+    // geometric normal, which is the same convention used by the rest of the
+    // kernel-side face selection logic.
+    return dot(tri_normal, ray_direction) < 0.0;
+}
+
 public Hit trace_ray(float3 origin, float3 direction) {
     RayDesc ray;
     ray.Origin = origin;
@@ -348,11 +364,6 @@ public Hit trace_ray(float3 origin, float3 direction) {
     InstanceData inst = instance_data[inst_index];
     uint *tri_face = (uint *)inst.tri_face_addr;
     uint base = tri_face[prim];  // even side-1 slot
-    bool front = q.CommittedTriangleFrontFace();
-
-    hit.miss = false;
-    hit.slot = front ? base : base + 1u;
-    hit.position = origin + q.CommittedRayT() * direction;
 
     uint3 *indices = (uint3 *)inst.indices_addr;
     float3 *vertices = (float3 *)inst.vertices_addr;
@@ -361,6 +372,12 @@ public Hit trace_ray(float3 origin, float3 direction) {
         cross(vertices[tri.y] - vertices[tri.x],
               vertices[tri.z] - vertices[tri.x]));
     float3 n = normalize(transform_direction(inst, n_local));
+    bool front = triangle_front_face(n, direction);
+
+    hit.miss = false;
+    hit.slot = front ? base : base + 1u;
+    hit.position = origin + q.CommittedRayT() * direction;
+
     // Flip toward the incoming ray (same convention as the parity above:
     // front face <=> side 1 <=> winding normal against the ray).
     hit.normal = dot(n, direction) < 0.0 ? n : -n;

@@ -228,8 +228,12 @@ void run_probe(id<MTLDevice> device, id<MTLCommandQueue> queue,
     id<MTLBuffer> outcomes =
         [device newBufferWithLength:probe_threads * sizeof(std::uint32_t)
                            options:MTLResourceStorageModeShared];
+    struct ProbeCounter {
+        std::uint32_t low;
+        std::uint32_t high;
+    };
     id<MTLBuffer> counter =
-        [device newBufferWithLength:sizeof(std::uint64_t)
+        [device newBufferWithLength:2 * sizeof(std::uint32_t)
                            options:MTLResourceStorageModeShared];
     std::memset(outcomes.contents, 0, outcomes.length);
     std::memset(counter.contents, 0, counter.length);
@@ -277,8 +281,9 @@ void run_probe(id<MTLDevice> device, id<MTLCommandQueue> queue,
                   : std::to_string(bad) + " of " +
                         std::to_string(probe_threads) + " rays wrong");
 
+    const auto* counter_values = static_cast<const std::uint32_t*>(counter.contents);
     const std::uint64_t total =
-        *static_cast<const std::uint64_t*>(counter.contents);
+        (std::uint64_t(counter_values[1]) << 32) | counter_values[0];
     const std::uint64_t expected_total = probe_threads * probe_increment;
     gate(total == expected_total, "64-bit atomic add",
          "got " + std::to_string(total) + ", expected " +

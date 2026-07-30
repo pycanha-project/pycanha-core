@@ -25,7 +25,11 @@ public static const uint64_t PROBE_INCREMENT = 4294967296ull;
 [[vk::binding(0, 0)]] RaytracingAccelerationStructure tlas;
 // Per-thread outcome: 0 = miss, otherwise committed primitive index + 1.
 [[vk::binding(1, 0)]] RWStructuredBuffer<uint> outcomes;
+#if defined(PYCANHA_METAL_BACKEND)
+[[vk::binding(2, 0)]] RWStructuredBuffer<uint> counter;
+#else
 [[vk::binding(2, 0)]] RWStructuredBuffer<uint64_t> counter;
+#endif
 
 [shader("compute")]
 [numthreads(64, 1, 1)]
@@ -55,5 +59,10 @@ void csMain(uint3 gid: SV_DispatchThreadID) {
         outcomes[i] = 0u;
     }
 
+#if defined(PYCANHA_METAL_BACKEND)
+    InterlockedAdd(counter[0], 0u);
+    InterlockedAdd(counter[1], 1u);
+#else
     InterlockedAdd(counter[0], PROBE_INCREMENT);
+#endif
 }

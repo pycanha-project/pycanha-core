@@ -181,6 +181,7 @@ function(pycanha_add_slang_kernel _name)
              COMMAND "${PYCANHA_SLANGC}" "${_kernel_SOURCE}"
                      -I "${_kernel_dir}"
                      -target metal -O2
+                     -D PYCANHA_METAL_BACKEND=1
                      -entry csMain
                      -reflection-json "${_reflect}"
                      -o "${_msl}"
