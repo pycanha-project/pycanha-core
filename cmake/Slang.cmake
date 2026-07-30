@@ -184,7 +184,12 @@ function(pycanha_add_slang_kernel _name)
                      -entry csMain
                      -reflection-json "${_reflect}"
                      -o "${_msl}"
-             COMMAND "${PYCANHA_XCRUN}" metal -c "${_msl}" -o "${_air}"
+             # -Wno-unused-variable: slangc assigns the result of every
+             # InterlockedAdd and of bool-returning helpers to a temporary it
+             # then ignores. The warnings are about GENERATED code we cannot fix
+             # at the source, and left on they bury the real diagnostics.
+             COMMAND "${PYCANHA_XCRUN}" metal -Wno-unused-variable
+                     -c "${_msl}" -o "${_air}"
              COMMAND "${PYCANHA_XCRUN}" metallib "${_air}" -o "${_metallib}"
              COMMAND "${CMAKE_COMMAND}"
                      -DBINARY_INPUT=${_metallib}

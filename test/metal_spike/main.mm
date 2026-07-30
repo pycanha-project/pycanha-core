@@ -12,8 +12,9 @@
 //      whole toolchain — Slang -> MSL -> .metallib -> MTLComputePipelineState?
 //      Creating the pipeline state is the real check: it is where Metal
 //      validates the entry point and its buffer bindings.
-//   3. Does the runtime actually execute inline ray tracing and 64-bit atomic
-//      adds correctly, via the self-contained probe.slang kernel?
+//   3. Does the runtime actually execute inline ray tracing and atomic adds
+//      correctly, via the self-contained probe.slang kernel? (The 64-bit atomic
+//      question is a COMPILE-time one — see probe_atomics64.sh.)
 //
 // Exits 0 only if every gate passes.
 
@@ -27,18 +28,18 @@
 #include <cstring>
 #include <string>
 
-#include "pycanha-core/radiative/kernels/exchange_metallib.h"
+// exchange and solar are missing on purpose — see the comment in CMakeLists.txt
+// about the 64-bit atomic deposits. Add their headers back together with their
+// kernel targets.
 #include "pycanha-core/radiative/kernels/probe_bindings.h"
 #include "pycanha-core/radiative/kernels/probe_metallib.h"
-#include "pycanha-core/radiative/kernels/solar_metallib.h"
 #include "pycanha-core/radiative/kernels/vf_metallib.h"
 
 namespace {
 
-// Mirrors PROBE_THREADS / PROBE_INCREMENT in probe.slang. The host verifies
-// exact sums, so these must stay in step with the kernel.
+// Mirrors PROBE_THREADS in probe.slang. The host verifies an exact sum, so it
+// must stay in step with the kernel.
 constexpr std::uint32_t probe_threads = 128;
-constexpr std::uint64_t probe_increment = 4294967296ULL;  // 2^32
 
 // Slang keeps the entry-point name for Metal (unlike the SPIR-V path, where it
 // renames it to "main").
@@ -206,7 +207,7 @@ Scene build_scene(id<MTLDevice> device, id<MTLCommandQueue> queue) {
     return scene;
 }
 
-// Gate 3: run probe.slang and check the ray-query outcomes and the 64-bit sum.
+// Gate 3: run probe.slang and check the ray-query outcomes and the atomic sum.
 void run_probe(id<MTLDevice> device, id<MTLCommandQueue> queue,
                const Scene& scene) {
     NSError* error = nil;
@@ -229,7 +230,7 @@ void run_probe(id<MTLDevice> device, id<MTLCommandQueue> queue,
         [device newBufferWithLength:probe_threads * sizeof(std::uint32_t)
                            options:MTLResourceStorageModeShared];
     id<MTLBuffer> counter =
-        [device newBufferWithLength:sizeof(std::uint64_t)
+        [device newBufferWithLength:sizeof(std::uint32_t)
                            options:MTLResourceStorageModeShared];
     std::memset(outcomes.contents, 0, outcomes.length);
     std::memset(counter.contents, 0, counter.length);
@@ -277,12 +278,11 @@ void run_probe(id<MTLDevice> device, id<MTLCommandQueue> queue,
                   : std::to_string(bad) + " of " +
                         std::to_string(probe_threads) + " rays wrong");
 
-    const std::uint64_t total =
-        *static_cast<const std::uint64_t*>(counter.contents);
-    const std::uint64_t expected_total = probe_threads * probe_increment;
-    gate(total == expected_total, "64-bit atomic add",
+    const std::uint32_t total =
+        *static_cast<const std::uint32_t*>(counter.contents);
+    gate(total == probe_threads, "32-bit atomic add",
          "got " + std::to_string(total) + ", expected " +
-             std::to_string(expected_total));
+             std::to_string(probe_threads));
 }
 
 }  // namespace
@@ -320,15 +320,14 @@ int main() {
         return 1;
     }
 
-    std::printf("\nGate 2 — production kernels through the toolchain\n");
+    std::printf(
+        "\nGate 2 — production kernels through the toolchain (vf only; "
+        "exchange/solar\n         are blocked on the 64-bit atomic deposit — "
+        "run probe_atomics64.sh)\n");
     namespace kernels = pycanha::radiative::kernels;
     check_pipeline(chosen, "vf", kernels::vf_metallib, kernels::vf_metallib_size);
-    check_pipeline(chosen, "exchange", kernels::exchange_metallib,
-                   kernels::exchange_metallib_size);
-    check_pipeline(chosen, "solar", kernels::solar_metallib,
-                   kernels::solar_metallib_size);
 
-    std::printf("\nGate 3 — runtime ray tracing and 64-bit atomics\n");
+    std::printf("\nGate 3 — runtime ray tracing and atomics\n");
     id<MTLCommandQueue> queue = [chosen newCommandQueue];
     const Scene scene = build_scene(chosen, queue);
     if (scene.instance != nil) {

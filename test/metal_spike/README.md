@@ -22,10 +22,32 @@ correctly reports gate 1 as FAIL.
 | Gate | What it proves |
 |---|---|
 | 1 | A device reports both `supportsRaytracing` and `supportsFamily:Apple9` |
-| 2 | The three production kernels (`vf`, `exchange`, `solar`) survive Slang → MSL → `.metallib` → `MTLComputePipelineState`. Pipeline creation is the real check: it is where Metal validates the entry point and its buffer bindings |
-| 3 | The runtime executes inline ray tracing (hit/miss + primitive index) and 64-bit atomic adds correctly, via the self-contained `probe.slang` kernel |
+| 2 | The production kernels survive Slang → MSL → `.metallib` → `MTLComputePipelineState`. Pipeline creation is the real check: it is where Metal validates the entry point and its buffer bindings. **Currently `vf` only** — see below |
+| 3 | The runtime executes inline ray tracing (hit/miss + primitive index) and 32-bit atomic adds correctly, via the self-contained `probe.slang` kernel |
 
 Exit code is 0 only if every gate passes.
+
+### Why gate 2 covers only `vf`
+
+The Metal compiler rejects 64-bit atomic adds on buffers outright — its
+`_valid_fetch_add_type` trait excludes `ulong` — which is what slangc emits for
+`fp_add`/`fp_add_raw` in `kernels/common.slang`. That blocks the **exchange** and
+**solar** kernels; `vf` is unaffected because its cells are u32 counts. Including
+the blocked kernels would fail the build and take the device and ray-tracing
+checks down with it, which defeats the purpose of a capability gate.
+
+**So run the companion probe too** — it is the open question on the whole port:
+
+```bash
+bash test/metal_spike/probe_atomics64.sh
+```
+
+It compiles one kernel per 64-bit operation (`fetch_add` in both C and template
+form, `fetch_max`, `load`/`store`, `compare_exchange_weak`) against every `-std`
+the toolchain accepts and prints the matrix. `roadmap/21-metal-spike-report.md`
+§2 maps each possible outcome to a fix. Once that lands, add `exchange` and
+`solar` back to the `foreach` in `CMakeLists.txt` and their headers to
+`main.mm` — nothing else changes.
 
 ## Setting up a store-fresh Mac mini M4
 
@@ -109,14 +131,13 @@ Expected output on an M4:
 ```
 Gate 1 — device capability
   [PASS] an Apple9 device with ray tracing — Apple M4
-Gate 2 — production kernels through the toolchain
+Gate 2 — production kernels through the toolchain (vf only; exchange/solar
+         are blocked on the 64-bit atomic deposit — run probe_atomics64.sh)
   [PASS] vf: metallib -> pipeline state — max threads/threadgroup = ...
-  [PASS] exchange: metallib -> pipeline state — ...
-  [PASS] solar: metallib -> pipeline state — ...
-Gate 3 — runtime ray tracing and 64-bit atomics
+Gate 3 — runtime ray tracing and atomics
   [PASS] acceleration structure build — BLAS ... B, TLAS ... B
   [PASS] inline ray tracing (hit/miss + primitive index) — 128 rays correct
-  [PASS] 64-bit atomic add — got 549755813888, expected 549755813888
+  [PASS] 32-bit atomic add — got 128, expected 128
 
 RESULT: PASS
 ```
@@ -126,17 +147,16 @@ RESULT: PASS
 - **Gate 1 FAIL** — the Mac is M1/M2, or the GPU is virtualised. Not a code bug.
 - **`xcrun metal` errors during the build** — the Metal toolchain component is
   missing or was installed under a different user account (see step 2).
-- **Gate 2 FAIL on a specific kernel** — the Metal front end rejected something
-  slangc emitted. The most likely culprit is the `(packed_float3 device*)`
-  casts from raw device addresses in `kernels/common.slang`; that is gate G3 in
-  the spike report, and its fallback (replacing the `uint64_t *_addr` fields
-  with element offsets into scene-wide buffers) is described there. Keep the
-  `.metal` and `.air` intermediates from `build/Release/test/metal_spike/kernels/`
-  — they are the evidence.
+- **A kernel fails to compile during the build** — the Metal front end rejected
+  something slangc emitted. Keep the `.metal` intermediates from
+  `build/Release/test/metal_spike/kernels/` — they are the evidence, and the
+  error line numbers refer to them, not to the `.slang` source. Two such bugs
+  are already known and worked around (the front-facing accessor and the 64-bit
+  atomics); both are recorded in the spike report.
 - **Gate 3 ray tracing FAIL, atomics PASS** — suspect the `useResource:` call in
   `main.mm`. A TLAS does not make the BLASes it references resident, and Metal
   reports misses rather than faulting, which is exactly the silent-wrong-results
   failure mode the real backend has to guard against.
-- **Gate 3 atomics FAIL** — the 64-bit atomic add is not behaving. Check that
-  gate 1 really reported `apple9=yes`; a partial sum that is a multiple of 2^32
-  short points at lost adds rather than a 32-bit truncation.
+- **Gate 3 atomics FAIL** — a plain 32-bit atomic add is losing updates, which
+  would be surprising enough to suspect the dispatch rather than the atomic
+  (check that `dispatchThreads:` covers all 128 threads).

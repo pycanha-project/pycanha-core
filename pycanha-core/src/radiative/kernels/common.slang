@@ -348,10 +348,8 @@ public Hit trace_ray(float3 origin, float3 direction) {
     InstanceData inst = instance_data[inst_index];
     uint *tri_face = (uint *)inst.tri_face_addr;
     uint base = tri_face[prim];  // even side-1 slot
-    bool front = q.CommittedTriangleFrontFace();
 
     hit.miss = false;
-    hit.slot = front ? base : base + 1u;
     hit.position = origin + q.CommittedRayT() * direction;
 
     uint3 *indices = (uint3 *)inst.indices_addr;
@@ -361,8 +359,19 @@ public Hit trace_ray(float3 origin, float3 direction) {
         cross(vertices[tri.y] - vertices[tri.x],
               vertices[tri.z] - vertices[tri.x]));
     float3 n = normalize(transform_direction(inst, n_local));
-    // Flip toward the incoming ray (same convention as the parity above:
-    // front face <=> side 1 <=> winding normal against the ray).
-    hit.normal = dot(n, direction) < 0.0 ? n : -n;
+
+    // Front-facing is derived from the winding normal instead of asking the ray
+    // query, because the two are equivalent here and the intrinsic is not
+    // portable: front face <=> the winding normal opposes the ray. The
+    // equivalence needs the instance transform to preserve orientation, which
+    // holds because ScenePart transforms are rigid (rotation + translation,
+    // determinant +1) and transform_direction applies rotation only; a
+    // mirroring transform would invert the test.
+    // (The Slang 2026.12.2 Metal backend also emits the wrong MSL name for
+    // RayQuery::CommittedTriangleFrontFace — get_ instead of is_ — so avoiding
+    // it sidesteps an upstream bug at no cost.)
+    bool front = dot(n, direction) < 0.0;
+    hit.slot = front ? base : base + 1u;
+    hit.normal = front ? n : -n;
     return hit;
 }

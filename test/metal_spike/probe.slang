@@ -17,15 +17,15 @@ module probe;
 // exact sums, so a mismatch would look like a GPU fault rather than a typo.
 public static const uint PROBE_THREADS = 128u;
 
-// Each thread adds exactly 2^32. A 32-bit accumulator would wrap to 0 on every
-// single add, so the expected total (PROBE_THREADS * 2^32) can only come out
-// right if the atomic is genuinely 64-bit.
-public static const uint64_t PROBE_INCREMENT = 4294967296ull;
-
 [[vk::binding(0, 0)]] RaytracingAccelerationStructure tlas;
 // Per-thread outcome: 0 = miss, otherwise committed primitive index + 1.
 [[vk::binding(1, 0)]] RWStructuredBuffer<uint> outcomes;
-[[vk::binding(2, 0)]] RWStructuredBuffer<uint64_t> counter;
+// Deliberately 32-bit. This probe used to accumulate into a uint64_t to prove
+// 64-bit atomic adds, but the Metal compiler rejects them outright
+// (_valid_fetch_add_type excludes ulong), so the question is a COMPILE-time one
+// and belongs in probe_atomics64.sh, not in a runtime kernel that would then
+// fail to build and take the ray-tracing checks down with it.
+[[vk::binding(2, 0)]] RWStructuredBuffer<uint> counter;
 
 [shader("compute")]
 [numthreads(64, 1, 1)]
@@ -55,5 +55,5 @@ void csMain(uint3 gid: SV_DispatchThreadID) {
         outcomes[i] = 0u;
     }
 
-    InterlockedAdd(counter[0], PROBE_INCREMENT);
+    InterlockedAdd(counter[0], 1u);
 }

@@ -10,10 +10,19 @@
 include(Slang)
 pycanha_fetch_slang()
 
-# The three production kernels, compiled to Metal through the same rule the
-# library will use. Guarded because once the Metal backend exists the library
-# itself defines these targets and we must reuse them rather than collide.
-foreach(_kernel vf exchange solar)
+# Production kernels compiled to Metal through the same rule the library will
+# use. Guarded because once the Metal backend exists the library itself defines
+# these targets and we must reuse them rather than collide.
+#
+# exchange and solar are NOT here yet: their energy deposits go through
+# fp_add/fp_add_raw, which slangc lowers to a 64-bit atomic_fetch_add that the
+# Metal compiler rejects (_valid_fetch_add_type excludes ulong). Including them
+# would fail the build and take the device and ray-tracing checks down with it,
+# which is the opposite of what a capability gate is for. Run
+# probe_atomics64.sh to find out which 64-bit primitive IS available, fix
+# fp_add accordingly, then add them back to this list — nothing else here
+# changes. vf is unaffected because its cells are u32 counts.
+foreach(_kernel vf)
     if(NOT TARGET pycanha_kernel_${_kernel})
         pycanha_add_slang_kernel(${_kernel}
             SOURCE ${PROJECT_SOURCE_DIR}/pycanha-core/src/radiative/kernels/${_kernel}.slang
@@ -28,9 +37,7 @@ pycanha_add_slang_kernel(probe
     TARGET metal)
 
 add_executable(metal_spike ${CMAKE_CURRENT_SOURCE_DIR}/main.mm)
-add_dependencies(metal_spike
-    pycanha_kernel_vf pycanha_kernel_exchange pycanha_kernel_solar
-    pycanha_kernel_probe)
+add_dependencies(metal_spike pycanha_kernel_vf pycanha_kernel_probe)
 target_include_directories(metal_spike PRIVATE ${PYCANHA_KERNEL_EMBED_DIR})
 target_compile_options(metal_spike PRIVATE -fobjc-arc)
 target_link_libraries(metal_spike PRIVATE
