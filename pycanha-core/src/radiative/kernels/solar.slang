@@ -1,5 +1,5 @@
 // Solar kernel: direct + reflected absorbed solar energy per face slot.
-// The source is a parallel sun along pc.sun_dir (unit, sun -> scene); the
+// The source is a parallel sun along sun_direction() (unit, sun -> scene); the
 // host sets FLAG_SOLAR_BAND so every material lookup uses the solar triplet.
 // Each thread samples one point on its face, casts a shadow ray toward the
 // sun (any hit — including a planet part — means occluded/eclipsed), scores
@@ -68,13 +68,14 @@ void csMain(uint3 gid: SV_DispatchThreadID) {
     uint ray_index = pc.ray_index_offset + ray_local;
     Rng rng = rng_init(face_slot, ray_index, pc.batch_seed);
 
+    float3 sun_dir = sun_direction();
     SurfaceSample sample = sample_face_point(face_slot, rng);
-    float cos_theta = dot(sample.normal, -pc.sun_dir);
+    float cos_theta = dot(sample.normal, -sun_dir);
     if (cos_theta <= 0.0) {
         return;  // this side faces away from the sun
     }
     float3 origin = offset_origin(sample.position, sample.normal);
-    Hit shadow = trace_ray(origin, -pc.sun_dir);
+    Hit shadow = trace_ray(origin, -sun_dir);
     if (!shadow.miss) {
         return;  // occluded by other geometry (or eclipsed by the planet)
     }
@@ -89,13 +90,13 @@ void csMain(uint3 gid: SV_DispatchThreadID) {
     fp_add(direct_acc, face_slot, e0 * a);
     fp_add(total_acc, face_slot, e0 * a);
 
-    // Follow the non-absorbed part: the incoming light travels along
-    // pc.sun_dir when it interacts with the surface.
+    // Follow the non-absorbed part: the incoming light travels along the sun
+    // direction when it interacts with the surface.
     float energy = e0 * (1.0 - a);
     if (!roulette(energy, rng)) {
         return;
     }
-    float3 dir = pc.sun_dir;
+    float3 dir = sun_dir;
     scatter(origin, dir, sample.position, sample.normal, s, t, d, rng);
 
     for (uint bounce = 0u; bounce < pc.max_bounces; ++bounce) {

@@ -69,6 +69,8 @@ option(PYCANHA_OPTION_SANITIZE_ADDR        "Enable to sanitize address (Unix onl
 option(PYCANHA_OPTION_SANITIZE_UNDEF       "Enable to sanitize undefined (Unix only)."     OFF )
 option(PYCANHA_USE_FETCHCONTENT_MANIFOLD   "Fetch Manifold from source instead of Conan."  ON  )
 option(PYCANHA_OPTION_RAYTRACING           "Enable the Vulkan RT radiative engine."        ON  )
+option(PYCANHA_OPTION_METAL_SPIKE
+       "Build the macOS Metal capability spike (Apple only, transitional)."                 OFF )
 
 
 
@@ -146,6 +148,18 @@ endif()
 if (NOT BUILD_TESTING STREQUAL OFF)
     enable_testing() #TODO: Not sure if necessary
     add_subdirectory(test)
+endif()
+
+# METAL SPIKE (macOS capability gate, transitional — see test/metal_spike)
+if (PYCANHA_OPTION_METAL_SPIKE)
+    if(NOT APPLE)
+        message(FATAL_ERROR "PYCANHA_OPTION_METAL_SPIKE is Apple-only")
+    endif()
+    # Objective-C++ is enabled here rather than in the subdirectory: CMake
+    # wants enable_language() at top level.
+    enable_language(OBJCXX)
+    enable_testing()
+    add_subdirectory(test/metal_spike)
 endif()
 
 # EXAMPLES

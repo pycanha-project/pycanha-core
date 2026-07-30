@@ -76,6 +76,7 @@ class Recipe_pycanha_core(ConanFile):
         "PYCANHA_OPTION_SANITIZE_ADDR": [True, False],
         "PYCANHA_OPTION_SANITIZE_UNDEF": [True, False],
         "PYCANHA_OPTION_RAYTRACING": [True, False],
+        "PYCANHA_OPTION_METAL_SPIKE": [True, False],
     }
 
     default_options = {
@@ -96,6 +97,7 @@ class Recipe_pycanha_core(ConanFile):
         "PYCANHA_OPTION_SANITIZE_ADDR": False,
         "PYCANHA_OPTION_SANITIZE_UNDEF": False,
         "PYCANHA_OPTION_RAYTRACING": True,
+        "PYCANHA_OPTION_METAL_SPIKE": False,
         "spdlog/*:use_std_fmt": True,
     }
 
@@ -182,6 +184,12 @@ class Recipe_pycanha_core(ConanFile):
                 "PYCANHA_OPTION_RAYTRACING is not supported on macOS (no "
                 "Vulkan). It is forced OFF there until a Metal backend "
                 "exists."
+            )
+
+        if self.options.PYCANHA_OPTION_METAL_SPIKE and self.settings.os != "Macos":
+            raise ConanInvalidConfiguration(
+                "PYCANHA_OPTION_METAL_SPIKE is macOS-only (it builds the "
+                "Metal capability gate in test/metal_spike)."
             )
 
     def config_options(self):

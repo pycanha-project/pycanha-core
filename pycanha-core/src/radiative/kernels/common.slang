@@ -29,12 +29,26 @@ public struct Push {
     public float fp_scale;         // fixed-point scale S of the deposits
     public float inv_fp_scale;     // 1/S
     public float ray_tmin_scale;   // self-intersection epsilon scale
-    public float3 sun_dir;         // solar kernel only (unit, sun -> scene)
+    // Solar kernel only (unit, sun -> scene). Stored as three scalars rather
+    // than a float3 on purpose: float3 is 12 bytes under Vulkan scalar block
+    // layout but 16 bytes (16-aligned) in Metal Shading Language, which would
+    // size this struct at 64 bytes for SPIR-V and 80 for Metal. Scalars lay
+    // out identically under both rules, so a single 64-byte C++ mirror serves
+    // every backend. Read them through sun_direction().
+    public float sun_dir_x;
+    public float sun_dir_y;
+    public float sun_dir_z;
     public float _pad;
 };
 
 [[vk::push_constant]]
 public Push pc;
+
+// Sun direction as a vector (see the Push field comment for why the three
+// components are stored as scalars).
+public float3 sun_direction() {
+    return float3(pc.sun_dir_x, pc.sun_dir_y, pc.sun_dir_z);
+}
 
 public static const uint FLAG_NORMAL_EMISSION = 1u;
 // Selects the solar property triplet (alpha_sol/spec_sol/tau_sol) instead of
