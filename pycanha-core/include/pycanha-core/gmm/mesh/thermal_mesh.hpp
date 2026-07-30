@@ -113,7 +113,9 @@ class ThermalMesh {
     }
 
     // --- Per-side tmm-node assignment ---
-    // Cell index k for cell (i in dir1, j in dir2): k = i*(n2-1) + j.
+    // Cell index k for cell (i in dir1, j in dir2): k = i + j*(n1-1), i.e.
+    // direction 1 varies fastest. That is the order STEP-TAS lists a meshed
+    // surface's faces in, so k is also the face's index in an exchanged model.
     //   node_side1(k) = node1_start + k * node1_step
     //   node_side2(k) = node2_start + k * node2_step
     // node_step == 0 means every face on that side shares the same node.

@@ -20,17 +20,18 @@ inline void fill_node_numbers(TriMeshD& mesh, const ThermalMesh& thermal_mesh) {
         return;
     }
 
-    const auto dir2_cells = static_cast<pycanha::MeshIndex>(
-        thermal_mesh.get_dir2_mesh().size() - 1U);
-    if (dir2_cells == 0U) {
+    const auto dir1_cells = static_cast<pycanha::MeshIndex>(
+        thermal_mesh.get_dir1_mesh().size() - 1U);
+    if (dir1_cells == 0U) {
         return;
     }
 
     for (Eigen::Index tri_idx = 0; tri_idx < mesh.face_ids.rows(); ++tri_idx) {
         const pycanha::MeshIndex face_id = mesh.face_ids(tri_idx);
         const pycanha::MeshIndex cell = face_id / 2U;
-        const pycanha::MeshIndex cell_i = cell / dir2_cells;
-        const pycanha::MeshIndex cell_j = cell % dir2_cells;
+        // Cells run with direction 1 fastest: cell = i + j * n1.
+        const pycanha::MeshIndex cell_i = cell % dir1_cells;
+        const pycanha::MeshIndex cell_j = cell / dir1_cells;
         mesh.node_numbers(static_cast<Eigen::Index>(2U * cell)) =
             thermal_mesh.node_of(cell_i, cell_j, 1U);
         mesh.node_numbers(static_cast<Eigen::Index>((2U * cell) + 1U)) =

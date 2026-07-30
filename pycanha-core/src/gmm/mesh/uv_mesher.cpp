@@ -218,14 +218,17 @@ TriMeshD build_mesh_from_plan(const ThermalMesh& thermal_mesh,
     std::vector<std::array<Eigen::Index, 3>> triangles;
     std::vector<std::uint64_t> face_ids;
 
-    for (std::size_t dir1_idx = 0; dir1_idx < num_dir1_cells; ++dir1_idx) {
-        const int dir1_segments = std::max(plan.dir1_segments[dir1_idx], 1);
-        for (std::size_t dir2_idx = 0; dir2_idx < num_dir2_cells; ++dir2_idx) {
-            const int dir2_segments = std::max(plan.dir2_segments[dir2_idx], 1);
+    // Cells are numbered with direction 1 varying fastest, matching the face
+    // order STEP-TAS gives a meshed surface. The loops are nested to follow
+    // that, so face ids come out ascending.
+    for (std::size_t dir2_idx = 0; dir2_idx < num_dir2_cells; ++dir2_idx) {
+        const int dir2_segments = std::max(plan.dir2_segments[dir2_idx], 1);
+        for (std::size_t dir1_idx = 0; dir1_idx < num_dir1_cells; ++dir1_idx) {
+            const int dir1_segments = std::max(plan.dir1_segments[dir1_idx], 1);
             // Even-numbered local face id = side 1 (front). Side parity is an
             // internal convention; node assignment happens later.
             const std::size_t linear_index =
-                (dir1_idx * num_dir2_cells) + dir2_idx;
+                (dir2_idx * num_dir1_cells) + dir1_idx;
             const auto face_id_value =
                 2U * static_cast<std::uint64_t>(linear_index);
 

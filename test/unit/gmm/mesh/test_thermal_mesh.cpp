@@ -56,9 +56,10 @@ TEST_CASE("ThermalMesh node_of follows start + k * step", "[gmm][mesh]") {
     mesh.set_node2_start(200);
     mesh.set_node2_step(0);
 
-    // k = i * (n2 - 1) + j, n2 - 1 == 2.
+    // Direction 1 varies fastest: k = i + j * (n1 - 1), n1 - 1 == 2.
     REQUIRE(mesh.node_of(0U, 0U, 1U) == 100);  // k = 0
-    REQUIRE(mesh.node_of(0U, 1U, 1U) == 101);  // k = 1
+    REQUIRE(mesh.node_of(1U, 0U, 1U) == 101);  // k = 1
+    REQUIRE(mesh.node_of(0U, 1U, 1U) == 102);  // k = 2
     REQUIRE(mesh.node_of(1U, 1U, 1U) == 103);  // k = 3
     // Side 2 with step 0: every face shares node 200.
     REQUIRE(mesh.node_of(0U, 0U, 2U) == 200);

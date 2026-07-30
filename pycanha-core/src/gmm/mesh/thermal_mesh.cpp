@@ -97,9 +97,12 @@ NodeNum ThermalMesh::node_of(MeshIndex i, MeshIndex j, unsigned side) const {
         throw std::invalid_argument(
             "ThermalMesh::node_of: cell (i, j) is out of range");
     }
-    const auto cell = (static_cast<std::int64_t>(i) *
-                       static_cast<std::int64_t>(_dir2_mesh.size() - 1U)) +
-                      static_cast<std::int64_t>(j);
+    // Direction 1 varies fastest: cell = i + j * n1. This is the face order
+    // STEP-TAS uses for a meshed surface, so a face's index here is the index
+    // it has in an exchanged model.
+    const auto cell = (static_cast<std::int64_t>(j) *
+                       static_cast<std::int64_t>(_dir1_mesh.size() - 1U)) +
+                      static_cast<std::int64_t>(i);
     const std::int64_t start = side == 2U ? _node2_start : _node1_start;
     const std::int64_t step = side == 2U ? _node2_step : _node1_step;
     return static_cast<NodeNum>(start + (cell * step));

@@ -364,8 +364,9 @@ pycanha::MeshIndex classify_triangle_by_centroid(
 
     const std::size_t cell_i = find_cell(thermal_mesh.get_dir1_mesh(), dir1);
     const std::size_t cell_j = find_cell(thermal_mesh.get_dir2_mesh(), dir2);
+    // Direction 1 varies fastest, as everywhere else cells are numbered.
     const std::size_t linear_index =
-        (cell_i * (thermal_mesh.get_dir2_mesh().size() - 1U)) + cell_j;
+        (cell_j * (thermal_mesh.get_dir1_mesh().size() - 1U)) + cell_i;
     return static_cast<pycanha::MeshIndex>((2U * linear_index) +
                                            (is_back ? 1U : 0U));
 }
