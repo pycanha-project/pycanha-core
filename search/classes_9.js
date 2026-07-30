@@ -1,7 +1,4 @@
 var searchData=
 [
-  ['literalstring_0',['LiteralString',['../classpycanha_1_1LiteralString.html',1,'pycanha']]],
-  ['localstorage_1',['LocalStorage',['../structpycanha_1_1Node_1_1LocalStorage.html',1,'pycanha::Node']]],
-  ['lookuptable1d_2',['LookupTable1D',['../classpycanha_1_1LookupTable1D.html',1,'pycanha']]],
-  ['lookuptablevec1d_3',['LookupTableVec1D',['../classpycanha_1_1LookupTableVec1D.html',1,'pycanha']]]
+  ['kerneldispatch_0',['KernelDispatch',['../structpycanha_1_1radiative_1_1detail_1_1SceneImpl_1_1KernelDispatch.html',1,'pycanha::radiative::detail::SceneImpl']]]
 ];

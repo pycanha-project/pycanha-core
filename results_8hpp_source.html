@@ -28,7 +28,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.16</span>
+   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.17</span>
    </div>
    <div id="projectbrief">The C++ core of pycanha</div>
   </td>
@@ -105,59 +105,80 @@ $(function(){initNavTree('results_8hpp_source.html','',''); });
 <div class="line"><a id="l00009" name="l00009"></a><span class="lineno">    9</span> </div>
 <div class="line"><a id="l00010" name="l00010"></a><span class="lineno">   10</span><span class="keyword">namespace </span>pycanha::radiative {</div>
 <div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span> </div>
-<div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span><span class="comment">// Every result carries its own statistics so callers can judge Monte-Carlo</span></div>
-<div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span><span class="comment">// convergence without re-tracing.</span></div>
-<div class="foldopen" id="foldopen00014" data-start="{" data-end="};">
-<div class="line"><a id="l00014" name="l00014"></a><span class="lineno"><a class="line" href="structpycanha_1_1radiative_1_1TraceStats.html">   14</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structpycanha_1_1radiative_1_1TraceStats.html">TraceStats</a> {</div>
-<div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span>    std::uint64_t total_rays = 0;</div>
-<div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span>    <span class="comment">// Cumulative across accumulate() calls.</span></div>
-<div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span>    std::uint64_t rays_per_face = 0;</div>
-<div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span>    <span class="comment">// Per-entry standard-error estimates.</span></div>
-<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span>    <span class="keywordtype">double</span> mean_stderr = 0.0;</div>
-<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span>    <span class="keywordtype">double</span> max_stderr = 0.0;</div>
-<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span>    <span class="comment">// VF only: max |Ai*Fij - Aj*Fji| (normalized).</span></div>
-<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span>    <span class="keywordtype">double</span> reciprocity_residual = 0.0;</div>
-<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span>    <span class="comment">// Exchange only: energy killed below the threshold.</span></div>
-<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span>    <span class="keywordtype">double</span> lost_energy_fraction = 0.0;</div>
-<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span>    std::chrono::nanoseconds gpu_time{0};</div>
-<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span>};</div>
+<div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span><span class="comment">// Matrix results carry three VIRTUAL bucket columns appended after the</span></div>
+<div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span><span class="comment">// num_face_slots real columns, so every parcel of emitted energy has an</span></div>
+<div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span><span class="comment">// explicit, node-mappable destination:</span></div>
+<div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span><span class="comment">//  - space:    rays/energy that escaped the scene,</span></div>
+<div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span><span class="comment">//  - inactive: energy absorbed at inactive (non-radiative) faces</span></div>
+<div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span><span class="comment">//              (exchange only — the geometric vf kernel scores inactive</span></div>
+<div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span><span class="comment">//              faces at their own column),</span></div>
+<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span><span class="comment">//  - lost:     the purely mathematical residue (Russian-roulette balance,</span></div>
+<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span><span class="comment">//              max_bounces cutoff). Zero-mean adjustments make this entry</span></div>
+<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span><span class="comment">//              SIGNED and it may come out slightly negative.</span></div>
+<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span><span class="comment">// Full rows therefore account for everything: a vf row sums to exactly 1</span></div>
+<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span><span class="comment">// and an exchange row conserves energy exactly.</span></div>
+<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span><span class="keyword">inline</span> <span class="keyword">constexpr</span> std::int64_t num_virtual_columns = 3;</div>
+<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span><span class="keyword">inline</span> <span class="keyword">constexpr</span> std::int64_t space_column_offset = 0;</div>
+<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span><span class="keyword">inline</span> <span class="keyword">constexpr</span> std::int64_t inactive_column_offset = 1;</div>
+<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span><span class="keyword">inline</span> <span class="keyword">constexpr</span> std::int64_t lost_column_offset = 2;</div>
+<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span> </div>
+<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span><span class="comment">// Every result carries its own statistics so callers can judge Monte-Carlo</span></div>
+<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span><span class="comment">// convergence without re-tracing.</span></div>
+<div class="foldopen" id="foldopen00031" data-start="{" data-end="};">
+<div class="line"><a id="l00031" name="l00031"></a><span class="lineno"><a class="line" href="structpycanha_1_1radiative_1_1TraceStats.html">   31</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structpycanha_1_1radiative_1_1TraceStats.html">TraceStats</a> {</div>
+<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>    std::uint64_t total_rays = 0;</div>
+<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>    <span class="comment">// Cumulative across accumulate() calls.</span></div>
+<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>    std::uint64_t rays_per_face = 0;</div>
+<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>    <span class="comment">// Per-entry standard-error estimates.</span></div>
+<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>    <span class="keywordtype">double</span> mean_stderr = 0.0;</div>
+<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>    <span class="keywordtype">double</span> max_stderr = 0.0;</div>
+<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>    <span class="comment">// VF only: max |Ai*Fij - Aj*Fji| (normalized).</span></div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>    <span class="keywordtype">double</span> reciprocity_residual = 0.0;</div>
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>    <span class="comment">// Exchange only: energy killed below the threshold.</span></div>
+<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>    <span class="keywordtype">double</span> lost_energy_fraction = 0.0;</div>
+<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>    std::chrono::nanoseconds gpu_time{0};</div>
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>};</div>
 </div>
-<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span> </div>
-<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span><span class="comment">// Matrix rows/cols are face slots (global, both sides). 1 - row_sum of a VF</span></div>
-<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span><span class="comment">// row is the view factor to space; exchange matrices likewise leave &quot;to</span></div>
-<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span><span class="comment">// space&quot; implicit as the row deficit (the consumer materializes it as</span></div>
-<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span><span class="comment">// couplings to a space node).</span></div>
-<div class="foldopen" id="foldopen00032" data-start="{" data-end="};">
-<div class="line"><a id="l00032" name="l00032"></a><span class="lineno"><a class="line" href="structpycanha_1_1radiative_1_1VfResult.html">   32</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structpycanha_1_1radiative_1_1VfResult.html">VfResult</a> {</div>
-<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>    <a class="code hl_struct" href="structpycanha_1_1radiative_1_1SparseF64.html">SparseF64</a> vf;</div>
-<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>    Eigen::VectorXd row_sums;</div>
-<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>    <a class="code hl_struct" href="structpycanha_1_1radiative_1_1TraceStats.html">TraceStats</a> stats;</div>
-<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>};</div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span> </div>
+<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span><span class="comment">// Matrix rows are face slots (global, both sides); columns are the same</span></div>
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span><span class="comment">// slots plus the virtual bucket columns above (cols == rows +</span></div>
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span><span class="comment">// num_virtual_columns). A vf row including its space column sums to</span></div>
+<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span><span class="comment">// exactly 1; the consumer maps the buckets to real nodes (e.g. the space</span></div>
+<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span><span class="comment">// node) or drops them.</span></div>
+<div class="foldopen" id="foldopen00050" data-start="{" data-end="};">
+<div class="line"><a id="l00050" name="l00050"></a><span class="lineno"><a class="line" href="structpycanha_1_1radiative_1_1VfResult.html">   50</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structpycanha_1_1radiative_1_1VfResult.html">VfResult</a> {</div>
+<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>    <a class="code hl_struct" href="structpycanha_1_1radiative_1_1SparseF64.html">SparseF64</a> vf;</div>
+<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>    <span class="comment">// Per-row sum over ALL columns (== 1 exactly for rows that emitted).</span></div>
+<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>    Eigen::VectorXd row_sums;</div>
+<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>    <a class="code hl_struct" href="structpycanha_1_1radiative_1_1TraceStats.html">TraceStats</a> stats;</div>
+<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>};</div>
 </div>
-<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span> </div>
-<div class="foldopen" id="foldopen00038" data-start="{" data-end="};">
-<div class="line"><a id="l00038" name="l00038"></a><span class="lineno"><a class="line" href="structpycanha_1_1radiative_1_1ExchangeResult.html">   38</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structpycanha_1_1radiative_1_1ExchangeResult.html">ExchangeResult</a> {</div>
-<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>    Band band = Band::IR;</div>
-<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>    <a class="code hl_struct" href="structpycanha_1_1radiative_1_1SparseF64.html">SparseF64</a> factors;</div>
-<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>    <a class="code hl_struct" href="structpycanha_1_1radiative_1_1TraceStats.html">TraceStats</a> stats;</div>
-<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>};</div>
+<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span> </div>
+<div class="foldopen" id="foldopen00057" data-start="{" data-end="};">
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno"><a class="line" href="structpycanha_1_1radiative_1_1ExchangeResult.html">   57</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structpycanha_1_1radiative_1_1ExchangeResult.html">ExchangeResult</a> {</div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>    Band band = Band::IR;</div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>    <a class="code hl_struct" href="structpycanha_1_1radiative_1_1SparseF64.html">SparseF64</a> factors;</div>
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>    <a class="code hl_struct" href="structpycanha_1_1radiative_1_1TraceStats.html">TraceStats</a> stats;</div>
+<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>};</div>
 </div>
-<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span> </div>
-<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span><span class="comment">// Per-face-slot vectors; the solar kernel is O(Nf) and needs no matrix.</span></div>
-<div class="foldopen" id="foldopen00045" data-start="{" data-end="};">
-<div class="line"><a id="l00045" name="l00045"></a><span class="lineno"><a class="line" href="structpycanha_1_1radiative_1_1SolarResult.html">   45</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structpycanha_1_1radiative_1_1SolarResult.html">SolarResult</a> {</div>
-<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>    Eigen::VectorXd direct;  <span class="comment">// W/m^2 absorbed, direct illumination</span></div>
-<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>    Eigen::VectorXd total;   <span class="comment">// W/m^2 absorbed incl. reflections</span></div>
-<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>    <a class="code hl_struct" href="structpycanha_1_1radiative_1_1TraceStats.html">TraceStats</a> stats;</div>
-<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>};</div>
+<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span> </div>
+<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span><span class="comment">// Per-face-slot absorbed power; the solar kernel is O(Nf) and needs no</span></div>
+<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span><span class="comment">// matrix. Watts (extensive): node mapping is a plain per-node sum, and</span></div>
+<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span><span class="comment">// flux is watts / face area when needed.</span></div>
+<div class="foldopen" id="foldopen00066" data-start="{" data-end="};">
+<div class="line"><a id="l00066" name="l00066"></a><span class="lineno"><a class="line" href="structpycanha_1_1radiative_1_1SolarResult.html">   66</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structpycanha_1_1radiative_1_1SolarResult.html">SolarResult</a> {</div>
+<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>    Eigen::VectorXd direct;  <span class="comment">// W absorbed, direct illumination</span></div>
+<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>    Eigen::VectorXd total;   <span class="comment">// W absorbed incl. reflections</span></div>
+<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>    <a class="code hl_struct" href="structpycanha_1_1radiative_1_1TraceStats.html">TraceStats</a> stats;</div>
+<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>};</div>
 </div>
-<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span> </div>
-<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>}  <span class="comment">// namespace pycanha::radiative</span></div>
-<div class="ttc" id="astructpycanha_1_1radiative_1_1ExchangeResult_html"><div class="ttname"><a href="structpycanha_1_1radiative_1_1ExchangeResult.html">pycanha::radiative::ExchangeResult</a></div><div class="ttdef"><b>Definition</b> results.hpp:38</div></div>
-<div class="ttc" id="astructpycanha_1_1radiative_1_1SolarResult_html"><div class="ttname"><a href="structpycanha_1_1radiative_1_1SolarResult.html">pycanha::radiative::SolarResult</a></div><div class="ttdef"><b>Definition</b> results.hpp:45</div></div>
-<div class="ttc" id="astructpycanha_1_1radiative_1_1SparseF64_html"><div class="ttname"><a href="structpycanha_1_1radiative_1_1SparseF64.html">pycanha::radiative::SparseF64</a></div><div class="ttdef"><b>Definition</b> sparse.hpp:11</div></div>
-<div class="ttc" id="astructpycanha_1_1radiative_1_1TraceStats_html"><div class="ttname"><a href="structpycanha_1_1radiative_1_1TraceStats.html">pycanha::radiative::TraceStats</a></div><div class="ttdef"><b>Definition</b> results.hpp:14</div></div>
-<div class="ttc" id="astructpycanha_1_1radiative_1_1VfResult_html"><div class="ttname"><a href="structpycanha_1_1radiative_1_1VfResult.html">pycanha::radiative::VfResult</a></div><div class="ttdef"><b>Definition</b> results.hpp:32</div></div>
+<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span> </div>
+<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>}  <span class="comment">// namespace pycanha::radiative</span></div>
+<div class="ttc" id="astructpycanha_1_1radiative_1_1ExchangeResult_html"><div class="ttname"><a href="structpycanha_1_1radiative_1_1ExchangeResult.html">pycanha::radiative::ExchangeResult</a></div><div class="ttdef"><b>Definition</b> results.hpp:57</div></div>
+<div class="ttc" id="astructpycanha_1_1radiative_1_1SolarResult_html"><div class="ttname"><a href="structpycanha_1_1radiative_1_1SolarResult.html">pycanha::radiative::SolarResult</a></div><div class="ttdef"><b>Definition</b> results.hpp:66</div></div>
+<div class="ttc" id="astructpycanha_1_1radiative_1_1SparseF64_html"><div class="ttname"><a href="structpycanha_1_1radiative_1_1SparseF64.html">pycanha::radiative::SparseF64</a></div><div class="ttdef"><b>Definition</b> sparse.hpp:12</div></div>
+<div class="ttc" id="astructpycanha_1_1radiative_1_1TraceStats_html"><div class="ttname"><a href="structpycanha_1_1radiative_1_1TraceStats.html">pycanha::radiative::TraceStats</a></div><div class="ttdef"><b>Definition</b> results.hpp:31</div></div>
+<div class="ttc" id="astructpycanha_1_1radiative_1_1VfResult_html"><div class="ttname"><a href="structpycanha_1_1radiative_1_1VfResult.html">pycanha::radiative::VfResult</a></div><div class="ttdef"><b>Definition</b> results.hpp:50</div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->

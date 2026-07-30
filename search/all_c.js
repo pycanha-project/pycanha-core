@@ -1,10 +1,9 @@
 var searchData=
 [
-  ['namedconstants_0',['NamedConstants',['../classpycanha_1_1NamedConstants.html',1,'pycanha']]],
-  ['node_1',['Node',['../classpycanha_1_1Node.html',1,'pycanha::Node'],['../classpycanha_1_1Node.html#a1a03ae20add186d6c3641a6f3bc74a87',1,'pycanha::Node::Node(NodeNum node_num)'],['../classpycanha_1_1Node.html#a00dbc2185ad3bc9c730c6b6a08b1433b',1,'pycanha::Node::Node(NodeNum node_num, const std::weak_ptr&lt; Nodes &gt; &amp;parent_pointer)']]],
-  ['node_5fof_2',['node_of',['../classpycanha_1_1gmm_1_1ThermalMesh.html#aac124a372d1692a68060071bf2c39b25',1,'pycanha::gmm::ThermalMesh']]],
-  ['nodes_3',['Nodes',['../classpycanha_1_1Nodes.html',1,'pycanha::Nodes'],['../classpycanha_1_1Nodes.html#a2997cd286bfea8e687eab639ce2ec0c5',1,'pycanha::Nodes::Nodes()']]],
-  ['not_20found_4',['CMake not found',['../md_docs_2faq.html#autotoc_md36',1,'']]],
-  ['not_20found_20after_20conan_20install_5',['Eigen3 not found after conan install',['../md_docs_2faq.html#autotoc_md37',1,'']]],
-  ['num_5fnodes_6',['num_nodes',['../classpycanha_1_1Nodes.html#a9cd78e014d17ef07b1246bb52fafb593',1,'pycanha::Nodes']]]
+  ['main_20and_20pull_20requests_0',['Continuous validation on &lt;span class=&quot;tt&quot;&gt;main&lt;/span&gt; and pull requests',['../md_docs_2cicd.html#autotoc_md28',1,'']]],
+  ['managers_3a_20conan_1',['Package managers: Conan',['../md_docs_2tools.html#autotoc_md20',1,'']]],
+  ['manifoldcutbackend_2',['ManifoldCutBackend',['../classpycanha_1_1gmm_1_1cutting_1_1ManifoldCutBackend.html',1,'pycanha::gmm::cutting']]],
+  ['materialtable_3',['MaterialTable',['../structpycanha_1_1radiative_1_1MaterialTable.html',1,'pycanha::radiative']]],
+  ['memoryestimate_4',['MemoryEstimate',['../structpycanha_1_1radiative_1_1MemoryEstimate.html',1,'pycanha::radiative']]],
+  ['meshoptions_5',['MeshOptions',['../structpycanha_1_1gmm_1_1MeshOptions.html',1,'pycanha::gmm']]]
 ];

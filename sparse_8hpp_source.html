@@ -28,7 +28,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.16</span>
+   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.17</span>
    </div>
    <div id="projectbrief">The C++ core of pycanha</div>
   </td>
@@ -102,22 +102,23 @@ $(function(){initNavTree('sparse_8hpp_source.html','',''); });
 <div class="line"><a id="l00006" name="l00006"></a><span class="lineno">    6</span><span class="keyword">namespace </span>pycanha::radiative {</div>
 <div class="line"><a id="l00007" name="l00007"></a><span class="lineno">    7</span> </div>
 <div class="line"><a id="l00008" name="l00008"></a><span class="lineno">    8</span><span class="comment">// Minimal CSR container used by every matrix result; maps 1:1 (zero-copy</span></div>
-<div class="line"><a id="l00009" name="l00009"></a><span class="lineno">    9</span><span class="comment">// through the bindings) to scipy.sparse.csr_matrix. Rows/cols are face slots</span></div>
-<div class="line"><a id="l00010" name="l00010"></a><span class="lineno">   10</span><span class="comment">// (global, both sides); &quot;to space&quot; is implicit as the row deficit.</span></div>
-<div class="foldopen" id="foldopen00011" data-start="{" data-end="};">
-<div class="line"><a id="l00011" name="l00011"></a><span class="lineno"><a class="line" href="structpycanha_1_1radiative_1_1SparseF64.html">   11</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structpycanha_1_1radiative_1_1SparseF64.html">SparseF64</a> {</div>
-<div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span>    Eigen::VectorX&lt;std::int64_t&gt; indptr;   <span class="comment">// rows + 1</span></div>
-<div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span>    Eigen::VectorX&lt;std::int32_t&gt; indices;  <span class="comment">// column of each stored value</span></div>
-<div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span>    Eigen::VectorXd values;</div>
-<div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span>    std::int64_t rows = 0;</div>
-<div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span>    std::int64_t cols = 0;</div>
-<div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span> </div>
-<div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span>    [[nodiscard]] std::int64_t nnz() <span class="keyword">const</span> <span class="keyword">noexcept</span> { <span class="keywordflow">return</span> values.rows(); }</div>
-<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span>};</div>
+<div class="line"><a id="l00009" name="l00009"></a><span class="lineno">    9</span><span class="comment">// through the bindings) to scipy.sparse.csr_matrix. Rows are face slots</span></div>
+<div class="line"><a id="l00010" name="l00010"></a><span class="lineno">   10</span><span class="comment">// (global, both sides); columns additionally carry the virtual</span></div>
+<div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span><span class="comment">// space/inactive/lost buckets, so full rows close exactly.</span></div>
+<div class="foldopen" id="foldopen00012" data-start="{" data-end="};">
+<div class="line"><a id="l00012" name="l00012"></a><span class="lineno"><a class="line" href="structpycanha_1_1radiative_1_1SparseF64.html">   12</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structpycanha_1_1radiative_1_1SparseF64.html">SparseF64</a> {</div>
+<div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span>    Eigen::VectorX&lt;std::int64_t&gt; indptr;   <span class="comment">// rows + 1</span></div>
+<div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span>    Eigen::VectorX&lt;std::int32_t&gt; indices;  <span class="comment">// column of each stored value</span></div>
+<div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span>    Eigen::VectorXd values;</div>
+<div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span>    std::int64_t rows = 0;</div>
+<div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span>    std::int64_t cols = 0;</div>
+<div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span> </div>
+<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span>    [[nodiscard]] std::int64_t nnz() <span class="keyword">const</span> <span class="keyword">noexcept</span> { <span class="keywordflow">return</span> values.rows(); }</div>
+<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span>};</div>
 </div>
-<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span> </div>
-<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span>}  <span class="comment">// namespace pycanha::radiative</span></div>
-<div class="ttc" id="astructpycanha_1_1radiative_1_1SparseF64_html"><div class="ttname"><a href="structpycanha_1_1radiative_1_1SparseF64.html">pycanha::radiative::SparseF64</a></div><div class="ttdef"><b>Definition</b> sparse.hpp:11</div></div>
+<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span> </div>
+<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span>}  <span class="comment">// namespace pycanha::radiative</span></div>
+<div class="ttc" id="astructpycanha_1_1radiative_1_1SparseF64_html"><div class="ttname"><a href="structpycanha_1_1radiative_1_1SparseF64.html">pycanha::radiative::SparseF64</a></div><div class="ttdef"><b>Definition</b> sparse.hpp:12</div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->

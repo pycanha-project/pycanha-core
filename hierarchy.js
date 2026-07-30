@@ -1,6 +1,7 @@
 var hierarchy =
 [
     [ "pycanha::radiative::AccumConfig", "structpycanha_1_1radiative_1_1AccumConfig.html", null ],
+    [ "pycanha::radiative::detail::SolarAccumImpl::BatchSetup", "structpycanha_1_1radiative_1_1detail_1_1SolarAccumImpl_1_1BatchSetup.html", null ],
     [ "pycanha::gmm::BulkMaterial", "classpycanha_1_1gmm_1_1BulkMaterial.html", null ],
     [ "pycanha::CallbackContext", "classpycanha_1_1CallbackContext.html", null ],
     [ "pycanha::CallbackRegistry", "classpycanha_1_1CallbackRegistry.html", null ],
@@ -31,7 +32,10 @@ var hierarchy =
     [ "pycanha::EntitiesHelper", "classpycanha_1_1EntitiesHelper.html", null ],
     [ "pycanha::Entity", "classpycanha_1_1Entity.html", null ],
     [ "pycanha::detail::EntityOps", "structpycanha_1_1detail_1_1EntityOps.html", null ],
+    [ "pycanha::radiative::detail::EntryStats", "structpycanha_1_1radiative_1_1detail_1_1EntryStats.html", null ],
     [ "pycanha::ESATANReader", "classpycanha_1_1ESATANReader.html", null ],
+    [ "pycanha::radiative::detail::ExchangeAccumImpl", "classpycanha_1_1radiative_1_1detail_1_1ExchangeAccumImpl.html", null ],
+    [ "pycanha::radiative::ExchangeAccumulator", "classpycanha_1_1radiative_1_1ExchangeAccumulator.html", null ],
     [ "pycanha::radiative::ExchangeResult", "structpycanha_1_1radiative_1_1ExchangeResult.html", null ],
     [ "pycanha::Formula", "classpycanha_1_1Formula.html", [
       [ "pycanha::ExpressionFormula", "classpycanha_1_1ExpressionFormula.html", null ],
@@ -56,6 +60,7 @@ var hierarchy =
     [ "pycanha::detail::InterpLocation", "structpycanha_1_1detail_1_1InterpLocation.html", null ],
     [ "pycanha::random_generators::IntGenerator&lt; RandT &gt;", "classpycanha_1_1random__generators_1_1IntGenerator.html", null ],
     [ "pycanha::IntPairHash", "structpycanha_1_1IntPairHash.html", null ],
+    [ "pycanha::radiative::detail::SceneImpl::KernelDispatch", "structpycanha_1_1radiative_1_1detail_1_1SceneImpl_1_1KernelDispatch.html", null ],
     [ "pycanha::LiteralString", "classpycanha_1_1LiteralString.html", null ],
     [ "pycanha::Node::LocalStorage", "structpycanha_1_1Node_1_1LocalStorage.html", null ],
     [ "pycanha::LookupTable1D", "classpycanha_1_1LookupTable1D.html", null ],
@@ -88,7 +93,10 @@ var hierarchy =
     [ "pycanha::gmm::mesh::detail::SamplingPlan", "structpycanha_1_1gmm_1_1mesh_1_1detail_1_1SamplingPlan.html", null ],
     [ "pycanha::radiative::detail::SceneImpl", "classpycanha_1_1radiative_1_1detail_1_1SceneImpl.html", null ],
     [ "pycanha::radiative::ScenePart", "structpycanha_1_1radiative_1_1ScenePart.html", null ],
+    [ "pycanha::radiative::detail::SolarAccumImpl", "classpycanha_1_1radiative_1_1detail_1_1SolarAccumImpl.html", null ],
+    [ "pycanha::radiative::SolarAccumulator", "classpycanha_1_1radiative_1_1SolarAccumulator.html", null ],
     [ "pycanha::radiative::SolarResult", "structpycanha_1_1radiative_1_1SolarResult.html", null ],
+    [ "pycanha::radiative::SolarState", "structpycanha_1_1radiative_1_1SolarState.html", null ],
     [ "pycanha::Solver", "classpycanha_1_1Solver.html", [
       [ "pycanha::SteadyStateSolver", "classpycanha_1_1SteadyStateSolver.html", [
         [ "pycanha::SSLU", "classpycanha_1_1SSLU.html", null ]

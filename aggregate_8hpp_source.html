@@ -28,7 +28,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.16</span>
+   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.17</span>
    </div>
    <div id="projectbrief">The C++ core of pycanha</div>
   </td>
@@ -121,17 +121,32 @@ $(function(){initNavTree('aggregate_8hpp_source.html','',''); });
 <div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span><span class="comment">// This is the area-weighted (extensive, m^2) reduction: with rows pre-scaled</span></div>
 <div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span><span class="comment">// by the band emissivity it is exactly the node-level GR sum; divide by node</span></div>
 <div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span><span class="comment">// areas afterwards for intensive (view-factor-like) node matrices.</span></div>
-<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span>[[nodiscard]] <a class="code hl_struct" href="structpycanha_1_1radiative_1_1SparseF64.html">SparseF64</a> aggregate_matrix(<span class="keyword">const</span> <a class="code hl_struct" href="structpycanha_1_1radiative_1_1SparseF64.html">SparseF64</a>&amp; face_matrix,</div>
-<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span>                                         std::span&lt;const NodeNum&gt; node_numbers,</div>
-<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span>                                         std::span&lt;const double&gt; face_areas);</div>
-<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span> </div>
-<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span><span class="comment">// W per node from W/m^2 per face: out(m) = sum_{i in m} flux[i] * area[i].</span></div>
-<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>[[nodiscard]] Eigen::VectorXd aggregate_flux(</div>
-<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>    <span class="keyword">const</span> Eigen::VectorXd&amp; face_flux_w_m2,</div>
-<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>    std::span&lt;const NodeNum&gt; node_numbers, std::span&lt;const double&gt; face_areas);</div>
+<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span><span class="comment">//</span></div>
+<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span><span class="comment">// Matrix results carry the virtual space/inactive/lost bucket columns after</span></div>
+<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span><span class="comment">// the real face columns. This overload drops them (missing column labels</span></div>
+<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span><span class="comment">// count as NO_NODE); use the row/column overload below to map a bucket to a</span></div>
+<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span><span class="comment">// real node (e.g. the space node).</span></div>
+<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>[[nodiscard]] <a class="code hl_struct" href="structpycanha_1_1radiative_1_1SparseF64.html">SparseF64</a> aggregate_matrix(<span class="keyword">const</span> <a class="code hl_struct" href="structpycanha_1_1radiative_1_1SparseF64.html">SparseF64</a>&amp; face_matrix,</div>
+<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>                                         std::span&lt;const NodeNum&gt; node_numbers,</div>
+<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>                                         std::span&lt;const double&gt; face_areas);</div>
 <div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span> </div>
-<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>}  <span class="comment">// namespace pycanha::radiative</span></div>
-<div class="ttc" id="astructpycanha_1_1radiative_1_1SparseF64_html"><div class="ttname"><a href="structpycanha_1_1radiative_1_1SparseF64.html">pycanha::radiative::SparseF64</a></div><div class="ttdef"><b>Definition</b> sparse.hpp:11</div></div>
+<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span><span class="comment">// General form: rows and columns labeled independently. `row_node_numbers`</span></div>
+<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span><span class="comment">// has one entry per matrix row, `col_node_numbers` one per matrix COLUMN —</span></div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span><span class="comment">// including the virtual bucket columns, so those can be assigned nodes or</span></div>
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span><span class="comment">// NO_NODE. Output rows/cols are indexed by position in</span></div>
+<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span><span class="comment">// aggregate_nodes(row_node_numbers) / aggregate_nodes(col_node_numbers).</span></div>
+<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>[[nodiscard]] <a class="code hl_struct" href="structpycanha_1_1radiative_1_1SparseF64.html">SparseF64</a> aggregate_matrix(</div>
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>    <span class="keyword">const</span> <a class="code hl_struct" href="structpycanha_1_1radiative_1_1SparseF64.html">SparseF64</a>&amp; face_matrix, std::span&lt;const NodeNum&gt; row_node_numbers,</div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>    std::span&lt;const NodeNum&gt; col_node_numbers,</div>
+<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>    std::span&lt;const double&gt; face_areas);</div>
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span> </div>
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span><span class="comment">// W per node from W/m^2 per face: out(m) = sum_{i in m} flux[i] * area[i].</span></div>
+<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>[[nodiscard]] Eigen::VectorXd aggregate_flux(</div>
+<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>    <span class="keyword">const</span> Eigen::VectorXd&amp; face_flux_w_m2,</div>
+<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>    std::span&lt;const NodeNum&gt; node_numbers, std::span&lt;const double&gt; face_areas);</div>
+<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span> </div>
+<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>}  <span class="comment">// namespace pycanha::radiative</span></div>
+<div class="ttc" id="astructpycanha_1_1radiative_1_1SparseF64_html"><div class="ttname"><a href="structpycanha_1_1radiative_1_1SparseF64.html">pycanha::radiative::SparseF64</a></div><div class="ttdef"><b>Definition</b> sparse.hpp:12</div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->

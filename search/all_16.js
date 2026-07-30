@@ -1,4 +1,5 @@
 var searchData=
 [
-  ['_7enodes_0',['~Nodes',['../classpycanha_1_1Nodes.html#a367ddc89abf198442e1311564fae5e66',1,'pycanha::Nodes']]]
+  ['workflow_0',['Development workflow',['../md_docs_2workflow.html',1,'']]],
+  ['works_1',['How it works',['../index.html#autotoc_md3',1,'']]]
 ];
