@@ -19,7 +19,7 @@ TEST_CASE("radiative device: graceful error when unavailable",
 TEST_CASE("radiative device: enumeration lists devices",
           "[radiative][device]") {
     if (!rad::is_available()) {
-        SUCCEED("no RT-capable Vulkan device: skipped");
+        SUCCEED("no RT-capable GPU device: skipped");
         return;
     }
     const auto devices = rad::enumerate_devices();
@@ -30,7 +30,7 @@ TEST_CASE("radiative device: enumeration lists devices",
 TEST_CASE("radiative device: default creation picks an RT device",
           "[radiative][device]") {
     if (!rad::is_available()) {
-        SUCCEED("no RT-capable Vulkan device: skipped");
+        SUCCEED("no RT-capable GPU device: skipped");
         return;
     }
     const rad::Device device = rad::Device::create();
@@ -45,7 +45,7 @@ TEST_CASE("radiative device: explicit bad index throws",
 
 TEST_CASE("radiative device: memory budget positive", "[radiative][device]") {
     if (!rad::is_available()) {
-        SUCCEED("no RT-capable Vulkan device: skipped");
+        SUCCEED("no RT-capable GPU device: skipped");
         return;
     }
     const rad::Device device = rad::Device::create();

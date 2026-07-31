@@ -128,6 +128,15 @@ struct ExtensionSupport {
     check.info.max_dispatch_rays =
         static_cast<std::uint64_t>(props.limits.maxComputeWorkGroupCount[0]) *
         workgroup_size;
+    if (check.info.software) {
+        check.score = 0;
+    } else if (props.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
+        check.score = 3;
+    } else if (props.deviceType == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU) {
+        check.score = 2;
+    } else {
+        check.score = 1;
+    }
 
     const ExtensionSupport extensions = query_extensions(device);
     check.has_memory_budget = extensions.memory_budget;

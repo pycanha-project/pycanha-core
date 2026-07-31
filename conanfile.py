@@ -18,7 +18,7 @@ class Recipe_pycanha_core(ConanFile):
 
     # This is the version used everywhere. Right now is set manually,
     # but it could be set automatically from the git tag for example.
-    version = "0.17"
+    version = "0.18"
 
     # I've followed the instructions from https://docs.conan.io/2/tutorial/creating_packages/other_types_of_packages/header_only_packages.html
     # but without adding the "header-only" keyword to the recipe, it doesn't work. The use of the "header-only" is from here:
@@ -127,7 +127,10 @@ class Recipe_pycanha_core(ConanFile):
         # library loads fine on machines without any Vulkan driver).
         # VMA handles device-memory allocation. volk is a static library, so
         # it must propagate to consumers of this static package.
-        if self.options.PYCANHA_OPTION_RAYTRACING:
+        # macOS uses the Metal backend instead and needs no extra Conan
+        # packages: Metal and Foundation are system frameworks, and the Metal
+        # shader compiler comes from the Xcode toolchain.
+        if self.options.PYCANHA_OPTION_RAYTRACING and self.settings.os != "Macos":
             self.requires(f"vulkan-headers/{versions['vulkan-headers']}")
             self.requires(f"volk/{versions['volk']}")
             self.requires(
@@ -177,21 +180,9 @@ class Recipe_pycanha_core(ConanFile):
                 "IWYU (Include what you use) is broken right now. Set to OFF."
             )
 
-        if self.settings.os == "Macos" and self.options.PYCANHA_OPTION_RAYTRACING:
-            raise ConanInvalidConfiguration(
-                "PYCANHA_OPTION_RAYTRACING is not supported on macOS (no "
-                "Vulkan). It is forced OFF there until a Metal backend "
-                "exists."
-            )
-
     def config_options(self):
         if self.settings.os == "Windows":
             self.options.rm_safe("fPIC")
-        if self.settings.os == "Macos":
-            # No Vulkan on macOS: the raytracer is unavailable there until a
-            # Metal backend exists. The stub build keeps is_available()
-            # linkable (returning false) so downstream code is unaffected.
-            self.options.PYCANHA_OPTION_RAYTRACING = False
 
     def configure(self):
         # For static libraries, propagate fPIC to dependencies
@@ -355,13 +346,19 @@ class Recipe_pycanha_core(ConanFile):
             "symengine::symengine",
         ]
         if self.options.PYCANHA_OPTION_RAYTRACING:
-            self.cpp_info.requires.extend(
-                [
-                    "vulkan-headers::vulkan-headers",
-                    "volk::volk",
-                    "vulkan-memory-allocator::vulkan-memory-allocator",
-                ]
-            )
+            if self.settings.os == "Macos":
+                # The Metal backend links system frameworks instead of the
+                # Vulkan packages; consumers of this static library need them
+                # on their link line too.
+                self.cpp_info.frameworks.extend(["Metal", "Foundation"])
+            else:
+                self.cpp_info.requires.extend(
+                    [
+                        "vulkan-headers::vulkan-headers",
+                        "volk::volk",
+                        "vulkan-memory-allocator::vulkan-memory-allocator",
+                    ]
+                )
 
         # Public formula headers include <symengine/...>. The current Conan
         # symengine package resolves the library target correctly, but does not

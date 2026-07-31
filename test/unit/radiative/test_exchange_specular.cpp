@@ -24,7 +24,7 @@ using radiative_fixtures::make_plates_with_sheet;
 TEST_CASE("radiative exchange: a perfect mirror redirects without absorbing",
           "[radiative][gpu][exchange]") {
     if (!rad::is_available()) {
-        SUCCEED("no RT-capable Vulkan device: skipped");
+        SUCCEED("no RT-capable GPU device: skipped");
         return;
     }
     const auto model = make_mirror_bench();
@@ -55,7 +55,7 @@ TEST_CASE("radiative exchange: a perfect mirror redirects without absorbing",
 TEST_CASE("radiative exchange: a fully transparent sheet changes nothing",
           "[radiative][gpu][exchange]") {
     if (!rad::is_available()) {
-        SUCCEED("no RT-capable Vulkan device: skipped");
+        SUCCEED("no RT-capable GPU device: skipped");
         return;
     }
     rad::Device device = rad::Device::create();
@@ -99,7 +99,7 @@ TEST_CASE("radiative exchange: a fully transparent sheet changes nothing",
 TEST_CASE("radiative exchange: a half-transparent sheet splits the energy",
           "[radiative][gpu][exchange]") {
     if (!rad::is_available()) {
-        SUCCEED("no RT-capable Vulkan device: skipped");
+        SUCCEED("no RT-capable GPU device: skipped");
         return;
     }
     rad::Device device = rad::Device::create();

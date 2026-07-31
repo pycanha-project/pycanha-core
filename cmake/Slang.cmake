@@ -28,10 +28,17 @@ function(pycanha_fetch_slang)
         set(_archive "slang-${_version}-linux-x86_64.tar.gz")
         set(_sha256 "5533415953112ddeb0a935755bdd2da5de530e6528a560a32ad809c9d9faf29c")
         set(_slangc_name "slangc")
+    elseif(APPLE)
+        if(NOT CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64")
+            message(FATAL_ERROR
+                "The Metal kernels require Apple Silicon (found "
+                "${CMAKE_SYSTEM_PROCESSOR}); build with "
+                "PYCANHA_OPTION_RAYTRACING=False on Intel Macs")
+        endif()
+        set(_archive "slang-${_version}-macos-aarch64.zip")
+        set(_sha256 "d1b6aac3f10b0031ef3ba7b0432ab678180aee745ff49d6d77b74271ced7bbbc")
+        set(_slangc_name "slangc")
     else()
-        # macOS builds with PYCANHA_OPTION_RAYTRACING=False (stub) and never
-        # reaches this. TODO(radiative): a Metal backend adds the
-        # macos-aarch64 archive here (slangc also emits Metal).
         message(FATAL_ERROR "No pinned slang archive for this platform")
     endif()
 
@@ -49,34 +56,120 @@ function(pycanha_fetch_slang)
     set(PYCANHA_SLANGC "${_slangc}" PARENT_SCOPE)
     message(STATUS "Slang ${_version}: ${_slangc}")
 
-    # spirv-val catches compiler/driver SPIR-V mismatches at build time
-    # instead of first-run time. Optional — the Conan spirv-tools
-    # tool-require puts it on the build env PATH; skip quietly when absent.
-    find_program(PYCANHA_SPIRV_VAL spirv-val)
-    if(PYCANHA_SPIRV_VAL)
-        message(STATUS "spirv-val: ${PYCANHA_SPIRV_VAL}")
+    if(APPLE)
+        # On Apple the MSL produced by slangc still has to be compiled by
+        # Apple's own shader compiler, which is where a broken kernel actually
+        # shows up. Probe it now so a missing toolchain is a clear configure
+        # error instead of a confusing failure halfway through the build.
+        find_program(PYCANHA_XCRUN xcrun REQUIRED)
+        execute_process(COMMAND "${PYCANHA_XCRUN}" metal --version
+            RESULT_VARIABLE _metal_rc
+            OUTPUT_VARIABLE _metal_out
+            ERROR_VARIABLE _metal_err)
+        if(NOT _metal_rc EQUAL 0)
+            message(FATAL_ERROR
+                "The Metal shader compiler is not available (xcrun metal "
+                "--version failed).\nSince Xcode 26 it is an unbundled, "
+                "per-user component; install it with:\n"
+                "    xcodebuild -downloadComponent MetalToolchain\n"
+                "${_metal_err}")
+        endif()
+        string(REGEX REPLACE "\n.*" "" _metal_version "${_metal_out}${_metal_err}")
+        message(STATUS "Metal shader compiler: ${_metal_version}")
+        set(PYCANHA_XCRUN "${PYCANHA_XCRUN}" PARENT_SCOPE)
     else()
-        message(STATUS "spirv-val not found — SPIR-V validation step skipped")
+        # spirv-val catches compiler/driver SPIR-V mismatches at build time
+        # instead of first-run time. Optional — the Conan spirv-tools
+        # tool-require puts it on the build env PATH; skip quietly when absent.
+        find_program(PYCANHA_SPIRV_VAL spirv-val)
+        if(PYCANHA_SPIRV_VAL)
+            message(STATUS "spirv-val: ${PYCANHA_SPIRV_VAL}")
+        else()
+            message(STATUS "spirv-val not found — SPIR-V validation step skipped")
+        endif()
     endif()
+endfunction()
+
+# Metal branch of pycanha_add_slang_kernel(); see its comment for the contract.
+# Separate function only to keep either pipeline readable.
+function(pycanha_add_metal_kernel _name _source _kernel_dir _embed_dir _depends)
+    set(_work "${CMAKE_CURRENT_BINARY_DIR}/kernels")
+    set(_msl "${_work}/${_name}.metal")
+    set(_reflect "${_work}/${_name}.reflect.json")
+    set(_air "${_work}/${_name}.air")
+    set(_metallib "${_work}/${_name}.metallib")
+    set(_lib_header "${_embed_dir}/${_name}_metallib.h")
+    set(_bindings_header "${_embed_dir}/${_name}_bindings.h")
+
+    add_custom_command(
+        OUTPUT "${_metallib}" "${_lib_header}" "${_bindings_header}"
+        COMMAND "${CMAKE_COMMAND}" -E make_directory "${_work}" "${_embed_dir}"
+        # No -profile/-capability (those select SPIR-V atoms) and no
+        # -fvk-use-scalar-layout (Vulkan-only). The define switches the shared
+        # module to the deposit and front-face paths Metal can express.
+        COMMAND "${PYCANHA_SLANGC}" "${_source}"
+                -I "${_kernel_dir}"
+                -target metal -O2
+                -D PYCANHA_METAL_BACKEND=1
+                -entry csMain
+                -reflection-json "${_reflect}"
+                -o "${_msl}"
+        # -Wno-unused-variable applies to GENERATED MSL: slangc assigns every
+        # InterlockedAdd result and every bool-returning helper to a temporary
+        # nothing reads, and that noise buries real diagnostics.
+        COMMAND "${PYCANHA_XCRUN}" metal -Wno-unused-variable
+                -c "${_msl}" -o "${_air}"
+        COMMAND "${PYCANHA_XCRUN}" metallib "${_air}" -o "${_metallib}"
+        COMMAND "${CMAKE_COMMAND}"
+                -DBINARY_INPUT=${_metallib}
+                -DHEADER_OUTPUT=${_lib_header}
+                -DVARIABLE_NAME=${_name}_metallib
+                -P "${PROJECT_SOURCE_DIR}/cmake/EmbedBinary.cmake"
+        COMMAND "${CMAKE_COMMAND}"
+                -DREFLECTION_INPUT=${_reflect}
+                -DHEADER_OUTPUT=${_bindings_header}
+                -DKERNEL_NAME=${_name}
+                -P "${PROJECT_SOURCE_DIR}/cmake/MetalBindings.cmake"
+        DEPENDS "${_source}" ${_depends}
+                "${PROJECT_SOURCE_DIR}/cmake/EmbedBinary.cmake"
+                "${PROJECT_SOURCE_DIR}/cmake/MetalBindings.cmake"
+        COMMENT "Compiling Slang kernel ${_name} (Metal)"
+        VERBATIM)
+
+    add_custom_target(pycanha_kernel_${_name}
+        DEPENDS "${_lib_header}" "${_bindings_header}")
 endfunction()
 
 # pycanha_add_slang_kernel(<name>
 #     SOURCE <kernel.slang>
-#     DEPENDS <module.slang> ...)      # Slang emits no depfile: list imports
+#     DEPENDS <module.slang> ...      # Slang emits no depfile: list imports
+#     [TARGET <spirv|metal>])         # default spirv
 #
-# Compiles the kernel to SPIR-V (Vulkan 1.3, scalar block layout, explicit
-# ray-query + 64-bit-atomics capabilities), validates the SPIR-V when
+# spirv: compiles the kernel to SPIR-V (Vulkan 1.3, scalar block layout,
+# explicit ray-query + 64-bit-atomics capabilities), validates the SPIR-V when
 # spirv-val is available, and generates
 # ${PYCANHA_KERNEL_EMBED_DIR}/pycanha-core/radiative/kernels/<name>_spv.h
-# defining pycanha::radiative::kernels::<name>_spv. Creates the custom target
-# pycanha_kernel_<name>; the caller wires it into the library.
+# defining pycanha::radiative::kernels::<name>_spv.
+#
+# metal: compiles the kernel to MSL, then to a .metallib through Apple's
+# shader compiler (which is where a broken kernel actually fails — it plays the
+# role spirv-val plays on the Vulkan side), and generates two headers:
+# <name>_metallib.h (the library bytes) and <name>_bindings.h (the buffer
+# indices, read out of the compiler's own reflection dump because Metal ignores
+# the [[vk::binding]] attributes and numbers buffers per kernel).
+#
+# Either way it creates the custom target pycanha_kernel_<name>; the caller
+# wires it into the library.
 function(pycanha_add_slang_kernel _name)
-    cmake_parse_arguments(PARSE_ARGV 1 _kernel "" "SOURCE" "DEPENDS")
+    cmake_parse_arguments(PARSE_ARGV 1 _kernel "" "SOURCE;TARGET" "DEPENDS")
     if(NOT _kernel_SOURCE)
         message(FATAL_ERROR "pycanha_add_slang_kernel: SOURCE is required")
     endif()
     if(NOT PYCANHA_SLANGC)
         message(FATAL_ERROR "pycanha_add_slang_kernel: call pycanha_fetch_slang() first")
+    endif()
+    if(NOT _kernel_TARGET)
+        set(_kernel_TARGET "spirv")
     endif()
 
     set(_embed_root "${CMAKE_BINARY_DIR}/kernel_embed")
@@ -84,6 +177,17 @@ function(pycanha_add_slang_kernel _name)
     set(_spv "${CMAKE_CURRENT_BINARY_DIR}/kernels/${_name}.spv")
     set(_header "${_embed_dir}/${_name}_spv.h")
     get_filename_component(_kernel_dir "${_kernel_SOURCE}" DIRECTORY)
+
+    if(_kernel_TARGET STREQUAL "metal")
+        pycanha_add_metal_kernel("${_name}" "${_kernel_SOURCE}" "${_kernel_dir}"
+            "${_embed_dir}" "${_kernel_DEPENDS}")
+        set(PYCANHA_KERNEL_EMBED_DIR "${_embed_root}" PARENT_SCOPE)
+        return()
+    elseif(NOT _kernel_TARGET STREQUAL "spirv")
+        message(FATAL_ERROR
+            "pycanha_add_slang_kernel: TARGET must be spirv or metal "
+            "(got ${_kernel_TARGET})")
+    endif()
 
     set(_commands
         COMMAND "${CMAKE_COMMAND}" -E make_directory

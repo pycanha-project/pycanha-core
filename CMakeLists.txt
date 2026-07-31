@@ -68,7 +68,7 @@ option(PYCANHA_OPTION_CPPCHECK             "Add cppcheck."                      
 option(PYCANHA_OPTION_SANITIZE_ADDR        "Enable to sanitize address (Unix only)."       OFF )
 option(PYCANHA_OPTION_SANITIZE_UNDEF       "Enable to sanitize undefined (Unix only)."     OFF )
 option(PYCANHA_USE_FETCHCONTENT_MANIFOLD   "Fetch Manifold from source instead of Conan."  ON  )
-option(PYCANHA_OPTION_RAYTRACING           "Enable the Vulkan RT radiative engine."        ON  )
+option(PYCANHA_OPTION_RAYTRACING           "Enable the GPU RT radiative engine."           ON  )
 
 
 
@@ -77,6 +77,27 @@ project(
     "pycanha-core"
     VERSION ${CONAN_PROJECT_VERSION}
     LANGUAGES CXX)
+
+# The macOS radiative backend is written in Objective-C++ (the Metal API is
+# Objective-C). CMake only accepts enable_language() at the top level, not in
+# the subdirectory that owns those sources.
+if(APPLE AND PYCANHA_OPTION_RAYTRACING)
+    enable_language(OBJCXX)
+    set(CMAKE_OBJCXX_STANDARD 23)
+    set(CMAKE_OBJCXX_STANDARD_REQUIRED ON)
+    set(CMAKE_OBJCXX_EXTENSIONS OFF)
+    # The backend requires GPU family Apple9, whose enumerator arrived in the
+    # macOS 14 SDK; an older deployment target would only fail later, as
+    # availability warnings on every capability query.
+    if(CMAKE_OSX_DEPLOYMENT_TARGET AND
+       CMAKE_OSX_DEPLOYMENT_TARGET VERSION_LESS 14.0)
+        message(FATAL_ERROR
+            "The Metal radiative backend needs a macOS 14 or newer deployment "
+            "target (CMAKE_OSX_DEPLOYMENT_TARGET is "
+            "${CMAKE_OSX_DEPLOYMENT_TARGET}); build with "
+            "PYCANHA_OPTION_RAYTRACING=False to get the stub instead")
+    endif()
+endif()
 
 
 

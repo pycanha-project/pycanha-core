@@ -22,7 +22,7 @@ using radiative_fixtures::make_parallel_plates;
 TEST_CASE("radiative vf: a closed enclosure sees no space",
           "[radiative][gpu][vf]") {
     if (!rad::is_available()) {
-        SUCCEED("no RT-capable Vulkan device: skipped");
+        SUCCEED("no RT-capable GPU device: skipped");
         return;
     }
     const auto model = make_box_enclosure();
@@ -55,7 +55,7 @@ TEST_CASE("radiative vf: a closed enclosure sees no space",
 TEST_CASE("radiative vf: an emitter subset reproduces the full run's rows",
           "[radiative][gpu][vf]") {
     if (!rad::is_available()) {
-        SUCCEED("no RT-capable Vulkan device: skipped");
+        SUCCEED("no RT-capable GPU device: skipped");
         return;
     }
     const auto model = make_box_enclosure();
@@ -93,7 +93,7 @@ TEST_CASE("radiative vf: an emitter subset reproduces the full run's rows",
 TEST_CASE("radiative vf: normal emission fires straight along the normal",
           "[radiative][gpu][vf]") {
     if (!rad::is_available()) {
-        SUCCEED("no RT-capable Vulkan device: skipped");
+        SUCCEED("no RT-capable GPU device: skipped");
         return;
     }
     const auto model = make_parallel_plates(1.0);
@@ -122,7 +122,7 @@ TEST_CASE("radiative vf: normal emission fires straight along the normal",
 TEST_CASE("radiative vf: the sparse threshold prunes storage, not closure",
           "[radiative][gpu][vf]") {
     if (!rad::is_available()) {
-        SUCCEED("no RT-capable Vulkan device: skipped");
+        SUCCEED("no RT-capable GPU device: skipped");
         return;
     }
     const auto model = make_parallel_plates(1.0);

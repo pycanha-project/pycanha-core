@@ -166,7 +166,7 @@ TEST_CASE("radiative gebhart: invalid inputs are rejected",
 TEST_CASE("radiative gebhart: matrix path agrees with the MCRT kernel",
           "[radiative][gpu][gebhart]") {
     if (!rad::is_available()) {
-        SUCCEED("no RT-capable Vulkan device: skipped");
+        SUCCEED("no RT-capable GPU device: skipped");
         return;
     }
     const double eps = 0.6;

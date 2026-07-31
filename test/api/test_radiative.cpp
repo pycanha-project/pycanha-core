@@ -64,7 +64,7 @@ void require_result_shape(const rad::VfResult& result) {
 
 TEST_CASE("api: radiative view factors end to end", "[api][radiative][gpu]") {
     if (!rad::is_available()) {
-        SUCCEED("no RT-capable Vulkan device: skipped");
+        SUCCEED("no RT-capable GPU device: skipped");
         return;
     }
     const auto model = make_demo_model();

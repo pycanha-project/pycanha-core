@@ -1,5 +1,7 @@
-// Public RadiativeScene / VfAccumulator API over the src-private vk_scene
-// and vk_accum layers.
+// Public RadiativeScene / VfAccumulator API over the src-private backend
+// scene and accumulator layers (Vulkan everywhere except macOS, where it is
+// Metal). Both backends define the same detail:: class names, so nothing
+// below this comment is backend-specific.
 
 #include "pycanha-core/radiative/scene.hpp"
 
@@ -18,8 +20,13 @@
 #include "pycanha-core/radiative/results.hpp"
 #include "pycanha-core/radiative/scene_part.hpp"
 #include "pycanha-core/radiative/settings.hpp"
+#ifdef __APPLE__
+#include "mtl_accum.hpp"
+#include "mtl_scene.hpp"
+#else
 #include "vk_accum.hpp"
 #include "vk_scene.hpp"
+#endif
 
 namespace pycanha::radiative {
 

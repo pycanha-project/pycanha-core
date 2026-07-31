@@ -1,4 +1,7 @@
-// Public Device / availability API over the src-private vk_device layer.
+// Public Device / availability API over the src-private backend device layer
+// (Vulkan everywhere except macOS, where it is Metal). Everything here is
+// backend-independent: the backend enumerates the devices, ranks them and
+// reports whether each one can run the kernels.
 
 #include "pycanha-core/radiative/device.hpp"
 
@@ -12,7 +15,11 @@
 #include <utility>
 #include <vector>
 
+#ifdef __APPLE__
+#include "mtl_device.hpp"
+#else
 #include "vk_device.hpp"
+#endif
 
 namespace pycanha::radiative {
 
@@ -20,27 +27,25 @@ namespace {
 
 using detail::PhysicalDeviceCheck;
 
-// Selection order for the default pick: discrete > integrated > other
-// hardware > software (a software rasterizer like lavapipe is a valid last
-// resort — same SPIR-V, just slow).
-[[nodiscard]] int selection_score(const PhysicalDeviceCheck& check) {
-    if (check.info.software) {
-        return 0;
-    }
-    VkPhysicalDeviceProperties2 props2{
-        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2,
-        .pNext = nullptr,
-        .properties = {}};
-    vkGetPhysicalDeviceProperties2(check.physical_device, &props2);
-    switch (props2.properties.deviceType) {
-        case VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU:
-            return 3;
-        case VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU:
-            return 2;
-        default:
-            return 1;
-    }
-}
+// Wording of the "cannot run here" errors: the driver stack, the requirements
+// and the way out are all backend-specific.
+#ifdef __APPLE__
+constexpr const char* no_devices_message =
+    "pycanha::radiative: no Metal device found.";
+constexpr const char* device_api_name = "Metal";
+constexpr const char* no_capable_device_message =
+    "pycanha::radiative: no ray-tracing-capable Metal device found (need an "
+    "Apple9 GPU — M3 or newer — with ray-tracing support).";
+#else
+constexpr const char* no_devices_message =
+    "pycanha::radiative: no Vulkan driver found. Install a GPU driver with "
+    "Vulkan support, or Mesa lavapipe for a software fallback.";
+constexpr const char* device_api_name = "Vulkan";
+constexpr const char* no_capable_device_message =
+    "pycanha::radiative: no ray-tracing-capable Vulkan device found (need "
+    "acceleration structures, ray queries and 64-bit atomics). Update the GPU "
+    "driver or install Mesa lavapipe >= 26.";
+#endif
 
 }  // namespace
 
@@ -64,10 +69,7 @@ std::vector<DeviceInfo> enumerate_devices() {
 Device Device::create(std::int32_t index) {
     const auto checks = detail::enumerate_physical_devices();
     if (checks.empty()) {
-        throw std::runtime_error(
-            "pycanha::radiative: no Vulkan driver found. Install a GPU "
-            "driver with Vulkan support, or Mesa lavapipe for a software "
-            "fallback.");
+        throw std::runtime_error(no_devices_message);
     }
 
     const PhysicalDeviceCheck* picked = nullptr;
@@ -76,8 +78,8 @@ Device Device::create(std::int32_t index) {
         if (unsigned_index >= checks.size()) {
             throw std::runtime_error("pycanha::radiative: device index " +
                                      std::to_string(index) + " out of range (" +
-                                     std::to_string(checks.size()) +
-                                     " Vulkan devices found)");
+                                     std::to_string(checks.size()) + " " +
+                                     device_api_name + " devices found)");
         }
         picked = &checks[unsigned_index];
         if (!picked->info.ray_tracing) {
@@ -91,18 +93,13 @@ Device Device::create(std::int32_t index) {
             if (!check.info.ray_tracing) {
                 continue;
             }
-            const int score = selection_score(check);
-            if (score > best_score) {
-                best_score = score;
+            if (check.score > best_score) {
+                best_score = check.score;
                 picked = &check;
             }
         }
         if (picked == nullptr) {
-            throw std::runtime_error(
-                "pycanha::radiative: no ray-tracing-capable Vulkan device "
-                "found (need acceleration structures, ray queries and "
-                "64-bit atomics). Update the GPU driver or install Mesa "
-                "lavapipe >= 26.");
+            throw std::runtime_error(no_capable_device_message);
         }
     }
 
