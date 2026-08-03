@@ -8,6 +8,7 @@
 
 namespace {
 
+using pycanha::gmm::ActiveSide;
 using pycanha::gmm::BulkMaterial;
 using pycanha::gmm::ThermalMesh;
 
@@ -92,4 +93,66 @@ TEST_CASE("ThermalMesh materials are shared by reference", "[gmm][mesh]") {
     REQUIRE(mesh.get_side1_material() == aluminum);
     REQUIRE(mesh.get_side1_material() == mesh.get_side2_material());
     REQUIRE(mesh.get_side1_material()->get_density() == 2700.0);
+}
+
+TEST_CASE("ThermalMesh activity defaults to both sides in both physics",
+          "[gmm][mesh]") {
+    const ThermalMesh mesh;
+    REQUIRE(mesh.get_radiative_active_side() == ActiveSide::Both);
+    REQUIRE(mesh.get_conductive_active_side() == ActiveSide::Both);
+    REQUIRE(mesh.is_radiative_active(1U));
+    REQUIRE(mesh.is_radiative_active(2U));
+    REQUIRE(mesh.is_conductive_active(1U));
+    REQUIRE(mesh.is_conductive_active(2U));
+    REQUIRE(mesh.is_side_active(1U));
+    REQUIRE(mesh.is_side_active(2U));
+}
+
+TEST_CASE("ThermalMesh active-side selector covers the four states",
+          "[gmm][mesh]") {
+    ThermalMesh mesh;
+
+    mesh.set_radiative_active_side(ActiveSide::None);
+    REQUIRE_FALSE(mesh.is_radiative_active(1U));
+    REQUIRE_FALSE(mesh.is_radiative_active(2U));
+
+    mesh.set_radiative_active_side(ActiveSide::Side1);
+    REQUIRE(mesh.is_radiative_active(1U));
+    REQUIRE_FALSE(mesh.is_radiative_active(2U));
+
+    mesh.set_radiative_active_side(ActiveSide::Side2);
+    REQUIRE_FALSE(mesh.is_radiative_active(1U));
+    REQUIRE(mesh.is_radiative_active(2U));
+
+    mesh.set_radiative_active_side(ActiveSide::Both);
+    REQUIRE(mesh.is_radiative_active(1U));
+    REQUIRE(mesh.is_radiative_active(2U));
+}
+
+TEST_CASE("ThermalMesh radiative and conductive activity are independent",
+          "[gmm][mesh]") {
+    ThermalMesh mesh;
+    // The two ESATAN states a single selector could not express: side 1 only
+    // radiates, side 2 only conducts.
+    mesh.set_radiative_active_side(ActiveSide::Side1);
+    mesh.set_conductive_active_side(ActiveSide::Side2);
+
+    REQUIRE(mesh.is_radiative_active(1U));
+    REQUIRE_FALSE(mesh.is_conductive_active(1U));
+    REQUIRE_FALSE(mesh.is_radiative_active(2U));
+    REQUIRE(mesh.is_conductive_active(2U));
+    REQUIRE(mesh.is_side_active(1U));
+    REQUIRE(mesh.is_side_active(2U));
+
+    mesh.set_radiative_active_side(ActiveSide::Side2);
+    mesh.set_conductive_active_side(ActiveSide::Side2);
+    REQUIRE_FALSE(mesh.is_side_active(1U));
+    REQUIRE(mesh.is_side_active(2U));
+}
+
+TEST_CASE("ThermalMesh activity predicates validate the side", "[gmm][mesh]") {
+    const ThermalMesh mesh;
+    REQUIRE_THROWS_AS(mesh.is_radiative_active(0U), std::invalid_argument);
+    REQUIRE_THROWS_AS(mesh.is_conductive_active(3U), std::invalid_argument);
+    REQUIRE_THROWS_AS(mesh.is_side_active(0U), std::invalid_argument);
 }
