@@ -49,7 +49,7 @@ void require_tiled_matches(rad::RadiativeScene& scene,
 TEST_CASE("radiative exchange: blackbody factors equal the view factors",
           "[radiative][gpu][exchange]") {
     if (!rad::is_available()) {
-        SUCCEED("no RT-capable Vulkan device: skipped");
+        SUCCEED("no RT-capable GPU device: skipped");
         return;
     }
     const auto model = make_parallel_plates(1.0);
@@ -84,7 +84,7 @@ TEST_CASE("radiative exchange: blackbody factors equal the view factors",
 TEST_CASE("radiative exchange: gray plates match the infinite-plate formula",
           "[radiative][gpu][exchange]") {
     if (!rad::is_available()) {
-        SUCCEED("no RT-capable Vulkan device: skipped");
+        SUCCEED("no RT-capable GPU device: skipped");
         return;
     }
     // A tiny gap makes the finite plates a good stand-in for the infinite
@@ -118,7 +118,7 @@ TEST_CASE(
     "bit-identical",
     "[radiative][gpu][exchange][tiled]") {
     if (!rad::is_available()) {
-        SUCCEED("no RT-capable Vulkan device: skipped");
+        SUCCEED("no RT-capable GPU device: skipped");
         return;
     }
     const auto model = make_parallel_plates(1.0);
@@ -148,7 +148,7 @@ TEST_CASE(
 TEST_CASE("radiative exchange: the solar band scores every bounce",
           "[radiative][gpu][exchange]") {
     if (!rad::is_available()) {
-        SUCCEED("no RT-capable Vulkan device: skipped");
+        SUCCEED("no RT-capable GPU device: skipped");
         return;
     }
     // The mirror is black in IR but a perfect specular reflector in the
@@ -194,7 +194,7 @@ TEST_CASE("radiative exchange: the solar band scores every bounce",
 TEST_CASE("radiative exchange: Russian roulette is threshold-invariant",
           "[radiative][gpu][exchange]") {
     if (!rad::is_available()) {
-        SUCCEED("no RT-capable Vulkan device: skipped");
+        SUCCEED("no RT-capable GPU device: skipped");
         return;
     }
     // Highly reflective narrow cavity: paths are many bounces deep, so the
@@ -235,7 +235,7 @@ TEST_CASE("radiative exchange: Russian roulette is threshold-invariant",
 TEST_CASE("radiative exchange: inactive faces absorb into the lost bucket",
           "[radiative][gpu][exchange]") {
     if (!rad::is_available()) {
-        SUCCEED("no RT-capable Vulkan device: skipped");
+        SUCCEED("no RT-capable GPU device: skipped");
         return;
     }
     const auto model = make_parallel_plates(1.0);
@@ -274,7 +274,7 @@ TEST_CASE("radiative exchange: inactive faces absorb into the lost bucket",
 TEST_CASE("radiative exchange: update_materials swaps properties in place",
           "[radiative][gpu][exchange][scene]") {
     if (!rad::is_available()) {
-        SUCCEED("no RT-capable Vulkan device: skipped");
+        SUCCEED("no RT-capable GPU device: skipped");
         return;
     }
     const auto model = make_parallel_plates(1.0);

@@ -96,6 +96,22 @@ jobs:
         sudo apt-get install -y mesa-vulkan-drivers
         echo "VK_ICD_FILENAMES=$(ls /usr/share/vulkan/icd.d/lvp_icd*.json | head -1)" >> $GITHUB_ENV
 
+    - name: Install the Metal toolchain (compiles the Metal kernels)
+      if: matrix.config.os == 'macos'
+      run: |
+        # Since Xcode 26 the Metal shader compiler is an unbundled, per-user
+        # component, and the build fails at configure time without it.
+        #
+        # This job is COMPILE COVERAGE ONLY for the Metal backend. GitHub's
+        # macOS runners are Apple Virtualization Framework VMs whose "Apple
+        # Paravirtual device" reports GPU family Apple5: no ray tracing, no
+        # 64-bit atomics, and there is no software Metal driver equivalent to
+        # lavapipe. Every [gpu] case therefore skips here, and the value of
+        # the job is that slangc -target metal and the Metal compiler run on
+        # every push. Kernel results are verified on a local Apple9 Mac.
+        xcodebuild -downloadComponent MetalToolchain
+        xcrun metal --version
+
     - name: Install conan profiles
       run: |
         conan config install .conan

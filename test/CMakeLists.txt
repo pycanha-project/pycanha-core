@@ -41,6 +41,7 @@ set(UNIT_TEST_SOURCES
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/test_mesh_parts.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/test_primitive_variant.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/radiative/test_aggregate.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/radiative/test_cross_backend_bitdiff.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/radiative/test_device.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/radiative/test_exchange_kernels.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/radiative/test_exchange_specular.cpp"
@@ -94,6 +95,14 @@ set(API_TEST_SOURCES
   "${CMAKE_CURRENT_SOURCE_DIR}/api/test_thermaldata.cpp"
 )
 
+# The Metal backend has one layout conversion with no Vulkan counterpart (the
+# instance transform), so its test is Objective-C++ and only exists where that
+# backend is built.
+if(APPLE AND PYCANHA_OPTION_RAYTRACING)
+  list(APPEND UNIT_TEST_SOURCES
+    "${CMAKE_CURRENT_SOURCE_DIR}/unit/radiative/test_mtl_transform.mm")
+endif()
+
 set(TEST_SOURCES
   ${UNIT_TEST_SOURCES}
   ${API_TEST_SOURCES}
@@ -131,6 +140,18 @@ elseif(TARGET manifold)
 endif()
 if(UNIX AND NOT APPLE)
   target_link_libraries(${TEST_TARGET_NAME} PRIVATE m)
+endif()
+
+if(APPLE AND PYCANHA_OPTION_RAYTRACING)
+  # The Metal test reaches into the backend's src-private header, and needs
+  # the frameworks and reference counting the backend itself is built with.
+  target_include_directories(${TEST_TARGET_NAME} PRIVATE
+    ${PROJECT_SOURCE_DIR}/pycanha-core/src)
+  target_link_libraries(${TEST_TARGET_NAME} PRIVATE
+    "-framework Metal" "-framework Foundation")
+  set_source_files_properties(
+    ${CMAKE_CURRENT_SOURCE_DIR}/unit/radiative/test_mtl_transform.mm
+    PROPERTIES COMPILE_OPTIONS "-fobjc-arc")
 endif()
 
 target_set_warnings(

@@ -22,7 +22,9 @@
 
 import common;
 
-[[vk::binding(10, 0)]] RWStructuredBuffer<uint64_t> acc;
+// FpBuffer is a u64 cell on SPIR-V and a lo/hi u32 pair on Metal (same bytes);
+// deposits go through fp_add / fp_add_raw, never a raw InterlockedAdd here.
+[[vk::binding(10, 0)]] FpBuffer acc;
 
 [shader("compute")]
 [numthreads(64, 1, 1)]

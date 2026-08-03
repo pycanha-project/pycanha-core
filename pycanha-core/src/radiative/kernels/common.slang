@@ -29,12 +29,23 @@ public struct Push {
     public float fp_scale;         // fixed-point scale S of the deposits
     public float inv_fp_scale;     // 1/S
     public float ray_tmin_scale;   // self-intersection epsilon scale
-    public float3 sun_dir;         // solar kernel only (unit, sun -> scene)
+    // Solar kernel only (unit, sun -> scene). Three scalars rather than a
+    // float3 because a float3 is 12 B under Vulkan scalar layout but 16 B
+    // (16-aligned) in Metal Shading Language, which would make this struct 64 B
+    // for SPIR-V and 80 B for Metal and silently break the byte-for-byte
+    // contract with the C++ mirror. Scalars are laid out identically by both.
+    public float sun_dir_x;
+    public float sun_dir_y;
+    public float sun_dir_z;
     public float _pad;
 };
 
 [[vk::push_constant]]
 public Push pc;
+
+public float3 sun_direction() {
+    return float3(pc.sun_dir_x, pc.sun_dir_y, pc.sun_dir_z);
+}
 
 public static const uint FLAG_NORMAL_EMISSION = 1u;
 // Selects the solar property triplet (alpha_sol/spec_sol/tau_sol) instead of
@@ -126,14 +137,23 @@ public float rng_next(inout Rng r) {
 
 // ---------------------------------------------------------------------------
 // Fixed-point deposit: float energy is converted to an integer once and
-// accumulated with a 64-bit atomic add. Integer adds are associative (float
-// atomics are not), which is what makes results independent of thread
-// scheduling and accumulator layout. No zero-check: a zero add is harmless
-// and branchless is faster.
+// accumulated atomically. Integer adds are associative (float atomics are
+// not), which is what makes results independent of thread scheduling and
+// accumulator layout. No zero-check: a zero add is harmless and branchless is
+// faster.
+//
+// A 64-bit accumulator cell is a single u64 on SPIR-V, but Metal Shading
+// Language has NO 64-bit buffer atomics of any kind (not add, min/max,
+// load/store or compare-exchange, on any -std), so there the cell is a pair of
+// u32 counters holding its low and high halves. Two adjacent u32 at an 8-byte
+// stride ARE the little-endian byte image of the u64, so buffer sizes and host
+// readback are identical on both backends.
 // ---------------------------------------------------------------------------
-public void fp_add(RWStructuredBuffer<uint64_t> buf, uint idx, float value) {
-    InterlockedAdd(buf[idx], uint64_t(value * pc.fp_scale + 0.5));
-}
+#if defined(PYCANHA_METAL_BACKEND)
+public typealias FpBuffer = RWStructuredBuffer<uint>;
+#else
+public typealias FpBuffer = RWStructuredBuffer<uint64_t>;
+#endif
 
 // Fixed-point representation of a remaining-energy float. Monotone
 // non-decreasing in `energy` (f32 multiply, +0.5 and the u64 truncation all
@@ -146,9 +166,29 @@ public uint64_t to_fp(float energy) {
 // Raw integer add for pre-converted fixed-point amounts (deposit
 // differences and terminal balance flushes). u64 arithmetic wraps, which the
 // exchange kernel exploits for the Russian-roulette boost withdrawal.
-public void fp_add_raw(RWStructuredBuffer<uint64_t> buf, uint idx,
-                       uint64_t value) {
+//
+// The split path is exact, not an approximation: each 32-bit add is itself
+// atomic, so whatever the thread order the low halves total sum(V_lo) mod 2^32
+// and the number of low-half wraps is floor(sum(V_lo) / 2^32); folding that
+// carry into the high half reconstructs sum(V) mod 2^64 exactly. Results stay
+// bit-identical to the single-atomic path, including the wrapping subtraction.
+public void fp_add_raw(FpBuffer buf, uint idx, uint64_t value) {
+#if defined(PYCANHA_METAL_BACKEND)
+    uint lo = uint(value & 0xFFFFFFFFull);
+    uint hi = uint(value >> 32);
+    uint old_lo;
+    InterlockedAdd(buf[2u * idx], lo, old_lo);
+    uint carry = (old_lo + lo) < old_lo ? 1u : 0u;  // unsigned wrap == carry
+    InterlockedAdd(buf[2u * idx + 1u], hi + carry);
+#else
     InterlockedAdd(buf[idx], value);
+#endif
+}
+
+// Single definition of the float deposit, so the two backends' integer paths
+// cannot drift apart.
+public void fp_add(FpBuffer buf, uint idx, float value) {
+    fp_add_raw(buf, idx, to_fp(value));
 }
 
 // Band-selected optical triplet of a face slot: absorptivity, specular
@@ -334,11 +374,6 @@ public Hit trace_ray(float3 origin, float3 direction) {
     InstanceData inst = instance_data[inst_index];
     uint *tri_face = (uint *)inst.tri_face_addr;
     uint base = tri_face[prim];  // even side-1 slot
-    bool front = q.CommittedTriangleFrontFace();
-
-    hit.miss = false;
-    hit.slot = front ? base : base + 1u;
-    hit.position = origin + q.CommittedRayT() * direction;
 
     uint3 *indices = (uint3 *)inst.indices_addr;
     float3 *vertices = (float3 *)inst.vertices_addr;
@@ -347,6 +382,26 @@ public Hit trace_ray(float3 origin, float3 direction) {
         cross(vertices[tri.y] - vertices[tri.x],
               vertices[tri.z] - vertices[tri.x]));
     float3 n = normalize(transform_direction(inst, n_local));
+
+    // Front-facing is exactly "the winding normal opposes the ray" for an
+    // orientation-preserving instance transform, which every part has (rigid,
+    // determinant +1, and transform_direction applies rotation only). They
+    // could differ only at dot(n, direction) == 0 — a ray exactly in the
+    // triangle plane, which cannot produce a committed triangle hit.
+    // The two forms are kept apart because slangc's Metal back end has no
+    // working CommittedTriangleFrontFace() (it emits an accessor MSL does not
+    // declare), while on SPIR-V deriving `front` from `n` forces the vertex
+    // fetch before the slot is known and the compiler then emits the triangle
+    // fetch twice (measured: +23 executable instructions in the vf kernel).
+#if defined(PYCANHA_METAL_BACKEND)
+    bool front = dot(n, direction) < 0.0;
+#else
+    bool front = q.CommittedTriangleFrontFace();
+#endif
+
+    hit.miss = false;
+    hit.slot = front ? base : base + 1u;
+    hit.position = origin + q.CommittedRayT() * direction;
     // Flip toward the incoming ray (same convention as the parity above:
     // front face <=> side 1 <=> winding normal against the ray).
     hit.normal = dot(n, direction) < 0.0 ? n : -n;

@@ -92,7 +92,7 @@ void require_bit_identical(const rad::SolarResult& result,
 TEST_CASE("radiative solar: direct flux follows the cosine law",
           "[radiative][gpu][solar]") {
     if (!rad::is_available()) {
-        SUCCEED("no RT-capable Vulkan device: skipped");
+        SUCCEED("no RT-capable GPU device: skipped");
         return;
     }
     const auto model = make_single_plate();
@@ -114,7 +114,7 @@ TEST_CASE("radiative solar: direct flux follows the cosine law",
 TEST_CASE("radiative solar: occlusion shadows completely",
           "[radiative][gpu][solar]") {
     if (!rad::is_available()) {
-        SUCCEED("no RT-capable Vulkan device: skipped");
+        SUCCEED("no RT-capable GPU device: skipped");
         return;
     }
     const auto model = make_parallel_plates(1.0);
@@ -145,7 +145,7 @@ TEST_CASE("radiative solar: occlusion shadows completely",
 TEST_CASE("radiative solar: mirrors add a reflected component",
           "[radiative][gpu][solar]") {
     if (!rad::is_available()) {
-        SUCCEED("no RT-capable Vulkan device: skipped");
+        SUCCEED("no RT-capable GPU device: skipped");
         return;
     }
     const auto model = make_source_and_mirror();
@@ -182,7 +182,7 @@ TEST_CASE("radiative solar: mirrors add a reflected component",
 TEST_CASE("radiative solar: determinism, additivity and sun consistency",
           "[radiative][gpu][solar]") {
     if (!rad::is_available()) {
-        SUCCEED("no RT-capable Vulkan device: skipped");
+        SUCCEED("no RT-capable GPU device: skipped");
         return;
     }
     const auto model = make_parallel_plates(1.0);

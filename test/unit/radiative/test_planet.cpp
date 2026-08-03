@@ -61,7 +61,7 @@ make_plate_under_planet() {
 TEST_CASE("radiative planet: a celestial part blocks, scores and never emits",
           "[radiative][gpu][scene]") {
     if (!rad::is_available()) {
-        SUCCEED("no RT-capable Vulkan device: skipped");
+        SUCCEED("no RT-capable GPU device: skipped");
         return;
     }
     const auto model = make_plate_under_planet();

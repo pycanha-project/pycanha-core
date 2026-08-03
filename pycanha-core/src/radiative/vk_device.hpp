@@ -42,6 +42,12 @@ struct PhysicalDeviceCheck {
     VkPhysicalDevice physical_device = VK_NULL_HANDLE;
     DeviceInfo info;
     bool has_memory_budget = false;
+    // Preference when no device index is requested, highest wins: discrete >
+    // integrated > other hardware > software (a software rasterizer like
+    // lavapipe is a valid last resort — same SPIR-V, just slow). Ranking the
+    // devices here rather than in the shared selection code keeps every
+    // driver query inside the backend.
+    int score = 0;
 };
 
 // Empty when no driver / no devices. Order matches enumerate_devices().

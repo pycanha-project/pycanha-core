@@ -93,7 +93,7 @@ void require_bit_identical(const rad::VfResult& result,
 TEST_CASE("radiative vf: parallel plates match the analytic value",
           "[radiative][gpu][vf]") {
     if (!rad::is_available()) {
-        SUCCEED("no RT-capable Vulkan device: skipped");
+        SUCCEED("no RT-capable GPU device: skipped");
         return;
     }
     const auto model = make_parallel_plates();
@@ -127,7 +127,7 @@ TEST_CASE("radiative vf: parallel plates match the analytic value",
 TEST_CASE("radiative vf: same seed reproduces bit-identical results",
           "[radiative][gpu][vf]") {
     if (!rad::is_available()) {
-        SUCCEED("no RT-capable Vulkan device: skipped");
+        SUCCEED("no RT-capable GPU device: skipped");
         return;
     }
     const auto model = make_parallel_plates();
@@ -150,7 +150,7 @@ TEST_CASE("radiative vf: same seed reproduces bit-identical results",
 TEST_CASE("radiative vf: identity instances match the monolithic scene",
           "[radiative][gpu][vf][scene]") {
     if (!rad::is_available()) {
-        SUCCEED("no RT-capable Vulkan device: skipped");
+        SUCCEED("no RT-capable GPU device: skipped");
         return;
     }
     const auto model = make_parallel_plates();
@@ -181,7 +181,7 @@ TEST_CASE("radiative vf: identity instances match the monolithic scene",
 TEST_CASE("radiative vf: tiled layout is bit-identical to dense",
           "[radiative][gpu][vf]") {
     if (!rad::is_available()) {
-        SUCCEED("no RT-capable Vulkan device: skipped");
+        SUCCEED("no RT-capable GPU device: skipped");
         return;
     }
     const auto model = make_parallel_plates();
@@ -211,7 +211,7 @@ TEST_CASE("radiative vf: tiled layout is bit-identical to dense",
 
 TEST_CASE("radiative vf: batches accumulate", "[radiative][gpu][vf]") {
     if (!rad::is_available()) {
-        SUCCEED("no RT-capable Vulkan device: skipped");
+        SUCCEED("no RT-capable GPU device: skipped");
         return;
     }
     const auto model = make_parallel_plates();

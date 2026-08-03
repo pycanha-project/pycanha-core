@@ -26,24 +26,38 @@ find_package(spdlog REQUIRED CONFIG)
 find_package(HDF5 REQUIRED COMPONENTS CXX)
 find_package(symengine REQUIRED CONFIG)
 
-# Raytracing: vulkan-headers + volk (runtime loader, no link-time Vulkan
-# dependency) + VMA. Off => only the stub (is_available() == false).
-# macOS builds with the option OFF (forced in conanfile.py) until a Metal
-# backend exists.
+# Raytracing backends. Off => only the stub (is_available() == false).
+#  - Vulkan (Windows/Linux): vulkan-headers + volk (runtime loader, no
+#    link-time Vulkan dependency) + VMA.
+#  - Metal (macOS): the Metal and Foundation system frameworks, no extra
+#    packages. device.cpp and scene.cpp are the same sources for both
+#    backends — they only ever name the backend-private detail:: types — but
+#    on Apple they are compiled as Objective-C++ (see below), since that is
+#    what the backend's own headers are written in.
 if(PYCANHA_OPTION_RAYTRACING)
-    find_package(volk REQUIRED CONFIG)
-    find_package(VulkanHeaders REQUIRED CONFIG)
-    find_package(VulkanMemoryAllocator REQUIRED CONFIG)
     include(Slang)
     pycanha_fetch_slang()
-    set(PYCANHA_RADIATIVE_SOURCES
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/radiative/device.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/radiative/scene.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/radiative/vk_accum.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/radiative/vk_device.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/radiative/vk_scene.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/radiative/vma_impl.cpp
-    )
+    if(APPLE)
+        set(PYCANHA_RADIATIVE_SOURCES
+            ${CMAKE_CURRENT_SOURCE_DIR}/src/radiative/device.cpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/src/radiative/scene.cpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/src/radiative/mtl_accum.mm
+            ${CMAKE_CURRENT_SOURCE_DIR}/src/radiative/mtl_device.mm
+            ${CMAKE_CURRENT_SOURCE_DIR}/src/radiative/mtl_scene.mm
+        )
+    else()
+        find_package(volk REQUIRED CONFIG)
+        find_package(VulkanHeaders REQUIRED CONFIG)
+        find_package(VulkanMemoryAllocator REQUIRED CONFIG)
+        set(PYCANHA_RADIATIVE_SOURCES
+            ${CMAKE_CURRENT_SOURCE_DIR}/src/radiative/device.cpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/src/radiative/scene.cpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/src/radiative/vk_accum.cpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/src/radiative/vk_device.cpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/src/radiative/vk_scene.cpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/src/radiative/vma_impl.cpp
+        )
+    endif()
 else()
     set(PYCANHA_RADIATIVE_SOURCES
         ${CMAKE_CURRENT_SOURCE_DIR}/src/radiative/radiative_stub.cpp
@@ -213,31 +227,65 @@ target_link_libraries( ${LIB_NAME}
 )
 
 if(PYCANHA_OPTION_RAYTRACING)
-    # PRIVATE: public headers expose no Vulkan types.
-    target_link_libraries(${LIB_NAME} PRIVATE
-        volk::volk
-        Vulkan::Headers
-        GPUOpen::VulkanMemoryAllocator
-    )
-    # VMA sources its Vulkan entry points from volk (one config for all TUs).
-    target_compile_definitions(${LIB_NAME} PRIVATE
-        VMA_STATIC_VULKAN_FUNCTIONS=0
-        VMA_DYNAMIC_VULKAN_FUNCTIONS=1
-    )
+    if(APPLE)
+        # PRIVATE: public headers expose no Metal types.
+        target_link_libraries(${LIB_NAME} PRIVATE
+            "-framework Metal"
+            "-framework Foundation"
+        )
+        # device.cpp and scene.cpp are shared with the Vulkan backend, but on
+        # Apple the backend headers they include are Objective-C++, so they
+        # compile as OBJCXX here. Building every one of these translation
+        # units with automatic reference counting is what makes the Metal
+        # objects held by the backend classes ordinary C++ members with
+        # ordinary lifetimes — and it must be ALL of them, since they share
+        # those class definitions.
+        set_source_files_properties(
+            ${CMAKE_CURRENT_SOURCE_DIR}/src/radiative/device.cpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/src/radiative/scene.cpp
+            PROPERTIES LANGUAGE OBJCXX
+        )
+        set_source_files_properties(
+            ${CMAKE_CURRENT_SOURCE_DIR}/src/radiative/device.cpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/src/radiative/scene.cpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/src/radiative/mtl_accum.mm
+            ${CMAKE_CURRENT_SOURCE_DIR}/src/radiative/mtl_device.mm
+            ${CMAKE_CURRENT_SOURCE_DIR}/src/radiative/mtl_scene.mm
+            PROPERTIES COMPILE_OPTIONS "-fobjc-arc"
+        )
+        set(PYCANHA_KERNEL_TARGET metal)
+    else()
+        # PRIVATE: public headers expose no Vulkan types.
+        target_link_libraries(${LIB_NAME} PRIVATE
+            volk::volk
+            Vulkan::Headers
+            GPUOpen::VulkanMemoryAllocator
+        )
+        # VMA sources its Vulkan entry points from volk (one config for all TUs).
+        target_compile_definitions(${LIB_NAME} PRIVATE
+            VMA_STATIC_VULKAN_FUNCTIONS=0
+            VMA_DYNAMIC_VULKAN_FUNCTIONS=1
+        )
+        set(PYCANHA_KERNEL_TARGET spirv)
+    endif()
 
-    # Slang kernels: compiled to SPIR-V, validated, and embedded as generated
-    # headers on every build (compilation IS the shader syntax check).
+    # Slang kernels: compiled to SPIR-V or to a Metal library, checked by the
+    # respective shader compiler, and embedded as generated headers on every
+    # build (compilation IS the shader syntax check).
     pycanha_add_slang_kernel(vf
         SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/src/radiative/kernels/vf.slang
         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/radiative/kernels/common.slang
+        TARGET ${PYCANHA_KERNEL_TARGET}
     )
     pycanha_add_slang_kernel(exchange
         SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/src/radiative/kernels/exchange.slang
         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/radiative/kernels/common.slang
+        TARGET ${PYCANHA_KERNEL_TARGET}
     )
     pycanha_add_slang_kernel(solar
         SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/src/radiative/kernels/solar.slang
         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/radiative/kernels/common.slang
+        TARGET ${PYCANHA_KERNEL_TARGET}
     )
     add_dependencies(${LIB_NAME} pycanha_kernel_vf pycanha_kernel_exchange
         pycanha_kernel_solar)
