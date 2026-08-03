@@ -5,5 +5,8 @@ var searchData=
   ['manifoldcutbackend_2',['ManifoldCutBackend',['../classpycanha_1_1gmm_1_1cutting_1_1ManifoldCutBackend.html',1,'pycanha::gmm::cutting']]],
   ['materialtable_3',['MaterialTable',['../structpycanha_1_1radiative_1_1MaterialTable.html',1,'pycanha::radiative']]],
   ['memoryestimate_4',['MemoryEstimate',['../structpycanha_1_1radiative_1_1MemoryEstimate.html',1,'pycanha::radiative']]],
-  ['meshoptions_5',['MeshOptions',['../structpycanha_1_1gmm_1_1MeshOptions.html',1,'pycanha::gmm']]]
+  ['meridian_5flength_5',['meridian_length',['../classpycanha_1_1conduction_1_1MeridianProfile.html#ab4e231c6ad8b64f43b710b7304bb09c4',1,'pycanha::conduction::MeridianProfile']]],
+  ['meridianprofile_6',['MeridianProfile',['../classpycanha_1_1conduction_1_1MeridianProfile.html',1,'pycanha::conduction']]],
+  ['meshoptions_7',['MeshOptions',['../structpycanha_1_1gmm_1_1MeshOptions.html',1,'pycanha::gmm']]],
+  ['min_5fconductance_8',['min_conductance',['../structpycanha_1_1conduction_1_1TmmBuildOptions.html#aae69abbc2b7eacd04ab35ee0d3e9a48d',1,'pycanha::conduction::TmmBuildOptions']]]
 ];

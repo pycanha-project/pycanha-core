@@ -28,7 +28,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.17</span>
+   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.18</span>
    </div>
    <div id="projectbrief">The C++ core of pycanha</div>
   </td>
@@ -126,14 +126,20 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>is_valid</b> () const
 <tr class="memitem:aaa406f5c700d192f5631890c58bf0140" id="r_aaa406f5c700d192f5631890c58bf0140"><td class="memItemLeft" align="right" valign="top"><a id="aaa406f5c700d192f5631890c58bf0140" name="aaa406f5c700d192f5631890c58bf0140"></a>
 MeshIndex&#160;</td><td class="memItemRight" valign="bottom"><b>get_number_of_pair_faces</b> () const noexcept</td></tr>
 <tr class="memdesc:aaa406f5c700d192f5631890c58bf0140"><td class="mdescLeft">&#160;</td><td class="mdescRight">(n1 - 1) * (n2 - 1) face pairs. <br /></td></tr>
-<tr class="memitem:a6330d7ccfd0d7678d8e5b26d2e93bd70" id="r_a6330d7ccfd0d7678d8e5b26d2e93bd70"><td class="memItemLeft" align="right" valign="top"><a id="a6330d7ccfd0d7678d8e5b26d2e93bd70" name="a6330d7ccfd0d7678d8e5b26d2e93bd70"></a>
-bool&#160;</td><td class="memItemRight" valign="bottom"><b>get_side1_activity</b> () const noexcept</td></tr>
-<tr class="memitem:a5d13d5b85251b5fbac3cb81e9abd9c2e" id="r_a5d13d5b85251b5fbac3cb81e9abd9c2e"><td class="memItemLeft" align="right" valign="top"><a id="a5d13d5b85251b5fbac3cb81e9abd9c2e" name="a5d13d5b85251b5fbac3cb81e9abd9c2e"></a>
-bool&#160;</td><td class="memItemRight" valign="bottom"><b>get_side2_activity</b> () const noexcept</td></tr>
-<tr class="memitem:a226ea1ce2ae7a000ecd7e57bb7a3a1fd" id="r_a226ea1ce2ae7a000ecd7e57bb7a3a1fd"><td class="memItemLeft" align="right" valign="top"><a id="a226ea1ce2ae7a000ecd7e57bb7a3a1fd" name="a226ea1ce2ae7a000ecd7e57bb7a3a1fd"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>set_side1_activity</b> (bool activity) noexcept</td></tr>
-<tr class="memitem:ae8a69584e4a2b259be3a09454f5dff3d" id="r_ae8a69584e4a2b259be3a09454f5dff3d"><td class="memItemLeft" align="right" valign="top"><a id="ae8a69584e4a2b259be3a09454f5dff3d" name="ae8a69584e4a2b259be3a09454f5dff3d"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>set_side2_activity</b> (bool activity) noexcept</td></tr>
+<tr class="memitem:ab04c667c5c9ef9494dac57d877026693" id="r_ab04c667c5c9ef9494dac57d877026693"><td class="memItemLeft" align="right" valign="top"><a id="ab04c667c5c9ef9494dac57d877026693" name="ab04c667c5c9ef9494dac57d877026693"></a>
+ActiveSide&#160;</td><td class="memItemRight" valign="bottom"><b>get_radiative_active_side</b> () const noexcept</td></tr>
+<tr class="memitem:a03894709a5c475f0161ae868c1bf657e" id="r_a03894709a5c475f0161ae868c1bf657e"><td class="memItemLeft" align="right" valign="top"><a id="a03894709a5c475f0161ae868c1bf657e" name="a03894709a5c475f0161ae868c1bf657e"></a>
+ActiveSide&#160;</td><td class="memItemRight" valign="bottom"><b>get_conductive_active_side</b> () const noexcept</td></tr>
+<tr class="memitem:a9a4e3ed41503a2ed2c5ef325d9414798" id="r_a9a4e3ed41503a2ed2c5ef325d9414798"><td class="memItemLeft" align="right" valign="top"><a id="a9a4e3ed41503a2ed2c5ef325d9414798" name="a9a4e3ed41503a2ed2c5ef325d9414798"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>set_radiative_active_side</b> (ActiveSide sides) noexcept</td></tr>
+<tr class="memitem:a6c4c54ce9189d6a31236bed87c87d935" id="r_a6c4c54ce9189d6a31236bed87c87d935"><td class="memItemLeft" align="right" valign="top"><a id="a6c4c54ce9189d6a31236bed87c87d935" name="a6c4c54ce9189d6a31236bed87c87d935"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>set_conductive_active_side</b> (ActiveSide sides) noexcept</td></tr>
+<tr class="memitem:a24556da698cfcb9839e484b3a10fe965" id="r_a24556da698cfcb9839e484b3a10fe965"><td class="memItemLeft" align="right" valign="top"><a id="a24556da698cfcb9839e484b3a10fe965" name="a24556da698cfcb9839e484b3a10fe965"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>is_radiative_active</b> (unsigned side) const</td></tr>
+<tr class="memdesc:a24556da698cfcb9839e484b3a10fe965"><td class="mdescLeft">&#160;</td><td class="mdescRight">Per-side predicates. <code class="param">side</code> must be 1 or 2, else std::invalid_argument. <br /></td></tr>
+<tr class="memitem:a7129a6c21bb644f2fe3a0f2e0bd9b9fb" id="r_a7129a6c21bb644f2fe3a0f2e0bd9b9fb"><td class="memItemLeft" align="right" valign="top"><a id="a7129a6c21bb644f2fe3a0f2e0bd9b9fb" name="a7129a6c21bb644f2fe3a0f2e0bd9b9fb"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>is_conductive_active</b> (unsigned side) const</td></tr>
+<tr class="memitem:aae3a47011c3fdce2cdea46bc30898856" id="r_aae3a47011c3fdce2cdea46bc30898856"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aae3a47011c3fdce2cdea46bc30898856">is_side_active</a> (unsigned side) const</td></tr>
 <tr class="memitem:ade25245f530e90a28de5e8ab46a7e5b9" id="r_ade25245f530e90a28de5e8ab46a7e5b9"><td class="memItemLeft" align="right" valign="top"><a id="ade25245f530e90a28de5e8ab46a7e5b9" name="ade25245f530e90a28de5e8ab46a7e5b9"></a>
 double&#160;</td><td class="memItemRight" valign="bottom"><b>get_side1_thick</b> () const noexcept</td></tr>
 <tr class="memitem:a213745564602453f583a496e87a45ef1" id="r_a213745564602453f583a496e87a45ef1"><td class="memItemLeft" align="right" valign="top"><a id="a213745564602453f583a496e87a45ef1" name="a213745564602453f583a496e87a45ef1"></a>
@@ -191,10 +197,10 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>validate</b> () const
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pri-attribs" class="groupheader"><a id="pri-attribs" name="pri-attribs"></a>
 Private Attributes</h2></td></tr>
-<tr class="memitem:ab5be43d8abd7f992b46a21a091976576" id="r_ab5be43d8abd7f992b46a21a091976576"><td class="memItemLeft" align="right" valign="top"><a id="ab5be43d8abd7f992b46a21a091976576" name="ab5be43d8abd7f992b46a21a091976576"></a>
-bool&#160;</td><td class="memItemRight" valign="bottom"><b>_side1_activity</b> = true</td></tr>
-<tr class="memitem:a49e0edbb3c85c220ea35311414701c06" id="r_a49e0edbb3c85c220ea35311414701c06"><td class="memItemLeft" align="right" valign="top"><a id="a49e0edbb3c85c220ea35311414701c06" name="a49e0edbb3c85c220ea35311414701c06"></a>
-bool&#160;</td><td class="memItemRight" valign="bottom"><b>_side2_activity</b> = true</td></tr>
+<tr class="memitem:a056df1847dfd240d817228911b911e61" id="r_a056df1847dfd240d817228911b911e61"><td class="memItemLeft" align="right" valign="top"><a id="a056df1847dfd240d817228911b911e61" name="a056df1847dfd240d817228911b911e61"></a>
+ActiveSide&#160;</td><td class="memItemRight" valign="bottom"><b>_radiative_active_side</b> = ActiveSide::Both</td></tr>
+<tr class="memitem:aa59888d49a202f03316887bb1af04c6c" id="r_aa59888d49a202f03316887bb1af04c6c"><td class="memItemLeft" align="right" valign="top"><a id="aa59888d49a202f03316887bb1af04c6c" name="aa59888d49a202f03316887bb1af04c6c"></a>
+ActiveSide&#160;</td><td class="memItemRight" valign="bottom"><b>_conductive_active_side</b> = ActiveSide::Both</td></tr>
 <tr class="memitem:af43923e0215d39994ae6021902677fd5" id="r_af43923e0215d39994ae6021902677fd5"><td class="memItemLeft" align="right" valign="top"><a id="af43923e0215d39994ae6021902677fd5" name="af43923e0215d39994ae6021902677fd5"></a>
 double&#160;</td><td class="memItemRight" valign="bottom"><b>_side1_thick</b> = 0.0</td></tr>
 <tr class="memitem:a816d3b37c465f4b1bd576f1b961b1b9e" id="r_a816d3b37c465f4b1bd576f1b961b1b9e"><td class="memItemLeft" align="right" valign="top"><a id="a816d3b37c465f4b1bd576f1b961b1b9e" name="a816d3b37c465f4b1bd576f1b961b1b9e"></a>
@@ -226,10 +232,37 @@ std::int32_t&#160;</td><td class="memItemRight" valign="bottom"><b>_node2_step</
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Per-primitive thermal discretization with full legacy parity. </p>
-<p>Carries the UV cut vectors in the two parametric directions plus per-side (side 1 = front, side 2 = back) activity, thickness, color, bulk material and optical material. Adds four int32 fields driving the face -&gt; tmm-node assignment (see <a class="el" href="#aac124a372d1692a68060071bf2c39b25">node_of()</a>).</p>
+<p>Carries the UV cut vectors in the two parametric directions plus the two per-physics active-side selectors and, per side (side 1 = front, side 2 = back), thickness, color, bulk material and optical material. Adds four int32 fields driving the face -&gt; tmm-node assignment (see <a class="el" href="#aac124a372d1692a68060071bf2c39b25">node_of()</a>).</p>
 <p>NOTE on the public surface: there is intentionally no <span class="tt">Side</span> enum and no <span class="tt">face_id(i, j, side)</span> accessor. Internal face numbering (even = side 1, odd = side 2) is an implementation detail of the mesher.</p>
 <p>Validation is enforced on every setter: an invalid state throws std::invalid_argument (same contract as the legacy implementation). A <a class="el" href="classpycanha_1_1gmm_1_1ThermalMesh.html" title="Per-primitive thermal discretization with full legacy parity.">ThermalMesh</a> shared between two GeometryItems yields the SAME per-cell node number on both (the node fields are inputs, not per-item state). </p>
 </div><a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Member Function Documentation</h2>
+<a id="aae3a47011c3fdce2cdea46bc30898856" name="aae3a47011c3fdce2cdea46bc30898856"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aae3a47011c3fdce2cdea46bc30898856">&#9670;&#160;</a></span>is_side_active()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool pycanha::gmm::ThermalMesh::is_side_active </td>
+          <td>(</td>
+          <td class="paramtype">unsigned</td>          <td class="paramname"><span class="paramname"><em>side</em></span></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel nodiscard">nodiscard</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>True if the side takes part in either physics — the "this side of the
+shell exists at all" test. </p>
+
+</div>
+</div>
 <a id="aac124a372d1692a68060071bf2c39b25" name="aac124a372d1692a68060071bf2c39b25"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#aac124a372d1692a68060071bf2c39b25">&#9670;&#160;</a></span>node_of()</h2>
 

@@ -1,4 +1,22 @@
 var searchData=
 [
-  ['_7enodes_0',['~Nodes',['../classpycanha_1_1Nodes.html#a367ddc89abf198442e1311564fae5e66',1,'pycanha::Nodes']]]
+  ['set_5fa_0',['set_a',['../classpycanha_1_1Node.html#a5beaba39bf197f7fca9c5503be7b2dce',1,'pycanha::Node::set_a()'],['../classpycanha_1_1Nodes.html#a35d7f0f77fc053fd03cad125a1f9ac1e',1,'pycanha::Nodes::set_a()']]],
+  ['set_5faph_1',['set_aph',['../classpycanha_1_1Node.html#a4fd6ee80cf10f876eb402dd69c30530d',1,'pycanha::Node::set_aph()'],['../classpycanha_1_1Nodes.html#adf676f39c6af6eeecc86a32f07fcee54',1,'pycanha::Nodes::set_aph()']]],
+  ['set_5fc_2',['set_C',['../classpycanha_1_1Node.html#a4a0ad6f68774d1300f0ad7055a0c0838',1,'pycanha::Node::set_C()'],['../classpycanha_1_1Nodes.html#a6c8eb7284d3af80016003861d01bdcdd',1,'pycanha::Nodes::set_C()']]],
+  ['set_5feps_3',['set_eps',['../classpycanha_1_1Node.html#a9455cb582b891f68422a96d292e2ce96',1,'pycanha::Node::set_eps()'],['../classpycanha_1_1Nodes.html#aa383b92d27b975c894b0d4c7f55310e7',1,'pycanha::Nodes::set_eps()']]],
+  ['set_5ffx_4',['set_fx',['../classpycanha_1_1Node.html#af7d9289f631b00c00ba30770f773e810',1,'pycanha::Node::set_fx()'],['../classpycanha_1_1Nodes.html#a3d1b892c6ce8a4d6c4096f13bb0e9e6d',1,'pycanha::Nodes::set_fx()']]],
+  ['set_5ffy_5',['set_fy',['../classpycanha_1_1Node.html#a83600da5a12417b58740998f640a06d1',1,'pycanha::Node::set_fy()'],['../classpycanha_1_1Nodes.html#a36d66eee0b13153fd7e9bdab8709cc08',1,'pycanha::Nodes::set_fy()']]],
+  ['set_5ffz_6',['set_fz',['../classpycanha_1_1Node.html#a182e9ddadc89409b61045db38a45e7ad',1,'pycanha::Node::set_fz()'],['../classpycanha_1_1Nodes.html#a75b7b2c6b59472d7a713d64f29a03181',1,'pycanha::Nodes::set_fz()']]],
+  ['set_5fliteral_5fc_7',['set_literal_C',['../classpycanha_1_1Node.html#a338614f932dfc2da03556418983d537b',1,'pycanha::Node::set_literal_C()'],['../classpycanha_1_1Nodes.html#a70bb0973eeee2e302755f1fefb9e3605',1,'pycanha::Nodes::set_literal_C()']]],
+  ['set_5flogger_5flevel_8',['set_logger_level',['../namespacepycanha.html#a08752753ff47555d437f581a37fc88f7',1,'pycanha']]],
+  ['set_5fnode_5fnum_9',['set_node_num',['../classpycanha_1_1Node.html#a51fd35ae29d5bceab2547f81a8075282',1,'pycanha::Node']]],
+  ['set_5fpython_5flogger_5flevel_10',['set_python_logger_level',['../namespacepycanha.html#a046e6c70018788fee7e68442286f8e6f',1,'pycanha']]],
+  ['set_5fqa_11',['set_qa',['../classpycanha_1_1Node.html#a1259de95545d29ea866e10b45469607c',1,'pycanha::Node::set_qa()'],['../classpycanha_1_1Nodes.html#a8f6fcfc4c4e3a003d510d7acbcb5ce88',1,'pycanha::Nodes::set_qa()']]],
+  ['set_5fqe_12',['set_qe',['../classpycanha_1_1Node.html#ab25463b4dc1be843362646e6e1dcd2b1',1,'pycanha::Node::set_qe()'],['../classpycanha_1_1Nodes.html#a234ebd3808e7ae624804e587ebb43ec8',1,'pycanha::Nodes::set_qe()']]],
+  ['set_5fqi_13',['set_qi',['../classpycanha_1_1Node.html#a40ac285f684a0300075c5aeaba317e58',1,'pycanha::Node::set_qi()'],['../classpycanha_1_1Nodes.html#a8dd060bcbb3b991cf2a39239531fa983',1,'pycanha::Nodes::set_qi()']]],
+  ['set_5fqr_14',['set_qr',['../classpycanha_1_1Node.html#a595d0181d1dbd98995bd4b605c3dba61',1,'pycanha::Node::set_qr()'],['../classpycanha_1_1Nodes.html#a1684fe0e86e6cbdae0474ed5ec13cc77',1,'pycanha::Nodes::set_qr()']]],
+  ['set_5fqs_15',['set_qs',['../classpycanha_1_1Node.html#a51778e1fd1a27ba2b97f92edd24d82d1',1,'pycanha::Node::set_qs()'],['../classpycanha_1_1Nodes.html#ae8e6c0539f8213b4fc55840f409b3e83',1,'pycanha::Nodes::set_qs()']]],
+  ['set_5ft_16',['set_T',['../classpycanha_1_1Node.html#acc6a025c4618c26b37148a339a4d53ac',1,'pycanha::Node::set_T()'],['../classpycanha_1_1Nodes.html#a6aa6d55b0065197751040c0ce579fa53',1,'pycanha::Nodes::set_T()']]],
+  ['set_5fthermal_5fnodes_5fparent_17',['set_thermal_nodes_parent',['../classpycanha_1_1Node.html#aa6ed2994d3acaf711d8f0c12145a7983',1,'pycanha::Node']]],
+  ['set_5ftype_18',['set_type',['../classpycanha_1_1Node.html#ae63b3c12229048934496f9d19a058aab',1,'pycanha::Node::set_type()'],['../classpycanha_1_1Nodes.html#a03c0a37e09d5c6085f4f55f5983eacce',1,'pycanha::Nodes::set_type()']]]
 ];

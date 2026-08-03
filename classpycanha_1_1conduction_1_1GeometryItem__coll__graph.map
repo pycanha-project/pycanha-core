@@ -1,0 +1,17 @@
+<map id="pycanha::conduction::GeometryItem" name="pycanha::conduction::GeometryItem">
+<area shape="rect" id="Node000001" title=" " alt="" coords="1185,103,1341,147"/>
+<area shape="rect" id="Node000002" href="$classpycanha_1_1gmm_1_1Geometry.html" title=" " alt="" coords="825,71,1016,99"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="1032,95,1187,116,1182,116,1032,101"/>
+<area shape="rect" id="Node000003" href="$classpycanha_1_1gmm_1_1CoordinateTransformation.html" title=" " alt="" coords="441,5,638,50"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="653,36,789,54,861,71,855,71,789,60,653,41"/>
+<area shape="rect" id="Node000004" href="$classpycanha_1_1gmm_1_1GeometryModel.html" title=" " alt="" coords="424,74,655,102"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="670,84,827,85,822,86,670,89"/>
+<area shape="rect" id="Node000005" href="$structpycanha_1_1gmm_1_1MeshOptions.html" title=" " alt="" coords="5,44,217,72"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="232,64,425,78,421,81,232,69"/>
+<area shape="rect" id="Node000006" href="$classpycanha_1_1gmm_1_1TriMesh.html" title=" " alt="" coords="23,96,199,141"/>
+<area shape="poly" id="edge5_Node000004_Node000006" title=" " alt="" coords="214,114,399,105,448,102,443,103,400,110,215,120"/>
+<area shape="rect" id="Node000007" href="$classpycanha_1_1gmm_1_1ThermalMesh.html" title="Per&#45;primitive thermal discretization with full legacy parity." alt="" coords="813,136,1028,164"/>
+<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="1044,149,1161,142,1183,142,1188,141,1162,147,1044,154"/>
+<area shape="rect" id="Node000008" href="$classpycanha_1_1gmm_1_1Color.html" title="A 3&#45;channel (RGB) color." alt="" coords="459,150,620,178"/>
+<area shape="poly" id="edge7_Node000007_Node000008" title=" " alt="" coords="635,158,810,154,815,154,635,163"/>
+</map>

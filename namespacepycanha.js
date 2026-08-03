@@ -44,7 +44,7 @@ var namespacepycanha =
     [ "RadiativeCouplings", "classpycanha_1_1RadiativeCouplings.html", null ],
     [ "EntitiesHelper", "classpycanha_1_1EntitiesHelper.html", null ],
     [ "ThermalMathematicalModel", "classpycanha_1_1ThermalMathematicalModel.html", null ],
-    [ "ThermalModel", "classpycanha_1_1ThermalModel.html", null ],
+    [ "ThermalModel", "classpycanha_1_1ThermalModel.html", "classpycanha_1_1ThermalModel" ],
     [ "ThermalNetwork", "classpycanha_1_1ThermalNetwork.html", null ],
     [ "ProfileResult", "structpycanha_1_1ProfileResult.html", null ],
     [ "InstrumentationSession", "structpycanha_1_1InstrumentationSession.html", null ],

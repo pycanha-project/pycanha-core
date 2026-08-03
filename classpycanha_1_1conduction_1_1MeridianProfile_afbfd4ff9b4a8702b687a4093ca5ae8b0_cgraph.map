@@ -1,0 +1,7 @@
+<map id="pycanha::conduction::MeridianProfile::potential" name="pycanha::conduction::MeridianProfile::potential">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,5,199,50"/>
+<area shape="rect" id="Node000002" href="$classpycanha_1_1conduction_1_1MeridianProfile.html#ac279ed69d46c03a6ab25d91fa6d0b2ea" title=" " alt="" coords="247,5,432,50"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="199,25,234,27,229,28,199,30"/>
+<area shape="rect" id="Node000003" href="$classpycanha_1_1conduction_1_1MeridianProfile.html#abd54e6c0d71879d38a296952afcce2fa" title=" " alt="" coords="480,5,636,50"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="432,25,467,28,461,28,432,30"/>
+</map>

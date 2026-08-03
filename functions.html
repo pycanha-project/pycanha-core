@@ -28,7 +28,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.17</span>
+   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.18</span>
    </div>
    <div id="projectbrief">The C++ core of pycanha</div>
   </td>
@@ -121,13 +121,19 @@ $(function(){initNavTree('functions.html','',''); });
 
 <h3 class="doxsection"><a id="index_b" name="index_b"></a>- b -</h3><ul>
 <li>boundary_to_diffusive()&#160;:&#160;<a class="el" href="classpycanha_1_1Nodes.html#a8950054692801b40ae073d18f8d01ed7">pycanha::Nodes</a></li>
+<li>build_tmm_from_gmm()&#160;:&#160;<a class="el" href="classpycanha_1_1ThermalModel.html#a36a4d4e854904c0a1c4dd7567cf2fec6">pycanha::ThermalModel</a></li>
 <li>BulkMaterial()&#160;:&#160;<a class="el" href="classpycanha_1_1gmm_1_1BulkMaterial.html#a6d4b5341c9f9fbbe73ca91fa81ccccca">pycanha::gmm::BulkMaterial</a></li>
 </ul>
 
 
 <h3 class="doxsection"><a id="index_c" name="index_c"></a>- c -</h3><ul>
 <li>C_vector&#160;:&#160;<a class="el" href="classpycanha_1_1Nodes.html#a9f417cf3400c5d0dbb60a099b65e6929">pycanha::Nodes</a></li>
+<li>cell_links_computed&#160;:&#160;<a class="el" href="structpycanha_1_1conduction_1_1TmmBuildReport.html#a313e305ed6a54a34350220c036e35782">pycanha::conduction::TmmBuildReport</a></li>
+<li>close_full_revolution&#160;:&#160;<a class="el" href="structpycanha_1_1conduction_1_1TmmBuildOptions.html#a752bd26430152032760014f6be7a6d2d">pycanha::conduction::TmmBuildOptions</a></li>
+<li>closes_ring()&#160;:&#160;<a class="el" href="classpycanha_1_1conduction_1_1MeridianProfile.html#a031a0d216a92addc0b3c5222eeff6b3b">pycanha::conduction::MeridianProfile</a></li>
 <li>Color()&#160;:&#160;<a class="el" href="classpycanha_1_1gmm_1_1Color.html#a3414f1ff3e3db99823189a0bbd3e0fb1">pycanha::gmm::Color</a></li>
+<li>conductance&#160;:&#160;<a class="el" href="structpycanha_1_1conduction_1_1CellLink.html#a90db42285a740f412ff07be28b8548b1">pycanha::conduction::CellLink</a></li>
+<li>conductors_created&#160;:&#160;<a class="el" href="structpycanha_1_1conduction_1_1TmmBuildReport.html#a4cf6a951b48f1c31df9373b5ea40079f">pycanha::conduction::TmmBuildReport</a></li>
 <li>Coupling()&#160;:&#160;<a class="el" href="classpycanha_1_1Coupling.html#a5b797b6a7b4fcbf90328fe831039b958">pycanha::Coupling</a></li>
 <li>create_node_num_map()&#160;:&#160;<a class="el" href="classpycanha_1_1Nodes.html#abbfd843026d3645145507f0c59141c1b">pycanha::Nodes</a></li>
 </ul>
@@ -136,6 +142,8 @@ $(function(){initNavTree('functions.html','',''); });
 <h3 class="doxsection"><a id="index_d" name="index_d"></a>- d -</h3><ul>
 <li>delete_displace()&#160;:&#160;<a class="el" href="classpycanha_1_1Nodes.html#a81700922fc0fd0e15b785233a71b315c">pycanha::Nodes</a></li>
 <li>diffusive_to_boundary()&#160;:&#160;<a class="el" href="classpycanha_1_1Nodes.html#a7f189255473dd678cf1d5832a3838184">pycanha::Nodes</a></li>
+<li>dir1_coordinate()&#160;:&#160;<a class="el" href="classpycanha_1_1conduction_1_1MeridianProfile.html#a4d8b5da3039eed497a78fc4f4365f294">pycanha::conduction::MeridianProfile</a></li>
+<li>dir1_extent()&#160;:&#160;<a class="el" href="classpycanha_1_1conduction_1_1MeridianProfile.html#a7468ea518af3a3cad311406e689f8582">pycanha::conduction::MeridianProfile</a></li>
 </ul>
 
 
@@ -197,9 +205,13 @@ $(function(){initNavTree('functions.html','',''); });
 
 
 <h3 class="doxsection"><a id="index_i" name="index_i"></a>- i -</h3><ul>
+<li>initial_temperature&#160;:&#160;<a class="el" href="structpycanha_1_1conduction_1_1TmmBuildOptions.html#ae2565c1a0ce4cb131cf5fbbeb2789ff7">pycanha::conduction::TmmBuildOptions</a></li>
 <li>insert_displace()&#160;:&#160;<a class="el" href="classpycanha_1_1Nodes.html#a2ef3ee52b5de782b318b9860a7becff3">pycanha::Nodes</a></li>
+<li>intra_primitive_conductors&#160;:&#160;<a class="el" href="structpycanha_1_1conduction_1_1TmmBuildOptions.html#a445d7ad35e88272683d7cc434e1fffd3">pycanha::conduction::TmmBuildOptions</a></li>
 <li>is_mapped()&#160;:&#160;<a class="el" href="classpycanha_1_1Nodes.html#a3ffd64ed6c712b4506d7877c87108578">pycanha::Nodes</a></li>
 <li>is_node()&#160;:&#160;<a class="el" href="classpycanha_1_1Nodes.html#a5b7dd878a79e54c370e9273a32403736">pycanha::Nodes</a></li>
+<li>is_radiative_active()&#160;:&#160;<a class="el" href="classpycanha_1_1gmm_1_1ThermalMesh.html#a24556da698cfcb9839e484b3a10fe965">pycanha::gmm::ThermalMesh</a></li>
+<li>is_side_active()&#160;:&#160;<a class="el" href="classpycanha_1_1gmm_1_1ThermalMesh.html#aae3a47011c3fdce2cdea46bc30898856">pycanha::gmm::ThermalMesh</a></li>
 </ul>
 
 
@@ -220,6 +232,12 @@ $(function(){initNavTree('functions.html','',''); });
 </ul>
 
 
+<h3 class="doxsection"><a id="index_m" name="index_m"></a>- m -</h3><ul>
+<li>meridian_length()&#160;:&#160;<a class="el" href="classpycanha_1_1conduction_1_1MeridianProfile.html#ab4e231c6ad8b64f43b710b7304bb09c4">pycanha::conduction::MeridianProfile</a></li>
+<li>min_conductance&#160;:&#160;<a class="el" href="structpycanha_1_1conduction_1_1TmmBuildOptions.html#aae69abbc2b7eacd04ab35ee0d3e9a48d">pycanha::conduction::TmmBuildOptions</a></li>
+</ul>
+
+
 <h3 class="doxsection"><a id="index_n" name="index_n"></a>- n -</h3><ul>
 <li>Node()&#160;:&#160;<a class="el" href="classpycanha_1_1Node.html#a1a03ae20add186d6c3641a6f3bc74a87">pycanha::Node</a></li>
 <li>node_of()&#160;:&#160;<a class="el" href="classpycanha_1_1gmm_1_1ThermalMesh.html#aac124a372d1692a68060071bf2c39b25">pycanha::gmm::ThermalMesh</a></li>
@@ -229,7 +247,13 @@ $(function(){initNavTree('functions.html','',''); });
 
 
 <h3 class="doxsection"><a id="index_o" name="index_o"></a>- o -</h3><ul>
+<li>on_axis()&#160;:&#160;<a class="el" href="classpycanha_1_1conduction_1_1MeridianProfile.html#ac279ed69d46c03a6ab25d91fa6d0b2ea">pycanha::conduction::MeridianProfile</a></li>
 <li>OpticalMaterial()&#160;:&#160;<a class="el" href="classpycanha_1_1gmm_1_1OpticalMaterial.html#abc52e5d07c586e1b1e6c47b3695f2076">pycanha::gmm::OpticalMaterial</a></li>
+</ul>
+
+
+<h3 class="doxsection"><a id="index_p" name="index_p"></a>- p -</h3><ul>
+<li>potential()&#160;:&#160;<a class="el" href="classpycanha_1_1conduction_1_1MeridianProfile.html#afbfd4ff9b4a8702b687a4093ca5ae8b0">pycanha::conduction::MeridianProfile</a></li>
 </ul>
 
 
@@ -244,6 +268,7 @@ $(function(){initNavTree('functions.html','',''); });
 
 <h3 class="doxsection"><a id="index_r" name="index_r"></a>- r -</h3><ul>
 <li>remove_node()&#160;:&#160;<a class="el" href="classpycanha_1_1Nodes.html#a2d55736636b1f4ac3f7aa49ed4ec247d">pycanha::Nodes</a></li>
+<li>rho()&#160;:&#160;<a class="el" href="classpycanha_1_1conduction_1_1MeridianProfile.html#abd54e6c0d71879d38a296952afcce2fa">pycanha::conduction::MeridianProfile</a></li>
 </ul>
 
 
@@ -265,12 +290,14 @@ $(function(){initNavTree('functions.html','',''); });
 <li>set_T()&#160;:&#160;<a class="el" href="classpycanha_1_1Node.html#acc6a025c4618c26b37148a339a4d53ac">pycanha::Node</a>, <a class="el" href="classpycanha_1_1Nodes.html#a6aa6d55b0065197751040c0ce579fa53">pycanha::Nodes</a></li>
 <li>set_thermal_nodes_parent()&#160;:&#160;<a class="el" href="classpycanha_1_1Node.html#aa6ed2994d3acaf711d8f0c12145a7983">pycanha::Node</a></li>
 <li>set_type()&#160;:&#160;<a class="el" href="classpycanha_1_1Node.html#ae63b3c12229048934496f9d19a058aab">pycanha::Node</a>, <a class="el" href="classpycanha_1_1Nodes.html#a03c0a37e09d5c6085f4f55f5983eacce">pycanha::Nodes</a></li>
+<li>side&#160;:&#160;<a class="el" href="structpycanha_1_1conduction_1_1CellLink.html#a335155cf6f579abd5d5a42d2af246338">pycanha::conduction::CellLink</a></li>
 </ul>
 
 
 <h3 class="doxsection"><a id="index_t" name="index_t"></a>- t -</h3><ul>
 <li>T_vector&#160;:&#160;<a class="el" href="classpycanha_1_1Nodes.html#a8811afdad402e4a344ee268aea46fb2b">pycanha::Nodes</a></li>
 <li>ThermalMesh()&#160;:&#160;<a class="el" href="classpycanha_1_1gmm_1_1ThermalMesh.html#a5f3f0595e7974b0088a430ce83f5d7a2">pycanha::gmm::ThermalMesh</a></li>
+<li>through_thickness_conductors&#160;:&#160;<a class="el" href="structpycanha_1_1conduction_1_1TmmBuildOptions.html#aa55eac2ba545bb0bfac766ed665b5ec4">pycanha::conduction::TmmBuildOptions</a></li>
 </ul>
 
 

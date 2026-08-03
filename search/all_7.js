@@ -3,7 +3,7 @@ var searchData=
   ['geometry_0',['Geometry',['../classpycanha_1_1gmm_1_1Geometry.html',1,'pycanha::gmm']]],
   ['geometrygroup_1',['GeometryGroup',['../classpycanha_1_1gmm_1_1GeometryGroup.html',1,'pycanha::gmm']]],
   ['geometrygroupcutted_2',['GeometryGroupCutted',['../classpycanha_1_1gmm_1_1GeometryGroupCutted.html',1,'pycanha::gmm']]],
-  ['geometryitem_3',['GeometryItem',['../classpycanha_1_1gmm_1_1GeometryItem.html',1,'pycanha::gmm']]],
+  ['geometryitem_3',['GeometryItem',['../classpycanha_1_1conduction_1_1GeometryItem.html',1,'pycanha::conduction::GeometryItem'],['../classpycanha_1_1gmm_1_1GeometryItem.html',1,'pycanha::gmm::GeometryItem']]],
   ['geometrymodel_4',['GeometryModel',['../classpycanha_1_1gmm_1_1GeometryModel.html',1,'pycanha::gmm']]],
   ['get_5fa_5',['get_a',['../classpycanha_1_1Node.html#a876558b19fd24813e3ad240d7bcc6b47',1,'pycanha::Node::get_a()'],['../classpycanha_1_1Nodes.html#ab82156d7252c29b5498f99db2766d02e',1,'pycanha::Nodes::get_a(NodeNum node_num)']]],
   ['get_5fa_5fvalue_5fref_6',['get_a_value_ref',['../classpycanha_1_1Nodes.html#a329641b68bc7e76ba87dd94b57523c31',1,'pycanha::Nodes']]],

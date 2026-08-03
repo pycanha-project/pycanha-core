@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['t_5fvector_0',['T_vector',['../classpycanha_1_1Nodes.html#a8811afdad402e4a344ee268aea46fb2b',1,'pycanha::Nodes']]]
+  ['min_5fconductance_0',['min_conductance',['../structpycanha_1_1conduction_1_1TmmBuildOptions.html#aae69abbc2b7eacd04ab35ee0d3e9a48d',1,'pycanha::conduction::TmmBuildOptions']]]
 ];

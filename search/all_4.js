@@ -14,9 +14,11 @@ var searchData=
   ['deviceimpl_11',['DeviceImpl',['../classpycanha_1_1radiative_1_1detail_1_1DeviceImpl.html',1,'pycanha::radiative::detail']]],
   ['deviceinfo_12',['DeviceInfo',['../structpycanha_1_1radiative_1_1DeviceInfo.html',1,'pycanha::radiative']]],
   ['diffusive_5fto_5fboundary_13',['diffusive_to_boundary',['../classpycanha_1_1Nodes.html#a7f189255473dd678cf1d5832a3838184',1,'pycanha::Nodes']]],
-  ['disc_14',['Disc',['../classpycanha_1_1gmm_1_1Disc.html',1,'pycanha::gmm']]],
-  ['documentation_15',['Documentation',['../md_docs_2tools.html#autotoc_md18',1,'Documentation'],['../md_docs_2workflow.html#autotoc_md26',1,'Documentation'],['../md_docs_2cicd.html#autotoc_md32',1,'Documentation']]],
-  ['documentation_16',['Additional documentation',['../index.html#autotoc_md5',1,'']]],
-  ['doxygen_20awesome_20css_17',['Doxygen + graphviz + Doxygen Awesome CSS',['../md_docs_2tools.html#autotoc_md19',1,'']]],
-  ['doxygen_20graphviz_20doxygen_20awesome_20css_18',['Doxygen + graphviz + Doxygen Awesome CSS',['../md_docs_2tools.html#autotoc_md19',1,'']]]
+  ['dir1_5fcoordinate_14',['dir1_coordinate',['../classpycanha_1_1conduction_1_1MeridianProfile.html#a4d8b5da3039eed497a78fc4f4365f294',1,'pycanha::conduction::MeridianProfile']]],
+  ['dir1_5fextent_15',['dir1_extent',['../classpycanha_1_1conduction_1_1MeridianProfile.html#a7468ea518af3a3cad311406e689f8582',1,'pycanha::conduction::MeridianProfile']]],
+  ['disc_16',['Disc',['../classpycanha_1_1gmm_1_1Disc.html',1,'pycanha::gmm']]],
+  ['documentation_17',['Documentation',['../md_docs_2tools.html#autotoc_md18',1,'Documentation'],['../md_docs_2workflow.html#autotoc_md26',1,'Documentation'],['../md_docs_2cicd.html#autotoc_md32',1,'Documentation']]],
+  ['documentation_18',['Additional documentation',['../index.html#autotoc_md5',1,'']]],
+  ['doxygen_20awesome_20css_19',['Doxygen + graphviz + Doxygen Awesome CSS',['../md_docs_2tools.html#autotoc_md19',1,'']]],
+  ['doxygen_20graphviz_20doxygen_20awesome_20css_20',['Doxygen + graphviz + Doxygen Awesome CSS',['../md_docs_2tools.html#autotoc_md19',1,'']]]
 ];

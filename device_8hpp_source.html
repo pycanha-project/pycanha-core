@@ -28,7 +28,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.17</span>
+   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.18</span>
    </div>
    <div id="projectbrief">The C++ core of pycanha</div>
   </td>
@@ -107,66 +107,70 @@ $(function(){initNavTree('device_8hpp_source.html','',''); });
 <div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span><span class="keyword">class </span><a class="code hl_class" href="classpycanha_1_1radiative_1_1detail_1_1DeviceImpl.html">DeviceImpl</a>;</div>
 <div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span>}  <span class="comment">// namespace detail</span></div>
 <div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span> </div>
-<div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span><span class="comment">// One physical Vulkan device as seen by the radiative engine.</span></div>
-<div class="foldopen" id="foldopen00015" data-start="{" data-end="};">
-<div class="line"><a id="l00015" name="l00015"></a><span class="lineno"><a class="line" href="structpycanha_1_1radiative_1_1DeviceInfo.html">   15</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structpycanha_1_1radiative_1_1DeviceInfo.html">DeviceInfo</a> {</div>
-<div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span>    std::string name;</div>
-<div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span>    <span class="comment">// True when the device passes the full RT requirement set (Vulkan 1.3,</span></div>
-<div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span>    <span class="comment">// acceleration structures, ray queries, 64-bit buffer atomics, ...).</span></div>
-<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span>    <span class="keywordtype">bool</span> ray_tracing = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span>    <span class="comment">// Software implementation (lavapipe reports device type CPU).</span></div>
-<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span>    <span class="keywordtype">bool</span> software = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span>    <span class="comment">// Device-limit upper bound of rays per emitter in one dispatch.</span></div>
-<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span>    std::uint64_t max_dispatch_rays = 0;</div>
-<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span>    <span class="comment">// Position in enumerate_devices(); the argument for Device::create().</span></div>
-<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span>    std::uint32_t index = 0;</div>
-<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span>};</div>
+<div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span><span class="comment">// One physical GPU as seen by the radiative engine (a Vulkan device, or a</span></div>
+<div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span><span class="comment">// Metal device on macOS).</span></div>
+<div class="foldopen" id="foldopen00016" data-start="{" data-end="};">
+<div class="line"><a id="l00016" name="l00016"></a><span class="lineno"><a class="line" href="structpycanha_1_1radiative_1_1DeviceInfo.html">   16</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structpycanha_1_1radiative_1_1DeviceInfo.html">DeviceInfo</a> {</div>
+<div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span>    std::string name;</div>
+<div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span>    <span class="comment">// True when the device passes the full RT requirement set of its backend</span></div>
+<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span>    <span class="comment">// (Vulkan: 1.3, acceleration structures, ray queries, 64-bit buffer</span></div>
+<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span>    <span class="comment">// atomics, ...; Metal: hardware ray tracing on GPU family Apple9).</span></div>
+<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span>    <span class="keywordtype">bool</span> ray_tracing = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span>    <span class="comment">// Software implementation (lavapipe reports device type CPU). Always</span></div>
+<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span>    <span class="comment">// false on Metal — it has no software rasterizer to fall back to.</span></div>
+<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span>    <span class="keywordtype">bool</span> software = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span>    <span class="comment">// Device-limit upper bound of rays per emitter in one dispatch.</span></div>
+<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span>    std::uint64_t max_dispatch_rays = 0;</div>
+<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span>    <span class="comment">// Position in enumerate_devices(); the argument for Device::create().</span></div>
+<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span>    std::uint32_t index = 0;</div>
+<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span>};</div>
 </div>
-<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span> </div>
-<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span><span class="comment">// Cheap and safe on machines with no Vulkan driver at all: no driver means</span></div>
-<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span><span class="comment">// false / an empty list — never an exception. The rest of the library works</span></div>
-<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span><span class="comment">// without any GPU; only constructing radiative objects requires one.</span></div>
-<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span>[[nodiscard]] <span class="keywordtype">bool</span> is_available();</div>
-<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>[[nodiscard]] std::vector&lt;DeviceInfo&gt; enumerate_devices();</div>
-<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span> </div>
-<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span><span class="comment">// Owns the Vulkan instance/device/queues/allocator; one Device can serve</span></div>
-<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span><span class="comment">// many scenes. The ONLY place that touches driver discovery, so &quot;no Vulkan&quot;</span></div>
-<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span><span class="comment">// is a single, clear construction error. Public API exposes no Vulkan types.</span></div>
-<div class="foldopen" id="foldopen00037" data-start="{" data-end="};">
-<div class="line"><a id="l00037" name="l00037"></a><span class="lineno"><a class="line" href="classpycanha_1_1radiative_1_1Device.html">   37</a></span><span class="keyword">class </span>Device {</div>
-<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>  <span class="keyword">public</span>:</div>
-<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>    <span class="comment">// Creates the device at `index` (position in enumerate_devices()), or —</span></div>
-<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>    <span class="comment">// when `index` is negative — the best RT-capable device (discrete &gt;</span></div>
-<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>    <span class="comment">// integrated &gt; software). Throws std::runtime_error with an actionable</span></div>
-<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>    <span class="comment">// message when no RT-capable device (hardware or lavapipe) exists.</span></div>
-<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>    [[nodiscard]] <span class="keyword">static</span> Device create(std::int32_t index = -1);</div>
-<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span> </div>
-<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>    ~Device();</div>
-<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>    Device(Device&amp;&amp;) <span class="keyword">noexcept</span>;</div>
-<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>    Device&amp; operator=(Device&amp;&amp;) <span class="keyword">noexcept</span>;</div>
-<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>    Device(<span class="keyword">const</span> Device&amp;) = <span class="keyword">delete</span>;</div>
-<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>    Device&amp; operator=(<span class="keyword">const</span> Device&amp;) = <span class="keyword">delete</span>;</div>
-<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span> </div>
-<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>    [[nodiscard]] <span class="keyword">const</span> <a class="code hl_struct" href="structpycanha_1_1radiative_1_1DeviceInfo.html">DeviceInfo</a>&amp; info() <span class="keyword">const</span> <span class="keyword">noexcept</span>;</div>
-<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span> </div>
-<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>    <span class="comment">// DEVICE_LOCAL bytes currently available for new allocations on the</span></div>
-<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>    <span class="comment">// largest device heap (VK_EXT_memory_budget when present, otherwise 80%</span></div>
-<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>    <span class="comment">// of the heap size). Callers size accumulator buffers against this.</span></div>
-<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>    [[nodiscard]] std::uint64_t memory_budget() <span class="keyword">const</span>;</div>
-<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span> </div>
-<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>    <span class="comment">// Engine-internal accessor (opaque outside the library&#39;s own sources).</span></div>
-<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>    [[nodiscard]] <a class="code hl_class" href="classpycanha_1_1radiative_1_1detail_1_1DeviceImpl.html">detail::DeviceImpl</a>&amp; impl() <span class="keyword">const</span> <span class="keyword">noexcept</span>;</div>
-<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span> </div>
-<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>  <span class="keyword">private</span>:</div>
-<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>    <span class="keyword">explicit</span> Device(std::unique_ptr&lt;detail::DeviceImpl&gt; impl);</div>
-<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span> </div>
-<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>    std::unique_ptr&lt;detail::DeviceImpl&gt; _impl;</div>
-<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>};</div>
+<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span> </div>
+<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span><span class="comment">// Cheap and safe on machines with no GPU driver at all: no driver means</span></div>
+<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span><span class="comment">// false / an empty list — never an exception. The rest of the library works</span></div>
+<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span><span class="comment">// without any GPU; only constructing radiative objects requires one.</span></div>
+<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>[[nodiscard]] <span class="keywordtype">bool</span> is_available();</div>
+<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>[[nodiscard]] std::vector&lt;DeviceInfo&gt; enumerate_devices();</div>
+<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span> </div>
+<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span><span class="comment">// Owns the backend&#39;s device and queues; one Device can serve many scenes.</span></div>
+<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span><span class="comment">// The ONLY place that touches driver discovery, so &quot;no usable GPU&quot; is a</span></div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span><span class="comment">// single, clear construction error. The public API exposes no backend types.</span></div>
+<div class="foldopen" id="foldopen00040" data-start="{" data-end="};">
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno"><a class="line" href="classpycanha_1_1radiative_1_1Device.html">   40</a></span><span class="keyword">class </span>Device {</div>
+<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>  <span class="keyword">public</span>:</div>
+<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>    <span class="comment">// Creates the device at `index` (position in enumerate_devices()), or —</span></div>
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>    <span class="comment">// when `index` is negative — the best RT-capable device (discrete &gt;</span></div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>    <span class="comment">// integrated &gt; software). Throws std::runtime_error with an actionable</span></div>
+<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>    <span class="comment">// message when no RT-capable device exists.</span></div>
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>    [[nodiscard]] <span class="keyword">static</span> Device create(std::int32_t index = -1);</div>
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span> </div>
+<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>    ~Device();</div>
+<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>    Device(Device&amp;&amp;) <span class="keyword">noexcept</span>;</div>
+<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>    Device&amp; operator=(Device&amp;&amp;) <span class="keyword">noexcept</span>;</div>
+<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>    Device(<span class="keyword">const</span> Device&amp;) = <span class="keyword">delete</span>;</div>
+<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>    Device&amp; operator=(<span class="keyword">const</span> Device&amp;) = <span class="keyword">delete</span>;</div>
+<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span> </div>
+<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>    [[nodiscard]] <span class="keyword">const</span> <a class="code hl_struct" href="structpycanha_1_1radiative_1_1DeviceInfo.html">DeviceInfo</a>&amp; info() <span class="keyword">const</span> <span class="keyword">noexcept</span>;</div>
+<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span> </div>
+<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>    <span class="comment">// Device-local bytes currently available for new allocations: the</span></div>
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>    <span class="comment">// largest device heap minus what is in use where the driver reports it</span></div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>    <span class="comment">// (otherwise 80% of the heap size). On unified memory that heap is</span></div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>    <span class="comment">// system memory. Callers size accumulator buffers against this.</span></div>
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>    [[nodiscard]] std::uint64_t memory_budget() <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span> </div>
+<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>    <span class="comment">// Engine-internal accessor (opaque outside the library&#39;s own sources).</span></div>
+<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>    [[nodiscard]] <a class="code hl_class" href="classpycanha_1_1radiative_1_1detail_1_1DeviceImpl.html">detail::DeviceImpl</a>&amp; impl() <span class="keyword">const</span> <span class="keyword">noexcept</span>;</div>
+<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span> </div>
+<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>  <span class="keyword">private</span>:</div>
+<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>    <span class="keyword">explicit</span> Device(std::unique_ptr&lt;detail::DeviceImpl&gt; impl);</div>
+<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span> </div>
+<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>    std::unique_ptr&lt;detail::DeviceImpl&gt; _impl;</div>
+<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>};</div>
 </div>
-<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span> </div>
-<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>}  <span class="comment">// namespace pycanha::radiative</span></div>
-<div class="ttc" id="aclasspycanha_1_1radiative_1_1detail_1_1DeviceImpl_html"><div class="ttname"><a href="classpycanha_1_1radiative_1_1detail_1_1DeviceImpl.html">pycanha::radiative::detail::DeviceImpl</a></div><div class="ttdef"><b>Definition</b> radiative_stub.cpp:30</div></div>
-<div class="ttc" id="astructpycanha_1_1radiative_1_1DeviceInfo_html"><div class="ttname"><a href="structpycanha_1_1radiative_1_1DeviceInfo.html">pycanha::radiative::DeviceInfo</a></div><div class="ttdef"><b>Definition</b> device.hpp:15</div></div>
+<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span> </div>
+<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>}  <span class="comment">// namespace pycanha::radiative</span></div>
+<div class="ttc" id="aclasspycanha_1_1radiative_1_1detail_1_1DeviceImpl_html"><div class="ttname"><a href="classpycanha_1_1radiative_1_1detail_1_1DeviceImpl.html">pycanha::radiative::detail::DeviceImpl</a></div><div class="ttdef"><b>Definition</b> mtl_device.hpp:42</div></div>
+<div class="ttc" id="astructpycanha_1_1radiative_1_1DeviceInfo_html"><div class="ttname"><a href="structpycanha_1_1radiative_1_1DeviceInfo.html">pycanha::radiative::DeviceInfo</a></div><div class="ttdef"><b>Definition</b> device.hpp:16</div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->

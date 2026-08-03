@@ -28,7 +28,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.17</span>
+   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.18</span>
    </div>
    <div id="projectbrief">The C++ core of pycanha</div>
   </td>
@@ -97,7 +97,7 @@ $(function(){initNavTree('classpycanha_1_1radiative_1_1detail_1_1SolarAccumImpl.
 <div class="dynheader">
 Collaboration diagram for pycanha::radiative::detail::SolarAccumImpl:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="classpycanha_1_1radiative_1_1detail_1_1SolarAccumImpl__coll__graph.svg" width="999" height="594"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="classpycanha_1_1radiative_1_1detail_1_1SolarAccumImpl__coll__graph.svg" width="999" height="694"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 <center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-nested-classes" class="groupheader"><a id="nested-classes" name="nested-classes"></a>
@@ -120,11 +120,35 @@ SolarAccumImpl &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>opera
 void&#160;</td><td class="memItemRight" valign="bottom"><b>reset</b> ()</td></tr>
 <tr class="memitem:aae0ef8b8adc276a85cc0c718142858c5" id="r_aae0ef8b8adc276a85cc0c718142858c5"><td class="memItemLeft" align="right" valign="top"><a id="aae0ef8b8adc276a85cc0c718142858c5" name="aae0ef8b8adc276a85cc0c718142858c5"></a>
 <a class="el" href="structpycanha_1_1radiative_1_1SolarResult.html">SolarResult</a>&#160;</td><td class="memItemRight" valign="bottom"><b>build_result</b> () const</td></tr>
+<tr class="memitem:aac75627c45899df600a93a50b3c6f9d7" id="r_aac75627c45899df600a93a50b3c6f9d7"><td class="memItemLeft" align="right" valign="top"><a id="aac75627c45899df600a93a50b3c6f9d7" name="aac75627c45899df600a93a50b3c6f9d7"></a>
+id&lt; MTLBuffer &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>direct_buffer</b> () const noexcept</td></tr>
+<tr class="memitem:a8e844c64685f01b3bd237f59703de837" id="r_a8e844c64685f01b3bd237f59703de837"><td class="memItemLeft" align="right" valign="top"><a id="a8e844c64685f01b3bd237f59703de837" name="a8e844c64685f01b3bd237f59703de837"></a>
+id&lt; MTLBuffer &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>total_buffer</b> () const noexcept</td></tr>
+<tr class="memitem:a2c3647dca8f0f0c86257df6ab4184aa6" id="r_a2c3647dca8f0f0c86257df6ab4184aa6"><td class="memItemLeft" align="right" valign="top"><a id="a2c3647dca8f0f0c86257df6ab4184aa6" name="a2c3647dca8f0f0c86257df6ab4184aa6"></a>
+<a class="el" href="structpycanha_1_1radiative_1_1detail_1_1SolarAccumImpl_1_1BatchSetup.html">BatchSetup</a>&#160;</td><td class="memItemRight" valign="bottom"><b>prepare_batch</b> (const <a class="el" href="structpycanha_1_1radiative_1_1SolarState.html">SolarState</a> &amp;sun, std::uint64_t rays_per_face)</td></tr>
+<tr class="memitem:afbf0af91ba78d2423d0bdd27eb38f095" id="r_afbf0af91ba78d2423d0bdd27eb38f095"><td class="memItemLeft" align="right" valign="top"><a id="afbf0af91ba78d2423d0bdd27eb38f095" name="afbf0af91ba78d2423d0bdd27eb38f095"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>record_batch</b> (std::uint64_t rays_per_face, std::size_t num_emitters)</td></tr>
+<tr class="memitem:a6d1e4e2b37ee65ae0c3fc461f22ea294" id="r_a6d1e4e2b37ee65ae0c3fc461f22ea294"><td class="memItemLeft" align="right" valign="top"><a id="a6d1e4e2b37ee65ae0c3fc461f22ea294" name="a6d1e4e2b37ee65ae0c3fc461f22ea294"></a>
+<a class="el" href="classpycanha_1_1radiative_1_1detail_1_1SceneImpl.html">SceneImpl</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>scene</b> () const noexcept</td></tr>
+<tr class="memitem:a8f15d215c9849ddf8458d84eb4550db0" id="r_a8f15d215c9849ddf8458d84eb4550db0"><td class="memItemLeft" align="right" valign="top"><a id="a8f15d215c9849ddf8458d84eb4550db0" name="a8f15d215c9849ddf8458d84eb4550db0"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>SolarAccumImpl</b> (<a class="el" href="classpycanha_1_1radiative_1_1detail_1_1SceneImpl.html">SceneImpl</a> &amp;scene)</td></tr>
+<tr class="memitem:ad7ec9e88158a226b89d74d2c8e683960" id="r_ad7ec9e88158a226b89d74d2c8e683960"><td class="memItemLeft" align="right" valign="top"><a id="ad7ec9e88158a226b89d74d2c8e683960" name="ad7ec9e88158a226b89d74d2c8e683960"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>SolarAccumImpl</b> (const SolarAccumImpl &amp;)=delete</td></tr>
+<tr class="memitem:ae61a20ceba05fbc30b54afeb01c495c1" id="r_ae61a20ceba05fbc30b54afeb01c495c1"><td class="memItemLeft" align="right" valign="top"><a id="ae61a20ceba05fbc30b54afeb01c495c1" name="ae61a20ceba05fbc30b54afeb01c495c1"></a>
+SolarAccumImpl &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>operator=</b> (const SolarAccumImpl &amp;)=delete</td></tr>
+<tr class="memitem:ab9aa72897955267a867bcb27ae565524" id="r_ab9aa72897955267a867bcb27ae565524"><td class="memItemLeft" align="right" valign="top"><a id="ab9aa72897955267a867bcb27ae565524" name="ab9aa72897955267a867bcb27ae565524"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>SolarAccumImpl</b> (SolarAccumImpl &amp;&amp;)=delete</td></tr>
+<tr class="memitem:acfd8866893eb2218e737f4820065c094" id="r_acfd8866893eb2218e737f4820065c094"><td class="memItemLeft" align="right" valign="top"><a id="acfd8866893eb2218e737f4820065c094" name="acfd8866893eb2218e737f4820065c094"></a>
+SolarAccumImpl &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>operator=</b> (SolarAccumImpl &amp;&amp;)=delete</td></tr>
+<tr class="memitem:a3fc2a6feca4a9c7d8a93d2eedc863f44" id="r_a3fc2a6feca4a9c7d8a93d2eedc863f44"><td class="memItemLeft" align="right" valign="top"><a id="a3fc2a6feca4a9c7d8a93d2eedc863f44" name="a3fc2a6feca4a9c7d8a93d2eedc863f44"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>reset</b> ()</td></tr>
+<tr class="memitem:aae0ef8b8adc276a85cc0c718142858c5" id="r_aae0ef8b8adc276a85cc0c718142858c5"><td class="memItemLeft" align="right" valign="top"><a id="aae0ef8b8adc276a85cc0c718142858c5" name="aae0ef8b8adc276a85cc0c718142858c5"></a>
+<a class="el" href="structpycanha_1_1radiative_1_1SolarResult.html">SolarResult</a>&#160;</td><td class="memItemRight" valign="bottom"><b>build_result</b> () const</td></tr>
 <tr class="memitem:aa8a6cd94304a1c67a9549677573fb28d" id="r_aa8a6cd94304a1c67a9549677573fb28d"><td class="memItemLeft" align="right" valign="top"><a id="aa8a6cd94304a1c67a9549677573fb28d" name="aa8a6cd94304a1c67a9549677573fb28d"></a>
 VkBuffer&#160;</td><td class="memItemRight" valign="bottom"><b>direct_buffer</b> () const noexcept</td></tr>
 <tr class="memitem:aa2b01d3593868f747cb1565466062dff" id="r_aa2b01d3593868f747cb1565466062dff"><td class="memItemLeft" align="right" valign="top"><a id="aa2b01d3593868f747cb1565466062dff" name="aa2b01d3593868f747cb1565466062dff"></a>
 VkBuffer&#160;</td><td class="memItemRight" valign="bottom"><b>total_buffer</b> () const noexcept</td></tr>
-<tr class="memitem:a2c3647dca8f0f0c86257df6ab4184aa6" id="r_a2c3647dca8f0f0c86257df6ab4184aa6"><td class="memItemLeft" align="right" valign="top"><a id="a2c3647dca8f0f0c86257df6ab4184aa6" name="a2c3647dca8f0f0c86257df6ab4184aa6"></a>
+<tr class="memitem:a6657de5c0c2e71cea0b4fc0e8509f121" id="r_a6657de5c0c2e71cea0b4fc0e8509f121"><td class="memItemLeft" align="right" valign="top"><a id="a6657de5c0c2e71cea0b4fc0e8509f121" name="a6657de5c0c2e71cea0b4fc0e8509f121"></a>
 <a class="el" href="structpycanha_1_1radiative_1_1detail_1_1SolarAccumImpl_1_1BatchSetup.html">BatchSetup</a>&#160;</td><td class="memItemRight" valign="bottom"><b>prepare_batch</b> (const <a class="el" href="structpycanha_1_1radiative_1_1SolarState.html">SolarState</a> &amp;sun, std::uint64_t rays_per_face)</td></tr>
 <tr class="memitem:afbf0af91ba78d2423d0bdd27eb38f095" id="r_afbf0af91ba78d2423d0bdd27eb38f095"><td class="memItemLeft" align="right" valign="top"><a id="afbf0af91ba78d2423d0bdd27eb38f095" name="afbf0af91ba78d2423d0bdd27eb38f095"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>record_batch</b> (std::uint64_t rays_per_face, std::size_t num_emitters)</td></tr>
@@ -133,7 +157,7 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>record_batch</b> (std
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pri-attribs" class="groupheader"><a id="pri-attribs" name="pri-attribs"></a>
 Private Attributes</h2></td></tr>
-<tr class="memitem:a2f7133e261dbd7c21386f6f5d20c878b" id="r_a2f7133e261dbd7c21386f6f5d20c878b"><td class="memItemLeft" align="right" valign="top"><a id="a2f7133e261dbd7c21386f6f5d20c878b" name="a2f7133e261dbd7c21386f6f5d20c878b"></a>
+<tr class="memitem:a54475e7ea29b97dee3b74cb68bbb5949" id="r_a54475e7ea29b97dee3b74cb68bbb5949"><td class="memItemLeft" align="right" valign="top"><a id="a54475e7ea29b97dee3b74cb68bbb5949" name="a54475e7ea29b97dee3b74cb68bbb5949"></a>
 <a class="el" href="classpycanha_1_1radiative_1_1detail_1_1SceneImpl.html">SceneImpl</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>_scene</b></td></tr>
 <tr class="memitem:ac3d3a45ed11c39d1bf263f19f301398d" id="r_ac3d3a45ed11c39d1bf263f19f301398d"><td class="memItemLeft" align="right" valign="top"><a id="ac3d3a45ed11c39d1bf263f19f301398d" name="ac3d3a45ed11c39d1bf263f19f301398d"></a>
 <a class="el" href="structpycanha_1_1radiative_1_1detail_1_1GpuBuffer.html">GpuBuffer</a>&#160;</td><td class="memItemRight" valign="bottom"><b>_direct</b></td></tr>
@@ -153,8 +177,9 @@ std::uint64_t&#160;</td><td class="memItemRight" valign="bottom"><b>_rays_per_fa
 std::uint64_t&#160;</td><td class="memItemRight" valign="bottom"><b>_total_rays</b> = 0</td></tr>
 </table>
 <hr/>The documentation for this class was generated from the following files:<ul>
-<li>pycanha-core/src/radiative/<b>radiative_stub.cpp</b></li>
+<li>pycanha-core/src/radiative/<a class="el" href="mtl__accum_8hpp_source.html">mtl_accum.hpp</a></li>
 <li>pycanha-core/src/radiative/<a class="el" href="vk__accum_8hpp_source.html">vk_accum.hpp</a></li>
+<li>pycanha-core/src/radiative/<b>mtl_accum.mm</b></li>
 <li>pycanha-core/src/radiative/<b>vk_accum.cpp</b></li>
 </ul>
 </div><!-- contents -->
