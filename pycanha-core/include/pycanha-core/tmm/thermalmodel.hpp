@@ -3,6 +3,7 @@
 #include <memory>
 #include <string>
 
+#include "pycanha-core/conduction/options.hpp"
 #include "pycanha-core/gmm/geometrymodel.hpp"
 
 namespace pycanha {
@@ -49,6 +50,13 @@ class ThermalModel {
 
     [[nodiscard]] CallbackRegistry& callbacks() noexcept;
     [[nodiscard]] const CallbackRegistry& callbacks() const noexcept;
+
+    /// Populates the tmm from the gmm: one node per conductively active face
+    /// slot that carries a node number, plus the in-plane and
+    /// through-thickness conductors those slots imply. Requires an empty tmm;
+    /// see pycanha::conduction::build_tmm_from_gmm.
+    [[nodiscard]] conduction::TmmBuildReport build_tmm_from_gmm(
+        const conduction::TmmBuildOptions& options = {});
 
   private:
     std::string _name;
