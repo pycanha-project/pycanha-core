@@ -241,8 +241,10 @@ radiative::MaterialTable GeometryModel::material_table() const {
         for (Eigen::Index slot = first; slot <= last; slot += 2) {
             table.face_material[slot] = side1_row;
             table.face_material[slot + 1] = side2_row;
-            table.face_active[slot] = thermal_mesh.get_side1_activity();
-            table.face_active[slot + 1] = thermal_mesh.get_side2_activity();
+            // The raytracer table is radiative-only: a conductive-only side is
+            // inactive here even though it still carries a node.
+            table.face_active[slot] = thermal_mesh.is_radiative_active(1U);
+            table.face_active[slot + 1] = thermal_mesh.is_radiative_active(2U);
         }
     }
 

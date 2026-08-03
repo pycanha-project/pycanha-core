@@ -157,6 +157,10 @@ add_library(${LIB_NAME} STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/materials/optical_material.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/materials/color.cpp
 
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/conduction/builder.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/conduction/links.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/conduction/profile.cpp
+
     ${CMAKE_CURRENT_SOURCE_DIR}/src/io/esatan.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/thermaldata/data_model.cpp

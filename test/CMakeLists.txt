@@ -1,6 +1,13 @@
 
 set(UNIT_TEST_SOURCES
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/dependencies/test_conan_dependencies.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/conduction/test_builder.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/conduction/test_capacitance.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/conduction/test_links_invariants.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/conduction/test_links_planar.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/conduction/test_links_revolution.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/conduction/test_links_triangle.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/conduction/test_profile.cpp"
 #  "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/mesh/test_export_meshes.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/materials/test_materials.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/gmm/mesh/test_mesh_ops.cpp"
@@ -78,6 +85,7 @@ set(UNIT_TEST_SOURCES
 set(API_TEST_SOURCES
   "${CMAKE_CURRENT_SOURCE_DIR}/api/test_overview.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/api/test_geometry_model.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/api/test_gmm_to_tmm.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/api/test_thermal_network.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/api/test_parameters.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/api/test_radiative.cpp"

@@ -5,6 +5,8 @@
 #include <string>
 #include <utility>
 
+#include "pycanha-core/conduction/builder.hpp"
+#include "pycanha-core/conduction/options.hpp"
 #include "pycanha-core/gmm/geometrymodel.hpp"
 #include "pycanha-core/parameters/formulas.hpp"
 #include "pycanha-core/parameters/parameters.hpp"
@@ -102,6 +104,11 @@ CallbackRegistry& ThermalModel::callbacks() noexcept { return *_callbacks; }
 
 const CallbackRegistry& ThermalModel::callbacks() const noexcept {
     return *_callbacks;
+}
+
+conduction::TmmBuildReport ThermalModel::build_tmm_from_gmm(
+    const conduction::TmmBuildOptions& options) {
+    return conduction::build_tmm_from_gmm(*this, options);
 }
 
 }  // namespace pycanha

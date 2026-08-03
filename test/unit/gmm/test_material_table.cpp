@@ -14,6 +14,7 @@
 
 namespace {
 
+using pycanha::gmm::ActiveSide;
 using pycanha::gmm::GeometryItem;
 using pycanha::gmm::GeometryModel;
 using pycanha::gmm::OpticalMaterial;
@@ -42,7 +43,7 @@ struct Fixture {
         ThermalMesh panel_mesh;  // one face pair -> slots 0/1
         panel_mesh.set_side1_optical(white_paint);
         panel_mesh.set_side2_optical(black);
-        panel_mesh.set_side2_activity(/*activity=*/false);
+        panel_mesh.set_radiative_active_side(ActiveSide::Side1);
         model.add(make_panel("panel", std::move(panel_mesh)));
 
         ThermalMesh shared_mesh;  // slots 2/3
@@ -101,9 +102,29 @@ TEST_CASE("material_table: activity flags", "[gmm][materials]") {
     const auto table = fixture.model.material_table();
 
     REQUIRE(table.face_active[0]);
-    REQUIRE_FALSE(table.face_active[1]);  // side2_activity = false
+    REQUIRE_FALSE(table.face_active[1]);  // radiative side 2 deselected
     REQUIRE(table.face_active[2]);
     REQUIRE(table.face_active[3]);
+}
+
+TEST_CASE("material_table: only the radiative selector is read",
+          "[gmm][materials]") {
+    GeometryModel model{"scene"};
+    ThermalMesh mesh;
+    mesh.set_side1_optical(
+        std::make_shared<OpticalMaterial>("paint", 0.8, 0.3));
+    mesh.set_side2_optical(
+        std::make_shared<OpticalMaterial>("paint", 0.8, 0.3));
+    // A conductive-only shell: it still carries nodes and conductors, but the
+    // raytracer must not see either of its faces.
+    mesh.set_radiative_active_side(ActiveSide::None);
+    mesh.set_conductive_active_side(ActiveSide::Both);
+    model.add(make_panel("conductive_only", std::move(mesh)));
+
+    const auto table = model.material_table();
+    REQUIRE_FALSE(table.face_active[0]);
+    REQUIRE_FALSE(table.face_active[1]);
+    REQUIRE(table.face_material[0] >= 0);
 }
 
 TEST_CASE("material_table: table tracks the mesh", "[gmm][materials]") {

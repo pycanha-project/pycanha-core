@@ -15,12 +15,41 @@
 namespace pycanha::gmm {
 
 /**
+ * @brief Which sides of a shell take part in one physics.
+ *
+ * The four states are STEP-TAS's `mgm_active_side_type`. A ThermalMesh carries
+ * two independent selectors, one for radiation and one for conduction, so a
+ * side can radiate, conduct, do both, or do neither. That pair spans exactly
+ * the four activity values ESATAN uses ("Active", "Inactive", "Radiative",
+ * "Conductive"), which a single selector could not express.
+ *
+ * The underlying values are a bitmask over the two sides (side 1 = bit 0,
+ * side 2 = bit 1), which is what makes active_side_includes() a bit test.
+ */
+enum class ActiveSide : std::uint8_t {
+    None = 0,
+    Side1 = 1,
+    Side2 = 2,
+    Both = 3,
+};
+
+/// True if @p side (1 or 2) is selected by @p sides. Any other side is false.
+[[nodiscard]] constexpr bool active_side_includes(ActiveSide sides,
+                                                  unsigned side) noexcept {
+    if (side != 1U && side != 2U) {
+        return false;
+    }
+    const auto mask = static_cast<std::uint8_t>(1U << (side - 1U));
+    return (static_cast<std::uint8_t>(sides) & mask) != 0U;
+}
+
+/**
  * @brief Per-primitive thermal discretization with full legacy parity.
  *
- * Carries the UV cut vectors in the two parametric directions plus per-side
- * (side 1 = front, side 2 = back) activity, thickness, color, bulk material
- * and optical material. Adds four int32 fields driving the face -> tmm-node
- * assignment (see node_of()).
+ * Carries the UV cut vectors in the two parametric directions plus the two
+ * per-physics active-side selectors and, per side (side 1 = front, side 2 =
+ * back), thickness, color, bulk material and optical material. Adds four int32
+ * fields driving the face -> tmm-node assignment (see node_of()).
  *
  * NOTE on the public surface: there is intentionally no `Side` enum and no
  * `face_id(i, j, side)` accessor. Internal face numbering (even = side 1,
@@ -50,19 +79,31 @@ class ThermalMesh {
     /// (n1 - 1) * (n2 - 1) face pairs.
     [[nodiscard]] MeshIndex get_number_of_pair_faces() const noexcept;
 
+    // --- Activity, one selector per physics ---
+    // Radiative activity gates the optical/view-factor path; conductive
+    // activity gates capacitance and conductor generation. They are
+    // independent: neither implies the other.
+    [[nodiscard]] ActiveSide get_radiative_active_side() const noexcept {
+        return _radiative_active_side;
+    }
+    [[nodiscard]] ActiveSide get_conductive_active_side() const noexcept {
+        return _conductive_active_side;
+    }
+    void set_radiative_active_side(ActiveSide sides) noexcept {
+        _radiative_active_side = sides;
+    }
+    void set_conductive_active_side(ActiveSide sides) noexcept {
+        _conductive_active_side = sides;
+    }
+
+    /// Per-side predicates. @p side must be 1 or 2, else std::invalid_argument.
+    [[nodiscard]] bool is_radiative_active(unsigned side) const;
+    [[nodiscard]] bool is_conductive_active(unsigned side) const;
+    /// True if the side takes part in either physics — the "this side of the
+    /// shell exists at all" test.
+    [[nodiscard]] bool is_side_active(unsigned side) const;
+
     // --- Per-side metadata (side1 = front, side2 = back) ---
-    [[nodiscard]] bool get_side1_activity() const noexcept {
-        return _side1_activity;
-    }
-    [[nodiscard]] bool get_side2_activity() const noexcept {
-        return _side2_activity;
-    }
-    void set_side1_activity(bool activity) noexcept {
-        _side1_activity = activity;
-    }
-    void set_side2_activity(bool activity) noexcept {
-        _side2_activity = activity;
-    }
 
     [[nodiscard]] double get_side1_thick() const noexcept {
         return _side1_thick;
@@ -148,8 +189,8 @@ class ThermalMesh {
   private:
     void validate() const;
 
-    bool _side1_activity = true;
-    bool _side2_activity = true;
+    ActiveSide _radiative_active_side = ActiveSide::Both;
+    ActiveSide _conductive_active_side = ActiveSide::Both;
 
     double _side1_thick = 0.0;
     double _side2_thick = 0.0;

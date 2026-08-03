@@ -7,6 +7,7 @@
 #include <limits>
 #include <span>
 #include <stdexcept>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -50,6 +51,32 @@ void ThermalMesh::set_dir2_mesh(std::vector<double> dir2_mesh) {
         _dir2_mesh = std::move(previous);
         throw;
     }
+}
+
+namespace {
+
+void check_side(unsigned side, const char* who) {
+    if (side != 1U && side != 2U) {
+        throw std::invalid_argument(std::string(who) + ": side must be 1 or 2");
+    }
+}
+
+}  // namespace
+
+bool ThermalMesh::is_radiative_active(unsigned side) const {
+    check_side(side, "ThermalMesh::is_radiative_active");
+    return active_side_includes(_radiative_active_side, side);
+}
+
+bool ThermalMesh::is_conductive_active(unsigned side) const {
+    check_side(side, "ThermalMesh::is_conductive_active");
+    return active_side_includes(_conductive_active_side, side);
+}
+
+bool ThermalMesh::is_side_active(unsigned side) const {
+    check_side(side, "ThermalMesh::is_side_active");
+    return active_side_includes(_radiative_active_side, side) ||
+           active_side_includes(_conductive_active_side, side);
 }
 
 void ThermalMesh::set_side1_thick(double thick) {
