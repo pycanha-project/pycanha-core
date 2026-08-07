@@ -139,7 +139,7 @@ void SSLU::add_conductive_diagonal_to_matrix() {
 }
 
 void SSLU::deinitialize() {
-    SPDLOG_LOGGER_INFO(get_logger(), "De-initializing SSLU...");
+    SPDLOG_LOGGER_DEBUG(get_logger(), "De-initializing SSLU...");
     SPDLOG_LOGGER_ERROR(get_logger(), "Not implemented yet.");
 }
 

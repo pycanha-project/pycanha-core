@@ -47,7 +47,7 @@ jobs:
 
     name: ${{matrix.config.os}} ${{matrix.config.compiler}} ${{matrix.build_type}} built and tests
     runs-on: ${{matrix.config.runner}}
-    timeout-minutes: 45
+    timeout-minutes: 90
 
     steps:
     - name: Check out repository

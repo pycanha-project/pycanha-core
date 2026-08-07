@@ -5,6 +5,7 @@
 #include <bit>
 #include <cmath>
 #include <cstdint>
+#include <iostream>
 #include <tuple>
 #include <utility>
 
@@ -246,17 +247,16 @@ void CouplingMatrices::_move_node([[maybe_unused]] Index to_idx,
     // TODO
 }
 
+// Writes to stdout rather than through the logger: the caller asked for the
+// dump, so it must appear whatever the log thresholds are set to.
 void CouplingMatrices::print_sparse() const {
-    SPDLOG_LOGGER_INFO(pycanha::get_logger(), "     Kdd matrix");
-    SPDLOG_LOGGER_INFO(pycanha::get_logger(), "-------------------");
+    std::cout << "     Kdd matrix\n-------------------\n";
     sparse_utils::print_sparse(sparse_dd);
 
-    SPDLOG_LOGGER_INFO(pycanha::get_logger(), "     Kdb matrix");
-    SPDLOG_LOGGER_INFO(pycanha::get_logger(), "-------------------");
+    std::cout << "     Kdb matrix\n-------------------\n";
     sparse_utils::print_sparse(sparse_db);
 
-    SPDLOG_LOGGER_INFO(pycanha::get_logger(), "     Kbb matrix");
-    SPDLOG_LOGGER_INFO(pycanha::get_logger(), "-------------------");
+    std::cout << "     Kbb matrix\n-------------------\n";
     sparse_utils::print_sparse(sparse_bb);
 }
 

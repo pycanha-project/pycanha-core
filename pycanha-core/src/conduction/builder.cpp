@@ -129,22 +129,34 @@ struct BuildContext {
     return geometry;
 }
 
-void log_diagnostic(const BuildDiagnostic& diagnostic) {
-    switch (diagnostic.code) {
+// Whether a diagnostic describes expected behaviour rather than something the
+// build had to drop or assume. An approximated triangle fan, a cell band
+// reaching the axis and a side excluded by the active-side selector are all
+// normal, as is an item meshed for the radiative path alone and therefore
+// carrying no node numbers.
+[[nodiscard]] bool is_benign(const DiagnosticCode code) noexcept {
+    switch (code) {
         case DiagnosticCode::TriangleApproximated:
         case DiagnosticCode::AxisSingularity:
         case DiagnosticCode::InactiveSideSkipped:
-        // Common and legitimate: an item meshed for the radiative path alone
-        // carries no node numbers.
         case DiagnosticCode::NoNodeNumbers:
-            SPDLOG_LOGGER_INFO(pycanha::get_logger(), "build_tmm_from_gmm: {}",
-                               diagnostic.message);
-            break;
+            return true;
         default:
-            SPDLOG_LOGGER_WARN(pycanha::get_logger(), "build_tmm_from_gmm: {}",
-                               diagnostic.message);
-            break;
+            return false;
     }
+}
+
+void log_diagnostic(const BuildDiagnostic& diagnostic) {
+    if (is_benign(diagnostic.code)) {
+        // One record per item, so this scales with the model rather than with
+        // the call. The build's summary line carries the outcome instead.
+        SPDLOG_LOGGER_DEBUG(pycanha::get_logger(), "build_tmm_from_gmm: {}",
+                            diagnostic.message);
+        return;
+    }
+
+    SPDLOG_LOGGER_WARN(pycanha::get_logger(), "build_tmm_from_gmm: {}",
+                       diagnostic.message);
 }
 
 void report_diagnostic(TmmBuildReport& report, DiagnosticCode code,
@@ -578,6 +590,32 @@ TmmBuildReport build_tmm_from_gmm(ThermalModel& model,
     }
 
     commit(tmm, context);
+
+    // One summary line, at the severity of the worst diagnostic: a clean build
+    // stays off the console, one that dropped or assumed something announces
+    // itself there and points at the detail already recorded above.
+    const auto dropped = static_cast<std::size_t>(std::ranges::count_if(
+        context.report.diagnostics, [](const BuildDiagnostic& diagnostic) {
+            return !is_benign(diagnostic.code);
+        }));
+    if (dropped == 0U) {
+        SPDLOG_LOGGER_INFO(
+            pycanha::get_logger(),
+            "Built tmm from gmm - {} items ({} skipped), {} nodes, "
+            "{} conductors; no issues",
+            context.report.items_processed, context.report.items_skipped,
+            context.report.nodes_created, context.report.conductors_created);
+    } else {
+        SPDLOG_LOGGER_WARN(
+            pycanha::get_logger(),
+            "Built tmm from gmm - {} items ({} skipped), {} nodes, "
+            "{} conductors; {} of {} diagnostics report something dropped or "
+            "assumed",
+            context.report.items_processed, context.report.items_skipped,
+            context.report.nodes_created, context.report.conductors_created,
+            dropped, context.report.diagnostics.size());
+    }
+
     return std::move(context.report);
 }
 

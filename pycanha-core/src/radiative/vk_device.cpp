@@ -191,8 +191,10 @@ struct QueueFamilies {
 VkInstance shared_instance() {
     static VkInstance instance = []() -> VkInstance {
         if (volkInitialize() != VK_SUCCESS) {
-            SPDLOG_LOGGER_INFO(pycanha::get_logger(),
-                               "radiative: no Vulkan loader/driver found");
+            // Expected on any machine without a Vulkan driver, and already
+            // reported through is_available(); not worth a record per import.
+            SPDLOG_LOGGER_DEBUG(pycanha::get_logger(),
+                                "radiative: no Vulkan loader/driver found");
             return VK_NULL_HANDLE;
         }
 
