@@ -26,6 +26,7 @@
 #include <span>
 #include <vector>
 
+#include "exchange_assemble.hpp"
 #include "mtl_scene.hpp"
 #include "pycanha-core/radiative/results.hpp"
 #include "pycanha-core/radiative/scene.hpp"
@@ -33,14 +34,6 @@
 #include "vf_assemble.hpp"
 
 namespace pycanha::radiative::detail {
-
-// Running per-entry statistics while scanning exchange rows into a CSR.
-struct EntryStats {
-    double stderr_sum = 0.0;
-    double stderr_max = 0.0;
-    std::size_t entries = 0;
-    double lost_energy = 0.0;  // signed: Russian-roulette adjustments
-};
 
 class VfAccumImpl {
   public:
@@ -127,14 +120,10 @@ class ExchangeAccumImpl {
     [[nodiscard]] SceneImpl& scene() const noexcept { return _scene; }
 
   private:
-    // Fixed-point value of cell (row, col) regardless of layout; columns
-    // include the virtual space/inactive/lost buckets.
-    [[nodiscard]] std::uint64_t cell_at(std::size_t row, std::size_t col) const;
-    // Appends one row's thresholded entries and statistics (including the
-    // signed lost-column energy).
-    void scan_row(std::size_t row, std::uint64_t rays_row,
-                  std::vector<SparseIndex>& indices,
-                  std::vector<double>& values, EntryStats& stats) const;
+    // The accumulated cells in whichever layout this accumulator used. The
+    // assembly itself is backend-agnostic and lives in exchange_assemble;
+    // unified memory means there is nothing to invalidate first.
+    [[nodiscard]] ExchangeCellSource cells() const;
 
     SceneImpl& _scene;
     Band _band;

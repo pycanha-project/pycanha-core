@@ -11,7 +11,7 @@
 #include <stdexcept>
 #include <vector>
 
-#include "csr_assembly.hpp"
+#include "exchange_assemble.hpp"
 #include "pycanha-core/radiative/materials.hpp"
 #include "pycanha-core/radiative/results.hpp"
 #include "pycanha-core/radiative/scene.hpp"
@@ -40,13 +40,6 @@ namespace {
 // u64 balances could overflow.
 [[nodiscard]] std::uint64_t max_cumulative_rays(double fp_scale) {
     return (std::uint64_t{1} << 63U) / static_cast<std::uint64_t>(fp_scale);
-}
-
-// Magnitude of a wrapping-u64 difference (conservation residuals are exact
-// zeros when the kernel is right; a broken kernel may miss in either
-// direction).
-[[nodiscard]] std::uint64_t wrap_magnitude(std::uint64_t difference) {
-    return std::min(difference, std::uint64_t{0} - difference);
 }
 
 void clear_host_visible(const SceneImpl& scene, const GpuBuffer& buffer) {
@@ -236,139 +229,27 @@ void ExchangeAccumImpl::record_batch(std::span<const std::uint32_t> emitters,
     _total_rays += rays_per_face * emitters.size();
 }
 
-std::uint64_t ExchangeAccumImpl::cell_at(std::size_t row,
-                                         std::size_t col) const {
-    if (_config.layout == AccumLayout::Dense) {
-        const std::size_t slots = _scene.num_face_slots();
-        const std::size_t cols = matrix_columns(slots);
-        const std::span<const std::uint64_t> cells(
-            static_cast<const std::uint64_t*>(checked_mapped(_cells)),
-            slots * cols);
-        return cells[(row * cols) + col];
+ExchangeCellSource ExchangeAccumImpl::cells() const {
+    if (_config.layout != AccumLayout::Dense) {
+        return std::span<const HostCountRow>(_host_rows);
     }
-    const auto& host_row = _host_rows[row];
-    const auto it = host_row.find(static_cast<std::uint32_t>(col));
-    return it == host_row.end() ? 0 : it->second;
-}
-
-void ExchangeAccumImpl::scan_row(std::size_t row, std::uint64_t rays_row,
-                                 std::vector<SparseIndex>& indices,
-                                 std::vector<double>& values,
-                                 EntryStats& stats) const {
+    invalidate_host_visible(_scene, _cells);
     const std::size_t slots = _scene.num_face_slots();
-    const std::size_t cols = matrix_columns(slots);
-    const std::size_t lost_col =
-        slots + static_cast<std::size_t>(lost_column_offset);
-    const double inv_scale = 1.0 / _fp_scale;
-    // Ascending column order in both layouts, so the CSR (and every derived
-    // statistic) is bit-identical between Dense and Tiled.
-    for (std::size_t col = 0; col < cols; ++col) {
-        const std::uint64_t cell = cell_at(row, col);
-        if (cell == 0) {
-            continue;
-        }
-        // The lost column is signed: Russian-roulette boost withdrawals may
-        // push it (slightly) negative. The fixed-point value converts FIRST
-        // (exact for full deposits), THEN divides by the rays — the same
-        // rounding path as the vf counts, so blackbody exchange factors are
-        // bit-identical to view factors.
-        const double energy =
-            col == lost_col
-                ? static_cast<double>(static_cast<std::int64_t>(cell)) *
-                      inv_scale
-                : static_cast<double>(cell) * inv_scale;
-        const double factor = energy / static_cast<double>(rays_row);
-        if (col == lost_col) {
-            stats.lost_energy += energy;
-        }
-        if (col < slots) {
-            // Conservative per-entry standard error: a ray's deposit into
-            // one cell is in [0, 1], so the Bernoulli bound dominates the
-            // true variance.
-            const double entry_stderr =
-                std::sqrt(factor * std::max(1.0 - factor, 0.0) /
-                          static_cast<double>(rays_row));
-            stats.stderr_sum += entry_stderr;
-            stats.stderr_max = std::max(stats.stderr_max, entry_stderr);
-            ++stats.entries;
-        }
-        // Row statistics come before thresholding; the threshold only
-        // prunes what is stored.
-        if (std::abs(factor) > _config.sparse_threshold) {
-            indices.push_back(static_cast<SparseIndex>(col));
-            values.push_back(factor);
-        }
-    }
+    return std::span<const std::uint64_t>(
+        static_cast<const std::uint64_t*>(checked_mapped(_cells)),
+        slots * matrix_columns(slots));
 }
 
 ExchangeResult ExchangeAccumImpl::build_result() const {
-    if (_config.layout == AccumLayout::Dense) {
-        invalidate_host_visible(_scene, _cells);
-    }
-    const std::size_t slots = _scene.num_face_slots();
-
-    ExchangeResult result;
-    result.band = _band;
-
-    std::vector<SparseIndex> row_starts;
-    row_starts.reserve(slots + 1);
-    std::vector<SparseIndex> indices;
-    std::vector<double> values;
-    EntryStats stats;
-    double emitted_energy = 0.0;
-
-    row_starts.push_back(0);
-    for (std::size_t row = 0; row < slots; ++row) {
-        const std::uint64_t rays_row = _rays_per_row[row];
-        if (rays_row > 0 && _fp_scale > 0.0) {
-            scan_row(row, rays_row, indices, values, stats);
-            emitted_energy += static_cast<double>(rays_row);
-        }
-        check_sparse_capacity(values.size());
-        row_starts.push_back(static_cast<SparseIndex>(values.size()));
-    }
-    result.factors = make_csr(static_cast<Eigen::Index>(slots),
-                              static_cast<Eigen::Index>(matrix_columns(slots)),
-                              row_starts, indices, values);
-
+    ExchangeResult result =
+        assemble_exchange(cells(), _rays_per_row, _fp_scale, _band, _config);
     result.stats.total_rays = _total_rays;
     result.stats.rays_per_face = _rays_per_face;
-    result.stats.mean_stderr =
-        stats.entries > 0
-            ? stats.stderr_sum / static_cast<double>(stats.entries)
-            : 0.0;
-    result.stats.max_stderr = stats.stderr_max;
-    result.stats.lost_energy_fraction =
-        emitted_energy > 0.0 ? stats.lost_energy / emitted_energy : 0.0;
     return result;
 }
 
 std::uint64_t ExchangeAccumImpl::conservation_error() const {
-    if (_fp_scale <= 0.0) {
-        return 0;
-    }
-    if (_config.layout == AccumLayout::Dense) {
-        invalidate_host_visible(_scene, _cells);
-    }
-    const std::size_t slots = _scene.num_face_slots();
-    const std::size_t cols = matrix_columns(slots);
-    const auto scale = static_cast<std::uint64_t>(_fp_scale);
-    std::uint64_t max_error = 0;
-    for (std::size_t row = 0; row < slots; ++row) {
-        if (_rays_per_row[row] == 0) {
-            continue;
-        }
-        // Everything wraps mod 2^64 — the identity the kernel maintains.
-        // The virtual columns are part of the balance, so the full row
-        // accounts for every parcel of emitted energy.
-        std::uint64_t balance = 0;
-        for (std::size_t col = 0; col < cols; ++col) {
-            balance += cell_at(row, col);
-        }
-        const std::uint64_t expected = _rays_per_row[row] * scale;
-        max_error = std::max(max_error, wrap_magnitude(balance - expected));
-    }
-    return max_error;
+    return exchange_conservation_error(cells(), _rays_per_row, _fp_scale);
 }
 
 SolarAccumImpl::SolarAccumImpl(SceneImpl& scene) : _scene(scene) {

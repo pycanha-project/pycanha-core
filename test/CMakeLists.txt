@@ -43,6 +43,7 @@ set(UNIT_TEST_SOURCES
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/radiative/test_aggregate.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/radiative/test_cross_backend_bitdiff.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/radiative/test_device.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/radiative/test_exchange_assemble.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/radiative/test_exchange_kernels.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/radiative/test_exchange_specular.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/radiative/test_gebhart.cpp"
