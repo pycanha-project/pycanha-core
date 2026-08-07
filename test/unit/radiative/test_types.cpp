@@ -18,11 +18,12 @@ TEST_CASE("radiative types: accumulator config defaults", "[radiative]") {
     REQUIRE(config.sparse_threshold == 0.0);
 }
 
-TEST_CASE("radiative types: empty CSR container", "[radiative]") {
-    const rad::SparseF64 matrix;
-    REQUIRE(matrix.rows == 0);
-    REQUIRE(matrix.cols == 0);
-    REQUIRE(matrix.nnz() == 0);
+TEST_CASE("radiative types: an untraced result carries an empty matrix",
+          "[radiative]") {
+    const rad::VfResult result;
+    REQUIRE(result.vf.rows() == 0);
+    REQUIRE(result.vf.cols() == 0);
+    REQUIRE(result.vf.nonZeros() == 0);
 }
 
 TEST_CASE("radiative types: results carry statistics", "[radiative]") {

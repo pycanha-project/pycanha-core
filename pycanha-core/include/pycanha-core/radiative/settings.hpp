@@ -31,6 +31,32 @@ enum class AccumLayout : std::uint8_t {
     Tiled,  // tile_rows x Nf blocks streamed + CPU-sparsified — the big path
 };
 
+// How the two independent Monte-Carlo estimates of a face pair are combined
+// into the single reciprocity-consistent value that gets stored.
+enum class TriangulationMode : std::uint8_t {
+    // Keep the forward estimate as traced. Nothing is combined, so the
+    // stored triangle is still two independent noisy numbers per pair — the
+    // mode to reach for when bisecting a suspected assembly bug.
+    None,
+    // Weight each direction by how densely it was sampled:
+    //   X_i = 1/2 (1 + sign(Y) |Y|^n),  Y = (v - u) / (v + u)
+    // with u = A_i/N_i and v = A_j/N_j, the two estimator variances up to a
+    // factor that cancels. n = 1 makes this exactly inverse-variance
+    // (minimum-variance) weighting; the default n = 0.4 is the more
+    // aggressive, empirically tuned rule the reference implementation uses.
+    RayDensity,
+};
+
+struct TriangulationConfig {
+    TriangulationMode mode = TriangulationMode::RayDensity;
+    // Must be > 0. 1.0 reduces the weight to inverse-variance weighting.
+    double exponent = 0.4;
+    // Also keep the raw, untriangulated matrix (both triangles) alongside
+    // the combined upper triangle. Off at every model size: it doubles the
+    // result memory and exists only for someone debugging a model.
+    bool keep_full_matrix = false;
+};
+
 struct AccumConfig {
     AccumLayout layout = AccumLayout::Dense;
     // Tiled only; 0 = invalid, must be set (the Python policy derives it).
@@ -38,7 +64,19 @@ struct AccumConfig {
     // Entries with |value| <= threshold are dropped from the result CSR;
     // row sums and every other statistic are computed BEFORE thresholding,
     // so closure/conservation accounting stays exact. 0 keeps any nonzero.
+    //
+    // The VF matrix compares on the INTENSIVE value max(F_ij, F_ji), which
+    // is the stored G_ij divided by the smaller of the two face areas, so a
+    // pair is dropped only when both directions are negligible. That
+    // comparison happens AFTER the two directions are combined: dropping
+    // them independently first would leave a surviving entry combined
+    // against a zero, which re-breaks the reciprocity just imposed and
+    // biases the survivor low.
     double sparse_threshold = 0.0;
+    // VF only; the exchange kernel deposits energy rather than unit hits,
+    // so its effective sample size is not the ray count and this variance
+    // proxy does not apply to it.
+    TriangulationConfig triangulation;
 };
 
 }  // namespace pycanha::radiative

@@ -4,9 +4,7 @@
 #include <catch2/matchers/catch_matchers.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 #include <cstddef>
-#include <cstdint>
 #include <stdexcept>
-#include <tuple>
 #include <vector>
 
 #include "pycanha-core/globals.hpp"
@@ -20,7 +18,6 @@
 #include "pycanha-core/radiative/results.hpp"
 #include "pycanha-core/radiative/scene.hpp"
 #include "pycanha-core/radiative/settings.hpp"
-#include "pycanha-core/radiative/sparse.hpp"
 #include "scene_fixtures.hpp"
 
 namespace rad = pycanha::radiative;
@@ -33,55 +30,30 @@ using radiative_fixtures::make_parallel_plates;
 
 namespace {
 
-// CSR from (row, col, value) triplets that are already row-major sorted.
-[[nodiscard]] rad::SparseF64 make_csr(
-    std::int64_t size,
-    const std::vector<std::tuple<std::int64_t, std::int32_t, double>>&
-        entries) {
-    rad::SparseF64 out;
-    out.rows = size;
-    out.cols = size;
-    out.indptr = Eigen::VectorX<std::int64_t>::Zero(size + 1);
-    out.indices.resize(static_cast<Eigen::Index>(entries.size()));
-    out.values.resize(static_cast<Eigen::Index>(entries.size()));
-    for (std::size_t k = 0; k < entries.size(); ++k) {
-        const auto& [row, col, value] = entries[k];
-        out.indices(static_cast<Eigen::Index>(k)) = col;
-        out.values(static_cast<Eigen::Index>(k)) = value;
-        out.indptr(row + 1) += 1;
-    }
-    for (std::int64_t row = 0; row < size; ++row) {
-        out.indptr(row + 1) += out.indptr(row);
-    }
+// Square row-major CSR from (row, col, value) triplets.
+[[nodiscard]] rad::SparseMatrix make_csr(
+    Eigen::Index size, const std::vector<Eigen::Triplet<double>>& entries) {
+    rad::SparseMatrix out(size, size);
+    out.setFromTriplets(entries.begin(), entries.end());
     return out;
 }
 
 // Two facing unit surfaces (slots 0 and 2) seeing each other with F = 0.4;
-// slots 1 and 3 look into space.
-[[nodiscard]] rad::SparseF64 two_surface_vf() {
-    return make_csr(4, {{0, 2, 0.4}, {2, 0, 0.4}});
+// slots 1 and 3 look into space. Unit areas make the stored extensive
+// coupling numerically equal to the view factor.
+constexpr std::array<double, 4> unit_areas{1.0, 1.0, 1.0, 1.0};
+
+[[nodiscard]] rad::SparseMatrix two_surface_vf() {
+    return make_csr(4, {{0, 2, 0.4}});
 }
 
 // In-place row scaling: GR aggregation needs A_i * eps_i * B_ij.
-void scale_rows_by_emissivity(rad::SparseF64& matrix,
+void scale_rows_by_emissivity(rad::SparseMatrix& matrix,
                               const Eigen::VectorXd& emissivity) {
-    for (Eigen::Index row = 0; row < matrix.rows; ++row) {
-        for (std::int64_t k = matrix.indptr(row); k < matrix.indptr(row + 1);
-             ++k) {
-            matrix.values(static_cast<Eigen::Index>(k)) *= emissivity(row);
-        }
-    }
-}
-
-// Entry-wise comparison of two square node matrices within 1e-12.
-void require_matrices_match(const rad::SparseF64& result,
-                            const rad::SparseF64& reference,
-                            std::int64_t size) {
-    for (std::int64_t row = 0; row < size; ++row) {
-        for (std::int32_t col = 0; col < size; ++col) {
-            REQUIRE(
-                csr_value(result, row, col) ==
-                Catch::Approx(csr_value(reference, row, col)).margin(1e-12));
+    for (Eigen::Index row = 0; row < matrix.rows(); ++row) {
+        for (rad::SparseMatrix::InnerIterator entry(matrix, row); entry;
+             ++entry) {
+            entry.valueRef() *= emissivity(row);
         }
     }
 }
@@ -90,10 +62,11 @@ void require_matrices_match(const rad::SparseF64& result,
 
 TEST_CASE("radiative gebhart: two-surface factors match the closed form",
           "[radiative][gebhart]") {
-    const rad::SparseF64 vf = two_surface_vf();
+    const rad::SparseMatrix vf = two_surface_vf();
     const Eigen::VectorXd emissivity = Eigen::VectorXd::Constant(4, 0.5);
 
-    const rad::SparseF64 factors = rad::gebhart_factors(vf, emissivity);
+    const rad::SparseMatrix factors =
+        rad::gebhart_factors(vf, emissivity, unit_areas);
     // B02 = eps * F / (1 - rho^2 F^2), B00 = eps * rho * F^2 / (same).
     REQUIRE(csr_value(factors, 0, 2) == Catch::Approx(0.2 / 0.96));
     REQUIRE(csr_value(factors, 0, 0) == Catch::Approx(0.04 / 0.96));
@@ -101,65 +74,74 @@ TEST_CASE("radiative gebhart: two-surface factors match the closed form",
 
     // policy = 0 renormalizes each row to one (deficit treated as noise):
     // effectively F = 1 between the two surfaces.
-    const rad::SparseF64 closed =
-        rad::gebhart_factors(vf, emissivity, /*space_fraction_policy=*/0.0);
+    const rad::SparseMatrix closed = rad::gebhart_factors(
+        vf, emissivity, unit_areas, /*space_fraction_policy=*/0.0);
     REQUIRE(csr_value(closed, 0, 2) == Catch::Approx(0.5 / 0.75));
     REQUIRE(csr_value(closed, 0, 0) == Catch::Approx(0.25 / 0.75));
 }
 
 TEST_CASE("radiative gebhart: node factors equal the aggregated dense path",
           "[radiative][gebhart]") {
-    const rad::SparseF64 vf = two_surface_vf();
+    const rad::SparseMatrix vf = two_surface_vf();
     const Eigen::VectorXd emissivity = Eigen::VectorXd::Constant(4, 0.5);
     const std::array<NodeNum, 4> node_numbers{10, NO_NODE, 20, NO_NODE};
-    const std::array<double, 4> areas{1.0, 1.0, 1.0, 1.0};
 
-    const rad::SparseF64 node_gr =
-        rad::gebhart_node_factors(vf, emissivity, node_numbers, areas);
-    REQUIRE(node_gr.rows == 2);
-    REQUIRE(node_gr.cols == 2);
+    const rad::SparseMatrix node_gr =
+        rad::gebhart_node_factors(vf, emissivity, node_numbers, unit_areas);
+    REQUIRE(node_gr.rows() == 2);
+    REQUIRE(node_gr.cols() == 2);
 
-    // Reference: dense face-level Gebhart, rows scaled by eps, aggregated
-    // to nodes.
-    rad::SparseF64 scaled = rad::gebhart_factors(vf, emissivity);
+    // Reference: dense face-level Gebhart, rows scaled by A_i eps_i to make
+    // them extensive, then condensed to nodes.
+    rad::SparseMatrix scaled = rad::gebhart_factors(vf, emissivity, unit_areas);
     scale_rows_by_emissivity(scaled, emissivity);
-    const rad::SparseF64 reference =
-        rad::aggregate_matrix(scaled, node_numbers, areas);
+    const rad::AggregateResult reference =
+        rad::aggregate_matrix(scaled, node_numbers);
 
-    require_matrices_match(node_gr, reference, 2);
-    // Diffuse-gray GR is symmetric when the VF matrix is reciprocal.
+    // The node path keeps both triangles; the condensed reference folds them
+    // into one, so compare the off-diagonal coupling through that.
+    REQUIRE(csr_value(node_gr, 0, 1) + csr_value(node_gr, 1, 0) ==
+            Catch::Approx(csr_value(reference.matrix, 0, 1)).margin(1e-12));
+    // Diffuse-gray GR is symmetric when the VF matrix is reciprocal. Storing
+    // one symmetric coupling per pair leaves only the round-off of the sparse
+    // solve, so this holds three orders of magnitude tighter than the 1e-12
+    // an independently-estimated pair of directions could support.
     REQUIRE(csr_value(node_gr, 0, 1) ==
-            Catch::Approx(csr_value(node_gr, 1, 0)).margin(1e-12));
+            Catch::Approx(csr_value(node_gr, 1, 0)).margin(1e-15));
     REQUIRE(csr_value(node_gr, 0, 1) == Catch::Approx(0.1 / 0.96));
 }
 
 TEST_CASE("radiative gebhart: the dense path guards its size",
           "[radiative][gebhart]") {
-    const std::int64_t huge = 20'001;
-    rad::SparseF64 vf;
-    vf.rows = huge;
-    vf.cols = huge;
-    vf.indptr = Eigen::VectorX<std::int64_t>::Zero(huge + 1);
+    const Eigen::Index huge = 20'001;
+    const rad::SparseMatrix vf(huge, huge);
     const Eigen::VectorXd emissivity = Eigen::VectorXd::Constant(huge, 0.5);
+    const std::vector<double> areas(static_cast<std::size_t>(huge), 1.0);
     REQUIRE_THROWS_WITH(
-        rad::gebhart_factors(vf, emissivity),
+        rad::gebhart_factors(vf, emissivity, areas),
         Catch::Matchers::ContainsSubstring("gebhart_node_factors"));
 }
 
 TEST_CASE("radiative gebhart: invalid inputs are rejected",
           "[radiative][gebhart]") {
-    const rad::SparseF64 vf = two_surface_vf();
+    const rad::SparseMatrix vf = two_surface_vf();
     // Wrong emissivity size.
     REQUIRE_THROWS_AS(
-        rad::gebhart_factors(vf, Eigen::VectorXd::Constant(3, 0.5)),
+        rad::gebhart_factors(vf, Eigen::VectorXd::Constant(3, 0.5), unit_areas),
         std::invalid_argument);
     // Emissivity outside [0, 1].
     REQUIRE_THROWS_AS(
-        rad::gebhart_factors(vf, Eigen::VectorXd::Constant(4, 1.5)),
+        rad::gebhart_factors(vf, Eigen::VectorXd::Constant(4, 1.5), unit_areas),
         std::invalid_argument);
     // Policy outside [0, 1].
     REQUIRE_THROWS_AS(
-        rad::gebhart_factors(vf, Eigen::VectorXd::Constant(4, 0.5), 2.0),
+        rad::gebhart_factors(vf, Eigen::VectorXd::Constant(4, 0.5), unit_areas,
+                             2.0),
+        std::invalid_argument);
+    // A stored entry below the diagonal duplicates a coupling.
+    REQUIRE_THROWS_AS(
+        rad::gebhart_factors(make_csr(4, {{0, 2, 0.4}, {2, 0, 0.4}}),
+                             Eigen::VectorXd::Constant(4, 0.5), unit_areas),
         std::invalid_argument);
 }
 
@@ -193,7 +175,8 @@ TEST_CASE("radiative gebhart: matrix path agrees with the MCRT kernel",
     const rad::VfResult vf = vf_acc.result();
     const Eigen::VectorXd emissivity = Eigen::VectorXd::Constant(
         static_cast<Eigen::Index>(scene.num_face_slots()), eps);
-    const rad::SparseF64 gebhart = rad::gebhart_factors(vf.vf, emissivity);
+    const rad::SparseMatrix gebhart =
+        rad::gebhart_factors(vf.vf, emissivity, scene.face_areas());
 
     REQUIRE(csr_value(mcrt.factors, 0, 2) ==
             Catch::Approx(csr_value(gebhart, 0, 2)).margin(0.02));

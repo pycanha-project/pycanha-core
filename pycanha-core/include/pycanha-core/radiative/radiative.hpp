@@ -12,4 +12,3 @@
 #include "pycanha-core/radiative/scene.hpp"         // IWYU pragma: export
 #include "pycanha-core/radiative/scene_part.hpp"    // IWYU pragma: export
 #include "pycanha-core/radiative/settings.hpp"      // IWYU pragma: export
-#include "pycanha-core/radiative/sparse.hpp"        // IWYU pragma: export

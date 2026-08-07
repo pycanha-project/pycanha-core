@@ -45,15 +45,16 @@ void require_memory_estimates(const rad::RadiativeScene& scene) {
     const rad::MemoryEstimate tiled = rad::estimate_memory(
         scene, rad::AccumConfig{.layout = rad::AccumLayout::Tiled,
                                 .tile_rows = 2,
-                                .sparse_threshold = 0.0});
+                                .sparse_threshold = 0.0,
+                                .triangulation = {}});
     REQUIRE(tiled.host_bytes_block == 2 * tiled.gpu_bytes_per_tile_row);
 }
 
 // Matrix shape: face-slot rows, face-slot + virtual bucket columns; the
 // explicit space column closes every emitted row exactly.
 void require_result_shape(const rad::VfResult& result) {
-    REQUIRE(result.vf.rows == 4);
-    REQUIRE(result.vf.cols == 4 + rad::num_virtual_columns);
+    REQUIRE(result.vf.rows() == 4);
+    REQUIRE(result.vf.cols() == 4 + rad::num_virtual_columns);
     REQUIRE(result.stats.total_rays == 4'000);
     for (Eigen::Index row = 0; row < result.row_sums.size(); ++row) {
         REQUIRE(result.row_sums(row) == Catch::Approx(1.0).margin(1e-12));

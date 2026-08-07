@@ -105,13 +105,21 @@ TEST_CASE("radiative planet: a celestial part blocks, scores and never emits",
     REQUIRE(acc.conservation_error() == 0);
 
     // The vf kernel sees the same geometry (planet faces are ordinary
-    // first-hit targets for view factors).
-    rad::VfAccumulator vf_acc(scene);
+    // first-hit targets for view factors). Untriangulated and divided by the
+    // plate area, its stored entries are the same intensive estimate the
+    // exchange factors above are.
+    rad::VfAccumulator vf_acc(
+        scene, rad::AccumConfig{
+                   .layout = rad::AccumLayout::Dense,
+                   .tile_rows = 0,
+                   .sparse_threshold = 0.0,
+                   .triangulation = {.mode = rad::TriangulationMode::None}});
     scene.accumulate_vf(vf_acc, settings);
     const rad::VfResult vf = vf_acc.result();
     double vf_to_planet = 0.0;
     for (std::int32_t col = planet_first_slot; col < slots; ++col) {
         vf_to_planet += csr_value(vf.vf, 0, col);
     }
-    REQUIRE(vf_to_planet == Catch::Approx(to_planet).margin(0.01));
+    REQUIRE(vf_to_planet / scene.face_areas()[0] ==
+            Catch::Approx(to_planet).margin(0.01));
 }

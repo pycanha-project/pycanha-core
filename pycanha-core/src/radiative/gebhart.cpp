@@ -10,43 +10,48 @@
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
-#include <cstdint>
 #include <iterator>
 #include <span>
 #include <stdexcept>
 #include <string>
 #include <vector>
 
+#include "csr_assembly.hpp"
 #include "pycanha-core/globals.hpp"
 #include "pycanha-core/gmm/ids.hpp"
 #include "pycanha-core/radiative/aggregate.hpp"
 #include "pycanha-core/radiative/results.hpp"
-#include "pycanha-core/radiative/sparse.hpp"
 
 namespace pycanha::radiative {
 
+using detail::check_sparse_capacity;
+using detail::make_csr;
 using gmm::NO_NODE;
 
 namespace {
 
 // The dense solve is O(n^3) time and O(n^2) memory; past this size the
 // node-level adjoint path is the intended tool.
-constexpr std::int64_t max_dense_slots = 20'000;
+constexpr Eigen::Index max_dense_slots = 20'000;
 
-void validate_gebhart_inputs(const SparseF64& vf,
+void validate_gebhart_inputs(const SparseMatrix& vf,
                              const Eigen::VectorXd& emissivity,
+                             std::span<const double> face_areas,
                              double space_fraction_policy) {
     // Traced VF results carry the virtual space/inactive/lost columns; a
     // hand-built plain square matrix is equally fine. Columns beyond the
     // face slots never re-emit, so both shapes solve the same system.
-    if (vf.cols != vf.rows && vf.cols != vf.rows + num_virtual_columns) {
+    if (vf.cols() != vf.rows() &&
+        vf.cols() != vf.rows() + num_virtual_columns) {
         throw std::invalid_argument(
             "pycanha::radiative: the VF matrix must be square or carry "
             "exactly the virtual bucket columns");
     }
-    if (emissivity.rows() != vf.rows) {
+    if (emissivity.rows() != vf.rows() ||
+        face_areas.size() != static_cast<std::size_t>(vf.rows())) {
         throw std::invalid_argument(
-            "pycanha::radiative: emissivity size must match the VF matrix");
+            "pycanha::radiative: emissivity/face_areas size must match the "
+            "VF matrix");
     }
     for (Eigen::Index slot = 0; slot < emissivity.rows(); ++slot) {
         const double eps = emissivity(slot);
@@ -63,22 +68,56 @@ void validate_gebhart_inputs(const SparseF64& vf,
     }
 }
 
+// Both view factors of every stored coupling, as a square n x n matrix. The
+// VF result keeps only the upper triangle of the symmetric extensive
+// G_ij = A_i F_ij, so the two directions have to be expanded before anything
+// can solve with them; the virtual bucket columns never re-emit and are
+// dropped here.
+[[nodiscard]] SparseMatrix expand_view_factors(
+    const SparseMatrix& vf, std::span<const double> face_areas) {
+    const Eigen::Index n = vf.rows();
+    std::vector<Eigen::Triplet<double>> triplets;
+    triplets.reserve(static_cast<std::size_t>(vf.nonZeros()) * 2);
+    for (Eigen::Index row = 0; row < n; ++row) {
+        for (SparseMatrix::InnerIterator entry(vf, row); entry; ++entry) {
+            const Eigen::Index col = entry.col();
+            if (col >= n) {
+                continue;
+            }
+            if (col < row) {
+                throw std::invalid_argument(
+                    "pycanha::radiative: the VF matrix must hold only its "
+                    "upper triangle; entry (" +
+                    std::to_string(row) + ", " + std::to_string(col) +
+                    ") duplicates a coupling and would be counted twice");
+            }
+            const double coupling = entry.value();
+            triplets.emplace_back(
+                row, col, coupling / face_areas[static_cast<std::size_t>(row)]);
+            if (col != row) {
+                triplets.emplace_back(
+                    col, row,
+                    coupling / face_areas[static_cast<std::size_t>(col)]);
+            }
+        }
+    }
+    SparseMatrix expanded(n, n);
+    expanded.setFromTriplets(triplets.begin(), triplets.end());
+    return expanded;
+}
+
 // Per-row multipliers implementing the space policy: with policy p, each
 // row is divided by row_sum + p * (1 - row_sum) — p = 1 keeps the matrix
 // as-is (the deficit is a real view to space), p = 0 renormalizes rows to
-// one (the deficit is Monte-Carlo noise on a closed enclosure). Only real
-// face columns count toward row_sum: the virtual bucket columns ARE the
-// deficit.
-[[nodiscard]] std::vector<double> row_scales(const SparseF64& vf,
+// one (the deficit is Monte-Carlo noise on a closed enclosure). The input is
+// the already-expanded square F, so every column counts.
+[[nodiscard]] std::vector<double> row_scales(const SparseMatrix& expanded,
                                              double space_fraction_policy) {
-    std::vector<double> scales(static_cast<std::size_t>(vf.rows), 1.0);
-    for (Eigen::Index row = 0; row < vf.rows; ++row) {
+    std::vector<double> scales(static_cast<std::size_t>(expanded.rows()), 1.0);
+    for (Eigen::Index row = 0; row < expanded.rows(); ++row) {
         double row_sum = 0.0;
-        for (std::int64_t k = vf.indptr(row); k < vf.indptr(row + 1); ++k) {
-            const auto entry = static_cast<Eigen::Index>(k);
-            if (vf.indices(entry) < vf.rows) {
-                row_sum += vf.values(entry);
-            }
+        for (SparseMatrix::InnerIterator entry(expanded, row); entry; ++entry) {
+            row_sum += entry.value();
         }
         const double denominator =
             row_sum + (space_fraction_policy * (1.0 - row_sum));
@@ -90,55 +129,50 @@ void validate_gebhart_inputs(const SparseF64& vf,
 }
 
 // CSR from a dense row-major scan, keeping every nonzero entry.
-[[nodiscard]] SparseF64 pack_dense(const Eigen::MatrixXd& dense) {
-    SparseF64 out;
-    out.rows = dense.rows();
-    out.cols = dense.cols();
-    out.indptr.resize(dense.rows() + 1);
-    std::vector<std::int32_t> indices;
+[[nodiscard]] SparseMatrix pack_dense(const Eigen::MatrixXd& dense) {
+    std::vector<SparseIndex> row_starts;
+    row_starts.reserve(static_cast<std::size_t>(dense.rows()) + 1);
+    std::vector<SparseIndex> columns;
     std::vector<double> values;
-    out.indptr(0) = 0;
+    row_starts.push_back(0);
     for (Eigen::Index row = 0; row < dense.rows(); ++row) {
         for (Eigen::Index col = 0; col < dense.cols(); ++col) {
             const double value = dense(row, col);
             if (value != 0.0) {
-                indices.push_back(static_cast<std::int32_t>(col));
+                columns.push_back(static_cast<SparseIndex>(col));
                 values.push_back(value);
             }
         }
-        out.indptr(row + 1) = static_cast<std::int64_t>(values.size());
+        check_sparse_capacity(values.size());
+        row_starts.push_back(static_cast<SparseIndex>(values.size()));
     }
-    out.indices = Eigen::Map<const Eigen::VectorX<std::int32_t>>(
-        indices.data(), static_cast<Eigen::Index>(indices.size()));
-    out.values = Eigen::Map<const Eigen::VectorXd>(
-        values.data(), static_cast<Eigen::Index>(values.size()));
-    return out;
+    return make_csr(dense.rows(), dense.cols(), row_starts, columns, values);
 }
 
 }  // namespace
 
-SparseF64 gebhart_factors(const SparseF64& vf,
-                          const Eigen::VectorXd& emissivity,
-                          double space_fraction_policy) {
-    validate_gebhart_inputs(vf, emissivity, space_fraction_policy);
-    if (vf.rows > max_dense_slots) {
+SparseMatrix gebhart_factors(const SparseMatrix& vf,
+                             const Eigen::VectorXd& emissivity,
+                             std::span<const double> face_areas,
+                             double space_fraction_policy) {
+    validate_gebhart_inputs(vf, emissivity, face_areas, space_fraction_policy);
+    if (vf.rows() > max_dense_slots) {
         throw std::invalid_argument(
             "pycanha::radiative: gebhart_factors solves a dense " +
-            std::to_string(vf.rows) + "x" + std::to_string(vf.rows) +
+            std::to_string(vf.rows()) + "x" + std::to_string(vf.rows()) +
             " system, which is limited to " + std::to_string(max_dense_slots) +
             " face slots; use gebhart_node_factors for large models");
     }
-    const auto n = static_cast<Eigen::Index>(vf.rows);
-    const std::vector<double> scales = row_scales(vf, space_fraction_policy);
+    const Eigen::Index n = vf.rows();
+    const SparseMatrix expanded = expand_view_factors(vf, face_areas);
+    const std::vector<double> scales =
+        row_scales(expanded, space_fraction_policy);
 
     Eigen::MatrixXd f = Eigen::MatrixXd::Zero(n, n);
     for (Eigen::Index row = 0; row < n; ++row) {
         const double scale = scales[static_cast<std::size_t>(row)];
-        for (std::int64_t k = vf.indptr(row); k < vf.indptr(row + 1); ++k) {
-            const auto entry = static_cast<Eigen::Index>(k);
-            if (vf.indices(entry) < n) {  // bucket columns never re-emit
-                f(row, vf.indices(entry)) = vf.values(entry) * scale;
-            }
+        for (SparseMatrix::InnerIterator entry(expanded, row); entry; ++entry) {
+            f(row, entry.col()) = entry.value() * scale;
         }
     }
 
@@ -151,26 +185,22 @@ SparseF64 gebhart_factors(const SparseF64& vf,
     return pack_dense(system.partialPivLu().solve(rhs));
 }
 
-SparseF64 gebhart_node_factors(const SparseF64& vf,
-                               const Eigen::VectorXd& emissivity,
-                               std::span<const NodeNum> node_numbers,
-                               std::span<const double> face_areas,
-                               double space_fraction_policy) {
-    validate_gebhart_inputs(vf, emissivity, space_fraction_policy);
-    const auto n = static_cast<Eigen::Index>(vf.rows);
-    if (node_numbers.size() != static_cast<std::size_t>(n) ||
-        face_areas.size() != static_cast<std::size_t>(n)) {
+SparseMatrix gebhart_node_factors(const SparseMatrix& vf,
+                                  const Eigen::VectorXd& emissivity,
+                                  std::span<const NodeNum> node_numbers,
+                                  std::span<const double> face_areas,
+                                  double space_fraction_policy) {
+    validate_gebhart_inputs(vf, emissivity, face_areas, space_fraction_policy);
+    const Eigen::Index n = vf.rows();
+    if (node_numbers.size() != static_cast<std::size_t>(n)) {
         throw std::invalid_argument(
-            "pycanha::radiative: node_numbers/face_areas size must match "
-            "the VF matrix");
+            "pycanha::radiative: node_numbers size must match the VF matrix");
     }
 
     const std::vector<NodeNum> nodes = aggregate_nodes(node_numbers);
     const auto num_nodes = static_cast<Eigen::Index>(nodes.size());
     if (num_nodes == 0) {
-        SparseF64 empty;
-        empty.indptr = Eigen::VectorX<std::int64_t>::Zero(1);
-        return empty;
+        return SparseMatrix{};
     }
     std::vector<Eigen::Index> node_of(static_cast<std::size_t>(n), -1);
     for (std::size_t slot = 0; slot < node_numbers.size(); ++slot) {
@@ -184,21 +214,19 @@ SparseF64 gebhart_node_factors(const SparseF64& vf,
     // Sparse system (I - F R) and the tall-skinny RHS F E V (columns =
     // nodes): one factorization + num_nodes solves instead of a dense
     // inverse — num_nodes stays small no matter how fine the mesh is.
-    const std::vector<double> scales = row_scales(vf, space_fraction_policy);
+    const SparseMatrix expanded = expand_view_factors(vf, face_areas);
+    const std::vector<double> scales =
+        row_scales(expanded, space_fraction_policy);
     std::vector<Eigen::Triplet<double>> triplets;
-    triplets.reserve(static_cast<std::size_t>(vf.nnz()) +
+    triplets.reserve(static_cast<std::size_t>(expanded.nonZeros()) +
                      static_cast<std::size_t>(n));
     Eigen::MatrixXd rhs = Eigen::MatrixXd::Zero(n, num_nodes);
     for (Eigen::Index row = 0; row < n; ++row) {
         triplets.emplace_back(row, row, 1.0);
         const double scale = scales[static_cast<std::size_t>(row)];
-        for (std::int64_t k = vf.indptr(row); k < vf.indptr(row + 1); ++k) {
-            const auto entry = static_cast<Eigen::Index>(k);
-            const Eigen::Index col = vf.indices(entry);
-            if (col >= n) {
-                continue;  // bucket columns never re-emit
-            }
-            const double f_entry = vf.values(entry) * scale;
+        for (SparseMatrix::InnerIterator entry(expanded, row); entry; ++entry) {
+            const Eigen::Index col = entry.col();
+            const double f_entry = entry.value() * scale;
             triplets.emplace_back(row, col, -f_entry * (1.0 - emissivity(col)));
             const Eigen::Index node_col =
                 node_of[static_cast<std::size_t>(col)];

@@ -8,21 +8,17 @@
 #include <vector>
 
 #include "pycanha-core/gmm/geometrymodel.hpp"
-#include "pycanha-core/gmm/mesh/thermal_mesh.hpp"
-#include "pycanha-core/gmm/primitives/rectangle.hpp"
-#include "pycanha-core/gmm/scene/geometry_item.hpp"
 #include "pycanha-core/radiative/accumulators.hpp"
 #include "pycanha-core/radiative/device.hpp"
 #include "pycanha-core/radiative/results.hpp"
 #include "pycanha-core/radiative/scene.hpp"
 #include "pycanha-core/radiative/settings.hpp"
-#include "pycanha-core/radiative/sparse.hpp"
+#include "scene_fixtures.hpp"
 
 namespace rad = pycanha::radiative;
-using pycanha::gmm::GeometryItem;
-using pycanha::gmm::GeometryModel;
-using pycanha::gmm::Rectangle;
-using pycanha::gmm::ThermalMesh;
+using radiative_fixtures::csr_bit_identical;
+using radiative_fixtures::csr_value;
+using radiative_fixtures::make_parallel_plates;
 
 namespace {
 
@@ -44,46 +40,19 @@ namespace {
             (y * std::atan(y)));
 }
 
-// Two unit plates 1 apart, side 1 of each facing the other. Slot layout:
-// plate A = slots 0/1, plate B = slots 2/3.
-[[nodiscard]] std::unique_ptr<GeometryModel> make_parallel_plates() {
-    auto model = std::make_unique<GeometryModel>("plates");
-    model->add(std::make_shared<GeometryItem>(
-        "plate_a", Rectangle({0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}),
-        ThermalMesh{}));
-    // Winding chosen so the side-1 normal points down (-z), toward plate A.
-    model->add(std::make_shared<GeometryItem>(
-        "plate_b", Rectangle({0.0, 0.0, 1.0}, {0.0, 1.0, 1.0}, {1.0, 0.0, 1.0}),
-        ThermalMesh{}));
-    return model;
-}
-
-[[nodiscard]] double csr_value(const rad::SparseF64& matrix, std::int64_t row,
-                               std::int32_t col) {
-    for (std::int64_t k = matrix.indptr(row); k < matrix.indptr(row + 1); ++k) {
-        if (matrix.indices(k) == col) {
-            return matrix.values(k);
-        }
-    }
-    return 0.0;
-}
-
 // The explicit space column closes every emitted row to exactly one.
-void require_closed_row(const rad::VfResult& result, std::int64_t row,
-                        std::int32_t space_col, double expected_space) {
+void require_closed_row(const rad::VfResult& result, Eigen::Index row,
+                        Eigen::Index space_col, double expected_space) {
     REQUIRE(csr_value(result.vf, row, space_col) ==
             Catch::Approx(expected_space).margin(1e-12));
-    REQUIRE(result.row_sums(static_cast<Eigen::Index>(row)) ==
-            Catch::Approx(1.0).margin(1e-12));
+    REQUIRE(result.row_sums(row) == Catch::Approx(1.0).margin(1e-12));
 }
 
 // Bit-exact equality of two VF results (integer counting cells make this a
 // hard guarantee, not a tolerance check).
 void require_bit_identical(const rad::VfResult& result,
                            const rad::VfResult& reference) {
-    REQUIRE(result.vf.nnz() == reference.vf.nnz());
-    REQUIRE(result.vf.values.cwiseEqual(reference.vf.values).all());
-    REQUIRE(result.vf.indices.cwiseEqual(reference.vf.indices).all());
+    REQUIRE(csr_bit_identical(result.vf, reference.vf));
     REQUIRE(result.row_sums.size() == reference.row_sums.size());
     REQUIRE(result.row_sums.cwiseEqual(reference.row_sums).all());
 }
@@ -96,7 +65,7 @@ TEST_CASE("radiative vf: parallel plates match the analytic value",
         SUCCEED("no RT-capable GPU device: skipped");
         return;
     }
-    const auto model = make_parallel_plates();
+    const auto model = make_parallel_plates(1.0);
     rad::Device device = rad::Device::create();
     rad::RadiativeScene scene(device, model->mesh_parts(),
                               model->material_table());
@@ -130,7 +99,7 @@ TEST_CASE("radiative vf: same seed reproduces bit-identical results",
         SUCCEED("no RT-capable GPU device: skipped");
         return;
     }
-    const auto model = make_parallel_plates();
+    const auto model = make_parallel_plates(1.0);
     rad::Device device = rad::Device::create();
     rad::RadiativeScene scene(device, model->mesh_parts(),
                               model->material_table());
@@ -153,7 +122,7 @@ TEST_CASE("radiative vf: identity instances match the monolithic scene",
         SUCCEED("no RT-capable GPU device: skipped");
         return;
     }
-    const auto model = make_parallel_plates();
+    const auto model = make_parallel_plates(1.0);
     rad::Device device = rad::Device::create();
 
     rad::TraceSettings settings;
@@ -184,7 +153,7 @@ TEST_CASE("radiative vf: tiled layout is bit-identical to dense",
         SUCCEED("no RT-capable GPU device: skipped");
         return;
     }
-    const auto model = make_parallel_plates();
+    const auto model = make_parallel_plates(1.0);
     rad::Device device = rad::Device::create();
     rad::RadiativeScene scene(device, model->mesh_parts(),
                               model->material_table());
@@ -203,7 +172,8 @@ TEST_CASE("radiative vf: tiled layout is bit-identical to dense",
         rad::VfAccumulator tiled(
             scene, rad::AccumConfig{.layout = rad::AccumLayout::Tiled,
                                     .tile_rows = tile_rows,
-                                    .sparse_threshold = 0.0});
+                                    .sparse_threshold = 0.0,
+                                    .triangulation = {}});
         scene.accumulate_vf(tiled, settings);
         require_bit_identical(tiled.result(), reference);
     }
@@ -214,7 +184,7 @@ TEST_CASE("radiative vf: batches accumulate", "[radiative][gpu][vf]") {
         SUCCEED("no RT-capable GPU device: skipped");
         return;
     }
-    const auto model = make_parallel_plates();
+    const auto model = make_parallel_plates(1.0);
     rad::Device device = rad::Device::create();
     rad::RadiativeScene scene(device, model->mesh_parts(),
                               model->material_table());

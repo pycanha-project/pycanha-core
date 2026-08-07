@@ -1,7 +1,9 @@
 #include <array>
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
+#include <cstddef>
 #include <cstdint>
+#include <span>
 #include <stdexcept>
 #include <vector>
 
@@ -15,6 +17,7 @@
 #include "scene_fixtures.hpp"
 
 namespace rad = pycanha::radiative;
+using radiative_fixtures::csr_bit_identical;
 using radiative_fixtures::csr_value;
 using radiative_fixtures::gray_row;
 using radiative_fixtures::make_materials;
@@ -32,16 +35,37 @@ void require_tiled_matches(rad::RadiativeScene& scene,
         scene, rad::Band::IR,
         rad::AccumConfig{.layout = rad::AccumLayout::Tiled,
                          .tile_rows = tile_rows,
-                         .sparse_threshold = 0.0});
+                         .sparse_threshold = 0.0,
+                         .triangulation = {}});
     settings.seed = 1;
     scene.accumulate_exchange(tiled, settings);
     settings.seed = 2;
     scene.accumulate_exchange(tiled, settings);
     const rad::ExchangeResult result = tiled.result();
-    REQUIRE(result.factors.nnz() == reference.factors.nnz());
-    REQUIRE(result.factors.indices.cwiseEqual(reference.factors.indices).all());
-    REQUIRE(result.factors.values.cwiseEqual(reference.factors.values).all());
+    REQUIRE(csr_bit_identical(result.factors, reference.factors));
     REQUIRE(tiled.conservation_error() == 0);
+}
+
+// With eps = 1 every ray deposits its full (power-of-two scaled) energy at
+// the first hit, so the exchange cells ARE the vf counts: same rays, same
+// hits, and the u64 -> f64 conversion is exact. The two results report them
+// differently — exchange keeps the intensive count/rays over both triangles,
+// vf the extensive (area/rays)*count over the upper one. The vf assembly
+// hoists the area/rays ratio out of its inner loop, so the two orderings
+// round differently and the agreement is to a few ulps rather than the bit.
+void require_vf_matches_blackbody(const rad::VfResult& vf,
+                                  const rad::ExchangeResult& exchange,
+                                  std::span<const double> areas) {
+    REQUIRE(vf.vf.nonZeros() > 0);
+    for (Eigen::Index row = 0; row < vf.vf.rows(); ++row) {
+        for (rad::SparseMatrix::InnerIterator entry(vf.vf, row); entry;
+             ++entry) {
+            REQUIRE(entry.value() ==
+                    Catch::Approx(areas[static_cast<std::size_t>(row)] *
+                                  csr_value(exchange.factors, row, entry.col()))
+                        .epsilon(1e-15));
+        }
+    }
 }
 
 }  // namespace
@@ -63,7 +87,15 @@ TEST_CASE("radiative exchange: blackbody factors equal the view factors",
     settings.rays_per_face = 10'000;
     settings.seed = 5;
 
-    rad::VfAccumulator vf_acc(scene);
+    // Untriangulated, so the vf entries are the raw forward estimates the
+    // exchange kernel is being compared against rather than a combination
+    // of them.
+    rad::VfAccumulator vf_acc(
+        scene, rad::AccumConfig{
+                   .layout = rad::AccumLayout::Dense,
+                   .tile_rows = 0,
+                   .sparse_threshold = 0.0,
+                   .triangulation = {.mode = rad::TriangulationMode::None}});
     scene.accumulate_vf(vf_acc, settings);
     rad::ExchangeAccumulator ex_acc(scene, rad::Band::IR);
     scene.accumulate_exchange(ex_acc, settings);
@@ -71,13 +103,8 @@ TEST_CASE("radiative exchange: blackbody factors equal the view factors",
     const rad::VfResult vf = vf_acc.result();
     const rad::ExchangeResult exchange = ex_acc.result();
 
-    // With eps = 1 every ray deposits its full (power-of-two scaled) energy
-    // at the first hit, so the exchange CSR is BIT-identical to the VF one:
-    // same rays, same hits, and the u64 -> f64 conversion is exact.
     REQUIRE(exchange.band == rad::Band::IR);
-    REQUIRE(exchange.factors.nnz() == vf.vf.nnz());
-    REQUIRE(exchange.factors.indices.cwiseEqual(vf.vf.indices).all());
-    REQUIRE(exchange.factors.values.cwiseEqual(vf.vf.values).all());
+    require_vf_matches_blackbody(vf, exchange, scene.face_areas());
     REQUIRE(ex_acc.conservation_error() == 0);
 }
 
@@ -310,7 +337,7 @@ TEST_CASE("radiative exchange: update_materials swaps properties in place",
     scene.accumulate_vf(vf_after, settings, emitters);
     const rad::VfResult before = vf_before.result();
     const rad::VfResult after = vf_after.result();
-    REQUIRE(after.vf.values.cwiseEqual(before.vf.values).all());
+    REQUIRE(csr_bit_identical(after.vf, before.vf));
 
     // Changing the mapping (or the row count) needs a scene rebuild.
     const std::array<std::array<float, 6>, 2> two_rows{gray_row(0.5F),

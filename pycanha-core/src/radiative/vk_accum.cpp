@@ -11,10 +11,12 @@
 #include <stdexcept>
 #include <vector>
 
+#include "csr_assembly.hpp"
 #include "pycanha-core/radiative/materials.hpp"
 #include "pycanha-core/radiative/results.hpp"
 #include "pycanha-core/radiative/scene.hpp"
 #include "pycanha-core/radiative/settings.hpp"
+#include "vf_assemble.hpp"
 #include "vk_device.hpp"
 #include "vk_scene.hpp"
 
@@ -130,127 +132,22 @@ void VfAccumImpl::record_batch(std::span<const std::uint32_t> emitters,
     _total_rays += rays_per_face * emitters.size();
 }
 
-std::uint64_t VfAccumImpl::count_at(std::size_t row, std::size_t col) const {
-    if (_config.layout == AccumLayout::Dense) {
-        const std::size_t slots = _scene.num_face_slots();
-        const std::size_t cols = matrix_columns(slots);
-        const std::span<const std::uint32_t> counts(
-            static_cast<const std::uint32_t*>(checked_mapped(_counts)),
-            slots * cols);
-        return counts[(row * cols) + col];
-    }
-    const auto& host_row = _host_rows[row];
-    const auto it = host_row.find(static_cast<std::uint32_t>(col));
-    return it == host_row.end() ? 0 : it->second;
-}
-
-double VfAccumImpl::scan_row(std::size_t row, std::uint64_t rays_row,
-                             std::vector<std::int32_t>& indices,
-                             std::vector<double>& values,
-                             EntryStats& stats) const {
-    const std::size_t slots = _scene.num_face_slots();
-    const std::size_t cols = matrix_columns(slots);
-    double row_sum = 0.0;
-    // Ascending column order in both layouts, so the CSR (and every derived
-    // statistic) is bit-identical between Dense and Tiled.
-    for (std::size_t col = 0; col < cols; ++col) {
-        const std::uint64_t count = count_at(row, col);
-        if (count == 0) {
-            continue;
-        }
-        const double vf =
-            static_cast<double>(count) / static_cast<double>(rays_row);
-        // Row statistics come BEFORE thresholding, so dropping tiny entries
-        // never corrupts the closure accounting.
-        row_sum += vf;
-        if (col < slots) {
-            // Binomial standard error of the per-entry estimate (real face
-            // columns only).
-            const double entry_stderr = std::sqrt(
-                vf * std::max(1.0 - vf, 0.0) / static_cast<double>(rays_row));
-            stats.stderr_sum += entry_stderr;
-            stats.stderr_max = std::max(stats.stderr_max, entry_stderr);
-            ++stats.entries;
-        }
-        if (vf > _config.sparse_threshold) {
-            indices.push_back(static_cast<std::int32_t>(col));
-            values.push_back(vf);
-        }
-    }
-    return row_sum;
-}
-
 VfResult VfAccumImpl::build_result() const {
+    const std::size_t slots = _scene.num_face_slots();
+    VfResult result;
     if (_config.layout == AccumLayout::Dense) {
         invalidate_host_visible(_scene, _counts);
+        const std::span<const std::uint32_t> cells(
+            static_cast<const std::uint32_t*>(checked_mapped(_counts)),
+            slots * matrix_columns(slots));
+        result =
+            assemble_vf(cells, _scene.face_areas(), _rays_per_row, _config);
+    } else {
+        result = assemble_vf(std::span<const HostCountRow>(_host_rows),
+                             _scene.face_areas(), _rays_per_row, _config);
     }
-    const std::size_t slots = _scene.num_face_slots();
-    const std::span<const double> areas = _scene.face_areas();
-
-    VfResult result;
-    result.vf.rows = static_cast<std::int64_t>(slots);
-    result.vf.cols = static_cast<std::int64_t>(matrix_columns(slots));
-    result.vf.indptr.resize(static_cast<Eigen::Index>(slots) + 1);
-    result.row_sums = Eigen::VectorXd::Zero(static_cast<Eigen::Index>(slots));
-
-    std::vector<std::int32_t> indices;
-    std::vector<double> values;
-    EntryStats stats;
-
-    result.vf.indptr(0) = 0;
-    for (std::size_t row = 0; row < slots; ++row) {
-        const std::uint64_t rays_row = _rays_per_row[row];
-        if (rays_row > 0) {
-            result.row_sums(static_cast<Eigen::Index>(row)) =
-                scan_row(row, rays_row, indices, values, stats);
-        }
-        result.vf.indptr(static_cast<Eigen::Index>(row) + 1) =
-            static_cast<std::int64_t>(values.size());
-    }
-
-    result.vf.indices = Eigen::Map<const Eigen::VectorX<std::int32_t>>(
-        indices.data(), static_cast<Eigen::Index>(indices.size()));
-    result.vf.values = Eigen::Map<const Eigen::VectorXd>(
-        values.data(), static_cast<Eigen::Index>(values.size()));
-
-    // Reciprocity residual max |Ai*Fij - Aj*Fji| (normalized by the larger
-    // term) over pairs where both rows emitted — a winding/parity bug shows
-    // up here long before it is visible in individual entries.
-    double reciprocity = 0.0;
-    for (std::size_t row = 0; row < slots; ++row) {
-        if (_rays_per_row[row] == 0) {
-            continue;
-        }
-        for (std::size_t col = row + 1; col < slots; ++col) {
-            if (_rays_per_row[col] == 0) {
-                continue;
-            }
-            const double forward = areas[row] *
-                                   static_cast<double>(count_at(row, col)) /
-                                   static_cast<double>(_rays_per_row[row]);
-            // Transposed lookup: the reverse-direction view factor.
-            const std::size_t transposed_row = col;
-            const std::size_t transposed_col = row;
-            const double backward =
-                areas[col] *
-                static_cast<double>(count_at(transposed_row, transposed_col)) /
-                static_cast<double>(_rays_per_row[col]);
-            const double larger = std::max(forward, backward);
-            if (larger > 0.0) {
-                reciprocity = std::max(reciprocity,
-                                       std::abs(forward - backward) / larger);
-            }
-        }
-    }
-
     result.stats.total_rays = _total_rays;
     result.stats.rays_per_face = _rays_per_face;
-    result.stats.mean_stderr =
-        stats.entries > 0
-            ? stats.stderr_sum / static_cast<double>(stats.entries)
-            : 0.0;
-    result.stats.max_stderr = stats.stderr_max;
-    result.stats.reciprocity_residual = reciprocity;
     // TODO(radiative): fill gpu_time from timestamp queries around each
     // dispatch chunk.
     return result;
@@ -355,7 +252,7 @@ std::uint64_t ExchangeAccumImpl::cell_at(std::size_t row,
 }
 
 void ExchangeAccumImpl::scan_row(std::size_t row, std::uint64_t rays_row,
-                                 std::vector<std::int32_t>& indices,
+                                 std::vector<SparseIndex>& indices,
                                  std::vector<double>& values,
                                  EntryStats& stats) const {
     const std::size_t slots = _scene.num_face_slots();
@@ -398,7 +295,7 @@ void ExchangeAccumImpl::scan_row(std::size_t row, std::uint64_t rays_row,
         // Row statistics come before thresholding; the threshold only
         // prunes what is stored.
         if (std::abs(factor) > _config.sparse_threshold) {
-            indices.push_back(static_cast<std::int32_t>(col));
+            indices.push_back(static_cast<SparseIndex>(col));
             values.push_back(factor);
         }
     }
@@ -412,30 +309,27 @@ ExchangeResult ExchangeAccumImpl::build_result() const {
 
     ExchangeResult result;
     result.band = _band;
-    result.factors.rows = static_cast<std::int64_t>(slots);
-    result.factors.cols = static_cast<std::int64_t>(matrix_columns(slots));
-    result.factors.indptr.resize(static_cast<Eigen::Index>(slots) + 1);
 
-    std::vector<std::int32_t> indices;
+    std::vector<SparseIndex> row_starts;
+    row_starts.reserve(slots + 1);
+    std::vector<SparseIndex> indices;
     std::vector<double> values;
     EntryStats stats;
     double emitted_energy = 0.0;
 
-    result.factors.indptr(0) = 0;
+    row_starts.push_back(0);
     for (std::size_t row = 0; row < slots; ++row) {
         const std::uint64_t rays_row = _rays_per_row[row];
         if (rays_row > 0 && _fp_scale > 0.0) {
             scan_row(row, rays_row, indices, values, stats);
             emitted_energy += static_cast<double>(rays_row);
         }
-        result.factors.indptr(static_cast<Eigen::Index>(row) + 1) =
-            static_cast<std::int64_t>(values.size());
+        check_sparse_capacity(values.size());
+        row_starts.push_back(static_cast<SparseIndex>(values.size()));
     }
-
-    result.factors.indices = Eigen::Map<const Eigen::VectorX<std::int32_t>>(
-        indices.data(), static_cast<Eigen::Index>(indices.size()));
-    result.factors.values = Eigen::Map<const Eigen::VectorXd>(
-        values.data(), static_cast<Eigen::Index>(values.size()));
+    result.factors = make_csr(static_cast<Eigen::Index>(slots),
+                              static_cast<Eigen::Index>(matrix_columns(slots)),
+                              row_starts, indices, values);
 
     result.stats.total_rays = _total_rays;
     result.stats.rays_per_face = _rays_per_face;
