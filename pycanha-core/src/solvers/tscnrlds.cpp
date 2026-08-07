@@ -43,10 +43,10 @@ void TSCNRLDS::initialize() {
     TSCNRL::initialize_common();
 
 #if PYCANHA_USE_MKL
-    SPDLOG_LOGGER_INFO(get_logger(), "TSCNRLDS (MKL) initializing...");
-    SPDLOG_LOGGER_INFO(get_logger(), "MKL threads: {}", mkl_get_max_threads());
+    SPDLOG_LOGGER_INFO(get_logger(), "TSCNRLDS initializing (MKL, {} threads)",
+                       mkl_get_max_threads());
 #else
-    SPDLOG_LOGGER_INFO(get_logger(), "TSCNRLDS (Eigen) initializing...");
+    SPDLOG_LOGGER_INFO(get_logger(), "TSCNRLDS initializing (Eigen)");
 #endif
 
     sparse_utils::add_zero_diag_square(_k_matrix);

@@ -4,8 +4,11 @@
 #include <catch2/catch_test_macros.hpp>
 #include <cmath>
 #include <cstdint>
+#include <iostream>
 #include <optional>
+#include <sstream>
 #include <stdexcept>
+#include <streambuf>
 #include <string>
 #include <utility>
 #include <variant>
@@ -334,6 +337,26 @@ TEST_CASE("Parameters refresh cached data and expose index accessors",
     REQUIRE(std::as_const(params).get_double_ptr(Index{99}) == nullptr);
     REQUIRE_FALSE(params.get_parameter_optional(Index{99}).has_value());
     REQUIRE_FALSE(params.get_parameter_name(Index{99}).has_value());
+}
+
+TEST_CASE("print helpers write to stdout rather than the logger",
+          "[parameters]") {
+    // These go to stdout on purpose: the caller asked for the value, so it has
+    // to appear whatever the log thresholds happen to be.
+    Parameters params;
+    params.add_parameter("scalar", 42.0);
+
+    const std::ostringstream captured;
+    std::streambuf* const original = std::cout.rdbuf(captured.rdbuf());
+    params.print_parameter("scalar");
+    params.print_parameter("absent");
+    params.print_memory_address("scalar");
+    std::cout.rdbuf(original);
+
+    const std::string output = captured.str();
+    REQUIRE(output.contains("scalar = 42"));
+    REQUIRE(output.contains("Parameter 'absent' doesn't exist"));
+    REQUIRE(output.contains("Mem. addr:"));
 }
 
 // NOLINTEND(bugprone-chained-comparison)

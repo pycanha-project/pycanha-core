@@ -45,7 +45,7 @@ class LoggerRegistryGuard {
     static void drop_loggers() {
         spdlog::drop("pycanha-core");
         spdlog::drop("pycanha-core.profiling");
-        spdlog::drop("pycanha-python");
+        spdlog::drop("pycanha");
     }
 };
 

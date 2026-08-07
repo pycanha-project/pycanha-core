@@ -11,12 +11,9 @@
 
 #pragma once
 
-#include <spdlog/spdlog.h>
-
+#include <iostream>
 #include <string>
 #include <utility>
-
-#include "pycanha-core/utils/logger.hpp"
 
 namespace pycanha {
 
@@ -60,9 +57,9 @@ class LiteralString {
         return *this;
     }
 
-    void print_string() const {
-        SPDLOG_LOGGER_INFO(pycanha::get_logger(), "{}", _string);
-    }
+    // Writes to stdout rather than through the logger: the caller asked for
+    // the value, so it must appear whatever the log thresholds are set to.
+    void print_string() const { std::cout << _string << '\n'; }
     [[nodiscard]] const std::string& get_literal() const { return _string; }
     [[nodiscard]] bool is_empty() const { return _string.empty(); }
 

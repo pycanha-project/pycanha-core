@@ -318,7 +318,7 @@ void TransientSolver::restart_solve() {
     time_iter = -1;
     idata_out = 0;
 
-    SPDLOG_LOGGER_INFO(pycanha::get_logger(), "(Re)starting solve...");
+    SPDLOG_LOGGER_DEBUG(pycanha::get_logger(), "(Re)starting solve...");
 }
 
 }  // namespace pycanha

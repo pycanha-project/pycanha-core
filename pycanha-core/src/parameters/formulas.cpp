@@ -450,12 +450,14 @@ void Formulas::apply_formulas() {
         return;
     }
 
-    const auto logger = get_logger();
+    // get_logger() is called inside the macro rather than hoisted into a local
+    // so that a build with debug records compiled away leaves no unused local
+    // behind.
     for (const auto& formula : _formulas) {
         formula->apply_formula();
-        SPDLOG_LOGGER_INFO(logger, "[Formula Debug] {} = {}",
-                           formula->entity().string_representation(),
-                           formula->get_value());
+        SPDLOG_LOGGER_DEBUG(get_logger(), "{} = {}",
+                            formula->entity().string_representation(),
+                            formula->get_value());
     }
 }
 
@@ -472,12 +474,13 @@ void Formulas::apply_compiled_formulas() {
         return;
     }
 
-    const auto logger = get_logger();
+    // As in apply_formulas(): keep the logger lookup inside the macro so a
+    // build with debug records compiled away leaves no unused local behind.
     for (const auto& formula : _formulas) {
         formula->apply_compiled_formula();
-        SPDLOG_LOGGER_INFO(logger, "[Formula Debug] {} = {}",
-                           formula->entity().string_representation(),
-                           formula->get_value());
+        SPDLOG_LOGGER_DEBUG(get_logger(), "{} = {}",
+                            formula->entity().string_representation(),
+                            formula->get_value());
     }
 }
 

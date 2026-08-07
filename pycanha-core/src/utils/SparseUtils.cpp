@@ -8,6 +8,7 @@
 #include <cstring>
 #include <iomanip>
 #include <ios>
+#include <iostream>
 #include <iterator>
 #include <sstream>
 #include <stdexcept>
@@ -898,7 +899,7 @@ void print_sparse(const Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse) {
         oss << '\n';
     }
     oss << "-------------------\n";
-    SPDLOG_LOGGER_INFO(pycanha::get_logger(), "{}", oss.str());
+    std::cout << oss.str() << '\n';
 }
 
 void print_sparse_values(
@@ -923,7 +924,7 @@ void print_sparse_values(
             oss << sparse.valuePtr()[i] << ", ";
         }
     }
-    SPDLOG_LOGGER_INFO(pycanha::get_logger(), "{}", oss.str());
+    std::cout << oss.str() << '\n';
 }
 
 void print_sparse_inner(
@@ -948,7 +949,7 @@ void print_sparse_inner(
             oss << sparse.innerIndexPtr()[i] << ", ";
         }
     }
-    SPDLOG_LOGGER_INFO(pycanha::get_logger(), "{}", oss.str());
+    std::cout << oss.str() << '\n';
 }
 
 void print_sparse_outer(
@@ -958,7 +959,7 @@ void print_sparse_outer(
     for (int i = 0; i < sparse.outerSize() + 1; i++) {
         oss << sparse.outerIndexPtr()[i] << ", ";
     }
-    SPDLOG_LOGGER_INFO(pycanha::get_logger(), "{}", oss.str());
+    std::cout << oss.str() << '\n';
 }
 
 void print_sparse_nnz(
@@ -972,31 +973,29 @@ void print_sparse_nnz(
     } else {
         oss << " **empty** ";
     }
-    SPDLOG_LOGGER_INFO(pycanha::get_logger(), "{}", oss.str());
+    std::cout << oss.str() << '\n';
 }
 
 void print_sparse_format(
     const Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse) {
     if (sparse.isCompressed()) {
-        SPDLOG_LOGGER_INFO(pycanha::get_logger(),
-                           "Sparse Row Major in COMPRESSED format");
+        std::cout << "Sparse Row Major in COMPRESSED format\n";
         return;
     }
 
-    SPDLOG_LOGGER_INFO(pycanha::get_logger(),
-                       "Sparse Row Major in UNCOMPRESSED format");
+    std::cout << "Sparse Row Major in UNCOMPRESSED format\n";
 }
 
 void print_sparse_structure(
     const Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse) {
-    SPDLOG_LOGGER_INFO(pycanha::get_logger(), "*****************************");
+    std::cout << "*****************************\n";
     print_sparse_format(sparse);
     print_sparse(sparse);
     print_sparse_values(sparse);
     print_sparse_inner(sparse);
     print_sparse_outer(sparse);
     print_sparse_nnz(sparse);
-    SPDLOG_LOGGER_INFO(pycanha::get_logger(), "*****************************");
+    std::cout << "*****************************\n";
 }
 
 }  // namespace pycanha::sparse_utils

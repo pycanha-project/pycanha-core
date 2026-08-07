@@ -695,13 +695,9 @@ void ESATANReader::read_tmd(const std::string& filepath) {
     }
 
     if (verbose) {
-        SPDLOG_LOGGER_INFO(pycanha::get_logger(), "Read TMD: {}", filepath);
-        SPDLOG_LOGGER_INFO(pycanha::get_logger(), "  Nodes: {}",
-                           node_numbers.size());
-        SPDLOG_LOGGER_INFO(pycanha::get_logger(), "  GLs: {}",
-                           gl_values.size());
-        SPDLOG_LOGGER_INFO(pycanha::get_logger(), "  GRs: {}",
-                           gr_values.size());
+        SPDLOG_LOGGER_INFO(
+            pycanha::get_logger(), "Read TMD {} - {} nodes, {} GLs, {} GRs",
+            filepath, node_numbers.size(), gl_values.size(), gr_values.size());
     }
 }
 

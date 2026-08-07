@@ -8,10 +8,10 @@
 #include <cstddef>
 #include <cstdint>
 #include <deque>
+#include <iostream>
 #include <limits>
 #include <memory>
 #include <optional>
-#include <sstream>
 #include <string>
 #include <string_view>
 #include <type_traits>
@@ -250,7 +250,7 @@ void Parameters::Parameter::remove() {
 
 void Parameters::add_parameter(std::string name, ThermalValue value) {
     if (_structure_locked) {
-        SPDLOG_LOGGER_INFO(pycanha::get_logger(),
+        SPDLOG_LOGGER_WARN(pycanha::get_logger(),
                            "Parameter '{}' cannot be added while parameters "
                            "are structurally locked",
                            name);
@@ -258,7 +258,7 @@ void Parameters::add_parameter(std::string name, ThermalValue value) {
     }
 
     if (!is_valid_user_parameter_name(name)) {
-        SPDLOG_LOGGER_INFO(pycanha::get_logger(),
+        SPDLOG_LOGGER_WARN(pycanha::get_logger(),
                            "Parameter '{}' uses a reserved or entity-like "
                            "name",
                            name);
@@ -268,7 +268,7 @@ void Parameters::add_parameter(std::string name, ThermalValue value) {
     const auto canonical_name = canonicalize_parameter_key(name);
 
     if (_name_to_slot.contains(canonical_name)) {
-        SPDLOG_LOGGER_INFO(pycanha::get_logger(),
+        SPDLOG_LOGGER_WARN(pycanha::get_logger(),
                            "Parameter '{}' already exists", name);
         return;
     }
@@ -281,15 +281,15 @@ void Parameters::add_parameter(std::string name, ThermalValue value) {
     ++_active_size;
     mark_structural_change();
 
-    SPDLOG_LOGGER_INFO(pycanha::get_logger(), "Parameter '{}' added",
-                       _slots.back().name);
+    SPDLOG_LOGGER_DEBUG(pycanha::get_logger(), "Parameter '{}' added",
+                        _slots.back().name);
 }
 
 void Parameters::add_internal_parameter(std::string name, ThermalValue value) {
     const auto canonical_name = canonicalize_parameter_key(name);
 
     if (_name_to_slot.contains(canonical_name)) {
-        SPDLOG_LOGGER_INFO(pycanha::get_logger(),
+        SPDLOG_LOGGER_WARN(pycanha::get_logger(),
                            "Internal parameter '{}' already exists", name);
         return;
     }
@@ -302,13 +302,13 @@ void Parameters::add_internal_parameter(std::string name, ThermalValue value) {
     ++_active_size;
     mark_structural_change();
 
-    SPDLOG_LOGGER_INFO(pycanha::get_logger(), "Internal parameter '{}' added",
-                       _slots.back().name);
+    SPDLOG_LOGGER_DEBUG(pycanha::get_logger(), "Internal parameter '{}' added",
+                        _slots.back().name);
 }
 
 void Parameters::remove_parameter(const std::string& name) {
     if (_structure_locked) {
-        SPDLOG_LOGGER_INFO(pycanha::get_logger(),
+        SPDLOG_LOGGER_WARN(pycanha::get_logger(),
                            "Parameter '{}' cannot be removed while parameters "
                            "are structurally locked",
                            name);
@@ -317,13 +317,13 @@ void Parameters::remove_parameter(const std::string& name) {
 
     auto* slot = find_slot(name);
     if (slot == nullptr) {
-        SPDLOG_LOGGER_INFO(pycanha::get_logger(),
+        SPDLOG_LOGGER_WARN(pycanha::get_logger(),
                            "Parameter '{}' doesn't exist", name);
         return;
     }
 
     if (slot->is_internal) {
-        SPDLOG_LOGGER_INFO(pycanha::get_logger(),
+        SPDLOG_LOGGER_WARN(pycanha::get_logger(),
                            "Internal parameter '{}' cannot be removed with "
                            "remove_parameter",
                            name);
@@ -336,12 +336,12 @@ void Parameters::remove_parameter(const std::string& name) {
     --_active_size;
     mark_structural_change();
 
-    SPDLOG_LOGGER_INFO(pycanha::get_logger(), "Parameter '{}' removed", name);
+    SPDLOG_LOGGER_DEBUG(pycanha::get_logger(), "Parameter '{}' removed", name);
 }
 
 void Parameters::remove_internal_parameter(const std::string& name) {
     if (_structure_locked) {
-        SPDLOG_LOGGER_INFO(pycanha::get_logger(),
+        SPDLOG_LOGGER_WARN(pycanha::get_logger(),
                            "Internal parameter '{}' cannot be removed while "
                            "parameters are structurally locked",
                            name);
@@ -350,13 +350,13 @@ void Parameters::remove_internal_parameter(const std::string& name) {
 
     auto* slot = find_slot(name);
     if (slot == nullptr) {
-        SPDLOG_LOGGER_INFO(pycanha::get_logger(),
+        SPDLOG_LOGGER_WARN(pycanha::get_logger(),
                            "Internal parameter '{}' doesn't exist", name);
         return;
     }
 
     if (!slot->is_internal) {
-        SPDLOG_LOGGER_INFO(pycanha::get_logger(),
+        SPDLOG_LOGGER_WARN(pycanha::get_logger(),
                            "Parameter '{}' is not internal", name);
         return;
     }
@@ -368,14 +368,14 @@ void Parameters::remove_internal_parameter(const std::string& name) {
     --_active_size;
     mark_structural_change();
 
-    SPDLOG_LOGGER_INFO(pycanha::get_logger(), "Internal parameter '{}' removed",
-                       name);
+    SPDLOG_LOGGER_DEBUG(pycanha::get_logger(),
+                        "Internal parameter '{}' removed", name);
 }
 
 void Parameters::rename_parameter(const std::string& current_name,
                                   std::string new_name) {
     if (_structure_locked) {
-        SPDLOG_LOGGER_INFO(pycanha::get_logger(),
+        SPDLOG_LOGGER_WARN(pycanha::get_logger(),
                            "Parameter '{}' cannot be renamed while parameters "
                            "are structurally locked",
                            current_name);
@@ -384,20 +384,20 @@ void Parameters::rename_parameter(const std::string& current_name,
 
     auto* slot = find_slot(current_name);
     if (slot == nullptr) {
-        SPDLOG_LOGGER_INFO(pycanha::get_logger(),
+        SPDLOG_LOGGER_WARN(pycanha::get_logger(),
                            "Parameter '{}' doesn't exist", current_name);
         return;
     }
 
     if (slot->is_internal) {
-        SPDLOG_LOGGER_INFO(pycanha::get_logger(),
+        SPDLOG_LOGGER_WARN(pycanha::get_logger(),
                            "Internal parameter '{}' cannot be renamed",
                            current_name);
         return;
     }
 
     if (!is_valid_user_parameter_name(new_name)) {
-        SPDLOG_LOGGER_INFO(pycanha::get_logger(),
+        SPDLOG_LOGGER_WARN(pycanha::get_logger(),
                            "Parameter '{}' uses a reserved or entity-like "
                            "name",
                            new_name);
@@ -409,7 +409,7 @@ void Parameters::rename_parameter(const std::string& current_name,
 
     if ((new_canonical_name != current_canonical_name) &&
         _name_to_slot.contains(new_canonical_name)) {
-        SPDLOG_LOGGER_INFO(pycanha::get_logger(),
+        SPDLOG_LOGGER_WARN(pycanha::get_logger(),
                            "Parameter '{}' already exists", new_name);
         return;
     }
@@ -420,8 +420,8 @@ void Parameters::rename_parameter(const std::string& current_name,
     slot->name = std::move(new_name);
     mark_structural_change();
 
-    SPDLOG_LOGGER_INFO(pycanha::get_logger(), "Parameter '{}' renamed",
-                       slot->name);
+    SPDLOG_LOGGER_DEBUG(pycanha::get_logger(), "Parameter '{}' renamed",
+                        slot->name);
 }
 
 Parameters::Parameter Parameters::get_parameter_handle(
@@ -470,13 +470,13 @@ std::optional<Parameters::ThermalValue> Parameters::get_parameter_optional(
 void Parameters::set_parameter(const std::string& name, ThermalValue value) {
     auto* slot = find_slot(name);
     if (slot == nullptr) {
-        SPDLOG_LOGGER_INFO(pycanha::get_logger(),
+        SPDLOG_LOGGER_WARN(pycanha::get_logger(),
                            "Parameter '{}' doesn't exist", name);
         return;
     }
 
     if (slot->is_internal) {
-        SPDLOG_LOGGER_INFO(pycanha::get_logger(),
+        SPDLOG_LOGGER_WARN(pycanha::get_logger(),
                            "Internal parameter '{}' cannot be modified with "
                            "set_parameter",
                            name);
@@ -484,7 +484,7 @@ void Parameters::set_parameter(const std::string& name, ThermalValue value) {
     }
 
     if (slot->value.index() != value.index()) {
-        SPDLOG_LOGGER_INFO(pycanha::get_logger(),
+        SPDLOG_LOGGER_WARN(pycanha::get_logger(),
                            "Parameter '{}' type mismatch", name);
         return;
     }
@@ -500,7 +500,7 @@ void Parameters::set_parameter(const std::string& name, ThermalValue value) {
             if constexpr (is_matrix_type_v<ExistingType>) {
                 if ((existing.rows() != incoming->rows()) ||
                     (existing.cols() != incoming->cols())) {
-                    SPDLOG_LOGGER_INFO(pycanha::get_logger(),
+                    SPDLOG_LOGGER_WARN(pycanha::get_logger(),
                                        "Parameter '{}' shape mismatch", name);
                     return;
                 }
@@ -517,19 +517,19 @@ void Parameters::set_internal_parameter(const std::string& name,
                                         ThermalValue value) {
     auto* slot = find_slot(name);
     if (slot == nullptr) {
-        SPDLOG_LOGGER_INFO(pycanha::get_logger(),
+        SPDLOG_LOGGER_WARN(pycanha::get_logger(),
                            "Internal parameter '{}' doesn't exist", name);
         return;
     }
 
     if (!slot->is_internal) {
-        SPDLOG_LOGGER_INFO(pycanha::get_logger(),
+        SPDLOG_LOGGER_WARN(pycanha::get_logger(),
                            "Parameter '{}' is not internal", name);
         return;
     }
 
     if (slot->value.index() != value.index()) {
-        SPDLOG_LOGGER_INFO(pycanha::get_logger(),
+        SPDLOG_LOGGER_WARN(pycanha::get_logger(),
                            "Internal parameter '{}' type mismatch", name);
         return;
     }
@@ -545,7 +545,7 @@ void Parameters::set_internal_parameter(const std::string& name,
             if constexpr (is_matrix_type_v<ExistingType>) {
                 if ((existing.rows() != incoming->rows()) ||
                     (existing.cols() != incoming->cols())) {
-                    SPDLOG_LOGGER_INFO(pycanha::get_logger(),
+                    SPDLOG_LOGGER_WARN(pycanha::get_logger(),
                                        "Internal parameter '{}' shape "
                                        "mismatch",
                                        name);
@@ -560,41 +560,39 @@ void Parameters::set_internal_parameter(const std::string& name,
     invalidate_data_cache();
 }
 
+// The print_* helpers below write to stdout rather than through the logger.
+// The caller asked for output, so it must appear whatever the log thresholds
+// are set to, and a dump of a value is not a record of anything happening.
+
 void Parameters::print_memory_address(const std::string& name) const {
     const auto* slot = find_slot(name);
     if (slot == nullptr) {
-        SPDLOG_LOGGER_INFO(pycanha::get_logger(),
-                           "Parameter '{}' doesn't exist", name);
+        std::cout << "Parameter '" << name << "' doesn't exist\n";
         return;
     }
 
-    const void* const address =
-        std::visit(ConstDataMemoryAddress{}, slot->value);
-
-    SPDLOG_LOGGER_INFO(pycanha::get_logger(), "Mem. addr: {}", address);
+    std::cout << "Mem. addr: "
+              << std::visit(ConstDataMemoryAddress{}, slot->value) << '\n';
 }
 
 void Parameters::print_parameter(const std::string& name) const {
     const auto* slot = find_slot(name);
     if (slot == nullptr) {
-        SPDLOG_LOGGER_INFO(pycanha::get_logger(),
-                           "Parameter '{}' doesn't exist", name);
+        std::cout << "Parameter '" << name << "' doesn't exist\n";
         return;
     }
 
-    std::ostringstream oss;
-    oss << name << " = ";
+    std::cout << name << " = ";
     std::visit(
-        [&](const auto& value) {
+        [](const auto& value) {
             if constexpr (is_matrix_type_v<std::decay_t<decltype(value)>>) {
-                oss << '\n' << value;
+                std::cout << '\n' << value;
             } else {
-                oss << value;
+                std::cout << value;
             }
         },
         slot->value);
-
-    SPDLOG_LOGGER_INFO(pycanha::get_logger(), "{}", oss.str());
+    std::cout << '\n';
 }
 
 void* Parameters::get_value_ptr(const std::string& name) {
