@@ -61,7 +61,7 @@ void invalidate_host_visible(const SceneImpl& scene, const GpuBuffer& buffer) {
 
 }  // namespace
 
-VfAccumImpl::VfAccumImpl(SceneImpl& scene, AccumConfig config)
+VfAccumImpl::VfAccumImpl(SceneImpl& scene, const AccumConfig& config)
     : _scene(scene), _config(config) {
     const std::uint64_t slots = _scene.num_face_slots();
     std::uint64_t buffer_rows = slots;
@@ -147,7 +147,7 @@ VfResult VfAccumImpl::build_result() const {
 }
 
 ExchangeAccumImpl::ExchangeAccumImpl(SceneImpl& scene, Band band,
-                                     AccumConfig config)
+                                     const AccumConfig& config)
     : _scene(scene), _band(band), _config(config) {
     const std::uint64_t slots = _scene.num_face_slots();
     std::uint64_t buffer_rows = slots;

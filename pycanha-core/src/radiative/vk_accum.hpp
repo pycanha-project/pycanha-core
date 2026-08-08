@@ -28,7 +28,7 @@ namespace pycanha::radiative::detail {
 
 class VfAccumImpl {
   public:
-    VfAccumImpl(SceneImpl& scene, AccumConfig config);
+    VfAccumImpl(SceneImpl& scene, const AccumConfig& config);
     ~VfAccumImpl();
     VfAccumImpl(const VfAccumImpl&) = delete;
     VfAccumImpl& operator=(const VfAccumImpl&) = delete;
@@ -74,7 +74,7 @@ class VfAccumImpl {
 
 class ExchangeAccumImpl {
   public:
-    ExchangeAccumImpl(SceneImpl& scene, Band band, AccumConfig config);
+    ExchangeAccumImpl(SceneImpl& scene, Band band, const AccumConfig& config);
     ~ExchangeAccumImpl();
     ExchangeAccumImpl(const ExchangeAccumImpl&) = delete;
     ExchangeAccumImpl& operator=(const ExchangeAccumImpl&) = delete;
