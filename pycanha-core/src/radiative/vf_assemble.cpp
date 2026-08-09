@@ -20,9 +20,11 @@
 #include <cstdint>
 #include <span>
 #include <stdexcept>
+#include <utility>
 #include <variant>
 #include <vector>
 
+#include "closure_projection.hpp"
 #include "pair_walk.hpp"
 #include "pycanha-core/radiative/results.hpp"
 #include "pycanha-core/radiative/settings.hpp"
@@ -59,47 +61,25 @@ struct RowStats {
     std::size_t entries = 0;
 };
 
-// The combined value of one face pair, with the disagreement of the two raw
-// estimates measured BEFORE they are combined.
-struct Combined {
-    double value = 0.0;
-    double residual = 0.0;
-};
-
-[[nodiscard]] Combined combine_pair(double forward_ratio, double backward_ratio,
-                                    std::uint64_t forward_count,
-                                    std::uint64_t backward_count,
-                                    const Weighting& weighting) {
-    const double forward = forward_ratio * static_cast<double>(forward_count);
-    const double backward =
-        backward_ratio * static_cast<double>(backward_count);
-    const bool has_forward = forward_ratio > 0.0;
-    const bool has_backward = backward_ratio > 0.0;
-    // The residual is measured on the raw estimates, before they are
-    // combined, and only where both directions actually carry samples. It
-    // is the winding/parity check: taken after combining it would be zero
-    // by construction and would detect nothing.
-    const double larger = std::max(forward, backward);
-    const double residual = (has_forward && has_backward && larger > 0.0)
-                                ? std::abs(forward - backward) / larger
-                                : 0.0;
+[[nodiscard]] double combine_pair(double forward, double backward,
+                                  double forward_ratio, double backward_ratio,
+                                  const Weighting& weighting) {
     if (weighting.mode() == TriangulationMode::None) {
-        return {.value = forward, .residual = residual};
+        return forward;
     }
     // A row that emitted nothing has an infinite A/N, so Y -> -1 and the
     // weight passes entirely to the direction that does have data. The
     // degenerate limit is the right answer; only the arithmetic needs
     // guarding, which is why the ratio is stored as zero there.
-    if (!has_forward) {
-        return {.value = backward, .residual = residual};
+    if (!(forward_ratio > 0.0)) {
+        return backward;
     }
-    if (!has_backward) {
-        return {.value = forward, .residual = residual};
+    if (!(backward_ratio > 0.0)) {
+        return forward;
     }
     const double weight =
         weighting.forward_weight(forward_ratio, backward_ratio);
-    return {.value = (weight * forward) + ((1.0 - weight) * backward),
-            .residual = residual};
+    return (weight * forward) + ((1.0 - weight) * backward);
 }
 
 // Thresholding compares the INTENSIVE max(F_ij, F_ji) = G / min(A_i, A_j),
@@ -180,36 +160,106 @@ class VfEmit {
           _ratio(ratio),
           _weighting(&weighting),
           _threshold(threshold),
+          _project(weighting.mode() ==
+                   TriangulationMode::ConstrainedLeastSquares),
           _rows(rows),
           _residual(residual) {}
 
     void pair(std::size_t row, std::size_t column, std::uint64_t forward,
               std::uint64_t backward) const {
-        const Combined combined = combine_pair(_ratio[row], _ratio[column],
-                                               forward, backward, *_weighting);
-        _residual[row] = std::max(_residual[row], combined.residual);
-        if (keep_pair(combined.value, _areas[row], _areas[column],
-                      _threshold)) {
-            _rows[row].push(column, combined.value);
+        const double forward_value = _ratio[row] * static_cast<double>(forward);
+        const double backward_value =
+            _ratio[column] * static_cast<double>(backward);
+        _residual[row] =
+            std::max(_residual[row],
+                     raw_residual(row, column, forward_value, backward_value));
+        if (_project) {
+            // Nothing is dropped before the projection: an entry the
+            // projection cannot see is one the closure it imposes would be
+            // missing. The threshold runs afterwards instead.
+            const BlueEstimate blue = blue_combine(
+                forward_value, backward_value, _ratio[row], _ratio[column]);
+            _rows[row].push(column, blue.value, blue.variance);
+            return;
+        }
+        const double value =
+            combine_pair(forward_value, backward_value, _ratio[row],
+                         _ratio[column], *_weighting);
+        if (keep_pair(value, _areas[row], _areas[column], _threshold)) {
+            _rows[row].push(column, value);
         }
     }
 
     // The space/inactive/lost columns are the closure accounting: they have
     // no transpose partner to be combined with and no partner to be
     // negligible against, so they pass through untriangulated and
-    // unthresholded.
+    // unthresholded. They are part of a row's closure, so the projection
+    // gets to move them like any other unknown.
     void bucket(std::size_t row, std::size_t column, std::uint64_t cell) const {
-        _rows[row].push(column, _ratio[row] * static_cast<double>(cell));
+        const double value = _ratio[row] * static_cast<double>(cell);
+        if (_project) {
+            _rows[row].push(column, value, value * _ratio[row]);
+            return;
+        }
+        _rows[row].push(column, value);
     }
 
   private:
+    // The disagreement of the two raw estimates, measured BEFORE they are
+    // combined and only where both directions carry samples. It is the
+    // winding/parity check: taken after combining it would be zero by
+    // construction and would detect nothing.
+    [[nodiscard]] double raw_residual(std::size_t row, std::size_t column,
+                                      double forward, double backward) const {
+        const double larger = std::max(forward, backward);
+        if (_ratio[row] > 0.0 && _ratio[column] > 0.0 && larger > 0.0) {
+            return std::abs(forward - backward) / larger;
+        }
+        return 0.0;
+    }
+
     std::span<const double> _areas;
     std::span<const double> _ratio;
     const Weighting* _weighting;
     double _threshold;
+    bool _project;
     std::span<RowEntries> _rows;
     std::span<double> _residual;
 };
+
+// Closure targets for the projection: a row that emitted rays must account
+// for exactly its own area across all columns. A row that emitted nothing
+// carries no constraint, which is what the zero says.
+[[nodiscard]] std::vector<double> closure_targets(
+    std::span<const double> areas,
+    std::span<const std::uint64_t> rays_per_row) {
+    std::vector<double> targets(areas.size(), 0.0);
+    for (std::size_t slot = 0; slot < areas.size(); ++slot) {
+        if (rays_per_row[slot] > 0) {
+            targets[slot] = areas[slot];
+        }
+    }
+    return targets;
+}
+
+// Drops the negligible entries the projection was deliberately not allowed
+// to drop earlier. Buckets are closure accounting and always survive.
+void prune_rows(std::span<RowEntries> rows, std::span<const double> areas,
+                double threshold, std::size_t slots, unsigned threads) {
+    parallel_for_index(rows.size(), threads, [&](std::size_t row) {
+        RowEntries kept;
+        const RowEntries& entries = rows[row];
+        for (std::size_t at = 0; at < entries.values.size(); ++at) {
+            const auto column = static_cast<std::size_t>(entries.columns[at]);
+            const double value = entries.values[at];
+            if (column >= slots ||
+                keep_pair(value, areas[row], areas[column], threshold)) {
+                kept.push(column, value);
+            }
+        }
+        rows[row] = std::move(kept);
+    });
+}
 
 // Reduces the per-row scan products in row order, so the double sums do not
 // depend on how the rows were distributed across workers.
@@ -274,6 +324,12 @@ VfResult assemble_vf(CountSource counts, std::span<const double> areas,
                          scan_threads);
         scan_rows(sparse, scan_in, scan_out, scan_threads);
         walk_sparse_pairs(sparse, slots, tuning, emit);
+    }
+
+    if (config.triangulation.mode ==
+        TriangulationMode::ConstrainedLeastSquares) {
+        project_onto_closure(rows, closure_targets(areas, rays_per_row), slots);
+        prune_rows(rows, areas, config.sparse_threshold, slots, scan_threads);
     }
 
     result.vf = pack_rows(rows, static_cast<Eigen::Index>(cols), scan_threads);

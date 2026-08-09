@@ -201,6 +201,7 @@ add_library(${LIB_NAME} STATIC
 
     # Pure-CPU radiative services, built regardless of the raytracing option.
     ${CMAKE_CURRENT_SOURCE_DIR}/src/radiative/aggregate.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/radiative/closure_projection.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/radiative/exchange_assemble.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/radiative/gebhart.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/radiative/pair_walk.cpp
@@ -215,6 +216,7 @@ add_library(${LIB_NAME} STATIC
 # its default /fp:precise, so no equivalent flag is needed there.
 if(NOT MSVC)
     set_source_files_properties(
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/radiative/closure_projection.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/radiative/exchange_assemble.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/radiative/pair_walk.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/radiative/vf_assemble.cpp

@@ -226,9 +226,12 @@ class Cells {
         }
         std::uint64_t scored = 0;
         for (std::size_t column = 0; column < slots; ++column) {
+            // A quarter of a deposit unit per count, so that even a row
+            // where every column scores the maximum stays well inside the
+            // energy its rays carried and the space bucket cannot wrap.
             const std::uint64_t cell =
-                static_cast<std::uint64_t>(next()) * 1024U;
-            if (cell < 40U * 1024U) {
+                static_cast<std::uint64_t>(next()) * 256U;
+            if (cell < 40U * 256U) {
                 continue;  // most pairs never see each other
             }
             cells.set(row, column, cell);
@@ -623,4 +626,77 @@ TEST_CASE("radiative exchange assemble: the band emissivity follows the kernel",
     // No material assigned is a blackbody, matching the kernel's fallback.
     REQUIRE(infrared[2] == 1.0);
     REQUIRE(solar[2] == 1.0);
+}
+
+TEST_CASE("radiative exchange assemble: the wide scene balances too",
+          "[radiative][exchange][assemble]") {
+    // The invariance sweeps only compare runs against each other, so a scene
+    // whose rows did not balance would sail through them. It is the closure
+    // projection that needs the scene to be physical, so pin it here.
+    const Cells cells = make_wide_scene();
+    REQUIRE(cells.dense_error() == 0);
+    REQUIRE(cells.tiled_error() == 0);
+}
+
+TEST_CASE("radiative exchange assemble: least squares closes the energy",
+          "[radiative][exchange][assemble][closure]") {
+    rad::AccumConfig config;
+    config.triangulation.mode = rad::TriangulationMode::ConstrainedLeastSquares;
+    const Cells cells = make_wide_scene();
+    const rad::ExchangeResult projected = cells.dense(config);
+    const auto slots = static_cast<Eigen::Index>(cells.slots());
+
+    // A row's closure target is the energy it actually emitted, A_i eps_i,
+    // and the projection restores it exactly across every column the row
+    // takes part in — its own entries plus the ones stored above it.
+    for (std::size_t slot = 0; slot < cells.slots(); ++slot) {
+        if (cells.rays(slot) == 0 || !(cells.emissivity(slot) > 0.0)) {
+            continue;  // emitted no energy, so there is nothing to close
+        }
+        const auto row = static_cast<Eigen::Index>(slot);
+        double total = 0.0;
+        for (rad::SparseMatrix::InnerIterator entry(projected.factors, row);
+             entry; ++entry) {
+            total += entry.value();
+        }
+        for (Eigen::Index above = 0; above < row; ++above) {
+            for (rad::SparseMatrix::InnerIterator entry(projected.factors,
+                                                        above);
+                 entry; ++entry) {
+                if (entry.col() == row && row < slots) {
+                    total += entry.value();
+                }
+            }
+        }
+        REQUIRE(total ==
+                Catch::Approx(cells.area(slot) * cells.emissivity(slot))
+                    .epsilon(1e-9));
+    }
+}
+
+TEST_CASE("radiative exchange assemble: least squares is layout invariant",
+          "[radiative][exchange][assemble][closure]") {
+    rad::AccumConfig config;
+    config.triangulation.mode = rad::TriangulationMode::ConstrainedLeastSquares;
+    const Cells cells = make_wide_scene();
+    const rad::ExchangeResult serial =
+        cells.dense(config, detail::AssemblyTuning{.threads = 1});
+    REQUIRE(same_entries(cells.tiled(config).factors, serial.factors));
+    for (const unsigned threads : {2U, 3U, 8U}) {
+        const detail::AssemblyTuning tuning{.tile = 7, .threads = threads};
+        REQUIRE(
+            same_entries(cells.dense(config, tuning).factors, serial.factors));
+    }
+}
+
+TEST_CASE("radiative exchange assemble: a zero-emissivity row is unconstrained",
+          "[radiative][exchange][assemble][closure]") {
+    rad::AccumConfig config;
+    config.triangulation.mode = rad::TriangulationMode::ConstrainedLeastSquares;
+    // Slot 3 emits rays but has no emissivity, so it transports no energy and
+    // there is nothing to close. It must not acquire an equation, and it must
+    // still store nothing.
+    const Cells cells = make_scene();
+    const rad::ExchangeResult projected = cells.dense(config);
+    REQUIRE_FALSE(rad::SparseMatrix::InnerIterator(projected.factors, 3));
 }

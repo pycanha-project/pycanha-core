@@ -167,6 +167,32 @@ class Counts {
     return config;
 }
 
+[[nodiscard]] rad::AccumConfig least_squares() {
+    rad::AccumConfig config;
+    config.triangulation.mode = rad::TriangulationMode::ConstrainedLeastSquares;
+    return config;
+}
+
+// Sum of a stored row over EVERY column it takes part in: the entries stored
+// in the row itself plus, because only the upper triangle is kept, the
+// entries stored above it at this row's column.
+[[nodiscard]] double closure_of(const rad::SparseMatrix& matrix,
+                                Eigen::Index slot, Eigen::Index slots) {
+    double total = 0.0;
+    for (rad::SparseMatrix::InnerIterator entry(matrix, slot); entry; ++entry) {
+        total += entry.value();
+    }
+    for (Eigen::Index row = 0; row < slot; ++row) {
+        for (rad::SparseMatrix::InnerIterator entry(matrix, row); entry;
+             ++entry) {
+            if (entry.col() == slot && slot < slots) {
+                total += entry.value();
+            }
+        }
+    }
+    return total;
+}
+
 }  // namespace
 
 TEST_CASE("radiative assemble: only the upper triangle is stored",
@@ -475,4 +501,125 @@ TEST_CASE("radiative assemble: an invalid exponent is rejected",
     const Counts counts = make_scene(4);
     REQUIRE_THROWS_AS(counts.dense(ray_density(0.0)), std::invalid_argument);
     REQUIRE_THROWS_AS(counts.dense(ray_density(-1.0)), std::invalid_argument);
+}
+
+TEST_CASE("radiative assemble: least squares closes every row exactly",
+          "[radiative][vf][assemble][closure]") {
+    const Counts counts = make_scene();
+    const rad::VfResult combined = counts.dense(ray_density());
+    const rad::VfResult projected = counts.dense(least_squares());
+    const auto slots = static_cast<Eigen::Index>(counts.slots());
+
+    // Weighting each pair on its own leaves rows no longer summing to their
+    // own area; the projection is the smallest weighted move that restores
+    // that, and it restores it exactly rather than approximately.
+    bool ray_density_missed = false;
+    for (std::size_t slot = 0; slot < counts.slots(); ++slot) {
+        const auto row = static_cast<Eigen::Index>(slot);
+        if (counts.rays(slot) == 0) {
+            continue;  // emitted nothing, so there is nothing to close
+        }
+        if (closure_of(combined.vf, row, slots) !=
+            Catch::Approx(counts.area(slot)).epsilon(1e-9)) {
+            ray_density_missed = true;
+        }
+        REQUIRE(closure_of(projected.vf, row, slots) ==
+                Catch::Approx(counts.area(slot)).epsilon(1e-9));
+    }
+    REQUIRE(ray_density_missed);
+}
+
+TEST_CASE("radiative assemble: least squares keeps reciprocity structural",
+          "[radiative][vf][assemble][closure]") {
+    const Counts counts = make_scene();
+    const rad::VfResult projected = counts.dense(least_squares());
+    // Closure is imposed on the SHARED entry, so it cannot pull the two
+    // directions apart: only the upper triangle exists to be stored.
+    for (Eigen::Index row = 0; row < projected.vf.rows(); ++row) {
+        for (rad::SparseMatrix::InnerIterator entry(projected.vf, row); entry;
+             ++entry) {
+            REQUIRE(entry.col() >= row);
+        }
+    }
+    // Closure is a statement about the raw estimate and is reported from it,
+    // so the projection must not have moved what row_sums means.
+    REQUIRE(projected.row_sums == counts.dense(ray_density()).row_sums);
+}
+
+TEST_CASE("radiative assemble: the least-squares correction is exact",
+          "[radiative][vf][assemble][closure]") {
+    // Two unit slots that see each other and space, with disagreeing
+    // estimates: forward says 1/4 of row 0 reaches slot 1, backward says 1/2
+    // of row 1 reaches slot 0. Equal ray densities put the unconstrained
+    // combination at 3/8, which leaves row 0 over-full and row 1 short.
+    Counts counts(2);
+    counts.set_area(0, 1.0);
+    counts.set_area(1, 1.0);
+    counts.set_rays(0, 1024);
+    counts.set_rays(1, 1024);
+    counts.set(0, 1, 256);
+    counts.set(0, counts.space_column(), 768);
+    counts.set(1, 0, 512);
+    counts.set(1, counts.space_column(), 512);
+
+    const rad::VfResult projected = counts.dense(least_squares());
+    // Hand-solved: with variances proportional to the estimates, the
+    // two-equation dual has the coupling land on 5/13 and both space columns
+    // on 8/13. Every row then closes to exactly one.
+    REQUIRE(value_at(projected.vf, 0, 1) ==
+            Catch::Approx(5.0 / 13.0).epsilon(1e-12));
+    REQUIRE(value_at(projected.vf, 0, 2) ==
+            Catch::Approx(8.0 / 13.0).epsilon(1e-12));
+    REQUIRE(value_at(projected.vf, 1, 2) ==
+            Catch::Approx(8.0 / 13.0).epsilon(1e-12));
+}
+
+TEST_CASE("radiative assemble: a non-emitting row carries no constraint",
+          "[radiative][vf][assemble][closure]") {
+    Counts counts(2);
+    counts.set_area(0, 2.0);
+    counts.set_area(1, 4.0);
+    counts.set_rays(0, 0);  // never emits: the environment/collector case
+    counts.set_rays(1, 1024);
+    counts.set(1, 0, 256);
+    counts.set(1, counts.space_column(), 768);
+
+    // Row 0 emitted nothing, so there is no closure to impose on it and the
+    // system must not acquire an equation for it. Row 1 still closes.
+    const rad::VfResult projected = counts.dense(least_squares());
+    REQUIRE(closure_of(projected.vf, 1, 2) ==
+            Catch::Approx(counts.area(1)).epsilon(1e-12));
+}
+
+TEST_CASE("radiative assemble: a singular closure system is reported",
+          "[radiative][vf][assemble][closure]") {
+    // Two unequal faces in a closed enclosure: every ray of each lands on the
+    // other and nothing reaches space. The two closure equations then both
+    // constrain the single shared entry, to different values, so no matrix
+    // satisfies them and the dual system is rank deficient.
+    Counts counts(2);
+    counts.set_area(0, 1.0);
+    counts.set_area(1, 2.0);
+    counts.set_rays(0, 1024);
+    counts.set_rays(1, 1024);
+    counts.set(0, 1, 1024);
+    counts.set(1, 0, 1024);
+
+    REQUIRE_THROWS_AS(counts.dense(least_squares()), std::runtime_error);
+    // The same model is perfectly fine for the independent-pair mode.
+    REQUIRE_NOTHROW(counts.dense(ray_density()));
+}
+
+TEST_CASE("radiative assemble: least squares is layout and thread invariant",
+          "[radiative][vf][assemble][closure]") {
+    const Counts counts = make_scene();
+    const rad::AccumConfig config = least_squares();
+    const rad::VfResult serial =
+        counts.dense(config, detail::AssemblyTuning{.threads = 1});
+    REQUIRE(same_entries(counts.tiled(config).vf, serial.vf));
+    for (const unsigned threads : {2U, 3U, 8U}) {
+        const detail::AssemblyTuning tuning{.tile = 7, .threads = threads};
+        REQUIRE(same_entries(counts.dense(config, tuning).vf, serial.vf));
+        REQUIRE(same_entries(counts.tiled(config, tuning).vf, serial.vf));
+    }
 }

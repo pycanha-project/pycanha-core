@@ -50,6 +50,18 @@ enum class TriangulationMode : std::uint8_t {
     // further factor eps_i eps_j, which appears in both directions and
     // therefore cancels out of the weight along with everything else.
     RayDensity,
+    // Impose reciprocity AND row closure together instead of one after the
+    // other. RayDensity blends each pair independently, which leaves rows no
+    // longer summing to the energy they emitted; renormalising afterwards
+    // then partly undoes the reciprocity. This mode solves for the matrix
+    // closest to the raw estimate in the inverse-variance metric among those
+    // that close every row exactly, which is a sparse symmetric system of
+    // one equation per face slot.
+    //
+    // It ignores `exponent`: the combination it starts from has to be the
+    // unconstrained minimum-variance one (n = 1) or the result is not the
+    // least-squares solution of anything.
+    ConstrainedLeastSquares,
 };
 
 struct TriangulationConfig {

@@ -20,9 +20,11 @@
 #include <numeric>
 #include <span>
 #include <stdexcept>
+#include <utility>
 #include <variant>
 #include <vector>
 
+#include "closure_projection.hpp"
 #include "pair_walk.hpp"
 #include "pycanha-core/radiative/materials.hpp"
 #include "pycanha-core/radiative/results.hpp"
@@ -47,6 +49,9 @@ struct SlotScales {
     // A_i eps_i: the emissive area a stored H is divided by to recover the
     // intensive B, and therefore what the threshold compares against.
     std::vector<double> emissive_area;
+    // The band absorptivity itself, which the absolute variance needs even
+    // though the weight does not.
+    std::vector<double> emissivity;
 };
 
 [[nodiscard]] SlotScales slot_scales(
@@ -57,6 +62,7 @@ struct SlotScales {
     scales.emission.assign(slots, 0.0);
     scales.ratio.assign(slots, 0.0);
     scales.emissive_area.assign(slots, 0.0);
+    scales.emissivity.assign(emissivity.begin(), emissivity.end());
     for (std::size_t slot = 0; slot < slots; ++slot) {
         scales.emissive_area[slot] = areas[slot] * emissivity[slot];
         if (rays_per_row[slot] > 0) {
@@ -150,6 +156,8 @@ class ExchangeEmit {
           _weighting(&weighting),
           _inv_scale(inv_scale),
           _threshold(threshold),
+          _project(weighting.mode() ==
+                   TriangulationMode::ConstrainedLeastSquares),
           _lost_column(lost_column),
           _rows(rows),
           _residual(residual) {}
@@ -174,6 +182,21 @@ class ExchangeEmit {
             _residual[row] =
                 std::max(_residual[row], std::abs(forward - backward) / larger);
         }
+        if (_project) {
+            // Nothing is dropped before the projection: an entry the
+            // projection cannot see is one the closure it imposes would be
+            // missing. The threshold runs afterwards instead.
+            const BlueEstimate blue = blue_combine(
+                forward, backward, _scales->ratio[row], _scales->ratio[column]);
+            // The exchange variance carries a further eps_i eps_j that the
+            // ray-density proxy drops because it cancels out of the WEIGHT.
+            // It does not cancel out of the absolute variance, which is what
+            // decides how far this entry may move relative to the others.
+            _rows[row].push(column, blue.value,
+                            blue.variance * _scales->emissivity[row] *
+                                _scales->emissivity[column]);
+            return;
+        }
         const double value =
             combine(row, column, forward, backward, has_forward, has_backward);
         if (keep(value, row, column)) {
@@ -196,9 +219,19 @@ class ExchangeEmit {
         // A row whose emissive area is zero traced rays and filled cells,
         // but carries no energy: storing explicit zeros for it would be the
         // one place the matrix admits a structural nonzero that is not one.
-        if (value != 0.0) {
-            _rows[row].push(column, value);
+        if (value == 0.0) {
+            return;
         }
+        if (_project) {
+            // Energy that escapes to space is fully accounted there, so the
+            // absorber-side emissivity of a bucket is one. The magnitude,
+            // because the lost column can be negative.
+            _rows[row].push(column, value,
+                            std::abs(value) * _scales->ratio[row] *
+                                _scales->emissivity[row]);
+            return;
+        }
+        _rows[row].push(column, value);
     }
 
   private:
@@ -243,10 +276,39 @@ class ExchangeEmit {
     const Weighting* _weighting;
     double _inv_scale;
     double _threshold;
+    bool _project;
     std::size_t _lost_column;
     std::span<RowEntries> _rows;
     std::span<double> _residual;
 };
+
+// Drops the negligible entries the projection was deliberately not allowed
+// to drop earlier. Buckets are closure accounting and always survive.
+void prune_rows(std::span<RowEntries> rows,
+                std::span<const double> emissive_area, double threshold,
+                std::size_t slots, unsigned threads) {
+    parallel_for_index(rows.size(), threads, [&](std::size_t row) {
+        RowEntries kept;
+        const RowEntries& entries = rows[row];
+        for (std::size_t at = 0; at < entries.values.size(); ++at) {
+            const auto column = static_cast<std::size_t>(entries.columns[at]);
+            const double value = entries.values[at];
+            if (value == 0.0) {
+                continue;
+            }
+            if (column < slots) {
+                const double smaller =
+                    std::min(emissive_area[row], emissive_area[column]);
+                if (smaller > 0.0 &&
+                    !((std::abs(value) / smaller) > threshold)) {
+                    continue;
+                }
+            }
+            kept.push(column, value);
+        }
+        rows[row] = std::move(kept);
+    });
+}
 
 // Reduces the per-row scan products in row order, so the double sums do not
 // depend on how the rows were distributed across workers.
@@ -336,6 +398,22 @@ ExchangeResult assemble_exchange(const ExchangeInputs& in,
                              slots, scan_threads);
             scan_rows(sparse, scan_in, scan_out, scan_threads);
             walk_sparse_pairs(sparse, slots, tuning, emit);
+        }
+        if (config.triangulation.mode ==
+            TriangulationMode::ConstrainedLeastSquares) {
+            // A row that emitted rays must account for exactly the energy it
+            // emitted, A_i eps_i, across all columns. A row that emitted
+            // nothing — or that emits nothing because its emissivity is zero
+            // — carries no constraint, which is what a zero target says.
+            std::vector<double> targets(slots, 0.0);
+            for (std::size_t slot = 0; slot < slots; ++slot) {
+                if (in.rays_per_row[slot] > 0) {
+                    targets[slot] = scales.emissive_area[slot];
+                }
+            }
+            project_onto_closure(rows, targets, slots);
+            prune_rows(rows, scales.emissive_area, config.sparse_threshold,
+                       slots, scan_threads);
         }
     }
 

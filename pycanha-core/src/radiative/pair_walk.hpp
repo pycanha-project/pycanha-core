@@ -177,10 +177,19 @@ void parallel_for_index(std::size_t count, unsigned threads, const Body& body) {
 struct RowEntries {
     std::vector<SparseIndex> columns;
     std::vector<double> values;
+    // Per-entry variance of `values`, parallel to it. Filled only by the
+    // constrained least-squares mode, which is the only thing that needs to
+    // know how far an entry is allowed to move.
+    std::vector<double> variances;
 
     void push(std::size_t column, double value) {
         columns.push_back(static_cast<SparseIndex>(column));
         values.push_back(value);
+    }
+
+    void push(std::size_t column, double value, double variance) {
+        push(column, value);
+        variances.push_back(variance);
     }
 };
 
