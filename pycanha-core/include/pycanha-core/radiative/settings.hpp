@@ -31,6 +31,53 @@ enum class AccumLayout : std::uint8_t {
     Tiled,  // tile_rows x Nf blocks streamed + CPU-sparsified — the big path
 };
 
+// How the two independent Monte-Carlo estimates of a face pair are combined
+// into the single reciprocity-consistent value that gets stored.
+enum class TriangulationMode : std::uint8_t {
+    // Keep the forward estimate as traced. Nothing is combined, so the
+    // stored triangle is still two independent noisy numbers per pair — the
+    // mode to reach for when bisecting a suspected assembly bug.
+    None,
+    // Weight each direction by how densely it was sampled:
+    //   X_i = 1/2 (1 + sign(Y) |Y|^n),  Y = (v - u) / (v + u)
+    // with u = A_i/N_i and v = A_j/N_j, the two estimator variances up to a
+    // factor that cancels. n = 1 makes this exactly inverse-variance
+    // (minimum-variance) weighting; the default n = 0.4 is the more
+    // aggressive, empirically tuned rule the reference implementation uses.
+    //
+    // The SAME proxy applies to the exchange kernel even though that kernel
+    // deposits energy rather than unit hits: its per-cell variance carries a
+    // further factor eps_i eps_j, which appears in both directions and
+    // therefore cancels out of the weight along with everything else.
+    RayDensity,
+    // Impose reciprocity AND row closure together instead of one after the
+    // other. RayDensity blends each pair independently, which leaves rows no
+    // longer summing to the energy they emitted; renormalising afterwards
+    // then partly undoes the reciprocity. This mode solves for the matrix
+    // closest to the raw estimate in the inverse-variance metric among those
+    // that close every row exactly, which is a sparse symmetric system of
+    // one equation per face slot.
+    //
+    // It ignores `exponent`: the combination it starts from has to be the
+    // unconstrained minimum-variance one (n = 1) or the result is not the
+    // least-squares solution of anything.
+    ConstrainedLeastSquares,
+};
+
+struct TriangulationConfig {
+    TriangulationMode mode = TriangulationMode::RayDensity;
+    // Must be > 0. 1.0 reduces the weight to inverse-variance weighting,
+    // which measured marginally better than 0.4 on the exchange path (where
+    // the ray-density proxy is exact rather than empirical) — 0.4 is kept as
+    // the single default for both paths so that a default-constructed config
+    // never means two different things.
+    double exponent = 0.4;
+    // Also keep the raw, untriangulated matrix (both triangles) alongside
+    // the combined upper triangle. Off at every model size: it doubles the
+    // result memory and exists only for someone debugging a model.
+    bool keep_full_matrix = false;
+};
+
 struct AccumConfig {
     AccumLayout layout = AccumLayout::Dense;
     // Tiled only; 0 = invalid, must be set (the Python policy derives it).
@@ -38,7 +85,17 @@ struct AccumConfig {
     // Entries with |value| <= threshold are dropped from the result CSR;
     // row sums and every other statistic are computed BEFORE thresholding,
     // so closure/conservation accounting stays exact. 0 keeps any nonzero.
+    //
+    // Both matrices compare on the INTENSIVE value: max(F_ij, F_ji) is the
+    // stored G_ij over the smaller face area, max(B_ij, B_ji) the stored
+    // H_ij over the smaller A*eps. A pair is therefore dropped only when
+    // both directions are negligible. That comparison happens AFTER the two
+    // directions are combined: dropping them independently first would leave
+    // a surviving entry combined against a zero, which re-breaks the
+    // reciprocity just imposed and biases the survivor low.
     double sparse_threshold = 0.0;
+    // Applies to the VF and the exchange accumulator alike.
+    TriangulationConfig triangulation;
 };
 
 }  // namespace pycanha::radiative

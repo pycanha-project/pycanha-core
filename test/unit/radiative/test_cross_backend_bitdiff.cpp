@@ -34,7 +34,6 @@
 #include "pycanha-core/radiative/results.hpp"
 #include "pycanha-core/radiative/scene.hpp"
 #include "pycanha-core/radiative/settings.hpp"
-#include "pycanha-core/radiative/sparse.hpp"
 #include "scene_fixtures.hpp"
 
 namespace rad = pycanha::radiative;
@@ -45,15 +44,15 @@ using radiative_fixtures::make_materials;
 namespace {
 
 // One line per stored entry: row, column, and the exact bits of the value.
-void dump_csr(const std::string& path, const rad::SparseF64& matrix) {
+void dump_csr(const std::string& path, const rad::SparseMatrix& matrix) {
     std::ofstream out(path, std::ios::binary | std::ios::trunc);
-    out << "rows " << matrix.rows << " cols " << matrix.cols << "\n";
-    for (std::int64_t row = 0; row < matrix.rows; ++row) {
-        for (std::int64_t k = matrix.indptr(row); k < matrix.indptr(row + 1);
-             ++k) {
-            out << row << ' ' << matrix.indices(k) << ' ' << std::hex
-                << std::setw(16) << std::setfill('0')
-                << std::bit_cast<std::uint64_t>(matrix.values(k)) << std::dec
+    out << "rows " << matrix.rows() << " cols " << matrix.cols() << "\n";
+    for (Eigen::Index row = 0; row < matrix.rows(); ++row) {
+        for (rad::SparseMatrix::InnerIterator entry(matrix, row); entry;
+             ++entry) {
+            out << row << ' ' << entry.col() << ' ' << std::hex << std::setw(16)
+                << std::setfill('0')
+                << std::bit_cast<std::uint64_t>(entry.value()) << std::dec
                 << '\n';
         }
     }

@@ -15,6 +15,7 @@
 #include "scene_fixtures.hpp"
 
 namespace rad = pycanha::radiative;
+using radiative_fixtures::csr_bit_identical;
 using radiative_fixtures::csr_value;
 using radiative_fixtures::gray_row;
 using radiative_fixtures::make_materials;
@@ -32,16 +33,29 @@ void require_tiled_matches(rad::RadiativeScene& scene,
         scene, rad::Band::IR,
         rad::AccumConfig{.layout = rad::AccumLayout::Tiled,
                          .tile_rows = tile_rows,
-                         .sparse_threshold = 0.0});
+                         .sparse_threshold = 0.0,
+                         .triangulation = {}});
     settings.seed = 1;
     scene.accumulate_exchange(tiled, settings);
     settings.seed = 2;
     scene.accumulate_exchange(tiled, settings);
     const rad::ExchangeResult result = tiled.result();
-    REQUIRE(result.factors.nnz() == reference.factors.nnz());
-    REQUIRE(result.factors.indices.cwiseEqual(reference.factors.indices).all());
-    REQUIRE(result.factors.values.cwiseEqual(reference.factors.values).all());
+    REQUIRE(csr_bit_identical(result.factors, reference.factors));
     REQUIRE(tiled.conservation_error() == 0);
+}
+
+// With eps = 1 every ray deposits its full (power-of-two scaled) energy at
+// the first hit, so the exchange cells ARE the vf counts scaled by an exact
+// power of two: same rays, same hits, and every conversion on the way back
+// is exact. Both results then store the same extensive quantity over the
+// same upper triangle — G_ij = A_i F_ij and H_ij = A_i eps_i B_ij with
+// eps = 1 — so the two matrices must agree to the BIT, not to a tolerance.
+// This is the strongest cross-check the module has: it ties two independent
+// kernels, two accumulators and two assemblies together.
+void require_vf_matches_blackbody(const rad::VfResult& vf,
+                                  const rad::ExchangeResult& exchange) {
+    REQUIRE(vf.vf.nonZeros() > 0);
+    REQUIRE(csr_bit_identical(exchange.factors, vf.vf));
 }
 
 }  // namespace
@@ -63,21 +77,24 @@ TEST_CASE("radiative exchange: blackbody factors equal the view factors",
     settings.rays_per_face = 10'000;
     settings.seed = 5;
 
-    rad::VfAccumulator vf_acc(scene);
+    // Both sides triangulated the same way, so the comparison covers the
+    // combination step as well as the kernels: identical weights applied to
+    // identical estimates must land on identical bits.
+    const rad::AccumConfig config{
+        .layout = rad::AccumLayout::Dense,
+        .tile_rows = 0,
+        .sparse_threshold = 0.0,
+        .triangulation = {.mode = rad::TriangulationMode::RayDensity}};
+    rad::VfAccumulator vf_acc(scene, config);
     scene.accumulate_vf(vf_acc, settings);
-    rad::ExchangeAccumulator ex_acc(scene, rad::Band::IR);
+    rad::ExchangeAccumulator ex_acc(scene, rad::Band::IR, config);
     scene.accumulate_exchange(ex_acc, settings);
 
     const rad::VfResult vf = vf_acc.result();
     const rad::ExchangeResult exchange = ex_acc.result();
 
-    // With eps = 1 every ray deposits its full (power-of-two scaled) energy
-    // at the first hit, so the exchange CSR is BIT-identical to the VF one:
-    // same rays, same hits, and the u64 -> f64 conversion is exact.
     REQUIRE(exchange.band == rad::Band::IR);
-    REQUIRE(exchange.factors.nnz() == vf.vf.nnz());
-    REQUIRE(exchange.factors.indices.cwiseEqual(vf.vf.indices).all());
-    REQUIRE(exchange.factors.values.cwiseEqual(vf.vf.values).all());
+    require_vf_matches_blackbody(vf, exchange);
     REQUIRE(ex_acc.conservation_error() == 0);
 }
 
@@ -106,9 +123,10 @@ TEST_CASE("radiative exchange: gray plates match the infinite-plate formula",
     scene.accumulate_exchange(acc, settings, emitters);
     const rad::ExchangeResult result = acc.result();
 
-    // GR per unit area = eps * B12 for these unit plates.
+    // The stored H_ij IS the GR of the pair (A eps B), and these plates are
+    // unit area, so it compares against the closed form directly.
     const double expected = 1.0 / ((1.0 / eps) + (1.0 / eps) - 1.0);
-    const double gr = eps * csr_value(result.factors, 0, 2);
+    const double gr = csr_value(result.factors, 0, 2);
     REQUIRE(gr == Catch::Approx(expected).margin(0.02));
     REQUIRE(acc.conservation_error() == 0);
 }
@@ -300,7 +318,9 @@ TEST_CASE("radiative exchange: update_materials swaps properties in place",
 
     rad::ExchangeAccumulator gray_acc(scene, rad::Band::IR);
     scene.accumulate_exchange(gray_acc, settings, emitters);
-    const double gray_factor = csr_value(gray_acc.result().factors, 0, 2);
+    // The stored value is extensive, so recovering the exchange factor of
+    // the gray scene means dividing the emissive area A_0 eps_0 back out.
+    const double gray_factor = csr_value(gray_acc.result().factors, 0, 2) / 0.5;
     // Half the absorptivity halves the first-hit deposit; the multi-bounce
     // correction at this view factor is far below the margin.
     REQUIRE(gray_factor == Catch::Approx(0.5 * black_factor).margin(0.02));
@@ -310,7 +330,7 @@ TEST_CASE("radiative exchange: update_materials swaps properties in place",
     scene.accumulate_vf(vf_after, settings, emitters);
     const rad::VfResult before = vf_before.result();
     const rad::VfResult after = vf_after.result();
-    REQUIRE(after.vf.values.cwiseEqual(before.vf.values).all());
+    REQUIRE(csr_bit_identical(after.vf, before.vf));
 
     // Changing the mapping (or the row count) needs a scene rebuild.
     const std::array<std::array<float, 6>, 2> two_rows{gray_row(0.5F),

@@ -201,9 +201,28 @@ add_library(${LIB_NAME} STATIC
 
     # Pure-CPU radiative services, built regardless of the raytracing option.
     ${CMAKE_CURRENT_SOURCE_DIR}/src/radiative/aggregate.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/radiative/closure_projection.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/radiative/exchange_assemble.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/radiative/gebhart.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/radiative/pair_walk.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/radiative/vf_assemble.cpp
     ${PYCANHA_RADIATIVE_SOURCES}
 )
+# The two matrix assemblies interpolate a table and blend two estimates, both
+# of the form a + f * (b - a). GCC and Clang default to contracting that into
+# an FMA, which rounds once instead of twice — a different result from a
+# compiler that does not contract, which would silently cost the reproducibility
+# these files are otherwise written to guarantee. MSVC does not contract under
+# its default /fp:precise, so no equivalent flag is needed there.
+if(NOT MSVC)
+    set_source_files_properties(
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/radiative/closure_projection.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/radiative/exchange_assemble.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/radiative/pair_walk.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/radiative/vf_assemble.cpp
+        PROPERTIES COMPILE_OPTIONS "-ffp-contract=off")
+endif()
+
 target_include_directories(${LIB_NAME}
     PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>

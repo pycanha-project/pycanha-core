@@ -43,6 +43,7 @@ set(UNIT_TEST_SOURCES
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/radiative/test_aggregate.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/radiative/test_cross_backend_bitdiff.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/radiative/test_device.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/radiative/test_exchange_assemble.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/radiative/test_exchange_kernels.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/radiative/test_exchange_specular.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/radiative/test_gebhart.cpp"
@@ -51,6 +52,7 @@ set(UNIT_TEST_SOURCES
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/radiative/test_solar_kernel.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/radiative/test_types.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/radiative/test_vf_analytic.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/radiative/test_vf_assemble.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/radiative/test_vf_properties.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/parameters/test_formula.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/parameters/test_variable.cpp"
@@ -142,11 +144,16 @@ if(UNIX AND NOT APPLE)
   target_link_libraries(${TEST_TARGET_NAME} PRIVATE m)
 endif()
 
+# The view-factor assembly and the Metal transform are both tested white-box
+# through their src-private headers: the assembly's cache-blocked walk, thread
+# split and weight table each have an obvious counterpart they must reproduce
+# exactly, and only a direct call can pin them against it.
+target_include_directories(${TEST_TARGET_NAME} PRIVATE
+  ${PROJECT_SOURCE_DIR}/pycanha-core/src)
+
 if(APPLE AND PYCANHA_OPTION_RAYTRACING)
-  # The Metal test reaches into the backend's src-private header, and needs
-  # the frameworks and reference counting the backend itself is built with.
-  target_include_directories(${TEST_TARGET_NAME} PRIVATE
-    ${PROJECT_SOURCE_DIR}/pycanha-core/src)
+  # The Metal test needs the frameworks and reference counting the backend
+  # itself is built with.
   target_link_libraries(${TEST_TARGET_NAME} PRIVATE
     "-framework Metal" "-framework Foundation")
   set_source_files_properties(

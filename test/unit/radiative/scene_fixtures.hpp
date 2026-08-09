@@ -14,7 +14,7 @@
 #include "pycanha-core/gmm/primitives/rectangle.hpp"
 #include "pycanha-core/gmm/scene/geometry_item.hpp"
 #include "pycanha-core/radiative/materials.hpp"
-#include "pycanha-core/radiative/sparse.hpp"
+#include "pycanha-core/radiative/results.hpp"
 
 namespace radiative_fixtures {
 
@@ -141,14 +141,41 @@ make_box_enclosure() {
 }
 
 [[nodiscard]] inline double csr_value(
-    const pycanha::radiative::SparseF64& matrix, std::int64_t row,
-    std::int32_t col) {
-    for (std::int64_t k = matrix.indptr(row); k < matrix.indptr(row + 1); ++k) {
-        if (matrix.indices(k) == col) {
-            return matrix.values(k);
+    const pycanha::radiative::SparseMatrix& matrix, Eigen::Index row,
+    Eigen::Index col) {
+    for (pycanha::radiative::SparseMatrix::InnerIterator entry(matrix, row);
+         entry; ++entry) {
+        if (entry.col() == col) {
+            return entry.value();
         }
     }
     return 0.0;
+}
+
+// Bit-exact CSR equality: same shape, same stored columns, same value bits.
+// Integer accumulator cells make that a hard guarantee across layouts and
+// backends, so this is an equality check and not a tolerance claim.
+[[nodiscard]] inline bool csr_bit_identical(
+    const pycanha::radiative::SparseMatrix& lhs,
+    const pycanha::radiative::SparseMatrix& rhs) {
+    using Iterator = pycanha::radiative::SparseMatrix::InnerIterator;
+    if (lhs.rows() != rhs.rows() || lhs.cols() != rhs.cols() ||
+        lhs.nonZeros() != rhs.nonZeros()) {
+        return false;
+    }
+    for (Eigen::Index row = 0; row < lhs.rows(); ++row) {
+        Iterator left(lhs, row);
+        Iterator right(rhs, row);
+        for (; left && right; ++left, ++right) {
+            if (left.col() != right.col() || left.value() != right.value()) {
+                return false;
+            }
+        }
+        if (left || right) {
+            return false;
+        }
+    }
+    return true;
 }
 
 }  // namespace radiative_fixtures

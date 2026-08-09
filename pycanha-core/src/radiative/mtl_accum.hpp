@@ -24,27 +24,20 @@
 #include <cstddef>
 #include <cstdint>
 #include <span>
-#include <unordered_map>
 #include <vector>
 
+#include "exchange_assemble.hpp"
 #include "mtl_scene.hpp"
 #include "pycanha-core/radiative/results.hpp"
 #include "pycanha-core/radiative/scene.hpp"
 #include "pycanha-core/radiative/settings.hpp"
+#include "vf_assemble.hpp"
 
 namespace pycanha::radiative::detail {
 
-// Running per-entry statistics while scanning accumulator rows into a CSR.
-struct EntryStats {
-    double stderr_sum = 0.0;
-    double stderr_max = 0.0;
-    std::size_t entries = 0;
-    double lost_energy = 0.0;  // exchange only (signed)
-};
-
 class VfAccumImpl {
   public:
-    VfAccumImpl(SceneImpl& scene, AccumConfig config);
+    VfAccumImpl(SceneImpl& scene, const AccumConfig& config);
     ~VfAccumImpl();
     VfAccumImpl(const VfAccumImpl&) = delete;
     VfAccumImpl& operator=(const VfAccumImpl&) = delete;
@@ -77,21 +70,12 @@ class VfAccumImpl {
     [[nodiscard]] SceneImpl& scene() const noexcept { return _scene; }
 
   private:
-    // Integer count of cell (row, col) regardless of layout.
-    [[nodiscard]] std::uint64_t count_at(std::size_t row,
-                                         std::size_t col) const;
-    // Appends one row's thresholded entries and statistics; returns the
-    // pre-threshold row sum.
-    double scan_row(std::size_t row, std::uint64_t rays_row,
-                    std::vector<std::int32_t>& indices,
-                    std::vector<double>& values, EntryStats& stats) const;
-
     SceneImpl& _scene;
     AccumConfig _config;
     GpuBuffer _counts;
     // Tiled layout: accumulated counts per row (column -> count). Dense
     // keeps everything in the GPU buffer instead.
-    std::vector<std::unordered_map<std::uint32_t, std::uint64_t>> _host_rows;
+    std::vector<HostCountRow> _host_rows;
     // Rays emitted per matrix row, accumulated across batches (rows in an
     // emitter subset differ from rows that never emitted).
     std::vector<std::uint64_t> _rays_per_row;
@@ -101,7 +85,7 @@ class VfAccumImpl {
 
 class ExchangeAccumImpl {
   public:
-    ExchangeAccumImpl(SceneImpl& scene, Band band, AccumConfig config);
+    ExchangeAccumImpl(SceneImpl& scene, Band band, const AccumConfig& config);
     ~ExchangeAccumImpl();
     ExchangeAccumImpl(const ExchangeAccumImpl&) = delete;
     ExchangeAccumImpl& operator=(const ExchangeAccumImpl&) = delete;
@@ -136,21 +120,17 @@ class ExchangeAccumImpl {
     [[nodiscard]] SceneImpl& scene() const noexcept { return _scene; }
 
   private:
-    // Fixed-point value of cell (row, col) regardless of layout; columns
-    // include the virtual space/inactive/lost buckets.
-    [[nodiscard]] std::uint64_t cell_at(std::size_t row, std::size_t col) const;
-    // Appends one row's thresholded entries and statistics (including the
-    // signed lost-column energy).
-    void scan_row(std::size_t row, std::uint64_t rays_row,
-                  std::vector<std::int32_t>& indices,
-                  std::vector<double>& values, EntryStats& stats) const;
+    // The accumulated cells in whichever layout this accumulator used. The
+    // assembly itself is backend-agnostic and lives in exchange_assemble;
+    // unified memory means there is nothing to invalidate first.
+    [[nodiscard]] ExchangeCellSource cells() const;
 
     SceneImpl& _scene;
     Band _band;
     AccumConfig _config;
     GpuBuffer _cells;  // u64 fixed-point deposits, row stride slots + 3
     // Tiled layout: host-side accumulation (Dense reads the GPU buffer).
-    std::vector<std::unordered_map<std::uint32_t, std::uint64_t>> _host_rows;
+    std::vector<HostCountRow> _host_rows;
     std::vector<std::uint64_t> _rays_per_row;
     // Power of two chosen on the first batch; 0 = not chosen yet. Kept as
     // double for exact integer arithmetic on the host (f32 in the shader).
