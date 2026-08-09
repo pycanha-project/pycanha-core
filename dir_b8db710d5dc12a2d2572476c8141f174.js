@@ -10,6 +10,5 @@ var dir_b8db710d5dc12a2d2572476c8141f174 =
     [ "results.hpp", "results_8hpp_source.html", null ],
     [ "scene.hpp", "scene_8hpp_source.html", null ],
     [ "scene_part.hpp", "scene__part_8hpp_source.html", null ],
-    [ "settings.hpp", "settings_8hpp_source.html", null ],
-    [ "sparse.hpp", "sparse_8hpp_source.html", null ]
+    [ "settings.hpp", "settings_8hpp_source.html", null ]
 ];

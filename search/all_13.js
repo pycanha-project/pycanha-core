@@ -20,11 +20,12 @@ var searchData=
   ['tracestats_17',['TraceStats',['../structpycanha_1_1radiative_1_1TraceStats.html',1,'pycanha::radiative']]],
   ['transientsolver_18',['TransientSolver',['../classpycanha_1_1TransientSolver.html',1,'pycanha']]],
   ['triangle_19',['Triangle',['../classpycanha_1_1gmm_1_1Triangle.html',1,'pycanha::gmm']]],
-  ['trimesh_20',['TriMesh',['../classpycanha_1_1gmm_1_1TriMesh.html',1,'pycanha::gmm']]],
-  ['trimesh_3c_20double_20_3e_21',['TriMesh&lt; double &gt;',['../classpycanha_1_1gmm_1_1TriMesh.html',1,'pycanha::gmm']]],
-  ['trimesh_3c_20float_20_3e_22',['TriMesh&lt; float &gt;',['../classpycanha_1_1gmm_1_1TriMesh.html',1,'pycanha::gmm']]],
-  ['tscn_23',['TSCN',['../classpycanha_1_1TSCN.html',1,'pycanha']]],
-  ['tscnrl_24',['TSCNRL',['../classpycanha_1_1TSCNRL.html',1,'pycanha']]],
-  ['tscnrlds_25',['TSCNRLDS',['../classpycanha_1_1TSCNRLDS.html',1,'pycanha']]],
-  ['tscnrlds_5fjacobian_26',['TSCNRLDS_JACOBIAN',['../classpycanha_1_1TSCNRLDS__JACOBIAN.html',1,'pycanha']]]
+  ['triangulationconfig_20',['TriangulationConfig',['../structpycanha_1_1radiative_1_1TriangulationConfig.html',1,'pycanha::radiative']]],
+  ['trimesh_21',['TriMesh',['../classpycanha_1_1gmm_1_1TriMesh.html',1,'pycanha::gmm']]],
+  ['trimesh_3c_20double_20_3e_22',['TriMesh&lt; double &gt;',['../classpycanha_1_1gmm_1_1TriMesh.html',1,'pycanha::gmm']]],
+  ['trimesh_3c_20float_20_3e_23',['TriMesh&lt; float &gt;',['../classpycanha_1_1gmm_1_1TriMesh.html',1,'pycanha::gmm']]],
+  ['tscn_24',['TSCN',['../classpycanha_1_1TSCN.html',1,'pycanha']]],
+  ['tscnrl_25',['TSCNRL',['../classpycanha_1_1TSCNRL.html',1,'pycanha']]],
+  ['tscnrlds_26',['TSCNRLDS',['../classpycanha_1_1TSCNRLDS.html',1,'pycanha']]],
+  ['tscnrlds_5fjacobian_27',['TSCNRLDS_JACOBIAN',['../classpycanha_1_1TSCNRLDS__JACOBIAN.html',1,'pycanha']]]
 ];

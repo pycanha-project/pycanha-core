@@ -58,7 +58,8 @@ var annotated_dup =
       ] ],
       [ "radiative", null, [
         [ "detail", null, [
-          [ "EntryStats", "structpycanha_1_1radiative_1_1detail_1_1EntryStats.html", null ],
+          [ "BlueEstimate", "structpycanha_1_1radiative_1_1detail_1_1BlueEstimate.html", null ],
+          [ "ExchangeInputs", "structpycanha_1_1radiative_1_1detail_1_1ExchangeInputs.html", null ],
           [ "VfAccumImpl", "classpycanha_1_1radiative_1_1detail_1_1VfAccumImpl.html", null ],
           [ "ExchangeAccumImpl", "classpycanha_1_1radiative_1_1detail_1_1ExchangeAccumImpl.html", null ],
           [ "SolarAccumImpl", "classpycanha_1_1radiative_1_1detail_1_1SolarAccumImpl.html", "classpycanha_1_1radiative_1_1detail_1_1SolarAccumImpl" ],
@@ -67,11 +68,18 @@ var annotated_dup =
           [ "GpuBuffer", "structpycanha_1_1radiative_1_1detail_1_1GpuBuffer.html", null ],
           [ "InstanceDataGpu", "structpycanha_1_1radiative_1_1detail_1_1InstanceDataGpu.html", null ],
           [ "PushConstants", "structpycanha_1_1radiative_1_1detail_1_1PushConstants.html", null ],
-          [ "SceneImpl", "classpycanha_1_1radiative_1_1detail_1_1SceneImpl.html", "classpycanha_1_1radiative_1_1detail_1_1SceneImpl" ]
+          [ "SceneImpl", "classpycanha_1_1radiative_1_1detail_1_1SceneImpl.html", "classpycanha_1_1radiative_1_1detail_1_1SceneImpl" ],
+          [ "WeightTable", "classpycanha_1_1radiative_1_1detail_1_1WeightTable.html", null ],
+          [ "AssemblyTuning", "structpycanha_1_1radiative_1_1detail_1_1AssemblyTuning.html", null ],
+          [ "Weighting", "classpycanha_1_1radiative_1_1detail_1_1Weighting.html", null ],
+          [ "RowEntries", "structpycanha_1_1radiative_1_1detail_1_1RowEntries.html", null ],
+          [ "DenseCells", "structpycanha_1_1radiative_1_1detail_1_1DenseCells.html", null ],
+          [ "SparseCells", "structpycanha_1_1radiative_1_1detail_1_1SparseCells.html", null ]
         ] ],
         [ "VfAccumulator", "classpycanha_1_1radiative_1_1VfAccumulator.html", null ],
         [ "ExchangeAccumulator", "classpycanha_1_1radiative_1_1ExchangeAccumulator.html", null ],
         [ "SolarAccumulator", "classpycanha_1_1radiative_1_1SolarAccumulator.html", null ],
+        [ "AggregateResult", "structpycanha_1_1radiative_1_1AggregateResult.html", null ],
         [ "DeviceInfo", "structpycanha_1_1radiative_1_1DeviceInfo.html", null ],
         [ "Device", "classpycanha_1_1radiative_1_1Device.html", null ],
         [ "MaterialTable", "structpycanha_1_1radiative_1_1MaterialTable.html", null ],
@@ -84,8 +92,8 @@ var annotated_dup =
         [ "RadiativeScene", "classpycanha_1_1radiative_1_1RadiativeScene.html", null ],
         [ "ScenePart", "structpycanha_1_1radiative_1_1ScenePart.html", null ],
         [ "TraceSettings", "structpycanha_1_1radiative_1_1TraceSettings.html", null ],
+        [ "TriangulationConfig", "structpycanha_1_1radiative_1_1TriangulationConfig.html", null ],
         [ "AccumConfig", "structpycanha_1_1radiative_1_1AccumConfig.html", null ],
-        [ "SparseF64", "structpycanha_1_1radiative_1_1SparseF64.html", null ],
         [ "PhysicalDeviceCheck", "structpycanha_1_1radiative_1_1PhysicalDeviceCheck.html", null ]
       ] ],
       [ "random_generators", null, [

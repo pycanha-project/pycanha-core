@@ -45,6 +45,7 @@ var searchData=
   ['cube_42',['Cube',['../classpycanha_1_1gmm_1_1Cube.html',1,'pycanha::gmm']]],
   ['current_20implementation_20status_43',['Current implementation status',['../index.html#autotoc_md2',1,'']]],
   ['current_20repository_20usage_44',['Current repository usage',['../md_docs_2tools.html#autotoc_md23',1,'']]],
-  ['cutbackend_45',['CutBackend',['../classpycanha_1_1gmm_1_1cutting_1_1CutBackend.html',1,'pycanha::gmm::cutting']]],
-  ['cylinder_46',['Cylinder',['../classpycanha_1_1gmm_1_1Cylinder.html',1,'pycanha::gmm']]]
+  ['current_5flog_5ffile_45',['current_log_file',['../namespacepycanha.html#ac23dfbfb47261350ce220ee220885b40',1,'pycanha']]],
+  ['cutbackend_46',['CutBackend',['../classpycanha_1_1gmm_1_1cutting_1_1CutBackend.html',1,'pycanha::gmm::cutting']]],
+  ['cylinder_47',['Cylinder',['../classpycanha_1_1gmm_1_1Cylinder.html',1,'pycanha::gmm']]]
 ];

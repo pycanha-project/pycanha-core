@@ -1,5 +1,4 @@
 var searchData=
 [
-  ['remove_5fnode_0',['remove_node',['../classpycanha_1_1Nodes.html#a2d55736636b1f4ac3f7aa49ed4ec247d',1,'pycanha::Nodes']]],
-  ['rho_1',['rho',['../classpycanha_1_1conduction_1_1MeridianProfile.html#abd54e6c0d71879d38a296952afcce2fa',1,'pycanha::conduction::MeridianProfile']]]
+  ['potential_0',['potential',['../classpycanha_1_1conduction_1_1MeridianProfile.html#afbfd4ff9b4a8702b687a4093ca5ae8b0',1,'pycanha::conduction::MeridianProfile']]]
 ];

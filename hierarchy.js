@@ -1,7 +1,10 @@
 var hierarchy =
 [
     [ "pycanha::radiative::AccumConfig", "structpycanha_1_1radiative_1_1AccumConfig.html", null ],
+    [ "pycanha::radiative::AggregateResult", "structpycanha_1_1radiative_1_1AggregateResult.html", null ],
+    [ "pycanha::radiative::detail::AssemblyTuning", "structpycanha_1_1radiative_1_1detail_1_1AssemblyTuning.html", null ],
     [ "pycanha::radiative::detail::SolarAccumImpl::BatchSetup", "structpycanha_1_1radiative_1_1detail_1_1SolarAccumImpl_1_1BatchSetup.html", null ],
+    [ "pycanha::radiative::detail::BlueEstimate", "structpycanha_1_1radiative_1_1detail_1_1BlueEstimate.html", null ],
     [ "pycanha::conduction::BuildDiagnostic", "structpycanha_1_1conduction_1_1BuildDiagnostic.html", null ],
     [ "pycanha::gmm::BulkMaterial", "classpycanha_1_1gmm_1_1BulkMaterial.html", null ],
     [ "pycanha::CallbackContext", "classpycanha_1_1CallbackContext.html", null ],
@@ -24,6 +27,7 @@ var hierarchy =
     [ "pycanha::DataModel", "classpycanha_1_1DataModel.html", null ],
     [ "pycanha::DataModelStore", "classpycanha_1_1DataModelStore.html", null ],
     [ "pycanha::DataTableStore", "classpycanha_1_1DataTableStore.html", null ],
+    [ "pycanha::radiative::detail::DenseCells&lt; Cell &gt;", "structpycanha_1_1radiative_1_1detail_1_1DenseCells.html", null ],
     [ "pycanha::DenseMatrixTimeSeries", "classpycanha_1_1DenseMatrixTimeSeries.html", null ],
     [ "pycanha::DenseTimeSeries", "classpycanha_1_1DenseTimeSeries.html", null ],
     [ "pycanha::DerivativeParameterRegistry", "classpycanha_1_1DerivativeParameterRegistry.html", null ],
@@ -34,10 +38,10 @@ var hierarchy =
     [ "pycanha::EntitiesHelper", "classpycanha_1_1EntitiesHelper.html", null ],
     [ "pycanha::Entity", "classpycanha_1_1Entity.html", null ],
     [ "pycanha::detail::EntityOps", "structpycanha_1_1detail_1_1EntityOps.html", null ],
-    [ "pycanha::radiative::detail::EntryStats", "structpycanha_1_1radiative_1_1detail_1_1EntryStats.html", null ],
     [ "pycanha::ESATANReader", "classpycanha_1_1ESATANReader.html", null ],
     [ "pycanha::radiative::detail::ExchangeAccumImpl", "classpycanha_1_1radiative_1_1detail_1_1ExchangeAccumImpl.html", null ],
     [ "pycanha::radiative::ExchangeAccumulator", "classpycanha_1_1radiative_1_1ExchangeAccumulator.html", null ],
+    [ "pycanha::radiative::detail::ExchangeInputs", "structpycanha_1_1radiative_1_1detail_1_1ExchangeInputs.html", null ],
     [ "pycanha::radiative::ExchangeResult", "structpycanha_1_1radiative_1_1ExchangeResult.html", null ],
     [ "pycanha::Formula", "classpycanha_1_1Formula.html", [
       [ "pycanha::ExpressionFormula", "classpycanha_1_1ExpressionFormula.html", null ],
@@ -94,6 +98,7 @@ var hierarchy =
     [ "pycanha::radiative::RadiativeScene", "classpycanha_1_1radiative_1_1RadiativeScene.html", null ],
     [ "pycanha::random_generators::RealGenerator&lt; RandT &gt;", "classpycanha_1_1random__generators_1_1RealGenerator.html", null ],
     [ "pycanha::gmm::Rectangle", "classpycanha_1_1gmm_1_1Rectangle.html", null ],
+    [ "pycanha::radiative::detail::RowEntries", "structpycanha_1_1radiative_1_1detail_1_1RowEntries.html", null ],
     [ "pycanha::gmm::mesh::detail::SamplingPlan", "structpycanha_1_1gmm_1_1mesh_1_1detail_1_1SamplingPlan.html", null ],
     [ "pycanha::radiative::detail::SceneImpl", "classpycanha_1_1radiative_1_1detail_1_1SceneImpl.html", null ],
     [ "pycanha::radiative::ScenePart", "structpycanha_1_1radiative_1_1ScenePart.html", null ],
@@ -117,7 +122,7 @@ var hierarchy =
     ] ],
     [ "pycanha::SolverOutputConfig", "structpycanha_1_1SolverOutputConfig.html", null ],
     [ "pycanha::SolverRegistry", "classpycanha_1_1SolverRegistry.html", null ],
-    [ "pycanha::radiative::SparseF64", "structpycanha_1_1radiative_1_1SparseF64.html", null ],
+    [ "pycanha::radiative::detail::SparseCells", "structpycanha_1_1radiative_1_1detail_1_1SparseCells.html", null ],
     [ "pycanha::SparseTimeSeries", "classpycanha_1_1SparseTimeSeries.html", null ],
     [ "pycanha::gmm::Sphere", "classpycanha_1_1gmm_1_1Sphere.html", null ],
     [ "pycanha::gmm::detail::SphereFrame", "structpycanha_1_1gmm_1_1detail_1_1SphereFrame.html", null ],
@@ -134,10 +139,13 @@ var hierarchy =
     [ "pycanha::radiative::TraceSettings", "structpycanha_1_1radiative_1_1TraceSettings.html", null ],
     [ "pycanha::radiative::TraceStats", "structpycanha_1_1radiative_1_1TraceStats.html", null ],
     [ "pycanha::gmm::Triangle", "classpycanha_1_1gmm_1_1Triangle.html", null ],
+    [ "pycanha::radiative::TriangulationConfig", "structpycanha_1_1radiative_1_1TriangulationConfig.html", null ],
     [ "pycanha::gmm::TriMesh&lt; Scalar &gt;", "classpycanha_1_1gmm_1_1TriMesh.html", null ],
     [ "pycanha::gmm::UvMesher", "classpycanha_1_1gmm_1_1UvMesher.html", null ],
     [ "pycanha::gmm::mesh::ops::detail::ValidateEdgeHash", "structpycanha_1_1gmm_1_1mesh_1_1ops_1_1detail_1_1ValidateEdgeHash.html", null ],
     [ "pycanha::radiative::detail::VfAccumImpl", "classpycanha_1_1radiative_1_1detail_1_1VfAccumImpl.html", null ],
     [ "pycanha::radiative::VfAccumulator", "classpycanha_1_1radiative_1_1VfAccumulator.html", null ],
-    [ "pycanha::radiative::VfResult", "structpycanha_1_1radiative_1_1VfResult.html", null ]
+    [ "pycanha::radiative::VfResult", "structpycanha_1_1radiative_1_1VfResult.html", null ],
+    [ "pycanha::radiative::detail::Weighting", "classpycanha_1_1radiative_1_1detail_1_1Weighting.html", null ],
+    [ "pycanha::radiative::detail::WeightTable", "classpycanha_1_1radiative_1_1detail_1_1WeightTable.html", null ]
 ];

@@ -51,10 +51,18 @@ var namespacepycanha =
     [ "Instrumentor", "classpycanha_1_1Instrumentor.html", null ],
     [ "InstrumentationTimer", "classpycanha_1_1InstrumentationTimer.html", null ],
     [ "create_ostream_logger", "namespacepycanha.html#a87d68876c66af5fddcbbfde5c82c80e6", null ],
+    [ "current_log_file", "namespacepycanha.html#ac23dfbfb47261350ce220ee220885b40", null ],
+    [ "display_level", "namespacepycanha.html#a5641768ec196e1512c413386c1fef7e6", null ],
+    [ "file_output", "namespacepycanha.html#ac112ce2467e39fb4243848f0ea25a105", null ],
+    [ "flush", "namespacepycanha.html#a8157dec7ac1c24961abe09e83fe89df4", null ],
     [ "get_logger", "namespacepycanha.html#af116674b7649af0e33b3d7e78ecb1b1b", null ],
     [ "get_profiling_logger", "namespacepycanha.html#aa10488c2ff5bd88e91d25b92af8f7733", null ],
     [ "get_python_logger", "namespacepycanha.html#a986a70b1a008f250032d3580e2696ec9", null ],
+    [ "log_directory", "namespacepycanha.html#a99d5025e530ce403f77ed3e87ed0f384", null ],
     [ "log_noexcept", "namespacepycanha.html#abe6cb830e8474b6527b461ec6d7539f6", null ],
-    [ "set_logger_level", "namespacepycanha.html#a08752753ff47555d437f581a37fc88f7", null ],
-    [ "set_python_logger_level", "namespacepycanha.html#a046e6c70018788fee7e68442286f8e6f", null ]
+    [ "record_level", "namespacepycanha.html#ac97c80cce754c64f0db7994f8ba711c3", null ],
+    [ "set_display_level", "namespacepycanha.html#ad988a84a03aea68cfebfc57baaea9da6", null ],
+    [ "set_file_output", "namespacepycanha.html#aa53f45bd55aced2b0fe67d57f08c630b", null ],
+    [ "set_log_directory", "namespacepycanha.html#ac31aff4af616acdb25e9bda34ef294dc", null ],
+    [ "set_record_level", "namespacepycanha.html#a1a9da2050305eea55ad3c39bb7e1a765", null ]
 ];

@@ -289,8 +289,26 @@ std::vector&lt; Index &gt;&#160;</td><td class="memItemRight" valign="bottom"><b
 <tr class="memitem:a87d68876c66af5fddcbbfde5c82c80e6" id="r_a87d68876c66af5fddcbbfde5c82c80e6"><td class="memItemLeft" align="right" valign="top"><a id="a87d68876c66af5fddcbbfde5c82c80e6" name="a87d68876c66af5fddcbbfde5c82c80e6"></a>
 std::shared_ptr&lt; spdlog::logger &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>create_ostream_logger</b> (std::string_view name, std::ostream &amp;stream, spdlog::level::level_enum level=spdlog::level::info)</td></tr>
 <tr class="memdesc:a87d68876c66af5fddcbbfde5c82c80e6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a logger that writes to the given ostream (useful for testing). <br /></td></tr>
-<tr class="memitem:a08752753ff47555d437f581a37fc88f7" id="r_a08752753ff47555d437f581a37fc88f7"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a08752753ff47555d437f581a37fc88f7">set_logger_level</a> (spdlog::level::level_enum level)</td></tr>
-<tr class="memitem:a046e6c70018788fee7e68442286f8e6f" id="r_a046e6c70018788fee7e68442286f8e6f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a046e6c70018788fee7e68442286f8e6f">set_python_logger_level</a> (spdlog::level::level_enum level)</td></tr>
+<tr class="memitem:a1a9da2050305eea55ad3c39bb7e1a765" id="r_a1a9da2050305eea55ad3c39bb7e1a765"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a1a9da2050305eea55ad3c39bb7e1a765">set_record_level</a> (spdlog::level::level_enum level)</td></tr>
+<tr class="memitem:ac97c80cce754c64f0db7994f8ba711c3" id="r_ac97c80cce754c64f0db7994f8ba711c3"><td class="memItemLeft" align="right" valign="top"><a id="ac97c80cce754c64f0db7994f8ba711c3" name="ac97c80cce754c64f0db7994f8ba711c3"></a>
+spdlog::level::level_enum&#160;</td><td class="memItemRight" valign="bottom"><b>record_level</b> ()</td></tr>
+<tr class="memdesc:ac97c80cce754c64f0db7994f8ba711c3"><td class="mdescLeft">&#160;</td><td class="mdescRight">The current record threshold. <br /></td></tr>
+<tr class="memitem:ad988a84a03aea68cfebfc57baaea9da6" id="r_ad988a84a03aea68cfebfc57baaea9da6"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ad988a84a03aea68cfebfc57baaea9da6">set_display_level</a> (spdlog::level::level_enum level)</td></tr>
+<tr class="memitem:a5641768ec196e1512c413386c1fef7e6" id="r_a5641768ec196e1512c413386c1fef7e6"><td class="memItemLeft" align="right" valign="top"><a id="a5641768ec196e1512c413386c1fef7e6" name="a5641768ec196e1512c413386c1fef7e6"></a>
+spdlog::level::level_enum&#160;</td><td class="memItemRight" valign="bottom"><b>display_level</b> ()</td></tr>
+<tr class="memdesc:a5641768ec196e1512c413386c1fef7e6"><td class="mdescLeft">&#160;</td><td class="mdescRight">The current display threshold. <br /></td></tr>
+<tr class="memitem:aa53f45bd55aced2b0fe67d57f08c630b" id="r_aa53f45bd55aced2b0fe67d57f08c630b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aa53f45bd55aced2b0fe67d57f08c630b">set_file_output</a> (bool enabled)</td></tr>
+<tr class="memitem:ac112ce2467e39fb4243848f0ea25a105" id="r_ac112ce2467e39fb4243848f0ea25a105"><td class="memItemLeft" align="right" valign="top"><a id="ac112ce2467e39fb4243848f0ea25a105" name="ac112ce2467e39fb4243848f0ea25a105"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>file_output</b> ()</td></tr>
+<tr class="memdesc:ac112ce2467e39fb4243848f0ea25a105"><td class="mdescLeft">&#160;</td><td class="mdescRight">Whether writing to disk is enabled. <br /></td></tr>
+<tr class="memitem:ac31aff4af616acdb25e9bda34ef294dc" id="r_ac31aff4af616acdb25e9bda34ef294dc"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ac31aff4af616acdb25e9bda34ef294dc">set_log_directory</a> (std::filesystem::path directory)</td></tr>
+<tr class="memitem:a99d5025e530ce403f77ed3e87ed0f384" id="r_a99d5025e530ce403f77ed3e87ed0f384"><td class="memItemLeft" align="right" valign="top"><a id="a99d5025e530ce403f77ed3e87ed0f384" name="a99d5025e530ce403f77ed3e87ed0f384"></a>
+std::filesystem::path&#160;</td><td class="memItemRight" valign="bottom"><b>log_directory</b> ()</td></tr>
+<tr class="memdesc:a99d5025e530ce403f77ed3e87ed0f384"><td class="mdescLeft">&#160;</td><td class="mdescRight">The configured log directory. <br /></td></tr>
+<tr class="memitem:ac23dfbfb47261350ce220ee220885b40" id="r_ac23dfbfb47261350ce220ee220885b40"><td class="memItemLeft" align="right" valign="top">std::filesystem::path&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ac23dfbfb47261350ce220ee220885b40">current_log_file</a> ()</td></tr>
+<tr class="memitem:a8157dec7ac1c24961abe09e83fe89df4" id="r_a8157dec7ac1c24961abe09e83fe89df4"><td class="memItemLeft" align="right" valign="top"><a id="a8157dec7ac1c24961abe09e83fe89df4" name="a8157dec7ac1c24961abe09e83fe89df4"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>flush</b> ()</td></tr>
+<tr class="memdesc:a8157dec7ac1c24961abe09e83fe89df4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Flush both loggers. <br /></td></tr>
 <tr class="memitem:a768d7bf588a6a1fcbd00cb2bfa6c7914" id="r_a768d7bf588a6a1fcbd00cb2bfa6c7914"><td class="memItemLeft" align="right" valign="top"><a id="a768d7bf588a6a1fcbd00cb2bfa6c7914" name="a768d7bf588a6a1fcbd00cb2bfa6c7914"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>print_package_info</b> ()</td></tr>
 </table><table class="memberdecls">
@@ -342,6 +360,32 @@ constexpr MeshIndex&#160;</td><td class="memItemRight" valign="bottom"><b>INVALI
 <li>etc.. </li>
 </ul>
 </div><a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Function Documentation</h2>
+<a id="ac23dfbfb47261350ce220ee220885b40" name="ac23dfbfb47261350ce220ee220885b40"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac23dfbfb47261350ce220ee220885b40">&#9670;&#160;</a></span>current_log_file()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::filesystem::path pycanha::current_log_file </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel nodiscard">nodiscard</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>The log file currently open, or an empty path when there is none: file output disabled, nothing logged yet (the file is created on the first record, not at startup), or the directory could not be written to. </p>
+
+</div>
+</div>
 <a id="af116674b7649af0e33b3d7e78ecb1b1b" name="af116674b7649af0e33b3d7e78ecb1b1b"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#af116674b7649af0e33b3d7e78ecb1b1b">&#9670;&#160;</a></span>get_logger()</h2>
 
@@ -356,7 +400,8 @@ constexpr MeshIndex&#160;</td><td class="memItemRight" valign="bottom"><b>INVALI
         </tr>
       </table>
 </div><div class="memdoc">
-<p>Main library logger ("pycanha-core"). Default level: info. Pattern: [HH:MM:SS.mmm] [logger-name] [level] message </p>
+<p>Main library logger ("pycanha-core").</p>
+<p>Writes to two sinks that carry independent levels: a console sink on stderr, filtered by the display threshold, and a daily file sink, filtered by the record threshold. That split is what lets the library keep a full record on disk while staying quiet on the console. </p>
 
 </div>
 </div>
@@ -392,12 +437,8 @@ constexpr MeshIndex&#160;</td><td class="memItemRight" valign="bottom"><b>INVALI
         </tr>
       </table>
 </div><div class="memdoc">
-<p>Python-facing logger ("pycanha-python") sharing the main logger sinks. Default level: inherits the main logger level at creation time. Pattern: [HH:MM:SS.mmm] [logger-name] [level] message </p>
-<div class="dynheader">
-Here is the call graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="namespacepycanha_a986a70b1a008f250032d3580e2696ec9_cgraph.svg" width="370" height="56"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
-</div>
+<p>Logger for records originating outside the C++ core ("pycanha").</p>
+<p>Shares the main logger's sinks and level, so both origins land in one file with one clock and one configuration. The logger name is what distinguishes them in the output. </p>
 
 </div>
 </div>
@@ -437,49 +478,78 @@ Here is the call graph for this function:</div>
 
 </div>
 </div>
-<a id="a08752753ff47555d437f581a37fc88f7" name="a08752753ff47555d437f581a37fc88f7"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a08752753ff47555d437f581a37fc88f7">&#9670;&#160;</a></span>set_logger_level()</h2>
+<a id="ad988a84a03aea68cfebfc57baaea9da6" name="ad988a84a03aea68cfebfc57baaea9da6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad988a84a03aea68cfebfc57baaea9da6">&#9670;&#160;</a></span>set_display_level()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">void pycanha::set_logger_level </td>
+          <td class="memname">void pycanha::set_display_level </td>
           <td>(</td>
           <td class="paramtype">spdlog::level::level_enum</td>          <td class="paramname"><span class="paramname"><em>level</em></span></td><td>)</td>
           <td></td>
         </tr>
       </table>
 </div><div class="memdoc">
-<p>Change the main logger level at runtime. Throws std::invalid_argument if the requested level is more verbose than the compile-time SPDLOG_ACTIVE_LEVEL. </p>
-<div class="dynheader">
-Here is the call graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="namespacepycanha_a08752753ff47555d437f581a37fc88f7_cgraph.svg" width="364" height="56"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
-</div>
+<p>Set the threshold for what reaches the console. Defaults to warn; spdlog::level::off silences the console entirely.</p>
+<p>Throws std::invalid_argument on the same grounds as set_record_level. </p>
 
 </div>
 </div>
-<a id="a046e6c70018788fee7e68442286f8e6f" name="a046e6c70018788fee7e68442286f8e6f"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a046e6c70018788fee7e68442286f8e6f">&#9670;&#160;</a></span>set_python_logger_level()</h2>
+<a id="aa53f45bd55aced2b0fe67d57f08c630b" name="aa53f45bd55aced2b0fe67d57f08c630b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa53f45bd55aced2b0fe67d57f08c630b">&#9670;&#160;</a></span>set_file_output()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">void pycanha::set_python_logger_level </td>
+          <td class="memname">void pycanha::set_file_output </td>
+          <td>(</td>
+          <td class="paramtype">bool</td>          <td class="paramname"><span class="paramname"><em>enabled</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Master switch for writing to disk. When disabled nothing is created or written under the log directory; the console still receives records.</p>
+<p>Callers that write their own report files alongside the log are expected to honour this too, so that turning it off leaves the filesystem untouched. </p>
+
+</div>
+</div>
+<a id="ac31aff4af616acdb25e9bda34ef294dc" name="ac31aff4af616acdb25e9bda34ef294dc"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac31aff4af616acdb25e9bda34ef294dc">&#9670;&#160;</a></span>set_log_directory()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void pycanha::set_log_directory </td>
+          <td>(</td>
+          <td class="paramtype">std::filesystem::path</td>          <td class="paramname"><span class="paramname"><em>directory</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Directory holding the daily log file. Relative paths are resolved against the current working directory every time a file is opened, so this follows the process rather than the location the library was installed to. Defaults to "logs". </p>
+
+</div>
+</div>
+<a id="a1a9da2050305eea55ad3c39bb7e1a765" name="a1a9da2050305eea55ad3c39bb7e1a765"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1a9da2050305eea55ad3c39bb7e1a765">&#9670;&#160;</a></span>set_record_level()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void pycanha::set_record_level </td>
           <td>(</td>
           <td class="paramtype">spdlog::level::level_enum</td>          <td class="paramname"><span class="paramname"><em>level</em></span></td><td>)</td>
           <td></td>
         </tr>
       </table>
 </div><div class="memdoc">
-<p>Change the Python logger level at runtime. Throws std::invalid_argument if the requested level is more verbose than the compile-time SPDLOG_ACTIVE_LEVEL. </p>
-<div class="dynheader">
-Here is the call graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="namespacepycanha_a046e6c70018788fee7e68442286f8e6f_cgraph.svg" width="574" height="56"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
-</div>
+<p>Set the threshold for what is produced at all, and therefore what reaches the log file. Defaults to info.</p>
+<p>Throws std::invalid_argument if the requested level is more verbose than the compile-time SPDLOG_ACTIVE_LEVEL, which already stripped those calls. </p>
 
 </div>
 </div>

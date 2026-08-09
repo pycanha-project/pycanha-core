@@ -12,10 +12,12 @@ var searchData=
   ['add_5fsum_5fcoupling_5ffrom_5fnode_5fidxs_5fverbose_9',['add_sum_coupling_from_node_idxs_verbose',['../classpycanha_1_1CouplingMatrices.html#af34b080ded161758f3233564ddd1e04a',1,'pycanha::CouplingMatrices']]],
   ['additional_20documentation_10',['Additional documentation',['../index.html#autotoc_md5',1,'']]],
   ['after_20conan_20install_11',['Eigen3 not found after conan install',['../md_docs_2faq.html#autotoc_md37',1,'']]],
-  ['analysis_20tools_12',['Static analysis tools',['../md_docs_2tools.html#autotoc_md10',1,'']]],
-  ['and_20pull_20requests_13',['Continuous validation on &lt;span class=&quot;tt&quot;&gt;main&lt;/span&gt; and pull requests',['../md_docs_2cicd.html#autotoc_md28',1,'']]],
-  ['and_20runtime_20status_14',['Build and runtime status',['../index.html#autotoc_md4',1,'']]],
-  ['and_20versioning_15',['Releases and versioning',['../md_docs_2workflow.html#autotoc_md25',1,'']]],
-  ['aph_5fvector_16',['aph_vector',['../classpycanha_1_1Nodes.html#a3634a1005bab0c128b3bba5507225870',1,'pycanha::Nodes']]],
-  ['awesome_20css_17',['Doxygen + graphviz + Doxygen Awesome CSS',['../md_docs_2tools.html#autotoc_md19',1,'']]]
+  ['aggregateresult_12',['AggregateResult',['../structpycanha_1_1radiative_1_1AggregateResult.html',1,'pycanha::radiative']]],
+  ['analysis_20tools_13',['Static analysis tools',['../md_docs_2tools.html#autotoc_md10',1,'']]],
+  ['and_20pull_20requests_14',['Continuous validation on &lt;span class=&quot;tt&quot;&gt;main&lt;/span&gt; and pull requests',['../md_docs_2cicd.html#autotoc_md28',1,'']]],
+  ['and_20runtime_20status_15',['Build and runtime status',['../index.html#autotoc_md4',1,'']]],
+  ['and_20versioning_16',['Releases and versioning',['../md_docs_2workflow.html#autotoc_md25',1,'']]],
+  ['aph_5fvector_17',['aph_vector',['../classpycanha_1_1Nodes.html#a3634a1005bab0c128b3bba5507225870',1,'pycanha::Nodes']]],
+  ['assemblytuning_18',['AssemblyTuning',['../structpycanha_1_1radiative_1_1detail_1_1AssemblyTuning.html',1,'pycanha::radiative::detail']]],
+  ['awesome_20css_19',['Doxygen + graphviz + Doxygen Awesome CSS',['../md_docs_2tools.html#autotoc_md19',1,'']]]
 ];

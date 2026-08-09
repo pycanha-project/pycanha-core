@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=11"/>
 <meta name="generator" content="Doxygen 1.15.0"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>pycanha-core: pycanha::radiative::SparseF64 Struct Reference</title>
+<title>pycanha-core: pycanha::radiative::detail::RowEntries Struct Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -65,7 +65,7 @@ $(function() {
   </div>
 </div>
 <script type="text/javascript">
-$(function(){initNavTree('structpycanha_1_1radiative_1_1SparseF64.html','','structpycanha_1_1radiative_1_1SparseF64-members'); });
+$(function(){initNavTree('structpycanha_1_1radiative_1_1detail_1_1RowEntries.html','','structpycanha_1_1radiative_1_1detail_1_1RowEntries-members'); });
 </script>
 <div id="container">
 <div id="doc-content">
@@ -91,30 +91,28 @@ $(function(){initNavTree('structpycanha_1_1radiative_1_1SparseF64.html','','stru
 </div>
 
 <div class="header">
-  <div class="headertitle"><div class="title">pycanha::radiative::SparseF64 Struct Reference</div></div>
+  <div class="headertitle"><div class="title">pycanha::radiative::detail::RowEntries Struct Reference</div></div>
 </div><!--header-->
 <div class="contents">
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-methods" class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a45c33ff3c572ff3ff18c4babf89978c3" id="r_a45c33ff3c572ff3ff18c4babf89978c3"><td class="memItemLeft" align="right" valign="top"><a id="a45c33ff3c572ff3ff18c4babf89978c3" name="a45c33ff3c572ff3ff18c4babf89978c3"></a>
-std::int64_t&#160;</td><td class="memItemRight" valign="bottom"><b>nnz</b> () const noexcept</td></tr>
+<tr class="memitem:a8b29d9fc28478804d41b9a7de074c58c" id="r_a8b29d9fc28478804d41b9a7de074c58c"><td class="memItemLeft" align="right" valign="top"><a id="a8b29d9fc28478804d41b9a7de074c58c" name="a8b29d9fc28478804d41b9a7de074c58c"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>push</b> (std::size_t column, double value)</td></tr>
+<tr class="memitem:a111868eba064f100e524757eee55a540" id="r_a111868eba064f100e524757eee55a540"><td class="memItemLeft" align="right" valign="top"><a id="a111868eba064f100e524757eee55a540" name="a111868eba064f100e524757eee55a540"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>push</b> (std::size_t column, double value, double variance)</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-attribs" class="groupheader"><a id="pub-attribs" name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
-<tr class="memitem:abe534030540ca1aefd2d7997e32f576a" id="r_abe534030540ca1aefd2d7997e32f576a"><td class="memItemLeft" align="right" valign="top"><a id="abe534030540ca1aefd2d7997e32f576a" name="abe534030540ca1aefd2d7997e32f576a"></a>
-Eigen::VectorX&lt; std::int64_t &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>indptr</b></td></tr>
-<tr class="memitem:a5c6c0e4fb198234bfaf2a7f603339b99" id="r_a5c6c0e4fb198234bfaf2a7f603339b99"><td class="memItemLeft" align="right" valign="top"><a id="a5c6c0e4fb198234bfaf2a7f603339b99" name="a5c6c0e4fb198234bfaf2a7f603339b99"></a>
-Eigen::VectorX&lt; std::int32_t &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>indices</b></td></tr>
-<tr class="memitem:aa1459a43a605927de5c227fefcd7066d" id="r_aa1459a43a605927de5c227fefcd7066d"><td class="memItemLeft" align="right" valign="top"><a id="aa1459a43a605927de5c227fefcd7066d" name="aa1459a43a605927de5c227fefcd7066d"></a>
-Eigen::VectorXd&#160;</td><td class="memItemRight" valign="bottom"><b>values</b></td></tr>
-<tr class="memitem:a5a22c1b4a6fb2f2df805471689206469" id="r_a5a22c1b4a6fb2f2df805471689206469"><td class="memItemLeft" align="right" valign="top"><a id="a5a22c1b4a6fb2f2df805471689206469" name="a5a22c1b4a6fb2f2df805471689206469"></a>
-std::int64_t&#160;</td><td class="memItemRight" valign="bottom"><b>rows</b> = 0</td></tr>
-<tr class="memitem:a225553a2848e9620f91252b203d584b9" id="r_a225553a2848e9620f91252b203d584b9"><td class="memItemLeft" align="right" valign="top"><a id="a225553a2848e9620f91252b203d584b9" name="a225553a2848e9620f91252b203d584b9"></a>
-std::int64_t&#160;</td><td class="memItemRight" valign="bottom"><b>cols</b> = 0</td></tr>
+<tr class="memitem:a149d5ea84f052b38aaa049ff32f3f425" id="r_a149d5ea84f052b38aaa049ff32f3f425"><td class="memItemLeft" align="right" valign="top"><a id="a149d5ea84f052b38aaa049ff32f3f425" name="a149d5ea84f052b38aaa049ff32f3f425"></a>
+std::vector&lt; SparseIndex &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>columns</b></td></tr>
+<tr class="memitem:a69e5b4bf5b785eef08d5b7ce56be3b14" id="r_a69e5b4bf5b785eef08d5b7ce56be3b14"><td class="memItemLeft" align="right" valign="top"><a id="a69e5b4bf5b785eef08d5b7ce56be3b14" name="a69e5b4bf5b785eef08d5b7ce56be3b14"></a>
+std::vector&lt; double &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>values</b></td></tr>
+<tr class="memitem:a0fa0846207ed1ebc7e4e925f9b785596" id="r_a0fa0846207ed1ebc7e4e925f9b785596"><td class="memItemLeft" align="right" valign="top"><a id="a0fa0846207ed1ebc7e4e925f9b785596" name="a0fa0846207ed1ebc7e4e925f9b785596"></a>
+std::vector&lt; double &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>variances</b></td></tr>
 </table>
 <hr/>The documentation for this struct was generated from the following file:<ul>
-<li>pycanha-core/include/pycanha-core/radiative/<a class="el" href="sparse_8hpp_source.html">sparse.hpp</a></li>
+<li>pycanha-core/src/radiative/<a class="el" href="pair__walk_8hpp_source.html">pair_walk.hpp</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->
@@ -129,7 +127,7 @@ std::int64_t&#160;</td><td class="memItemRight" valign="bottom"><b>cols</b> = 0<
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a href="namespacepycanha.html">pycanha</a></li><li class="navelem"><b>radiative</b></li><li class="navelem"><a href="structpycanha_1_1radiative_1_1SparseF64.html">SparseF64</a></li>
+    <li class="navelem"><a href="namespacepycanha.html">pycanha</a></li><li class="navelem"><b>radiative</b></li><li class="navelem"><b>detail</b></li><li class="navelem"><a href="structpycanha_1_1radiative_1_1detail_1_1RowEntries.html">RowEntries</a></li>
     <li class="footer">Generated by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.15.0 </li>
   </ul>
 </div>

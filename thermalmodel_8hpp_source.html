@@ -148,22 +148,22 @@ $(function(){initNavTree('thermalmodel_8hpp_source.html','',''); });
 <div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>    [[nodiscard]] <a class="code hl_class" href="classpycanha_1_1CallbackRegistry.html">CallbackRegistry</a>&amp; callbacks() <span class="keyword">noexcept</span>;</div>
 <div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>    [[nodiscard]] <span class="keyword">const</span> <a class="code hl_class" href="classpycanha_1_1CallbackRegistry.html">CallbackRegistry</a>&amp; callbacks() <span class="keyword">const</span> <span class="keyword">noexcept</span>;</div>
 <div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span></div>
-<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>    [[nodiscard]] <a class="code hl_struct" href="structpycanha_1_1conduction_1_1TmmBuildReport.html">conduction::TmmBuildReport</a> <a class="code hl_function" href="classpycanha_1_1ThermalModel.html#a36a4d4e854904c0a1c4dd7567cf2fec6">build_tmm_from_gmm</a>(</div>
-<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>        <span class="keyword">const</span> <a class="code hl_struct" href="structpycanha_1_1conduction_1_1TmmBuildOptions.html">conduction::TmmBuildOptions</a>&amp; options = {});</div>
-<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span> </div>
-<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>  <span class="keyword">private</span>:</div>
-<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>    std::string _name;</div>
-<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>    std::shared_ptr&lt;ThermalMathematicalModel&gt; _tmm;</div>
-<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>    std::shared_ptr&lt;gmm::GeometryModel&gt; _gmm;</div>
-<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>    std::shared_ptr&lt;Parameters&gt; _parameters;</div>
-<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>    std::shared_ptr&lt;Formulas&gt; _formulas;</div>
-<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>    std::shared_ptr&lt;ThermalData&gt; _thermal_data;</div>
-<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>    std::shared_ptr&lt;SolverRegistry&gt; _solvers;</div>
-<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>    std::shared_ptr&lt;CallbackRegistry&gt; _callbacks;</div>
-<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>};</div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>    [[nodiscard]] <a class="code hl_struct" href="structpycanha_1_1conduction_1_1TmmBuildReport.html">conduction::TmmBuildReport</a> <a class="code hl_function" href="classpycanha_1_1ThermalModel.html#a36a4d4e854904c0a1c4dd7567cf2fec6">build_tmm_from_gmm</a>(</div>
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>        <span class="keyword">const</span> <a class="code hl_struct" href="structpycanha_1_1conduction_1_1TmmBuildOptions.html">conduction::TmmBuildOptions</a>&amp; options = {});</div>
+<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span> </div>
+<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>  <span class="keyword">private</span>:</div>
+<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>    std::string _name;</div>
+<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>    std::shared_ptr&lt;ThermalMathematicalModel&gt; _tmm;</div>
+<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>    std::shared_ptr&lt;gmm::GeometryModel&gt; _gmm;</div>
+<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>    std::shared_ptr&lt;Parameters&gt; _parameters;</div>
+<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>    std::shared_ptr&lt;Formulas&gt; _formulas;</div>
+<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>    std::shared_ptr&lt;ThermalData&gt; _thermal_data;</div>
+<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>    std::shared_ptr&lt;SolverRegistry&gt; _solvers;</div>
+<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>    std::shared_ptr&lt;CallbackRegistry&gt; _callbacks;</div>
+<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>};</div>
 </div>
-<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span> </div>
-<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>}  <span class="comment">// namespace pycanha</span></div>
+<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span> </div>
+<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>}  <span class="comment">// namespace pycanha</span></div>
 <div class="ttc" id="aclasspycanha_1_1CallbackRegistry_html"><div class="ttname"><a href="classpycanha_1_1CallbackRegistry.html">pycanha::CallbackRegistry</a></div><div class="ttdef"><b>Definition</b> callback_registry.hpp:28</div></div>
 <div class="ttc" id="aclasspycanha_1_1Formulas_html"><div class="ttname"><a href="classpycanha_1_1Formulas.html">pycanha::Formulas</a></div><div class="ttdef"><b>Definition</b> formulas.hpp:44</div></div>
 <div class="ttc" id="aclasspycanha_1_1Parameters_html"><div class="ttname"><a href="classpycanha_1_1Parameters.html">pycanha::Parameters</a></div><div class="ttdef"><b>Definition</b> parameters.hpp:17</div></div>
@@ -174,7 +174,7 @@ $(function(){initNavTree('thermalmodel_8hpp_source.html','',''); });
 <div class="ttc" id="aclasspycanha_1_1gmm_1_1GeometryModel_html"><div class="ttname"><a href="classpycanha_1_1gmm_1_1GeometryModel.html">pycanha::gmm::GeometryModel</a></div><div class="ttdef"><b>Definition</b> geometrymodel.hpp:27</div></div>
 <div class="ttc" id="anamespacepycanha_html"><div class="ttname"><a href="namespacepycanha.html">pycanha</a></div><div class="ttdoc">C++ Implementation of ThermalConductos (TCs).</div><div class="ttdef"><b>Definition</b> builder.hpp:5</div></div>
 <div class="ttc" id="astructpycanha_1_1conduction_1_1TmmBuildOptions_html"><div class="ttname"><a href="structpycanha_1_1conduction_1_1TmmBuildOptions.html">pycanha::conduction::TmmBuildOptions</a></div><div class="ttdoc">Knobs of the gmm -&gt; tmm conduction build.</div><div class="ttdef"><b>Definition</b> options.hpp:12</div></div>
-<div class="ttc" id="astructpycanha_1_1conduction_1_1TmmBuildReport_html"><div class="ttname"><a href="structpycanha_1_1conduction_1_1TmmBuildReport.html">pycanha::conduction::TmmBuildReport</a></div><div class="ttdef"><b>Definition</b> options.hpp:69</div></div>
+<div class="ttc" id="astructpycanha_1_1conduction_1_1TmmBuildReport_html"><div class="ttname"><a href="structpycanha_1_1conduction_1_1TmmBuildReport.html">pycanha::conduction::TmmBuildReport</a></div><div class="ttdef"><b>Definition</b> options.hpp:72</div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->

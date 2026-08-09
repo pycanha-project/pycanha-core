@@ -10,7 +10,7 @@ var searchData=
   ['solver_7',['Solver',['../classpycanha_1_1Solver.html',1,'pycanha']]],
   ['solveroutputconfig_8',['SolverOutputConfig',['../structpycanha_1_1SolverOutputConfig.html',1,'pycanha']]],
   ['solverregistry_9',['SolverRegistry',['../classpycanha_1_1SolverRegistry.html',1,'pycanha']]],
-  ['sparsef64_10',['SparseF64',['../structpycanha_1_1radiative_1_1SparseF64.html',1,'pycanha::radiative']]],
+  ['sparsecells_10',['SparseCells',['../structpycanha_1_1radiative_1_1detail_1_1SparseCells.html',1,'pycanha::radiative::detail']]],
   ['sparsetimeseries_11',['SparseTimeSeries',['../classpycanha_1_1SparseTimeSeries.html',1,'pycanha']]],
   ['sphere_12',['Sphere',['../classpycanha_1_1gmm_1_1Sphere.html',1,'pycanha::gmm']]],
   ['sphereframe_13',['SphereFrame',['../structpycanha_1_1gmm_1_1detail_1_1SphereFrame.html',1,'pycanha::gmm::detail']]],

@@ -1,18 +1,20 @@
 <map id="pycanha::radiative::detail::ExchangeAccumImpl" name="pycanha::radiative::detail::ExchangeAccumImpl">
-<area shape="rect" id="Node000001" title=" " alt="" coords="813,573,1024,617"/>
-<area shape="rect" id="Node000002" href="$classpycanha_1_1radiative_1_1detail_1_1SceneImpl.html" title=" " alt="" coords="569,182,711,227"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="668,237,904,572,898,572,665,242"/>
-<area shape="rect" id="Node000003" href="$classpycanha_1_1radiative_1_1detail_1_1DeviceImpl.html" title=" " alt="" coords="229,117,377,161"/>
-<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="392,146,468,157,546,172,572,181,567,182,544,178,467,162,393,151"/>
-<area shape="rect" id="Node000004" href="$structpycanha_1_1radiative_1_1DeviceInfo.html" title=" " alt="" coords="5,117,148,161"/>
-<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="162,137,230,137,226,141,165,141"/>
-<area shape="rect" id="Node000005" href="$structpycanha_1_1radiative_1_1MaterialTable.html" title=" " alt="" coords="232,186,374,231"/>
-<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="389,205,571,204,567,207,390,210"/>
-<area shape="rect" id="Node000006" href="$structpycanha_1_1radiative_1_1detail_1_1GpuBuffer.html" title=" " alt="" coords="232,550,374,595"/>
-<area shape="poly" id="edge8_Node000001_Node000006" title=" " alt="" coords="389,573,401,574,815,589,811,593,401,579,390,579"/>
-<area shape="poly" id="edge5_Node000002_Node000006" title=" " alt="" coords="389,575,429,572,470,564,509,549,543,526,573,492,595,454,612,412,624,369,635,288,638,230,641,225,641,288,629,370,617,414,600,456,577,496,547,530,511,554,471,569,430,577,390,580"/>
-<area shape="rect" id="Node000007" href="$structpycanha_1_1radiative_1_1detail_1_1SceneImpl_1_1KernelBindings.html" title=" " alt="" coords="232,31,374,92"/>
-<area shape="poly" id="edge6_Node000002_Node000007" title=" " alt="" coords="389,69,468,87,508,101,546,118,588,148,622,182,617,182,585,152,544,123,506,106,466,92,390,75"/>
-<area shape="rect" id="Node000008" href="$structpycanha_1_1radiative_1_1AccumConfig.html" title=" " alt="" coords="569,643,711,688"/>
-<area shape="poly" id="edge7_Node000001_Node000008" title=" " alt="" coords="726,650,789,636,853,618,859,618,790,641,727,655"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="819,573,1030,618"/>
+<area shape="rect" id="Node000002" href="$classpycanha_1_1radiative_1_1detail_1_1SceneImpl.html" title=" " alt="" coords="575,182,717,227"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="674,237,910,572,904,573,671,242"/>
+<area shape="rect" id="Node000003" href="$classpycanha_1_1radiative_1_1detail_1_1DeviceImpl.html" title=" " alt="" coords="232,117,380,162"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="394,146,472,157,552,173,579,181,573,182,550,178,471,162,396,151"/>
+<area shape="rect" id="Node000004" href="$structpycanha_1_1radiative_1_1DeviceInfo.html" title=" " alt="" coords="5,117,148,162"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="162,137,233,137,229,141,165,141"/>
+<area shape="rect" id="Node000005" href="$structpycanha_1_1radiative_1_1MaterialTable.html" title=" " alt="" coords="235,186,377,231"/>
+<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="392,205,577,204,572,207,393,210"/>
+<area shape="rect" id="Node000006" href="$structpycanha_1_1radiative_1_1detail_1_1GpuBuffer.html" title=" " alt="" coords="235,550,377,595"/>
+<area shape="poly" id="edge9_Node000001_Node000006" title=" " alt="" coords="393,573,407,574,821,590,817,593,407,579,393,579"/>
+<area shape="poly" id="edge5_Node000002_Node000006" title=" " alt="" coords="392,575,433,572,475,564,514,549,549,526,579,493,601,454,618,412,630,369,641,288,644,230,647,225,647,288,635,370,623,414,606,456,583,496,553,530,517,554,476,569,433,578,393,581"/>
+<area shape="rect" id="Node000007" href="$structpycanha_1_1radiative_1_1detail_1_1SceneImpl_1_1KernelBindings.html" title=" " alt="" coords="235,31,377,93"/>
+<area shape="poly" id="edge6_Node000002_Node000007" title=" " alt="" coords="392,69,472,87,513,101,552,118,594,148,628,182,623,182,591,152,550,123,511,106,471,92,393,74"/>
+<area shape="rect" id="Node000008" href="$structpycanha_1_1radiative_1_1AccumConfig.html" title=" " alt="" coords="575,644,717,688"/>
+<area shape="poly" id="edge7_Node000001_Node000008" title=" " alt="" coords="732,650,795,636,859,619,865,618,796,641,733,655"/>
+<area shape="rect" id="Node000009" href="$structpycanha_1_1radiative_1_1TriangulationConfig.html" title=" " alt="" coords="229,644,383,688"/>
+<area shape="poly" id="edge8_Node000008_Node000009" title=" " alt="" coords="399,663,577,666,572,666,399,669"/>
 </map>
