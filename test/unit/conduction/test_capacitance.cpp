@@ -115,9 +115,9 @@ TEST_CASE("capacitance: mismatched bulks are summed and reported",
             Catch::Approx((2.0 * 3.0 * 0.1) + (4.0 * 5.0 * 0.1)));
 }
 
-TEST_CASE("capacitance: a conductively inactive side contributes nothing",
+TEST_CASE("capacitance: a radiative-only side keeps its node and its mass",
           "[conduction][builder]") {
-    ThermalModel model("inactive_side");
+    ThermalModel model("radiative_only_side");
     ThermalMesh mesh;
     const auto bulk = make_bulk("alu");
     mesh.set_side1_material(bulk);
@@ -126,10 +126,37 @@ TEST_CASE("capacitance: a conductively inactive side contributes nothing",
     mesh.set_side2_thick(0.05);
     mesh.set_node1_start(1);
     mesh.set_node2_start(2);
-    // Side 2 still radiates, so it keeps its optical role, but it must not
-    // produce a node or any capacitance.
+    // Side 2 radiates without conducting: it is part of the model, so it gets
+    // its node and its half of the shell's mass. Only the conductors go.
     mesh.set_conductive_active_side(ActiveSide::Side1);
     mesh.set_radiative_active_side(ActiveSide::Both);
+    model.gmm().add(make_plate("plate", std::move(mesh)));
+
+    const TmmBuildReport report = model.build_tmm_from_gmm();
+    REQUIRE(report.nodes_created == 2U);
+    REQUIRE(has_code(report, DiagnosticCode::InactiveSideSkipped));
+    REQUIRE(model.tmm().nodes().is_node(1));
+    REQUIRE(model.tmm().nodes().is_node(2));
+    REQUIRE(model.tmm().nodes().get_C(2) == Catch::Approx(2.0 * 3.0 * 0.05));
+    REQUIRE(model.tmm().nodes().get_a(2) == Catch::Approx(1.0));
+    // Side 2 is out of the through-thickness series, so the two nodes are not
+    // linked.
+    REQUIRE(report.conductors_created == 0U);
+}
+
+TEST_CASE("capacitance: a side active in neither physics contributes nothing",
+          "[conduction][builder]") {
+    ThermalModel model("dead_side");
+    ThermalMesh mesh;
+    const auto bulk = make_bulk("alu");
+    mesh.set_side1_material(bulk);
+    mesh.set_side2_material(bulk);
+    mesh.set_side1_thick(0.05);
+    mesh.set_side2_thick(0.05);
+    mesh.set_node1_start(1);
+    mesh.set_node2_start(2);
+    mesh.set_conductive_active_side(ActiveSide::Side1);
+    mesh.set_radiative_active_side(ActiveSide::Side1);
     model.gmm().add(make_plate("plate", std::move(mesh)));
 
     const TmmBuildReport report = model.build_tmm_from_gmm();
@@ -137,6 +164,29 @@ TEST_CASE("capacitance: a conductively inactive side contributes nothing",
     REQUIRE(has_code(report, DiagnosticCode::InactiveSideSkipped));
     REQUIRE(model.tmm().nodes().is_node(1));
     REQUIRE_FALSE(model.tmm().nodes().is_node(2));
+}
+
+TEST_CASE("capacitance: a dual-surfaced node drops its inactive side's mass",
+          "[conduction][builder]") {
+    ThermalModel model("dual_surfaced_one_side_dead");
+    ThermalMesh mesh;
+    const auto bulk = make_bulk("alu");
+    mesh.set_side1_material(bulk);
+    mesh.set_side2_material(bulk);
+    mesh.set_side1_thick(0.05);
+    mesh.set_side2_thick(0.02);
+    // One node fed by both sides, but side 2 takes part in neither physics.
+    mesh.set_node1_start(7);
+    mesh.set_node2_start(7);
+    mesh.set_conductive_active_side(ActiveSide::Side1);
+    mesh.set_radiative_active_side(ActiveSide::Side1);
+    model.gmm().add(make_plate("plate", std::move(mesh)));
+
+    const TmmBuildReport report = model.build_tmm_from_gmm();
+    REQUIRE(report.nodes_created == 1U);
+    // Side 1 alone: t2 is not there to add.
+    REQUIRE(model.tmm().nodes().get_C(7) == Catch::Approx(2.0 * 3.0 * 0.05));
+    REQUIRE(model.tmm().nodes().get_a(7) == Catch::Approx(1.0));
 }
 
 TEST_CASE("capacitance: a conductive-only side still builds its node",

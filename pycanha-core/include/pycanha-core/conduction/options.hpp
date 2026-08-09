@@ -30,12 +30,15 @@ enum class DiagnosticCode : std::uint8_t {
     CutGeometrySkipped,
     /// The primitive produces no faces at all (Cube is cutter-only).
     UnmeshedPrimitive,
-    /// A side excluded by the conductive active-side selector.
+    /// A side carrying node numbers that one of the active-side selectors
+    /// excludes: either it takes part in neither physics, and so contributes
+    /// nothing at all, or it is radiative only, and so defines nodes with
+    /// capacitance but no conductors.
     InactiveSideSkipped,
-    /// No bulk material on a conductively active side: the side still defines
-    /// nodes, but with no capacitance and no conductors.
+    /// No bulk material on an active side: the side still defines nodes, but
+    /// with no capacitance and no conductors.
     MissingBulk,
-    /// Zero thickness on a conductively active side.
+    /// Zero thickness on an active side.
     ZeroThickness,
     /// Zero conductivity on a conductively active side.
     ZeroConductivity,

@@ -51,10 +51,11 @@ class ThermalModel {
     [[nodiscard]] CallbackRegistry& callbacks() noexcept;
     [[nodiscard]] const CallbackRegistry& callbacks() const noexcept;
 
-    /// Populates the tmm from the gmm: one node per conductively active face
-    /// slot that carries a node number, plus the in-plane and
-    /// through-thickness conductors those slots imply. Requires an empty tmm;
-    /// see pycanha::conduction::build_tmm_from_gmm.
+    /// Populates the tmm from the gmm: one node per active face slot that
+    /// carries a node number — active meaning it takes part in conduction,
+    /// radiation or both — plus the in-plane and through-thickness conductors
+    /// the conductively active ones imply. Requires an empty tmm; see
+    /// pycanha::conduction::build_tmm_from_gmm.
     [[nodiscard]] conduction::TmmBuildReport build_tmm_from_gmm(
         const conduction::TmmBuildOptions& options = {});
 

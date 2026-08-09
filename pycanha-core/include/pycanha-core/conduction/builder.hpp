@@ -11,10 +11,17 @@ namespace pycanha::conduction {
 /**
  * @brief Populates a model's tmm from its gmm: nodes and conductive couplings.
  *
- * Every conductively active face slot that carries a node number contributes
- * its capacitance, its area and its centroid to that node, and every pair of
- * adjacent cells contributes an in-plane conductor. Face pairs whose two sides
- * carry different node numbers additionally get a through-thickness conductor.
+ * Every active face slot that carries a node number contributes its
+ * capacitance, its area and its centroid to that node. A slot is active when
+ * its side takes part in either physics, so a radiative-only side gets its
+ * nodes too; a side that takes part in neither contributes nothing, even when
+ * the other side of the same face pair carries the same node number.
+ *
+ * Conductors are conduction-only. Every pair of adjacent cells on a
+ * conductively active side contributes an in-plane conductor, and face pairs
+ * whose two sides conduct and carry different node numbers additionally get a
+ * through-thickness conductor. A node fed by radiative-only slots therefore
+ * exists, with capacitance and area, but with no conductor attached.
  *
  * Radiative couplings, parameters, formulas and thermal data are left
  * untouched. Geometry inside a boolean-cut group is skipped: its cell grid no

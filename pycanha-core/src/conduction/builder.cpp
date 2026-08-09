@@ -65,6 +65,12 @@ struct SlotGeometry {
 
 // Everything one side of one item contributes.
 struct SideProperties {
+    /// Takes part in either physics. That is the "this side of the shell
+    /// exists" test, so it is what decides whether the side defines nodes and
+    /// hands them its thermal mass, its area and its centroid.
+    bool active = false;
+    /// Takes part in conduction. Only the conductors depend on this: a
+    /// radiative-only side still has a node and still carries its mass.
     bool conductive = false;
     bool has_nodes = false;
     double capacitance_per_area = 0.0;
@@ -81,8 +87,20 @@ struct ItemSides {
     [[nodiscard]] const SideProperties& of(unsigned side) const noexcept {
         return side == 1U ? side1 : side2;
     }
-    [[nodiscard]] bool any_conductive() const noexcept {
-        return side1.conductive || side2.conductive;
+    [[nodiscard]] bool any_active() const noexcept {
+        return side1.active || side2.active;
+    }
+    /// Some side both carries node numbers and takes part in a physics, so the
+    /// item has nodes to contribute to.
+    [[nodiscard]] bool contributes_nodes() const noexcept {
+        return (side1.has_nodes && side1.active) ||
+               (side2.has_nodes && side2.active);
+    }
+    /// The same, narrowed to conduction: whether any conductor can come out of
+    /// this item.
+    [[nodiscard]] bool contributes_conductors() const noexcept {
+        return (side1.has_nodes && side1.conductive) ||
+               (side2.has_nodes && side2.conductive);
     }
 };
 
@@ -252,22 +270,33 @@ void report_axis_singularity(const MeridianProfile& profile,
 void describe_side(const gmm::ThermalMesh& thermal_mesh, unsigned side,
                    const std::string& item_name, SideProperties& properties,
                    TmmBuildReport& report) {
+    // A side that takes part in either physics exists as far as the tmm is
+    // concerned: it defines nodes and hands them the shell's thermal mass on
+    // that side, whether or not it also conducts. Conduction is gated
+    // separately and only reaches the conductors.
+    properties.active = thermal_mesh.is_side_active(side);
+    properties.conductive = thermal_mesh.is_conductive_active(side);
+
     // Only a side that carries node numbers can contribute, so has_nodes gates
-    // every diagnostic below: a shell that is simply single-sided, or one
-    // meshed for the radiative path alone, must not fill the report with noise.
-    if (!thermal_mesh.is_conductive_active(side)) {
-        if (properties.has_nodes) {
-            report_diagnostic(
-                report, DiagnosticCode::InactiveSideSkipped, item_name,
-                "'" + item_name + "' side " + std::to_string(side) +
-                    " carries node numbers but is conductively inactive: no "
-                    "node, no capacitance, no conductor");
-        }
-        return;
-    }
-    properties.conductive = true;
+    // every diagnostic below: a shell that is simply single-sided must not fill
+    // the report with noise.
     if (!properties.has_nodes) {
         return;
+    }
+    if (!properties.active) {
+        report_diagnostic(report, DiagnosticCode::InactiveSideSkipped,
+                          item_name,
+                          "'" + item_name + "' side " + std::to_string(side) +
+                              " carries node numbers but takes part in neither "
+                              "physics: no node, no capacitance, no conductor");
+        return;
+    }
+    if (!properties.conductive) {
+        report_diagnostic(report, DiagnosticCode::InactiveSideSkipped,
+                          item_name,
+                          "'" + item_name + "' side " + std::to_string(side) +
+                              " is radiative only: it defines nodes and gives "
+                              "them its capacitance, but no conductor");
     }
 
     const auto& material = side == 1U ? thermal_mesh.get_side1_material()
@@ -277,9 +306,8 @@ void describe_side(const gmm::ThermalMesh& thermal_mesh, unsigned side,
     if (material == nullptr) {
         report_diagnostic(report, DiagnosticCode::MissingBulk, item_name,
                           "'" + item_name + "' side " + std::to_string(side) +
-                              " is conductively active but has no bulk "
-                              "material: its nodes get no capacitance and no "
-                              "conductors");
+                              " is active but has no bulk material: its nodes "
+                              "get no capacitance and no conductors");
         return;
     }
     properties.bulk = material.get();
@@ -290,7 +318,9 @@ void describe_side(const gmm::ThermalMesh& thermal_mesh, unsigned side,
                               "conductors");
         return;
     }
-    if (material->get_conductivity() <= 0.0) {
+    // Conductivity only ever feeds the conductors, so a side that does not
+    // conduct has nothing to say about it.
+    if (properties.conductive && material->get_conductivity() <= 0.0) {
         report_diagnostic(report, DiagnosticCode::ZeroConductivity, item_name,
                           "'" + item_name + "' side " + std::to_string(side) +
                               " has zero conductivity: it carries capacitance "
@@ -358,7 +388,9 @@ void accumulate_item_nodes(const ItemCells& cells, const ItemSides& sides,
     for (std::size_t cell = 0; cell < cells.count(); ++cell) {
         for (const unsigned side : {1U, 2U}) {
             const SideProperties& properties = sides.of(side);
-            if (!properties.conductive) {
+            // Per slot, so when both sides map to one node only the sides that
+            // are actually there hand it area and mass.
+            if (!properties.active) {
                 continue;
             }
             const NodeNum node = cells.node_of(cell, side);
@@ -430,17 +462,16 @@ void process_item(const std::shared_ptr<GeometryItem>& item,
                       context.report);
     }
 
-    if (!sides.any_conductive()) {
+    if (!sides.any_active()) {
         ++context.report.items_skipped;
         return;
     }
-    if (!(sides.side1.has_nodes && sides.side1.conductive) &&
-        !(sides.side2.has_nodes && sides.side2.conductive)) {
-        report_diagnostic(context.report, DiagnosticCode::NoNodeNumbers,
-                          item_name,
-                          "'" + item_name +
-                              "' has no node numbers on any conductively "
-                              "active side: it contributes nothing");
+    if (!sides.contributes_nodes()) {
+        report_diagnostic(
+            context.report, DiagnosticCode::NoNodeNumbers, item_name,
+            "'" + item_name +
+                "' has no node numbers on any active side: it contributes "
+                "nothing");
         ++context.report.items_skipped;
         return;
     }
@@ -449,8 +480,10 @@ void process_item(const std::shared_ptr<GeometryItem>& item,
     accumulate_item_nodes(cells, sides, context);
 
     // Both of these describe how the in-plane conductors are obtained, so
-    // neither has anything to say when they are turned off.
-    if (context.options.intra_primitive_conductors) {
+    // neither has anything to say when they are turned off, nor on an item
+    // whose nodes come from radiation alone.
+    if (context.options.intra_primitive_conductors &&
+        sides.contributes_conductors()) {
         if (const auto profile = profile_of(item->primitive());
             profile.has_value()) {
             report_axis_singularity(*profile, thermal_mesh, item_name,

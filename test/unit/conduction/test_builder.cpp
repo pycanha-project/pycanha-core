@@ -63,6 +63,21 @@ using pycanha::gmm::Triangle;
     return mesh;
 }
 
+// A one-cell shell whose two sides carry their own node number and their own
+// thickness over the same unit bulk. Both sides start active in both physics.
+[[nodiscard]] ThermalMesh two_sided_shell(pycanha::NodeNum node1,
+                                          pycanha::NodeNum node2, double thick1,
+                                          double thick2) {
+    ThermalMesh mesh;
+    mesh.set_side1_material(unit_bulk());
+    mesh.set_side2_material(unit_bulk());
+    mesh.set_side1_thick(thick1);
+    mesh.set_side2_thick(thick2);
+    mesh.set_node1_start(node1);
+    mesh.set_node2_start(node2);
+    return mesh;
+}
+
 [[nodiscard]] std::shared_ptr<GeometryItem> make_plate(
     const std::string& name, ThermalMesh mesh,
     CoordinateTransformation transform = {}) {
@@ -221,6 +236,29 @@ TEST_CASE("builder: intra-primitive conductors can be switched off",
     REQUIRE(report.nodes_created == 2U);
     REQUIRE(report.cell_links_computed == 0U);
     REQUIRE(report.conductors_created == 0U);
+}
+
+TEST_CASE("builder: an item that only radiates still builds its nodes",
+          "[conduction][builder]") {
+    ThermalModel model("radiative_only_item");
+    // Two cells, so there would be an in-plane link on each side if any side
+    // conducted.
+    // The default step of 0 puts both cells of a side on that side's node.
+    ThermalMesh mesh = two_sided_shell(1, 2, 1.0, 2.0);
+    mesh.set_dir1_mesh({0.0, 0.5, 1.0});
+    mesh.set_conductive_active_side(ActiveSide::None);
+    mesh.set_radiative_active_side(ActiveSide::Both);
+    model.gmm().add(make_plate("plate", std::move(mesh)));
+
+    const TmmBuildReport report = model.build_tmm_from_gmm();
+    REQUIRE(report.items_processed == 1U);
+    REQUIRE(report.nodes_created == 2U);
+    // Both cells of a side feed that side's node.
+    REQUIRE(model.tmm().nodes().get_a(1) == Catch::Approx(1.0));
+    REQUIRE(model.tmm().nodes().get_C(2) == Catch::Approx(2.0));
+    REQUIRE(report.cell_links_computed == 0U);
+    REQUIRE(report.conductors_created == 0U);
+    REQUIRE(num_conductors(model) == 0);
 }
 
 TEST_CASE("builder: a non-empty tmm is refused", "[conduction][builder]") {

@@ -81,8 +81,9 @@ class ThermalMesh {
 
     // --- Activity, one selector per physics ---
     // Radiative activity gates the optical/view-factor path; conductive
-    // activity gates capacitance and conductor generation. They are
-    // independent: neither implies the other.
+    // activity gates conductor generation. They are independent: neither
+    // implies the other. Taking part in either is what makes a side exist for
+    // the tmm, so that is what gates its nodes and their capacitance.
     [[nodiscard]] ActiveSide get_radiative_active_side() const noexcept {
         return _radiative_active_side;
     }
