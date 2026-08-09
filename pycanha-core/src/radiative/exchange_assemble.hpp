@@ -10,15 +10,21 @@
 // .mm file produces no error, no warning and no failing test until someone
 // with Apple hardware next builds the branch. Keeping the logic here means
 // the only Metal-side code is a call.
+//
+// The traversal itself — the cache-blocked tile-pair walk, the sparse merge,
+// the weight table, the CSR packing — is shared with the view-factor
+// assembly and lives in pair_walk.hpp. What stays here is only what knows
+// that a cell is fixed-point deposited energy.
 
 #include <cstdint>
 #include <span>
 #include <variant>
+#include <vector>
 
+#include "pair_walk.hpp"
 #include "pycanha-core/radiative/materials.hpp"
 #include "pycanha-core/radiative/results.hpp"
 #include "pycanha-core/radiative/settings.hpp"
-#include "vf_assemble.hpp"
 
 namespace pycanha::radiative::detail {
 
@@ -37,15 +43,30 @@ namespace pycanha::radiative::detail {
 using ExchangeCellSource =
     std::variant<std::span<const std::uint64_t>, std::span<const HostCountRow>>;
 
-// `rays_per_row` is per face slot and defines the slot count; the result
-// matrix has one row per slot and num_virtual_columns extra bucket columns.
-// `fp_scale` is the power of two the accumulator fixed on its first batch (0
-// when nothing was ever traced, which yields an empty result). Ray counts
-// and trace timings that belong to the accumulator rather than the cells
-// (total_rays, rays_per_face, gpu_time) are filled in by the caller.
+// The traced band's absorptivity per face slot, which is what weights
+// emission and absorption alike. A slot with no material assigned is a
+// blackbody (the scene warns about that at build time), so it reads 1.
+[[nodiscard]] std::vector<double> band_emissivity(
+    const MaterialTable& materials, Band band);
+
+struct ExchangeInputs {
+    ExchangeCellSource cells;
+    // Per face slot; `rays_per_row` defines the slot count.
+    std::span<const double> areas;
+    std::span<const double> emissivity;
+    std::span<const std::uint64_t> rays_per_row;
+    // The power of two the accumulator fixed on its first batch, or 0 when
+    // nothing was ever traced (which yields an empty result).
+    double fp_scale = 0.0;
+    Band band = Band::IR;
+};
+
+// Ray counts and trace timings that belong to the accumulator rather than
+// the cells (total_rays, rays_per_face, gpu_time) are filled in by the
+// caller.
 [[nodiscard]] ExchangeResult assemble_exchange(
-    ExchangeCellSource cells, std::span<const std::uint64_t> rays_per_row,
-    double fp_scale, Band band, const AccumConfig& config);
+    const ExchangeInputs& in, const AccumConfig& config,
+    const AssemblyTuning& tuning = {});
 
 // Largest deviation of a row's total deposits from the energy that row
 // emitted, in fixed-point units. Everything wraps mod 2^64 — the identity

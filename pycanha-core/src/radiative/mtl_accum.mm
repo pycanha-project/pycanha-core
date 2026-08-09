@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "exchange_assemble.hpp"
+#include "pair_walk.hpp"
 #include "mtl_device.hpp"
 #include "mtl_scene.hpp"
 #include "pycanha-core/radiative/materials.hpp"
@@ -47,12 +48,6 @@ namespace {
 // invalidate around it.
 void clear_cells(const GpuBuffer& buffer) {
     std::memset(checked_mapped(buffer), 0, buffer.size);
-}
-
-// Matrix row stride: the real face columns plus the virtual
-// space/inactive/lost bucket columns.
-[[nodiscard]] std::size_t matrix_columns(std::size_t slots) {
-    return slots + static_cast<std::size_t>(num_virtual_columns);
 }
 
 }  // namespace
@@ -226,8 +221,16 @@ ExchangeCellSource ExchangeAccumImpl::cells() const {
 }
 
 ExchangeResult ExchangeAccumImpl::build_result() const {
+    const std::vector<double> emissivity =
+        band_emissivity(_scene.materials(), _band);
     ExchangeResult result =
-        assemble_exchange(cells(), _rays_per_row, _fp_scale, _band, _config);
+        assemble_exchange(ExchangeInputs{.cells = cells(),
+                                         .areas = _scene.face_areas(),
+                                         .emissivity = emissivity,
+                                         .rays_per_row = _rays_per_row,
+                                         .fp_scale = _fp_scale,
+                                         .band = _band},
+                          _config);
     result.stats.total_rays = _total_rays;
     result.stats.rays_per_face = _rays_per_face;
     return result;

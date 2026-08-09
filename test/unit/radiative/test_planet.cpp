@@ -96,11 +96,15 @@ TEST_CASE("radiative planet: a celestial part blocks, scores and never emits",
     // ignored), so the plate row deposits full ray energy on planet
     // columns; the sphere at distance 3 subtends ~sin^2(asin(1/3)) of the
     // upward hemisphere.
-    double to_planet = 0.0;
+    double to_planet_extensive = 0.0;
     const auto slots = static_cast<std::int32_t>(scene.num_face_slots());
     for (std::int32_t col = planet_first_slot; col < slots; ++col) {
-        to_planet += csr_value(result.factors, 0, col);
+        to_planet_extensive += csr_value(result.factors, 0, col);
     }
+    // The stored value is the extensive A_i eps_i B_ij; dividing the
+    // emissive area back out recovers the intensive share.
+    const double to_planet =
+        to_planet_extensive / (scene.face_areas()[0] * 0.5);
     REQUIRE(to_planet == Catch::Approx(1.0 / 9.0).margin(0.02));
     REQUIRE(acc.conservation_error() == 0);
 

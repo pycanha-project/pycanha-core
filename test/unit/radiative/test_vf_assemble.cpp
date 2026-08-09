@@ -19,6 +19,7 @@
 
 #include "pycanha-core/radiative/results.hpp"
 #include "pycanha-core/radiative/settings.hpp"
+#include "radiative/pair_walk.hpp"
 #include "radiative/vf_assemble.hpp"
 
 namespace rad = pycanha::radiative;

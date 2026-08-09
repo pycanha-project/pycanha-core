@@ -43,10 +43,11 @@ struct TraceStats {
     // Per-entry standard-error estimates.
     double mean_stderr = 0.0;
     double max_stderr = 0.0;
-    // VF only: max |Ai*Fij - Aj*Fji| (normalized), measured on the RAW
-    // estimates before they are combined. Measured after combining it would
-    // be identically zero by construction and would stop being the
-    // winding/parity check it exists to be.
+    // Matrix results: the largest normalized disagreement of the two
+    // directions of a face pair, measured on the RAW estimates before they
+    // are combined. Measured after combining it would be identically zero
+    // by construction and would stop being the winding/parity check it
+    // exists to be.
     double reciprocity_residual = 0.0;
     // Exchange only: energy killed below the threshold.
     double lost_energy_fraction = 0.0;
@@ -87,9 +88,36 @@ struct VfResult {
     TraceStats stats;
 };
 
+// Same shape and the same convention as VfResult: rows are face slots,
+// columns are the slots plus the virtual bucket columns, and only the UPPER
+// TRIANGLE of the real face columns is kept.
+//
+// The stored value is the SYMMETRIC, EXTENSIVE quantity
+//
+//     H_ij = A_i eps_i B_ij = A_j eps_j B_ji     (units m^2)
+//
+// where B is the Gebhart absorption factor the kernel traces (deposited
+// energy per unit emitted) and eps is the traced band's absorptivity. H is
+// what actually transports heat and what the node-level GR is built from, so
+// storing it is what makes the upper triangle lossless: both factors come
+// back as B_ij = H_ij/(A_i eps_i) and B_ji = H_ij/(A_j eps_j).
+//
+// A slot with eps = 0 in the traced band is the one case where that does not
+// invert. It needs no special handling because there is nothing to recover:
+// such a face absorbs nothing, so B_ji = 0 for every j, and it emits nothing,
+// so its row transports no heat whatever the kernel's unit-energy rays did.
+// Both directions vanish consistently and H stays reciprocal. `full_factors`
+// keeps the raw B for anyone who wants the geometry behind that zero.
 struct ExchangeResult {
     Band band = Band::IR;
     SparseMatrix factors;
+    // The raw, untriangulated INTENSIVE B with BOTH triangles, present only
+    // when TriangulationConfig::keep_full_matrix asked for it. Deliberately
+    // not the extensive H that `full_vf` would suggest: for view factors the
+    // intensive form is always recoverable because areas are positive, for
+    // exchange it is not, so the debugging matrix carries the form that
+    // cannot be reconstructed.
+    std::optional<SparseMatrix> full_factors;
     TraceStats stats;
 };
 

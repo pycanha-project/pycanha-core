@@ -178,8 +178,11 @@ TEST_CASE("radiative gebhart: matrix path agrees with the MCRT kernel",
     const rad::SparseMatrix gebhart =
         rad::gebhart_factors(vf.vf, emissivity, scene.face_areas());
 
-    REQUIRE(csr_value(mcrt.factors, 0, 2) ==
+    // The MCRT matrix stores the extensive A_i eps_i B_ij, the Gebhart solve
+    // the intensive B, so the emissive area comes back out before comparing.
+    const double emissive = scene.face_areas()[0] * eps;
+    REQUIRE(csr_value(mcrt.factors, 0, 2) / emissive ==
             Catch::Approx(csr_value(gebhart, 0, 2)).margin(0.02));
-    REQUIRE(csr_value(mcrt.factors, 0, 0) ==
+    REQUIRE(csr_value(mcrt.factors, 0, 0) / emissive ==
             Catch::Approx(csr_value(gebhart, 0, 0)).margin(0.02));
 }

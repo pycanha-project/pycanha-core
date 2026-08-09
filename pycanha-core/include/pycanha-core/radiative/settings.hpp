@@ -44,12 +44,21 @@ enum class TriangulationMode : std::uint8_t {
     // factor that cancels. n = 1 makes this exactly inverse-variance
     // (minimum-variance) weighting; the default n = 0.4 is the more
     // aggressive, empirically tuned rule the reference implementation uses.
+    //
+    // The SAME proxy applies to the exchange kernel even though that kernel
+    // deposits energy rather than unit hits: its per-cell variance carries a
+    // further factor eps_i eps_j, which appears in both directions and
+    // therefore cancels out of the weight along with everything else.
     RayDensity,
 };
 
 struct TriangulationConfig {
     TriangulationMode mode = TriangulationMode::RayDensity;
-    // Must be > 0. 1.0 reduces the weight to inverse-variance weighting.
+    // Must be > 0. 1.0 reduces the weight to inverse-variance weighting,
+    // which measured marginally better than 0.4 on the exchange path (where
+    // the ray-density proxy is exact rather than empirical) — 0.4 is kept as
+    // the single default for both paths so that a default-constructed config
+    // never means two different things.
     double exponent = 0.4;
     // Also keep the raw, untriangulated matrix (both triangles) alongside
     // the combined upper triangle. Off at every model size: it doubles the
@@ -65,17 +74,15 @@ struct AccumConfig {
     // row sums and every other statistic are computed BEFORE thresholding,
     // so closure/conservation accounting stays exact. 0 keeps any nonzero.
     //
-    // The VF matrix compares on the INTENSIVE value max(F_ij, F_ji), which
-    // is the stored G_ij divided by the smaller of the two face areas, so a
-    // pair is dropped only when both directions are negligible. That
-    // comparison happens AFTER the two directions are combined: dropping
-    // them independently first would leave a surviving entry combined
-    // against a zero, which re-breaks the reciprocity just imposed and
-    // biases the survivor low.
+    // Both matrices compare on the INTENSIVE value: max(F_ij, F_ji) is the
+    // stored G_ij over the smaller face area, max(B_ij, B_ji) the stored
+    // H_ij over the smaller A*eps. A pair is therefore dropped only when
+    // both directions are negligible. That comparison happens AFTER the two
+    // directions are combined: dropping them independently first would leave
+    // a surviving entry combined against a zero, which re-breaks the
+    // reciprocity just imposed and biases the survivor low.
     double sparse_threshold = 0.0;
-    // VF only; the exchange kernel deposits energy rather than unit hits,
-    // so its effective sample size is not the ray count and this variance
-    // proxy does not apply to it.
+    // Applies to the VF and the exchange accumulator alike.
     TriangulationConfig triangulation;
 };
 
