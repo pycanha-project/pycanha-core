@@ -149,6 +149,8 @@ var annotated_dup =
       [ "ProfileResult", "structpycanha_1_1ProfileResult.html", null ],
       [ "InstrumentationSession", "structpycanha_1_1InstrumentationSession.html", null ],
       [ "Instrumentor", "classpycanha_1_1Instrumentor.html", null ],
-      [ "InstrumentationTimer", "classpycanha_1_1InstrumentationTimer.html", null ]
+      [ "InstrumentationTimer", "classpycanha_1_1InstrumentationTimer.html", null ],
+      [ "LogRecord", "structpycanha_1_1LogRecord.html", "structpycanha_1_1LogRecord" ],
+      [ "LogDrain", "structpycanha_1_1LogDrain.html", null ]
     ] ]
 ];

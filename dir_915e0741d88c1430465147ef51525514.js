@@ -2,6 +2,7 @@ var dir_915e0741d88c1430465147ef51525514 =
 [
     [ "eigenutils.hpp", "eigenutils_8hpp_source.html", null ],
     [ "Instrumentor.hpp", "Instrumentor_8hpp_source.html", null ],
+    [ "log_record.hpp", "log__record_8hpp_source.html", null ],
     [ "logger.hpp", "logger_8hpp_source.html", null ],
     [ "package_info.hpp", "package__info_8hpp_source.html", null ],
     [ "profiling.hpp", "profiling_8hpp_source.html", null ],

@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['side_0',['side',['../structpycanha_1_1conduction_1_1CellLink.html#a335155cf6f579abd5d5a42d2af246338',1,'pycanha::conduction::CellLink']]]
+  ['pid_0',['pid',['../structpycanha_1_1LogRecord.html#ae8619918e9c8321dbcfc82d6fbd65e8a',1,'pycanha::LogRecord']]]
 ];

@@ -28,7 +28,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.18</span>
+   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.19</span>
    </div>
    <div id="projectbrief">The C++ core of pycanha</div>
   </td>
@@ -151,6 +151,8 @@ Classes</h2></td></tr>
 <tr class="memitem:InstrumentationSession" id="r_InstrumentationSession"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structpycanha_1_1InstrumentationSession.html">InstrumentationSession</a></td></tr>
 <tr class="memitem:Instrumentor" id="r_Instrumentor"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classpycanha_1_1Instrumentor.html">Instrumentor</a></td></tr>
 <tr class="memitem:InstrumentationTimer" id="r_InstrumentationTimer"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classpycanha_1_1InstrumentationTimer.html">InstrumentationTimer</a></td></tr>
+<tr class="memitem:LogRecord" id="r_LogRecord"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structpycanha_1_1LogRecord.html">LogRecord</a></td></tr>
+<tr class="memitem:LogDrain" id="r_LogDrain"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structpycanha_1_1LogDrain.html">LogDrain</a></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-typedef-members" class="groupheader"><a id="typedef-members" name="typedef-members"></a>
 Typedefs</h2></td></tr>
@@ -289,6 +291,7 @@ std::vector&lt; Index &gt;&#160;</td><td class="memItemRight" valign="bottom"><b
 <tr class="memitem:a87d68876c66af5fddcbbfde5c82c80e6" id="r_a87d68876c66af5fddcbbfde5c82c80e6"><td class="memItemLeft" align="right" valign="top"><a id="a87d68876c66af5fddcbbfde5c82c80e6" name="a87d68876c66af5fddcbbfde5c82c80e6"></a>
 std::shared_ptr&lt; spdlog::logger &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>create_ostream_logger</b> (std::string_view name, std::ostream &amp;stream, spdlog::level::level_enum level=spdlog::level::info)</td></tr>
 <tr class="memdesc:a87d68876c66af5fddcbbfde5c82c80e6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a logger that writes to the given ostream (useful for testing). <br /></td></tr>
+<tr class="memitem:a9cfe035dad15ee3146ffa08404e39384" id="r_a9cfe035dad15ee3146ffa08404e39384"><td class="memItemLeft" align="right" valign="top">spdlog::level::level_enum&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a9cfe035dad15ee3146ffa08404e39384">compiled_log_level</a> ()</td></tr>
 <tr class="memitem:a1a9da2050305eea55ad3c39bb7e1a765" id="r_a1a9da2050305eea55ad3c39bb7e1a765"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a1a9da2050305eea55ad3c39bb7e1a765">set_record_level</a> (spdlog::level::level_enum level)</td></tr>
 <tr class="memitem:ac97c80cce754c64f0db7994f8ba711c3" id="r_ac97c80cce754c64f0db7994f8ba711c3"><td class="memItemLeft" align="right" valign="top"><a id="ac97c80cce754c64f0db7994f8ba711c3" name="ac97c80cce754c64f0db7994f8ba711c3"></a>
 spdlog::level::level_enum&#160;</td><td class="memItemRight" valign="bottom"><b>record_level</b> ()</td></tr>
@@ -309,6 +312,13 @@ std::filesystem::path&#160;</td><td class="memItemRight" valign="bottom"><b>log_
 <tr class="memitem:a8157dec7ac1c24961abe09e83fe89df4" id="r_a8157dec7ac1c24961abe09e83fe89df4"><td class="memItemLeft" align="right" valign="top"><a id="a8157dec7ac1c24961abe09e83fe89df4" name="a8157dec7ac1c24961abe09e83fe89df4"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>flush</b> ()</td></tr>
 <tr class="memdesc:a8157dec7ac1c24961abe09e83fe89df4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Flush both loggers. <br /></td></tr>
+<tr class="memitem:a6f89ae4f81626823e07c88a7cf6dc508" id="r_a6f89ae4f81626823e07c88a7cf6dc508"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structpycanha_1_1LogDrain.html">LogDrain</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a6f89ae4f81626823e07c88a7cf6dc508">drain_log_records</a> ()</td></tr>
+<tr class="memitem:a61e43b6ad435b91b84a0ecc8eae1bd5d" id="r_a61e43b6ad435b91b84a0ecc8eae1bd5d"><td class="memItemLeft" align="right" valign="top">std::vector&lt; <a class="el" href="structpycanha_1_1LogRecord.html">LogRecord</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a61e43b6ad435b91b84a0ecc8eae1bd5d">log_records</a> (std::size_t count)</td></tr>
+<tr class="memitem:a8b6a9277715c08ddd178a413d2a7a91e" id="r_a8b6a9277715c08ddd178a413d2a7a91e"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a8b6a9277715c08ddd178a413d2a7a91e">set_log_buffer_capacity</a> (std::size_t capacity)</td></tr>
+<tr class="memitem:ad0e05b63bc741d89e81adf73a7170bd1" id="r_ad0e05b63bc741d89e81adf73a7170bd1"><td class="memItemLeft" align="right" valign="top"><a id="ad0e05b63bc741d89e81adf73a7170bd1" name="ad0e05b63bc741d89e81adf73a7170bd1"></a>
+std::size_t&#160;</td><td class="memItemRight" valign="bottom"><b>log_buffer_capacity</b> ()</td></tr>
+<tr class="memdesc:ad0e05b63bc741d89e81adf73a7170bd1"><td class="mdescLeft">&#160;</td><td class="mdescRight">How many records the in-memory buffer holds before it starts discarding. <br /></td></tr>
+<tr class="memitem:a5987424c32886abcf3548dd8e36140d1" id="r_a5987424c32886abcf3548dd8e36140d1"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a5987424c32886abcf3548dd8e36140d1">clear_log_records</a> ()</td></tr>
 <tr class="memitem:a768d7bf588a6a1fcbd00cb2bfa6c7914" id="r_a768d7bf588a6a1fcbd00cb2bfa6c7914"><td class="memItemLeft" align="right" valign="top"><a id="a768d7bf588a6a1fcbd00cb2bfa6c7914" name="a768d7bf588a6a1fcbd00cb2bfa6c7914"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>print_package_info</b> ()</td></tr>
 </table><table class="memberdecls">
@@ -360,6 +370,52 @@ constexpr MeshIndex&#160;</td><td class="memItemRight" valign="bottom"><b>INVALI
 <li>etc.. </li>
 </ul>
 </div><a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Function Documentation</h2>
+<a id="a5987424c32886abcf3548dd8e36140d1" name="a5987424c32886abcf3548dd8e36140d1"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5987424c32886abcf3548dd8e36140d1">&#9670;&#160;</a></span>clear_log_records()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void pycanha::clear_log_records </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Discard every buffered record and reset the discard count.</p>
+<p>A deliberate reset, so what it throws away is not counted as a discard: the caller asked for it and cannot be surprised by the resulting gap. </p>
+
+</div>
+</div>
+<a id="a9cfe035dad15ee3146ffa08404e39384" name="a9cfe035dad15ee3146ffa08404e39384"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9cfe035dad15ee3146ffa08404e39384">&#9670;&#160;</a></span>compiled_log_level()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">spdlog::level::level_enum pycanha::compiled_log_level </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel nodiscard">nodiscard</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>The most verbose level this build kept. Calls below it were removed at compile time, so no runtime setting can bring them back and both thresholds refuse to go past it.</p>
+<p>A caller that wants everything the build can give — a test run, a development session — has to ask for this rather than name a level, because naming one that a leaner build compiled away is an error. </p>
+
+</div>
+</div>
 <a id="ac23dfbfb47261350ce220ee220885b40" name="ac23dfbfb47261350ce220ee220885b40"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ac23dfbfb47261350ce220ee220885b40">&#9670;&#160;</a></span>current_log_file()</h2>
 
@@ -386,6 +442,34 @@ constexpr MeshIndex&#160;</td><td class="memItemRight" valign="bottom"><b>INVALI
 
 </div>
 </div>
+<a id="a6f89ae4f81626823e07c88a7cf6dc508" name="a6f89ae4f81626823e07c88a7cf6dc508"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6f89ae4f81626823e07c88a7cf6dc508">&#9670;&#160;</a></span>drain_log_records()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="structpycanha_1_1LogDrain.html">LogDrain</a> pycanha::drain_log_records </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel nodiscard">nodiscard</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>Take everything the in-memory buffer has accumulated since the previous take, and report how much it had to discard to stay bounded.</p>
+<p>This is the whole of the library's outbound integration: records are pulled out by whoever wants them, on their own thread and at a moment of their choosing. The library itself never calls out, which is what keeps it usable and measurable on its own, and keeps a caller's own locking out of the logging path.</p>
+<p>A record is returned by exactly one take, so consecutive takes deliver a stream without repeats or gaps — except for the discards, which the returned count makes visible. </p>
+
+</div>
+</div>
 <a id="af116674b7649af0e33b3d7e78ecb1b1b" name="af116674b7649af0e33b3d7e78ecb1b1b"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#af116674b7649af0e33b3d7e78ecb1b1b">&#9670;&#160;</a></span>get_logger()</h2>
 
@@ -401,7 +485,7 @@ constexpr MeshIndex&#160;</td><td class="memItemRight" valign="bottom"><b>INVALI
       </table>
 </div><div class="memdoc">
 <p>Main library logger ("pycanha-core").</p>
-<p>Writes to two sinks that carry independent levels: a console sink on stderr, filtered by the display threshold, and a daily file sink, filtered by the record threshold. That split is what lets the library keep a full record on disk while staying quiet on the console. </p>
+<p>Writes to three sinks that carry independent levels: a console sink on stderr, filtered by the display threshold, and a daily file sink plus an in-memory buffer, both filtered by the record threshold. That split is what lets the library keep a full record while staying quiet on the console. </p>
 
 </div>
 </div>
@@ -478,6 +562,33 @@ Here is the call graph for this function:</div>
 
 </div>
 </div>
+<a id="a61e43b6ad435b91b84a0ecc8eae1bd5d" name="a61e43b6ad435b91b84a0ecc8eae1bd5d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a61e43b6ad435b91b84a0ecc8eae1bd5d">&#9670;&#160;</a></span>log_records()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::vector&lt; <a class="el" href="structpycanha_1_1LogRecord.html">LogRecord</a> &gt; pycanha::log_records </td>
+          <td>(</td>
+          <td class="paramtype">std::size_t</td>          <td class="paramname"><span class="paramname"><em>count</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel nodiscard">nodiscard</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>The most recent <span class="tt">count</span> records still held in memory, without consuming them: taking records and inspecting them are independent.</p>
+<p>Fewer than <span class="tt">count</span> records are returned when the buffer holds fewer, and the oldest come first. This is how recent records can be examined when file output is off and the console threshold hides them, which is the normal configuration for an interactive session. </p>
+
+</div>
+</div>
 <a id="ad988a84a03aea68cfebfc57baaea9da6" name="ad988a84a03aea68cfebfc57baaea9da6"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ad988a84a03aea68cfebfc57baaea9da6">&#9670;&#160;</a></span>set_display_level()</h2>
 
@@ -513,6 +624,24 @@ Here is the call graph for this function:</div>
 </div><div class="memdoc">
 <p>Master switch for writing to disk. When disabled nothing is created or written under the log directory; the console still receives records.</p>
 <p>Callers that write their own report files alongside the log are expected to honour this too, so that turning it off leaves the filesystem untouched. </p>
+
+</div>
+</div>
+<a id="a8b6a9277715c08ddd178a413d2a7a91e" name="a8b6a9277715c08ddd178a413d2a7a91e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8b6a9277715c08ddd178a413d2a7a91e">&#9670;&#160;</a></span>set_log_buffer_capacity()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void pycanha::set_log_buffer_capacity </td>
+          <td>(</td>
+          <td class="paramtype">std::size_t</td>          <td class="paramname"><span class="paramname"><em>capacity</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Resize the in-memory buffer, discarding the oldest records if the new capacity is smaller. Clamped to at least one record. </p>
 
 </div>
 </div>

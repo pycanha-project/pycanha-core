@@ -8,5 +8,6 @@ var searchData=
   ['meridian_5flength_5',['meridian_length',['../classpycanha_1_1conduction_1_1MeridianProfile.html#ab4e231c6ad8b64f43b710b7304bb09c4',1,'pycanha::conduction::MeridianProfile']]],
   ['meridianprofile_6',['MeridianProfile',['../classpycanha_1_1conduction_1_1MeridianProfile.html',1,'pycanha::conduction']]],
   ['meshoptions_7',['MeshOptions',['../structpycanha_1_1gmm_1_1MeshOptions.html',1,'pycanha::gmm']]],
-  ['min_5fconductance_8',['min_conductance',['../structpycanha_1_1conduction_1_1TmmBuildOptions.html#aae69abbc2b7eacd04ab35ee0d3e9a48d',1,'pycanha::conduction::TmmBuildOptions']]]
+  ['message_8',['message',['../structpycanha_1_1LogRecord.html#aafbce2676be06c7ae21855b39e14ae3b',1,'pycanha::LogRecord']]],
+  ['min_5fconductance_9',['min_conductance',['../structpycanha_1_1conduction_1_1TmmBuildOptions.html#aae69abbc2b7eacd04ab35ee0d3e9a48d',1,'pycanha::conduction::TmmBuildOptions']]]
 ];

@@ -70,6 +70,8 @@ var hierarchy =
     [ "pycanha::radiative::detail::SceneImpl::KernelDispatch", "structpycanha_1_1radiative_1_1detail_1_1SceneImpl_1_1KernelDispatch.html", null ],
     [ "pycanha::LiteralString", "classpycanha_1_1LiteralString.html", null ],
     [ "pycanha::Node::LocalStorage", "structpycanha_1_1Node_1_1LocalStorage.html", null ],
+    [ "pycanha::LogDrain", "structpycanha_1_1LogDrain.html", null ],
+    [ "pycanha::LogRecord", "structpycanha_1_1LogRecord.html", null ],
     [ "pycanha::LookupTable1D", "classpycanha_1_1LookupTable1D.html", null ],
     [ "pycanha::LookupTableVec1D", "classpycanha_1_1LookupTableVec1D.html", null ],
     [ "pycanha::radiative::MaterialTable", "structpycanha_1_1radiative_1_1MaterialTable.html", null ],
