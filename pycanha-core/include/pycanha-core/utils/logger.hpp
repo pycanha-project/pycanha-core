@@ -9,19 +9,23 @@
 #include <spdlog/common.h>
 #include <spdlog/logger.h>
 
+#include <cstddef>
 #include <filesystem>
 #include <memory>
 #include <ostream>
 #include <string_view>
+#include <vector>
+
+#include "pycanha-core/utils/log_record.hpp"
 
 namespace pycanha {
 
 /// Main library logger ("pycanha-core").
 ///
-/// Writes to two sinks that carry independent levels: a console sink on
-/// stderr, filtered by the display threshold, and a daily file sink, filtered
-/// by the record threshold. That split is what lets the library keep a full
-/// record on disk while staying quiet on the console.
+/// Writes to three sinks that carry independent levels: a console sink on
+/// stderr, filtered by the display threshold, and a daily file sink plus an
+/// in-memory buffer, both filtered by the record threshold. That split is what
+/// lets the library keep a full record while staying quiet on the console.
 std::shared_ptr<spdlog::logger> get_logger();
 
 /// Profiling logger ("pycanha-core.profiling").
@@ -55,6 +59,15 @@ void log_noexcept(spdlog::level::level_enum level,
 std::shared_ptr<spdlog::logger> create_ostream_logger(
     std::string_view name, std::ostream& stream,
     spdlog::level::level_enum level = spdlog::level::info);
+
+/// The most verbose level this build kept. Calls below it were removed at
+/// compile time, so no runtime setting can bring them back and both thresholds
+/// refuse to go past it.
+///
+/// A caller that wants everything the build can give — a test run, a
+/// development session — has to ask for this rather than name a level, because
+/// naming one that a leaner build compiled away is an error.
+[[nodiscard]] spdlog::level::level_enum compiled_log_level();
 
 /// Set the threshold for what is produced at all, and therefore what reaches
 /// the log file. Defaults to info.
@@ -101,5 +114,41 @@ void set_log_directory(std::filesystem::path directory);
 
 /// Flush both loggers.
 void flush();
+
+/// Take everything the in-memory buffer has accumulated since the previous
+/// take, and report how much it had to discard to stay bounded.
+///
+/// This is the whole of the library's outbound integration: records are pulled
+/// out by whoever wants them, on their own thread and at a moment of their
+/// choosing. The library itself never calls out, which is what keeps it usable
+/// and measurable on its own, and keeps a caller's own locking out of the
+/// logging path.
+///
+/// A record is returned by exactly one take, so consecutive takes deliver a
+/// stream without repeats or gaps — except for the discards, which the returned
+/// count makes visible.
+[[nodiscard]] LogDrain drain_log_records();
+
+/// The most recent `count` records still held in memory, without consuming
+/// them: taking records and inspecting them are independent.
+///
+/// Fewer than `count` records are returned when the buffer holds fewer, and the
+/// oldest come first. This is how recent records can be examined when file
+/// output is off and the console threshold hides them, which is the normal
+/// configuration for an interactive session.
+[[nodiscard]] std::vector<LogRecord> log_records(std::size_t count);
+
+/// Resize the in-memory buffer, discarding the oldest records if the new
+/// capacity is smaller. Clamped to at least one record.
+void set_log_buffer_capacity(std::size_t capacity);
+
+/// How many records the in-memory buffer holds before it starts discarding.
+[[nodiscard]] std::size_t log_buffer_capacity();
+
+/// Discard every buffered record and reset the discard count.
+///
+/// A deliberate reset, so what it throws away is not counted as a discard: the
+/// caller asked for it and cannot be surprised by the resulting gap.
+void clear_log_records();
 
 }  // namespace pycanha

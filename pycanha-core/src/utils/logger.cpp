@@ -10,9 +10,13 @@
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
 
+#include <algorithm>
 #include <array>
 #include <chrono>
+#include <cstddef>
+#include <cstdint>
 #include <ctime>
+#include <deque>
 #include <filesystem>
 #include <format>
 #include <iostream>
@@ -27,9 +31,10 @@
 #include <utility>
 #include <vector>
 
+#include "pycanha-core/utils/log_record.hpp"
+
 // The banner's command line comes from a different place on each platform.
 #if defined(_WIN32) || defined(__APPLE__)
-#include <cstddef>
 #include <span>
 #endif
 
@@ -38,7 +43,6 @@
 #elifdef __APPLE__
 #include <crt_externs.h>
 #else
-#include <algorithm>
 #include <fstream>
 #include <ios>
 #endif
@@ -360,10 +364,119 @@ class DailyFileSink final : public spdlog::sinks::base_sink<std::mutex> {
     bool _open_failed = false;
 };
 
+/// Keeps the most recent records in memory for a consumer to take later.
+///
+/// Appending is a copy under a plain mutex and nothing else — no callback, no
+/// I/O, no allocation the caller has to reason about. That is what lets code
+/// outside this library receive records without this library ever calling into
+/// it, which in turn keeps the library free of any knowledge about who is
+/// listening, and keeps a listener's own locking off the logging path.
+///
+/// The buffer is bounded, and full means the oldest record is discarded. A
+/// discard that nobody had taken yet is counted, so a consumer learns about the
+/// gap instead of silently receiving an incomplete stream.
+class RingSink final : public spdlog::sinks::base_sink<std::mutex> {
+  public:
+    RingSink() = default;
+
+    LogDrain drain() {
+        const std::scoped_lock lock(mutex_);
+        // Everything from the first record not yet taken to the newest one.
+        // The buffer holds consecutive sequence numbers, so the position of a
+        // record is the distance between its sequence and the front's.
+        const auto offset =
+            static_cast<std::ptrdiff_t>(_taken_through - _first_sequence);
+        LogDrain result{
+            .records = {std::next(_records.begin(), offset), _records.end()},
+            .dropped = std::exchange(_discarded, 0U)};
+        _taken_through = _next_sequence;
+        return result;
+    }
+
+    [[nodiscard]] std::vector<LogRecord> latest(const std::size_t count) {
+        const std::scoped_lock lock(mutex_);
+        const auto taken =
+            static_cast<std::ptrdiff_t>(std::min(count, _records.size()));
+        return {std::prev(_records.end(), taken), _records.end()};
+    }
+
+    void set_capacity(const std::size_t capacity) {
+        const std::scoped_lock lock(mutex_);
+        // A buffer that cannot hold anything would report every single record
+        // as discarded, which is a configuration nobody wants and an easy one
+        // to reach by passing a computed size.
+        _capacity = std::max<std::size_t>(capacity, 1U);
+        trim();
+    }
+
+    [[nodiscard]] std::size_t capacity() {
+        const std::scoped_lock lock(mutex_);
+        return _capacity;
+    }
+
+    void clear() {
+        const std::scoped_lock lock(mutex_);
+        _records.clear();
+        // An explicit reset is not a discard: the caller asked for the records
+        // to go away and cannot be surprised by their absence.
+        _first_sequence = _next_sequence;
+        _taken_through = _next_sequence;
+        _discarded = 0U;
+    }
+
+  protected:
+    void sink_it_(const spdlog::details::log_msg& msg) override {
+        if (_records.empty()) {
+            _first_sequence = _next_sequence;
+        }
+        _records.push_back(LogRecord{
+            .timestamp = msg.time,
+            .level = msg.level,
+            .origin = {msg.logger_name.data(), msg.logger_name.size()},
+            .message = {msg.payload.data(), msg.payload.size()},
+            .pid = spdlog::details::os::pid(),
+            .thread_id = msg.thread_id});
+        ++_next_sequence;
+        trim();
+    }
+
+    /// Nothing is held back between records, so there is nothing to push out.
+    void flush_() override {}
+
+  private:
+    void trim() {
+        while (_records.size() > _capacity) {
+            if (_first_sequence >= _taken_through) {
+                // Discarded before anybody took it, so it is a hole in the
+                // stream a consumer would otherwise never learn about.
+                ++_discarded;
+                _taken_through = _first_sequence + 1U;
+            }
+            _records.pop_front();
+            ++_first_sequence;
+        }
+    }
+
+    /// Enough to cover a whole operation's trail at the frequencies the level
+    /// rules allow, while staying small enough to be irrelevant to memory.
+    static constexpr std::size_t k_default_capacity = 4096U;
+
+    std::deque<LogRecord> _records;
+    std::size_t _capacity = k_default_capacity;
+    /// Sequence of `_records.front()`, meaningless while the buffer is empty.
+    std::uint64_t _first_sequence = 0U;
+    /// Sequence the next appended record will be given.
+    std::uint64_t _next_sequence = 0U;
+    /// Sequence of the first record not yet handed to a consumer.
+    std::uint64_t _taken_through = 0U;
+    std::size_t _discarded = 0U;
+};
+
 /// The loggers and the sinks they share, built once on first use.
 struct LogState {
     std::shared_ptr<spdlog::sinks::stderr_color_sink_mt> console;
     std::shared_ptr<DailyFileSink> file;
+    std::shared_ptr<RingSink> ring;
     std::shared_ptr<spdlog::logger> core;
     std::shared_ptr<spdlog::logger> python;
 };
@@ -379,7 +492,14 @@ LogState& state() {
         fresh.file->set_pattern(k_file_log_pattern);
         fresh.file->set_level(k_default_record_level);
 
-        const std::vector<spdlog::sink_ptr> sinks{fresh.console, fresh.file};
+        // Always installed: it is both the route out to a consumer and the
+        // only place recent records can be found once file output is off,
+        // which is exactly the configuration an interactive session uses.
+        fresh.ring = std::make_shared<RingSink>();
+        fresh.ring->set_level(k_default_record_level);
+
+        const std::vector<spdlog::sink_ptr> sinks{fresh.console, fresh.file,
+                                                  fresh.ring};
         fresh.core = std::make_shared<spdlog::logger>(
             "pycanha-core", sinks.begin(), sinks.end());
         fresh.core->set_level(k_default_record_level);
@@ -459,6 +579,10 @@ std::shared_ptr<spdlog::logger> create_ostream_logger(
     return logger;
 }
 
+spdlog::level::level_enum compiled_log_level() {
+    return k_compiled_active_log_level;
+}
+
 void set_record_level(const spdlog::level::level_enum level) {
     validate_requested_level("record", level);
     auto& current = state();
@@ -467,6 +591,7 @@ void set_record_level(const spdlog::level::level_enum level) {
     current.core->set_level(level);
     current.python->set_level(level);
     current.file->set_level(level);
+    current.ring->set_level(level);
 }
 
 spdlog::level::level_enum record_level() { return state().core->level(); }
@@ -499,5 +624,19 @@ void flush() {
     current.core->flush();
     current.python->flush();
 }
+
+LogDrain drain_log_records() { return state().ring->drain(); }
+
+std::vector<LogRecord> log_records(const std::size_t count) {
+    return state().ring->latest(count);
+}
+
+void set_log_buffer_capacity(const std::size_t capacity) {
+    state().ring->set_capacity(capacity);
+}
+
+std::size_t log_buffer_capacity() { return state().ring->capacity(); }
+
+void clear_log_records() { state().ring->clear(); }
 
 }  // namespace pycanha
