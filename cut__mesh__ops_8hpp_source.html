@@ -28,7 +28,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.19</span>
+   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.20</span>
    </div>
    <div id="projectbrief">The C++ core of pycanha</div>
   </td>
@@ -119,8 +119,8 @@ $(function(){initNavTree('cut__mesh__ops_8hpp_source.html','',''); });
 <div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span><span class="keywordtype">void</span> remove_degenerate_triangles(TriMeshD&amp; mesh, <span class="keywordtype">double</span> area_tolerance);</div>
 <div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span> </div>
 <div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span><span class="comment">// Assigns the per-side face_id to triangle `triangle_index` of `mesh` by</span></div>
-<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span><span class="comment">// projecting its centroid onto `primitive` and locating the owning UV cell in</span></div>
-<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span><span class="comment">// `thermal_mesh`. Even result = side 1, odd = side 2 (the former Side enum,</span></div>
+<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span><span class="comment">// projecting its centroid onto `primitive` and locating the owning UV face pair</span></div>
+<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span><span class="comment">// in `thermal_mesh`. Even result = side 1, odd = side 2 (the former Side enum,</span></div>
 <div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span><span class="comment">// inlined). Returns a MeshIndex face_id.</span></div>
 <div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span>[[nodiscard]] pycanha::MeshIndex classify_triangle_by_centroid(</div>
 <div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span>    <span class="keyword">const</span> TriMeshD&amp; mesh, Eigen::Index triangle_index,</div>

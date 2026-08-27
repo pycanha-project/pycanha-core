@@ -28,7 +28,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.19</span>
+   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.20</span>
    </div>
    <div id="projectbrief">The C++ core of pycanha</div>
   </td>
@@ -100,8 +100,8 @@ $(function(){initNavTree('vk__accum_8hpp_source.html','',''); });
 <div class="line"><a id="l00004" name="l00004"></a><span class="lineno">    4</span><span class="comment">// needed to normalize them into results and compute statistics. Matrix</span></div>
 <div class="line"><a id="l00005" name="l00005"></a><span class="lineno">    5</span><span class="comment">// accumulators (VF counts, exchange fixed-point energy) come in two</span></div>
 <div class="line"><a id="l00006" name="l00006"></a><span class="lineno">    6</span><span class="comment">// layouts, one result:</span></div>
-<div class="line"><a id="l00007" name="l00007"></a><span class="lineno">    7</span><span class="comment">//  - Dense: one num_slots x num_slots buffer, cells stay on the GPU.</span></div>
-<div class="line"><a id="l00008" name="l00008"></a><span class="lineno">    8</span><span class="comment">//  - Tiled: a tile_rows x num_slots scratch buffer reused per row block;</span></div>
+<div class="line"><a id="l00007" name="l00007"></a><span class="lineno">    7</span><span class="comment">//  - Dense: one num_num_faces x num_faces buffer, cells stay on the GPU.</span></div>
+<div class="line"><a id="l00008" name="l00008"></a><span class="lineno">    8</span><span class="comment">//  - Tiled: a tile_rows x num_faces scratch buffer reused per row block;</span></div>
 <div class="line"><a id="l00009" name="l00009"></a><span class="lineno">    9</span><span class="comment">//    cells stream into per-row host maps after every block.</span></div>
 <div class="line"><a id="l00010" name="l00010"></a><span class="lineno">   10</span><span class="comment">// Cells are integers, so both layouts produce bit-identical results for the</span></div>
 <div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span><span class="comment">// same seed — a property the tests assert. The solar accumulator is two</span></div>
@@ -144,7 +144,7 @@ $(function(){initNavTree('vk__accum_8hpp_source.html','',''); });
 <div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>    <span class="comment">// Tiled only: zeroes the block scratch before a new row block.</span></div>
 <div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>    <span class="keywordtype">void</span> clear_block_scratch();</div>
 <div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>    <span class="comment">// Tiled only: reads the scratch rows of `block_emitters` (block-relative</span></div>
-<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>    <span class="comment">// row = slot - row_offset) and adds nonzero cells into the host maps.</span></div>
+<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>    <span class="comment">// row = face - row_offset) and adds nonzero cells into the host maps.</span></div>
 <div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>    <span class="keywordtype">void</span> absorb_block(std::span&lt;const std::uint32_t&gt; block_emitters,</div>
 <div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>                      std::uint32_t row_offset);</div>
 <div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>    <span class="keywordtype">void</span> record_batch(std::span&lt;const std::uint32_t&gt; emitters,</div>
@@ -195,7 +195,7 @@ $(function(){initNavTree('vk__accum_8hpp_source.html','',''); });
 <div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span>    <span class="comment">// Tiled only: zeroes the block scratch before a new row block.</span></div>
 <div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span>    <span class="keywordtype">void</span> clear_block_scratch();</div>
 <div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>    <span class="comment">// Tiled only: adds the scratch rows of `block_emitters` into the host</span></div>
-<div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span>    <span class="comment">// maps (block-relative row = slot - row_offset).</span></div>
+<div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span>    <span class="comment">// maps (block-relative row = face - row_offset).</span></div>
 <div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>    <span class="keywordtype">void</span> absorb_block(std::span&lt;const std::uint32_t&gt; block_emitters,</div>
 <div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>                      std::uint32_t row_offset);</div>
 <div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>    <span class="keywordtype">void</span> record_batch(std::span&lt;const std::uint32_t&gt; emitters,</div>
@@ -211,7 +211,7 @@ $(function(){initNavTree('vk__accum_8hpp_source.html','',''); });
 <div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span>    SceneImpl&amp; _scene;</div>
 <div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>    Band _band;</div>
 <div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>    AccumConfig _config;</div>
-<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>    GpuBuffer _cells;  <span class="comment">// u64 fixed-point deposits, row stride slots + 3</span></div>
+<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>    GpuBuffer _cells;  <span class="comment">// u64 fixed-point deposits, row stride faces + 3</span></div>
 <div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span>    <span class="comment">// Tiled layout: host-side accumulation (Dense reads the GPU buffer).</span></div>
 <div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span>    std::vector&lt;HostCountRow&gt; _host_rows;</div>
 <div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>    std::vector&lt;std::uint64_t&gt; _rays_per_row;</div>
@@ -256,8 +256,8 @@ $(function(){initNavTree('vk__accum_8hpp_source.html','',''); });
 <div class="line"><a id="l00160" name="l00160"></a><span class="lineno">  160</span> </div>
 <div class="line"><a id="l00161" name="l00161"></a><span class="lineno">  161</span>  <span class="keyword">private</span>:</div>
 <div class="line"><a id="l00162" name="l00162"></a><span class="lineno">  162</span>    SceneImpl&amp; _scene;</div>
-<div class="line"><a id="l00163" name="l00163"></a><span class="lineno">  163</span>    GpuBuffer _direct;  <span class="comment">// u64 fixed-point absorbed direct energy per slot</span></div>
-<div class="line"><a id="l00164" name="l00164"></a><span class="lineno">  164</span>    GpuBuffer _total;   <span class="comment">// u64 fixed-point absorbed total energy per slot</span></div>
+<div class="line"><a id="l00163" name="l00163"></a><span class="lineno">  163</span>    GpuBuffer _direct;  <span class="comment">// u64 fixed-point absorbed direct energy per face</span></div>
+<div class="line"><a id="l00164" name="l00164"></a><span class="lineno">  164</span>    GpuBuffer _total;   <span class="comment">// u64 fixed-point absorbed total energy per face</span></div>
 <div class="line"><a id="l00165" name="l00165"></a><span class="lineno">  165</span>    SolarState _sun{};</div>
 <div class="line"><a id="l00166" name="l00166"></a><span class="lineno">  166</span>    <span class="keywordtype">bool</span> _sun_recorded = <span class="keyword">false</span>;</div>
 <div class="line"><a id="l00167" name="l00167"></a><span class="lineno">  167</span>    <span class="keywordtype">double</span> _fp_scale = 0.0;</div>

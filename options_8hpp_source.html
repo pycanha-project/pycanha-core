@@ -28,7 +28,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.19</span>
+   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.20</span>
    </div>
    <div id="projectbrief">The C++ core of pycanha</div>
   </td>
@@ -115,51 +115,51 @@ $(function(){initNavTree('options_8hpp_source.html','',''); });
 </div>
 <div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span> </div>
 <div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span><span class="keyword">enum class</span> DiagnosticCode : std::uint8_t {</div>
-<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span>    CutGeometrySkipped,</div>
-<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>    UnmeshedPrimitive,</div>
-<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>    InactiveSideSkipped,</div>
-<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>    MissingBulk,</div>
-<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>    ZeroThickness,</div>
-<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>    ZeroConductivity,</div>
-<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>    MixedBulkOnNode,</div>
-<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>    TriangleApproximated,</div>
-<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>    NoNodeNumbers,</div>
-<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>    DegenerateCell,</div>
-<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>    AxisSingularity,</div>
-<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>};</div>
-<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span> </div>
-<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>[[nodiscard]] std::string_view to_string(DiagnosticCode code) <span class="keyword">noexcept</span>;</div>
-<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span> </div>
-<div class="foldopen" id="foldopen00066" data-start="{" data-end="};">
-<div class="line"><a id="l00066" name="l00066"></a><span class="lineno"><a class="line" href="structpycanha_1_1conduction_1_1BuildDiagnostic.html">   66</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structpycanha_1_1conduction_1_1BuildDiagnostic.html">BuildDiagnostic</a> {</div>
-<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>    DiagnosticCode code = DiagnosticCode::CutGeometrySkipped;</div>
-<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>    std::string geometry_name;</div>
-<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>    std::string message;</div>
-<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>};</div>
+<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span>    CutGeometrySkipped,</div>
+<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>    UnmeshedPrimitive,</div>
+<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>    InactiveSideSkipped,</div>
+<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>    MissingBulk,</div>
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>    ZeroThickness,</div>
+<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>    ZeroConductivity,</div>
+<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>    MixedBulkOnNode,</div>
+<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>    DiscreteLinkFallback,</div>
+<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>    NoNodeNumbers,</div>
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>    DegenerateFacePair,</div>
+<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>    AxisSingularity,</div>
+<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>};</div>
+<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span> </div>
+<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>[[nodiscard]] std::string_view to_string(DiagnosticCode code) <span class="keyword">noexcept</span>;</div>
+<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span> </div>
+<div class="foldopen" id="foldopen00070" data-start="{" data-end="};">
+<div class="line"><a id="l00070" name="l00070"></a><span class="lineno"><a class="line" href="structpycanha_1_1conduction_1_1BuildDiagnostic.html">   70</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structpycanha_1_1conduction_1_1BuildDiagnostic.html">BuildDiagnostic</a> {</div>
+<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>    DiagnosticCode code = DiagnosticCode::CutGeometrySkipped;</div>
+<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>    std::string geometry_name;</div>
+<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>    std::string message;</div>
+<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>};</div>
 </div>
-<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span> </div>
-<div class="foldopen" id="foldopen00072" data-start="{" data-end="};">
-<div class="line"><a id="l00072" name="l00072"></a><span class="lineno"><a class="line" href="structpycanha_1_1conduction_1_1TmmBuildReport.html">   72</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structpycanha_1_1conduction_1_1TmmBuildReport.html">TmmBuildReport</a> {</div>
-<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>    std::size_t items_processed = 0;</div>
-<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>    std::size_t items_skipped = 0;</div>
-<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>    std::size_t nodes_created = 0;</div>
-<div class="line"><a id="l00077" name="l00077"></a><span class="lineno"><a class="line" href="structpycanha_1_1conduction_1_1TmmBuildReport.html#a4cf6a951b48f1c31df9373b5ea40079f">   77</a></span>    std::size_t <a class="code hl_variable" href="structpycanha_1_1conduction_1_1TmmBuildReport.html#a4cf6a951b48f1c31df9373b5ea40079f">conductors_created</a> = 0;</div>
-<div class="line"><a id="l00079" name="l00079"></a><span class="lineno"><a class="line" href="structpycanha_1_1conduction_1_1TmmBuildReport.html#a313e305ed6a54a34350220c036e35782">   79</a></span>    std::size_t <a class="code hl_variable" href="structpycanha_1_1conduction_1_1TmmBuildReport.html#a313e305ed6a54a34350220c036e35782">cell_links_computed</a> = 0;</div>
-<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span>    std::vector&lt;BuildDiagnostic&gt; diagnostics;</div>
-<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>};</div>
+<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span> </div>
+<div class="foldopen" id="foldopen00076" data-start="{" data-end="};">
+<div class="line"><a id="l00076" name="l00076"></a><span class="lineno"><a class="line" href="structpycanha_1_1conduction_1_1TmmBuildReport.html">   76</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structpycanha_1_1conduction_1_1TmmBuildReport.html">TmmBuildReport</a> {</div>
+<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>    std::size_t items_processed = 0;</div>
+<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span>    std::size_t items_skipped = 0;</div>
+<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span>    std::size_t nodes_created = 0;</div>
+<div class="line"><a id="l00081" name="l00081"></a><span class="lineno"><a class="line" href="structpycanha_1_1conduction_1_1TmmBuildReport.html#a4cf6a951b48f1c31df9373b5ea40079f">   81</a></span>    std::size_t <a class="code hl_variable" href="structpycanha_1_1conduction_1_1TmmBuildReport.html#a4cf6a951b48f1c31df9373b5ea40079f">conductors_created</a> = 0;</div>
+<div class="line"><a id="l00083" name="l00083"></a><span class="lineno"><a class="line" href="structpycanha_1_1conduction_1_1TmmBuildReport.html#acea0c65d1162f881c1edb5b224b1b874">   83</a></span>    std::size_t <a class="code hl_variable" href="structpycanha_1_1conduction_1_1TmmBuildReport.html#acea0c65d1162f881c1edb5b224b1b874">face_pair_links_computed</a> = 0;</div>
+<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>    std::vector&lt;BuildDiagnostic&gt; diagnostics;</div>
+<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>};</div>
 </div>
-<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span> </div>
-<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>}  <span class="comment">// namespace pycanha::conduction</span></div>
-<div class="ttc" id="astructpycanha_1_1conduction_1_1BuildDiagnostic_html"><div class="ttname"><a href="structpycanha_1_1conduction_1_1BuildDiagnostic.html">pycanha::conduction::BuildDiagnostic</a></div><div class="ttdef"><b>Definition</b> options.hpp:66</div></div>
+<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span> </div>
+<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span>}  <span class="comment">// namespace pycanha::conduction</span></div>
+<div class="ttc" id="astructpycanha_1_1conduction_1_1BuildDiagnostic_html"><div class="ttname"><a href="structpycanha_1_1conduction_1_1BuildDiagnostic.html">pycanha::conduction::BuildDiagnostic</a></div><div class="ttdef"><b>Definition</b> options.hpp:70</div></div>
 <div class="ttc" id="astructpycanha_1_1conduction_1_1TmmBuildOptions_html"><div class="ttname"><a href="structpycanha_1_1conduction_1_1TmmBuildOptions.html">pycanha::conduction::TmmBuildOptions</a></div><div class="ttdoc">Knobs of the gmm -&gt; tmm conduction build.</div><div class="ttdef"><b>Definition</b> options.hpp:12</div></div>
-<div class="ttc" id="astructpycanha_1_1conduction_1_1TmmBuildOptions_html_a445d7ad35e88272683d7cc434e1fffd3"><div class="ttname"><a href="structpycanha_1_1conduction_1_1TmmBuildOptions.html#a445d7ad35e88272683d7cc434e1fffd3">pycanha::conduction::TmmBuildOptions::intra_primitive_conductors</a></div><div class="ttdeci">bool intra_primitive_conductors</div><div class="ttdoc">Generate the in-plane conductors of each primitive&#39;s own cell grid.</div><div class="ttdef"><b>Definition</b> options.hpp:16</div></div>
+<div class="ttc" id="astructpycanha_1_1conduction_1_1TmmBuildOptions_html_a445d7ad35e88272683d7cc434e1fffd3"><div class="ttname"><a href="structpycanha_1_1conduction_1_1TmmBuildOptions.html#a445d7ad35e88272683d7cc434e1fffd3">pycanha::conduction::TmmBuildOptions::intra_primitive_conductors</a></div><div class="ttdeci">bool intra_primitive_conductors</div><div class="ttdoc">Generate the in-plane conductors of each primitive&#39;s own face-pair grid.</div><div class="ttdef"><b>Definition</b> options.hpp:16</div></div>
 <div class="ttc" id="astructpycanha_1_1conduction_1_1TmmBuildOptions_html_a752bd26430152032760014f6be7a6d2d"><div class="ttname"><a href="structpycanha_1_1conduction_1_1TmmBuildOptions.html#a752bd26430152032760014f6be7a6d2d">pycanha::conduction::TmmBuildOptions::close_full_revolution</a></div><div class="ttdeci">bool close_full_revolution</div><div class="ttdef"><b>Definition</b> options.hpp:21</div></div>
 <div class="ttc" id="astructpycanha_1_1conduction_1_1TmmBuildOptions_html_aa55eac2ba545bb0bfac766ed665b5ec4"><div class="ttname"><a href="structpycanha_1_1conduction_1_1TmmBuildOptions.html#aa55eac2ba545bb0bfac766ed665b5ec4">pycanha::conduction::TmmBuildOptions::through_thickness_conductors</a></div><div class="ttdeci">bool through_thickness_conductors</div><div class="ttdoc">Generate the side-1 &lt;-&gt; side-2 conductors of each face pair.</div><div class="ttdef"><b>Definition</b> options.hpp:18</div></div>
 <div class="ttc" id="astructpycanha_1_1conduction_1_1TmmBuildOptions_html_aae69abbc2b7eacd04ab35ee0d3e9a48d"><div class="ttname"><a href="structpycanha_1_1conduction_1_1TmmBuildOptions.html#aae69abbc2b7eacd04ab35ee0d3e9a48d">pycanha::conduction::TmmBuildOptions::min_conductance</a></div><div class="ttdeci">double min_conductance</div><div class="ttdef"><b>Definition</b> options.hpp:24</div></div>
 <div class="ttc" id="astructpycanha_1_1conduction_1_1TmmBuildOptions_html_ae2565c1a0ce4cb131cf5fbbeb2789ff7"><div class="ttname"><a href="structpycanha_1_1conduction_1_1TmmBuildOptions.html#ae2565c1a0ce4cb131cf5fbbeb2789ff7">pycanha::conduction::TmmBuildOptions::initial_temperature</a></div><div class="ttdeci">double initial_temperature</div><div class="ttdoc">Temperature written to every generated node.</div><div class="ttdef"><b>Definition</b> options.hpp:14</div></div>
-<div class="ttc" id="astructpycanha_1_1conduction_1_1TmmBuildReport_html"><div class="ttname"><a href="structpycanha_1_1conduction_1_1TmmBuildReport.html">pycanha::conduction::TmmBuildReport</a></div><div class="ttdef"><b>Definition</b> options.hpp:72</div></div>
-<div class="ttc" id="astructpycanha_1_1conduction_1_1TmmBuildReport_html_a313e305ed6a54a34350220c036e35782"><div class="ttname"><a href="structpycanha_1_1conduction_1_1TmmBuildReport.html#a313e305ed6a54a34350220c036e35782">pycanha::conduction::TmmBuildReport::cell_links_computed</a></div><div class="ttdeci">std::size_t cell_links_computed</div><div class="ttdoc">Face level, before aggregation.</div><div class="ttdef"><b>Definition</b> options.hpp:79</div></div>
-<div class="ttc" id="astructpycanha_1_1conduction_1_1TmmBuildReport_html_a4cf6a951b48f1c31df9373b5ea40079f"><div class="ttname"><a href="structpycanha_1_1conduction_1_1TmmBuildReport.html#a4cf6a951b48f1c31df9373b5ea40079f">pycanha::conduction::TmmBuildReport::conductors_created</a></div><div class="ttdeci">std::size_t conductors_created</div><div class="ttdoc">Node-pair level, after aggregation.</div><div class="ttdef"><b>Definition</b> options.hpp:77</div></div>
+<div class="ttc" id="astructpycanha_1_1conduction_1_1TmmBuildReport_html"><div class="ttname"><a href="structpycanha_1_1conduction_1_1TmmBuildReport.html">pycanha::conduction::TmmBuildReport</a></div><div class="ttdef"><b>Definition</b> options.hpp:76</div></div>
+<div class="ttc" id="astructpycanha_1_1conduction_1_1TmmBuildReport_html_a4cf6a951b48f1c31df9373b5ea40079f"><div class="ttname"><a href="structpycanha_1_1conduction_1_1TmmBuildReport.html#a4cf6a951b48f1c31df9373b5ea40079f">pycanha::conduction::TmmBuildReport::conductors_created</a></div><div class="ttdeci">std::size_t conductors_created</div><div class="ttdoc">Node-pair level, after aggregation.</div><div class="ttdef"><b>Definition</b> options.hpp:81</div></div>
+<div class="ttc" id="astructpycanha_1_1conduction_1_1TmmBuildReport_html_acea0c65d1162f881c1edb5b224b1b874"><div class="ttname"><a href="structpycanha_1_1conduction_1_1TmmBuildReport.html#acea0c65d1162f881c1edb5b224b1b874">pycanha::conduction::TmmBuildReport::face_pair_links_computed</a></div><div class="ttdeci">std::size_t face_pair_links_computed</div><div class="ttdoc">Face level, before aggregation.</div><div class="ttdef"><b>Definition</b> options.hpp:83</div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->

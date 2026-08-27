@@ -28,7 +28,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.19</span>
+   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.20</span>
    </div>
    <div id="projectbrief">The C++ core of pycanha</div>
   </td>
@@ -121,7 +121,7 @@ $(function(){initNavTree('closure__projection_8hpp_source.html','',''); });
 <div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span><span class="comment">//</span></div>
 <div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span><span class="comment">// where C is the row-membership matrix and V = diag(v). The matrix C V C^T</span></div>
 <div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span><span class="comment">// is symmetric positive semi-definite, has EXACTLY the sparsity of the</span></div>
-<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span><span class="comment">// coupling matrix plus a diagonal, and is only num_slots on a side — so one</span></div>
+<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span><span class="comment">// coupling matrix plus a diagonal, and is only num_faces on a side — so one</span></div>
 <div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span><span class="comment">// sparse Cholesky replaces a factorization of the full unknown vector. Its</span></div>
 <div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span><span class="comment">// right-hand side is the per-row closure deficit, which is also what the</span></div>
 <div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span><span class="comment">// multipliers price.</span></div>
@@ -167,7 +167,7 @@ $(function(){initNavTree('closure__projection_8hpp_source.html','',''); });
 <div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span><span class="comment">//</span></div>
 <div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span><span class="comment">// Throws if the system cannot be factorized or the solution is not finite.</span></div>
 <div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span><span class="keywordtype">void</span> project_onto_closure(std::span&lt;RowEntries&gt; rows,</div>
-<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>                          std::span&lt;const double&gt; targets, std::size_t slots);</div>
+<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>                          std::span&lt;const double&gt; targets, std::size_t faces);</div>
 <div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span> </div>
 <div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>}  <span class="comment">// namespace pycanha::radiative::detail</span></div>
 <div class="ttc" id="astructpycanha_1_1radiative_1_1detail_1_1BlueEstimate_html"><div class="ttname"><a href="structpycanha_1_1radiative_1_1detail_1_1BlueEstimate.html">pycanha::radiative::detail::BlueEstimate</a></div><div class="ttdef"><b>Definition</b> closure_projection.hpp:49</div></div>

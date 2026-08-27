@@ -28,7 +28,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.19</span>
+   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.20</span>
    </div>
    <div id="projectbrief">The C++ core of pycanha</div>
   </td>
@@ -108,25 +108,28 @@ $(function(){initNavTree('primitive_8hpp_source.html','',''); });
 <div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span><span class="preprocessor">#include &quot;pycanha-core/gmm/primitives/rectangle.hpp&quot;</span></div>
 <div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span><span class="preprocessor">#include &quot;pycanha-core/gmm/primitives/sphere.hpp&quot;</span></div>
 <div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span><span class="preprocessor">#include &quot;pycanha-core/gmm/primitives/triangle.hpp&quot;</span></div>
-<div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span> </div>
-<div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span><span class="keyword">namespace </span>pycanha::gmm {</div>
-<div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span> </div>
-<div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span><span class="keyword">using </span>Primitive = std::variant&lt;<a class="code hl_class" href="classpycanha_1_1gmm_1_1Triangle.html">Triangle</a>, <a class="code hl_class" href="classpycanha_1_1gmm_1_1Rectangle.html">Rectangle</a>, <a class="code hl_class" href="classpycanha_1_1gmm_1_1Quadrilateral.html">Quadrilateral</a>, <a class="code hl_class" href="classpycanha_1_1gmm_1_1Disc.html">Disc</a>,</div>
-<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span>                               <a class="code hl_class" href="classpycanha_1_1gmm_1_1Cylinder.html">Cylinder</a>, <a class="code hl_class" href="classpycanha_1_1gmm_1_1Cone.html">Cone</a>, <a class="code hl_class" href="classpycanha_1_1gmm_1_1Sphere.html">Sphere</a>, <a class="code hl_class" href="classpycanha_1_1gmm_1_1Paraboloid.html">Paraboloid</a>, <a class="code hl_class" href="classpycanha_1_1gmm_1_1Cube.html">Cube</a>&gt;;</div>
-<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span> </div>
-<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span><span class="keyword">template</span> &lt;<span class="keyword">class</span> Visitor&gt;</div>
-<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span><span class="keyword">using </span>primitive_visitor_t =</div>
-<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span>    std::common_type_t&lt;std::invoke_result_t&lt;Visitor, const Triangle&amp;&gt;,</div>
-<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span>                       std::invoke_result_t&lt;Visitor, const Rectangle&amp;&gt;,</div>
-<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span>                       std::invoke_result_t&lt;Visitor, const Quadrilateral&amp;&gt;,</div>
-<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span>                       std::invoke_result_t&lt;Visitor, const Disc&amp;&gt;,</div>
-<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span>                       std::invoke_result_t&lt;Visitor, const Cylinder&amp;&gt;,</div>
-<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span>                       std::invoke_result_t&lt;Visitor, const Cone&amp;&gt;,</div>
-<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span>                       std::invoke_result_t&lt;Visitor, const Sphere&amp;&gt;,</div>
-<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span>                       std::invoke_result_t&lt;Visitor, const Paraboloid&amp;&gt;,</div>
-<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span>                       std::invoke_result_t&lt;Visitor, const Cube&amp;&gt;&gt;;</div>
-<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span> </div>
-<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>}  <span class="comment">// namespace pycanha::gmm</span></div>
+<div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span><span class="preprocessor">#include &quot;pycanha-core/gmm/primitives/triangular_prism.hpp&quot;</span></div>
+<div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span> </div>
+<div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span><span class="keyword">namespace </span>pycanha::gmm {</div>
+<div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span> </div>
+<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span><span class="keyword">using </span>Primitive =</div>
+<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span>    std::variant&lt;<a class="code hl_class" href="classpycanha_1_1gmm_1_1Triangle.html">Triangle</a>, <a class="code hl_class" href="classpycanha_1_1gmm_1_1Rectangle.html">Rectangle</a>, <a class="code hl_class" href="classpycanha_1_1gmm_1_1Quadrilateral.html">Quadrilateral</a>, <a class="code hl_class" href="classpycanha_1_1gmm_1_1Disc.html">Disc</a>, <a class="code hl_class" href="classpycanha_1_1gmm_1_1Cylinder.html">Cylinder</a>, <a class="code hl_class" href="classpycanha_1_1gmm_1_1Cone.html">Cone</a>,</div>
+<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span>                 <a class="code hl_class" href="classpycanha_1_1gmm_1_1Sphere.html">Sphere</a>, <a class="code hl_class" href="classpycanha_1_1gmm_1_1Paraboloid.html">Paraboloid</a>, <a class="code hl_class" href="classpycanha_1_1gmm_1_1Cube.html">Cube</a>, <a class="code hl_class" href="classpycanha_1_1gmm_1_1TriangularPrism.html">TriangularPrism</a>&gt;;</div>
+<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span> </div>
+<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span><span class="keyword">template</span> &lt;<span class="keyword">class</span> Visitor&gt;</div>
+<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span><span class="keyword">using </span>primitive_visitor_t =</div>
+<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span>    std::common_type_t&lt;std::invoke_result_t&lt;Visitor, const Triangle&amp;&gt;,</div>
+<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span>                       std::invoke_result_t&lt;Visitor, const Rectangle&amp;&gt;,</div>
+<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span>                       std::invoke_result_t&lt;Visitor, const Quadrilateral&amp;&gt;,</div>
+<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span>                       std::invoke_result_t&lt;Visitor, const Disc&amp;&gt;,</div>
+<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span>                       std::invoke_result_t&lt;Visitor, const Cylinder&amp;&gt;,</div>
+<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span>                       std::invoke_result_t&lt;Visitor, const Cone&amp;&gt;,</div>
+<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span>                       std::invoke_result_t&lt;Visitor, const Sphere&amp;&gt;,</div>
+<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>                       std::invoke_result_t&lt;Visitor, const Paraboloid&amp;&gt;,</div>
+<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>                       std::invoke_result_t&lt;Visitor, const Cube&amp;&gt;,</div>
+<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>                       std::invoke_result_t&lt;Visitor, const TriangularPrism&amp;&gt;&gt;;</div>
+<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span> </div>
+<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>}  <span class="comment">// namespace pycanha::gmm</span></div>
 <div class="ttc" id="aclasspycanha_1_1gmm_1_1Cone_html"><div class="ttname"><a href="classpycanha_1_1gmm_1_1Cone.html">pycanha::gmm::Cone</a></div><div class="ttdef"><b>Definition</b> cone.hpp:7</div></div>
 <div class="ttc" id="aclasspycanha_1_1gmm_1_1Cube_html"><div class="ttname"><a href="classpycanha_1_1gmm_1_1Cube.html">pycanha::gmm::Cube</a></div><div class="ttdef"><b>Definition</b> cube.hpp:9</div></div>
 <div class="ttc" id="aclasspycanha_1_1gmm_1_1Cylinder_html"><div class="ttname"><a href="classpycanha_1_1gmm_1_1Cylinder.html">pycanha::gmm::Cylinder</a></div><div class="ttdef"><b>Definition</b> cylinder.hpp:7</div></div>
@@ -136,6 +139,7 @@ $(function(){initNavTree('primitive_8hpp_source.html','',''); });
 <div class="ttc" id="aclasspycanha_1_1gmm_1_1Rectangle_html"><div class="ttname"><a href="classpycanha_1_1gmm_1_1Rectangle.html">pycanha::gmm::Rectangle</a></div><div class="ttdef"><b>Definition</b> rectangle.hpp:7</div></div>
 <div class="ttc" id="aclasspycanha_1_1gmm_1_1Sphere_html"><div class="ttname"><a href="classpycanha_1_1gmm_1_1Sphere.html">pycanha::gmm::Sphere</a></div><div class="ttdef"><b>Definition</b> sphere.hpp:7</div></div>
 <div class="ttc" id="aclasspycanha_1_1gmm_1_1Triangle_html"><div class="ttname"><a href="classpycanha_1_1gmm_1_1Triangle.html">pycanha::gmm::Triangle</a></div><div class="ttdef"><b>Definition</b> triangle.hpp:7</div></div>
+<div class="ttc" id="aclasspycanha_1_1gmm_1_1TriangularPrism_html"><div class="ttname"><a href="classpycanha_1_1gmm_1_1TriangularPrism.html">pycanha::gmm::TriangularPrism</a></div><div class="ttdef"><b>Definition</b> triangular_prism.hpp:21</div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->

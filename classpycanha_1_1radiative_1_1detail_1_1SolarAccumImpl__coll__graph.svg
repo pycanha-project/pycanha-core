@@ -137,9 +137,9 @@
 <text xml:space="preserve" text-anchor="start" x="299.75" y="-227" font-family="Helvetica,sans-Serif" font-size="10.00" fill="grey">  _buf</text>
 <text xml:space="preserve" text-anchor="start" x="299.75" y="-210.25" font-family="Helvetica,sans-Serif" font-size="10.00" fill="grey">_emitters_buf</text>
 <text xml:space="preserve" text-anchor="start" x="299.75" y="-193.5" font-family="Helvetica,sans-Serif" font-size="10.00" fill="grey">_face_areas_buf</text>
-<text xml:space="preserve" text-anchor="start" x="299.75" y="-176.75" font-family="Helvetica,sans-Serif" font-size="10.00" fill="grey">_face_flags_buf</text>
-<text xml:space="preserve" text-anchor="start" x="299.75" y="-160" font-family="Helvetica,sans-Serif" font-size="10.00" fill="grey">_face_material_buf</text>
-<text xml:space="preserve" text-anchor="start" x="299.75" y="-143.25" font-family="Helvetica,sans-Serif" font-size="10.00" fill="grey">_instance_ssbo</text>
+<text xml:space="preserve" text-anchor="start" x="299.75" y="-176.75" font-family="Helvetica,sans-Serif" font-size="10.00" fill="grey">_face_record_buf</text>
+<text xml:space="preserve" text-anchor="start" x="299.75" y="-160" font-family="Helvetica,sans-Serif" font-size="10.00" fill="grey">_instance_ssbo</text>
+<text xml:space="preserve" text-anchor="start" x="299.75" y="-143.25" font-family="Helvetica,sans-Serif" font-size="10.00" fill="grey">_materials_buf</text>
 <text xml:space="preserve" text-anchor="start" x="299.75" y="-126.5" font-family="Helvetica,sans-Serif" font-size="10.00" fill="grey"> &#160;...</text>
 </g>
 <!-- Node7 -->

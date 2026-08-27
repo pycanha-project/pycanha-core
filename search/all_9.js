@@ -17,5 +17,6 @@ var searchData=
   ['is_5fnode_14',['is_node',['../classpycanha_1_1Nodes.html#a5b7dd878a79e54c370e9273a32403736',1,'pycanha::Nodes']]],
   ['is_5fradiative_5factive_15',['is_radiative_active',['../classpycanha_1_1gmm_1_1ThermalMesh.html#a24556da698cfcb9839e484b3a10fe965',1,'pycanha::gmm::ThermalMesh']]],
   ['is_5fside_5factive_16',['is_side_active',['../classpycanha_1_1gmm_1_1ThermalMesh.html#aae3a47011c3fdce2cdea46bc30898856',1,'pycanha::gmm::ThermalMesh']]],
-  ['it_20works_17',['How it works',['../index.html#autotoc_md3',1,'']]]
+  ['is_5fvalid_17',['is_valid',['../classpycanha_1_1gmm_1_1TriangularPrism.html#ab613d1f2e2a87136e5b2ad97acf67157',1,'pycanha::gmm::TriangularPrism']]],
+  ['it_20works_18',['How it works',['../index.html#autotoc_md3',1,'']]]
 ];

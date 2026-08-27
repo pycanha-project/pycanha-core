@@ -28,7 +28,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.19</span>
+   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.20</span>
    </div>
    <div id="projectbrief">The C++ core of pycanha</div>
   </td>
@@ -110,7 +110,7 @@ $(function(){initNavTree('memory_8hpp_source.html','',''); });
 <div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span><span class="comment">// message instead of exhausting device memory mid-trace.</span></div>
 <div class="foldopen" id="foldopen00015" data-start="{" data-end="};">
 <div class="line"><a id="l00015" name="l00015"></a><span class="lineno"><a class="line" href="structpycanha_1_1radiative_1_1MemoryEstimate.html">   15</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structpycanha_1_1radiative_1_1MemoryEstimate.html">MemoryEstimate</a> {</div>
-<div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span>    <span class="comment">// Full num_slots x (num_slots + virtual columns) accumulator, sized for</span></div>
+<div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span>    <span class="comment">// Full num_faces x (num_faces + virtual columns) accumulator, sized for</span></div>
 <div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span>    <span class="comment">// the u64 exchange cells (vf counting cells take half).</span></div>
 <div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span>    std::uint64_t gpu_bytes_dense = 0;</div>
 <div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span>    <span class="comment">// One row of the tiled block scratch (+ nothing else — the scratch is</span></div>

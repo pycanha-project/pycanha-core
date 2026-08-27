@@ -1,8 +1,8 @@
 var NAVTREEINDEX0 =
 {
 "Instrumentor_8hpp_source.html":[12,0,0,0,0,8,1],
-"RandomGenerators_8hpp_source.html":[12,0,0,0,0,8,6],
-"SparseUtils_8hpp_source.html":[12,0,0,0,0,8,7],
+"RandomGenerators_8hpp_source.html":[12,0,0,0,0,8,7],
+"SparseUtils_8hpp_source.html":[12,0,0,0,0,8,8],
 "accumulators_8hpp_source.html":[12,0,0,0,0,4,0],
 "aggregate_8hpp_source.html":[12,0,0,0,0,4,1],
 "annotated.html":[11,0],

@@ -1,0 +1,7 @@
+<map id="pycanha::gmm::TriangularPrism::to_uv" name="pycanha::gmm::TriangularPrism::to_uv">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,40,196,85"/>
+<area shape="rect" id="Node000002" href="$classpycanha_1_1gmm_1_1TriangularPrism.html#a2d1fc825173a382ad25c7f2f3d84de7b" title="The three base corners, in their defining order." alt="" coords="244,5,434,50"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="196,46,231,43,226,44,197,51"/>
+<area shape="rect" id="Node000003" href="$classpycanha_1_1gmm_1_1TriangularPrism.html#a06acb6b6ddfa4c7194461872d8e26450" title="The extrusion vector p4 &#45; p1." alt="" coords="244,75,434,119"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="196,74,231,81,226,81,196,79"/>
+</map>

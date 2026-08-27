@@ -9,5 +9,6 @@ var dir_2d0c52cb84672e47a8037b3a062a857c =
     [ "quadrilateral.hpp", "quadrilateral_8hpp_source.html", null ],
     [ "rectangle.hpp", "rectangle_8hpp_source.html", null ],
     [ "sphere.hpp", "sphere_8hpp_source.html", null ],
-    [ "triangle.hpp", "triangle_8hpp_source.html", null ]
+    [ "triangle.hpp", "triangle_8hpp_source.html", null ],
+    [ "triangular_prism.hpp", "triangular__prism_8hpp_source.html", null ]
 ];

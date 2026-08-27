@@ -28,7 +28,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.19</span>
+   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.20</span>
    </div>
    <div id="projectbrief">The C++ core of pycanha</div>
   </td>
@@ -105,7 +105,7 @@ $(function(){initNavTree('gebhart_8hpp_source.html','',''); });
 <div class="line"><a id="l00009" name="l00009"></a><span class="lineno">    9</span><span class="keyword">namespace </span>pycanha::radiative {</div>
 <div class="line"><a id="l00010" name="l00010"></a><span class="lineno">   10</span> </div>
 <div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span><span class="comment">// CPU Gebhart services (no Vulkan, built unconditionally): re-derive</span></div>
-<div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span><span class="comment">// radiative exchange factors from a geometric VF matrix and per-face-slot</span></div>
+<div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span><span class="comment">// radiative exchange factors from a geometric VF matrix and per-face</span></div>
 <div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span><span class="comment">// band emissivities without re-tracing — the diffuse-gray fast path. The</span></div>
 <div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span><span class="comment">// MCRT exchange kernel computes the same quantity directly, so the two</span></div>
 <div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span><span class="comment">// paths are cross-checkable within Monte-Carlo tolerance.</span></div>
@@ -127,7 +127,7 @@ $(function(){initNavTree('gebhart_8hpp_source.html','',''); });
 <div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span> </div>
 <div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span><span class="comment">// Face-level Gebhart factors B = (I - F R)^-1 F E with R = diag(1 - eps),</span></div>
 <div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span><span class="comment">// E = diag(eps). The dense solve limits this to small models (the guard</span></div>
-<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span><span class="comment">// throws above ~20k face slots, pointing at gebhart_node_factors).</span></div>
+<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span><span class="comment">// throws above ~20k faces, pointing at gebhart_node_factors).</span></div>
 <div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>[[nodiscard]] SparseMatrix gebhart_factors(<span class="keyword">const</span> SparseMatrix&amp; vf,</div>
 <div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>                                           <span class="keyword">const</span> Eigen::VectorXd&amp; emissivity,</div>
 <div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>                                           std::span&lt;const double&gt; face_areas,</div>
@@ -137,7 +137,7 @@ $(function(){initNavTree('gebhart_8hpp_source.html','',''); });
 <div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span><span class="comment">// GR(m, n) = sum_{i in m} sum_{j in n} A_i eps_i B_ij, computed with one</span></div>
 <div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span><span class="comment">// sparse factorization of (I - F R) and n_nodes sparse solves instead of a</span></div>
 <div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span><span class="comment">// dense inverse. Rows/cols are indexed by position in</span></div>
-<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span><span class="comment">// aggregate_nodes(node_numbers); NO_NODE slots are dropped.</span></div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span><span class="comment">// aggregate_nodes(node_numbers); NO_NODE faces are dropped.</span></div>
 <div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>[[nodiscard]] SparseMatrix gebhart_node_factors(</div>
 <div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>    <span class="keyword">const</span> SparseMatrix&amp; vf, <span class="keyword">const</span> Eigen::VectorXd&amp; emissivity,</div>
 <div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>    std::span&lt;const NodeNum&gt; node_numbers, std::span&lt;const double&gt; face_areas,</div>

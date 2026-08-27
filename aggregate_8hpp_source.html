@@ -28,7 +28,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.19</span>
+   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.20</span>
    </div>
    <div id="projectbrief">The C++ core of pycanha</div>
   </td>
@@ -106,9 +106,9 @@ $(function(){initNavTree('aggregate_8hpp_source.html','',''); });
 <div class="line"><a id="l00010" name="l00010"></a><span class="lineno">   10</span><span class="keyword">namespace </span>pycanha::radiative {</div>
 <div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span> </div>
 <div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span><span class="comment">// Face -&gt; node reduction (results are kept at face level; node views are</span></div>
-<div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span><span class="comment">// computed on demand). `node_numbers` is the GMM per-face-slot node array</span></div>
+<div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span><span class="comment">// computed on demand). `node_numbers` is the GMM per-face node array</span></div>
 <div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span><span class="comment">// (NO_NODE = unassigned, dropped from every aggregate); `face_areas` the</span></div>
-<div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span><span class="comment">// per-slot areas. Rows/cols of the aggregated outputs are indexed by the</span></div>
+<div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span><span class="comment">// per-face areas. Rows/cols of the aggregated outputs are indexed by the</span></div>
 <div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span><span class="comment">// position of the node in aggregate_nodes(node_numbers).</span></div>
 <div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span> </div>
 <div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span><span class="comment">// Sorted unique node numbers with NO_NODE removed — the row/col labels of</span></div>
@@ -139,13 +139,13 @@ $(function(){initNavTree('aggregate_8hpp_source.html','',''); });
 <div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span><span class="comment">//</span></div>
 <div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span><span class="comment">// Two things do not survive the mapping from faces to nodes, and both are</span></div>
 <div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span><span class="comment">// handled here:</span></div>
-<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span><span class="comment">//  - node numbers are assigned independently of face-slot numbering, so a</span></div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span><span class="comment">//  - node numbers are assigned independently of face numbering, so a</span></div>
 <div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span><span class="comment">//    face pair i &lt; j can land on a node pair m &gt; n; every write is</span></div>
 <div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span><span class="comment">//    canonicalised to (min(m, n), max(m, n)) or the output would be an</span></div>
 <div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span><span class="comment">//    arbitrary mix of both triangles rather than a triangle,</span></div>
 <div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span><span class="comment">//  - pairs whose faces share a node fall on the diagonal. A node is</span></div>
 <div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span><span class="comment">//    isothermal by definition, so radiation it exchanges with itself</span></div>
-<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span><span class="comment">//    transports no heat and the coupling network has no slot for it; the</span></div>
+<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span><span class="comment">//    transports no heat and the coupling network has no face for it; the</span></div>
 <div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span><span class="comment">//    diagonal is dropped and its total reported.</span></div>
 <div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span><span class="comment">//</span></div>
 <div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span><span class="comment">// Matrix results carry the virtual space/inactive/lost bucket columns after</span></div>

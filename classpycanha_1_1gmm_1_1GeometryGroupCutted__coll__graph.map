@@ -1,13 +1,15 @@
 <map id="pycanha::gmm::GeometryGroupCutted" name="pycanha::gmm::GeometryGroupCutted">
-<area shape="rect" id="Node000001" title=" " alt="" coords="44,318,274,362"/>
-<area shape="rect" id="Node000002" href="$classpycanha_1_1gmm_1_1Geometry.html" title=" " alt="" coords="63,241,254,268"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="160,282,161,318,156,316,157,286"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="148,358,378,403"/>
+<area shape="rect" id="Node000002" href="$classpycanha_1_1gmm_1_1Geometry.html" title=" " alt="" coords="63,249,254,277"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="181,286,246,358,241,358,179,290"/>
 <area shape="rect" id="Node000003" href="$classpycanha_1_1gmm_1_1CoordinateTransformation.html" title=" " alt="" coords="5,123,203,168"/>
-<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="123,179,155,240,149,241,121,184"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="121,179,155,248,150,249,120,184"/>
 <area shape="rect" id="Node000004" href="$classpycanha_1_1gmm_1_1GeometryModel.html" title=" " alt="" coords="227,132,458,159"/>
-<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="306,169,225,219,184,242,181,238,223,214,310,166"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="307,170,181,251,178,246,311,166"/>
 <area shape="rect" id="Node000005" href="$structpycanha_1_1gmm_1_1MeshOptions.html" title=" " alt="" coords="128,14,339,42"/>
-<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="227,54,229,78,235,98,254,116,279,130,274,131,251,120,231,100,223,79,225,59"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="227,54,229,78,235,98,254,116,279,130,274,132,251,120,231,100,223,79,225,59"/>
 <area shape="rect" id="Node000006" href="$classpycanha_1_1gmm_1_1TriMesh.html" title=" " alt="" coords="362,5,539,50"/>
-<area shape="poly" id="edge5_Node000004_Node000006" title=" " alt="" coords="430,61,399,101,362,133,359,129,395,97,426,64"/>
+<area shape="poly" id="edge5_Node000004_Node000006" title=" " alt="" coords="429,61,399,101,362,133,359,129,395,97,426,64"/>
+<area shape="rect" id="Node000007" href="$classpycanha_1_1gmm_1_1TriMesh.html" title=" " alt="" coords="278,241,455,285"/>
+<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="340,296,284,360,281,356,335,298"/>
 </map>

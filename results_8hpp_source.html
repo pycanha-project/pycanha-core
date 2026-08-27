@@ -28,7 +28,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.19</span>
+   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.20</span>
    </div>
    <div id="projectbrief">The C++ core of pycanha</div>
   </td>
@@ -114,7 +114,7 @@ $(function(){initNavTree('results_8hpp_source.html','',''); });
 <div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span><span class="keyword">using </span>SparseIndex = SparseMatrix::StorageIndex;</div>
 <div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span> </div>
 <div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span><span class="comment">// Matrix results carry three VIRTUAL bucket columns appended after the</span></div>
-<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span><span class="comment">// num_face_slots real columns, so every parcel of emitted energy has an</span></div>
+<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span><span class="comment">// num_faces real columns, so every parcel of emitted energy has an</span></div>
 <div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span><span class="comment">// explicit, node-mappable destination:</span></div>
 <div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span><span class="comment">//  - space:    rays/energy that escaped the scene,</span></div>
 <div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span><span class="comment">//  - inactive: energy absorbed at inactive (non-radiative) faces</span></div>
@@ -152,8 +152,8 @@ $(function(){initNavTree('results_8hpp_source.html','',''); });
 <div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>};</div>
 </div>
 <div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span> </div>
-<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span><span class="comment">// Matrix rows are face slots (global, both sides); columns are the same</span></div>
-<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span><span class="comment">// slots plus the virtual bucket columns above (cols == rows +</span></div>
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span><span class="comment">// Matrix rows are faces (global, both sides); columns are the same</span></div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span><span class="comment">// faces plus the virtual bucket columns above (cols == rows +</span></div>
 <div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span><span class="comment">// num_virtual_columns). The consumer maps the buckets to real nodes (e.g.</span></div>
 <div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span><span class="comment">// the space node) or drops them.</span></div>
 <div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span><span class="comment">//</span></div>
@@ -166,7 +166,7 @@ $(function(){initNavTree('results_8hpp_source.html','',''); });
 <div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span><span class="comment">// makes that lossless: both view factors come back as F_ij = G_ij/A_i and</span></div>
 <div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span><span class="comment">// F_ji = G_ij/A_j from the face areas the scene already owns, whereas an</span></div>
 <div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span><span class="comment">// upper-triangular F would silently discard one direction. The diagonal is</span></div>
-<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span><span class="comment">// retained even though a planar face slot cannot see itself, so nothing is</span></div>
+<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span><span class="comment">// retained even though a planar face cannot see itself, so nothing is</span></div>
 <div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span><span class="comment">// dropped without saying so. The three bucket columns are always &gt; i, have</span></div>
 <div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span><span class="comment">// no transpose partner, and pass through untriangulated.</span></div>
 <div class="foldopen" id="foldopen00074" data-start="{" data-end="};">
@@ -188,8 +188,8 @@ $(function(){initNavTree('results_8hpp_source.html','',''); });
 <div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>};</div>
 </div>
 <div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span> </div>
-<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span><span class="comment">// Same shape and the same convention as VfResult: rows are face slots,</span></div>
-<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span><span class="comment">// columns are the slots plus the virtual bucket columns, and only the UPPER</span></div>
+<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span><span class="comment">// Same shape and the same convention as VfResult: rows are faces,</span></div>
+<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span><span class="comment">// columns are the faces plus the virtual bucket columns, and only the UPPER</span></div>
 <div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span><span class="comment">// TRIANGLE of the real face columns is kept.</span></div>
 <div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span><span class="comment">//</span></div>
 <div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span><span class="comment">// The stored value is the SYMMETRIC, EXTENSIVE quantity</span></div>
@@ -202,7 +202,7 @@ $(function(){initNavTree('results_8hpp_source.html','',''); });
 <div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span><span class="comment">// storing it is what makes the upper triangle lossless: both factors come</span></div>
 <div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span><span class="comment">// back as B_ij = H_ij/(A_i eps_i) and B_ji = H_ij/(A_j eps_j).</span></div>
 <div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span><span class="comment">//</span></div>
-<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span><span class="comment">// A slot with eps = 0 in the traced band is the one case where that does not</span></div>
+<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span><span class="comment">// A face with eps = 0 in the traced band is the one case where that does not</span></div>
 <div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span><span class="comment">// invert. It needs no special handling because there is nothing to recover:</span></div>
 <div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span><span class="comment">// such a face absorbs nothing, so B_ji = 0 for every j, and it emits nothing,</span></div>
 <div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span><span class="comment">// so its row transports no heat whatever the kernel&#39;s unit-energy rays did.</span></div>
@@ -223,7 +223,7 @@ $(function(){initNavTree('results_8hpp_source.html','',''); });
 <div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span>};</div>
 </div>
 <div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span> </div>
-<div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span><span class="comment">// Per-face-slot absorbed power; the solar kernel is O(Nf) and needs no</span></div>
+<div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span><span class="comment">// Per-face absorbed power; the solar kernel is O(Nf) and needs no</span></div>
 <div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span><span class="comment">// matrix. Watts (extensive): node mapping is a plain per-node sum, and</span></div>
 <div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span><span class="comment">// flux is watts / face area when needed.</span></div>
 <div class="foldopen" id="foldopen00127" data-start="{" data-end="};">

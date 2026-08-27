@@ -28,7 +28,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.19</span>
+   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.20</span>
    </div>
    <div id="projectbrief">The C++ core of pycanha</div>
   </td>
@@ -115,16 +115,16 @@ $(function(){initNavTree('radiative_2materials_8hpp_source.html','',''); });
 <div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span>    <span class="comment">// [eps_ir, spec_ir, tau_ir, alpha_sol, spec_sol, tau_sol] — matches</span></div>
 <div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span>    <span class="comment">// gmm::OpticalMaterial::Properties exactly.</span></div>
 <div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span>    Eigen::Matrix&lt;float, Eigen::Dynamic, 6&gt; properties;</div>
-<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span>    <span class="comment">// Per face SLOT (global, both sides): row index into `properties`, or -1</span></div>
+<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span>    <span class="comment">// Per face (global, both sides): row index into `properties`, or -1</span></div>
 <div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span>    <span class="comment">// for &quot;no material assigned&quot; (treated as blackbody; warned at build).</span></div>
 <div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span>    Eigen::VectorXi face_material;</div>
-<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span>    <span class="comment">// Per face SLOT: emission/reception activity (ThermalMesh side activity).</span></div>
+<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span>    <span class="comment">// Per face: emission/reception activity (ThermalMesh side activity).</span></div>
 <div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span>    Eigen::Matrix&lt;bool, Eigen::Dynamic, 1&gt; face_active;</div>
 <div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span> </div>
 <div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span>    [[nodiscard]] Eigen::Index num_materials() <span class="keyword">const</span> <span class="keyword">noexcept</span> {</div>
 <div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span>        <span class="keywordflow">return</span> properties.rows();</div>
 <div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span>    }</div>
-<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span>    [[nodiscard]] Eigen::Index num_face_slots() <span class="keyword">const</span> <span class="keyword">noexcept</span> {</div>
+<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span>    [[nodiscard]] Eigen::Index num_faces() <span class="keyword">const</span> <span class="keyword">noexcept</span> {</div>
 <div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span>        <span class="keywordflow">return</span> face_material.rows();</div>
 <div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>    }</div>
 <div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>};</div>

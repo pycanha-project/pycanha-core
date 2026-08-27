@@ -28,7 +28,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.19</span>
+   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.20</span>
    </div>
    <div id="projectbrief">The C++ core of pycanha</div>
   </td>
@@ -139,8 +139,8 @@ $(function(){initNavTree('exchange__assemble_8hpp_source.html','',''); });
 <div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span><span class="keyword">using </span>ExchangeCellSource =</div>
 <div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>    std::variant&lt;std::span&lt;const std::uint64_t&gt;, std::span&lt;const HostCountRow&gt;&gt;;</div>
 <div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span> </div>
-<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span><span class="comment">// The traced band&#39;s absorptivity per face slot, which is what weights</span></div>
-<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span><span class="comment">// emission and absorption alike. A slot with no material assigned is a</span></div>
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span><span class="comment">// The traced band&#39;s absorptivity per face, which is what weights</span></div>
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span><span class="comment">// emission and absorption alike. A face with no material assigned is a</span></div>
 <div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span><span class="comment">// blackbody (the scene warns about that at build time), so it reads 1.</span></div>
 <div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>[[nodiscard]] std::vector&lt;double&gt; band_emissivity(</div>
 <div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>    <span class="keyword">const</span> MaterialTable&amp; materials, Band band);</div>
@@ -148,7 +148,7 @@ $(function(){initNavTree('exchange__assemble_8hpp_source.html','',''); });
 <div class="foldopen" id="foldopen00052" data-start="{" data-end="};">
 <div class="line"><a id="l00052" name="l00052"></a><span class="lineno"><a class="line" href="structpycanha_1_1radiative_1_1detail_1_1ExchangeInputs.html">   52</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structpycanha_1_1radiative_1_1detail_1_1ExchangeInputs.html">ExchangeInputs</a> {</div>
 <div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>    ExchangeCellSource cells;</div>
-<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>    <span class="comment">// Per face slot; `rays_per_row` defines the slot count.</span></div>
+<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>    <span class="comment">// Per face; `rays_per_row` defines the face count.</span></div>
 <div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>    std::span&lt;const double&gt; areas;</div>
 <div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>    std::span&lt;const double&gt; emissivity;</div>
 <div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>    std::span&lt;const std::uint64_t&gt; rays_per_row;</div>
@@ -176,7 +176,7 @@ $(function(){initNavTree('exchange__assemble_8hpp_source.html','',''); });
 <div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span>}  <span class="comment">// namespace pycanha::radiative::detail</span></div>
 <div class="ttc" id="astructpycanha_1_1radiative_1_1AccumConfig_html"><div class="ttname"><a href="structpycanha_1_1radiative_1_1AccumConfig.html">pycanha::radiative::AccumConfig</a></div><div class="ttdef"><b>Definition</b> settings.hpp:81</div></div>
 <div class="ttc" id="astructpycanha_1_1radiative_1_1ExchangeResult_html"><div class="ttname"><a href="structpycanha_1_1radiative_1_1ExchangeResult.html">pycanha::radiative::ExchangeResult</a></div><div class="ttdef"><b>Definition</b> results.hpp:111</div></div>
-<div class="ttc" id="astructpycanha_1_1radiative_1_1detail_1_1AssemblyTuning_html"><div class="ttname"><a href="structpycanha_1_1radiative_1_1detail_1_1AssemblyTuning.html">pycanha::radiative::detail::AssemblyTuning</a></div><div class="ttdef"><b>Definition</b> pair_walk.hpp:105</div></div>
+<div class="ttc" id="astructpycanha_1_1radiative_1_1detail_1_1AssemblyTuning_html"><div class="ttname"><a href="structpycanha_1_1radiative_1_1detail_1_1AssemblyTuning.html">pycanha::radiative::detail::AssemblyTuning</a></div><div class="ttdef"><b>Definition</b> pair_walk.hpp:106</div></div>
 <div class="ttc" id="astructpycanha_1_1radiative_1_1detail_1_1ExchangeInputs_html"><div class="ttname"><a href="structpycanha_1_1radiative_1_1detail_1_1ExchangeInputs.html">pycanha::radiative::detail::ExchangeInputs</a></div><div class="ttdef"><b>Definition</b> exchange_assemble.hpp:52</div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->

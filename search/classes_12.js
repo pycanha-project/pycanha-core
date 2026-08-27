@@ -13,12 +13,13 @@ var searchData=
   ['tracestats_10',['TraceStats',['../structpycanha_1_1radiative_1_1TraceStats.html',1,'pycanha::radiative']]],
   ['transientsolver_11',['TransientSolver',['../classpycanha_1_1TransientSolver.html',1,'pycanha']]],
   ['triangle_12',['Triangle',['../classpycanha_1_1gmm_1_1Triangle.html',1,'pycanha::gmm']]],
-  ['triangulationconfig_13',['TriangulationConfig',['../structpycanha_1_1radiative_1_1TriangulationConfig.html',1,'pycanha::radiative']]],
-  ['trimesh_14',['TriMesh',['../classpycanha_1_1gmm_1_1TriMesh.html',1,'pycanha::gmm']]],
-  ['trimesh_3c_20double_20_3e_15',['TriMesh&lt; double &gt;',['../classpycanha_1_1gmm_1_1TriMesh.html',1,'pycanha::gmm']]],
-  ['trimesh_3c_20float_20_3e_16',['TriMesh&lt; float &gt;',['../classpycanha_1_1gmm_1_1TriMesh.html',1,'pycanha::gmm']]],
-  ['tscn_17',['TSCN',['../classpycanha_1_1TSCN.html',1,'pycanha']]],
-  ['tscnrl_18',['TSCNRL',['../classpycanha_1_1TSCNRL.html',1,'pycanha']]],
-  ['tscnrlds_19',['TSCNRLDS',['../classpycanha_1_1TSCNRLDS.html',1,'pycanha']]],
-  ['tscnrlds_5fjacobian_20',['TSCNRLDS_JACOBIAN',['../classpycanha_1_1TSCNRLDS__JACOBIAN.html',1,'pycanha']]]
+  ['triangularprism_13',['TriangularPrism',['../classpycanha_1_1gmm_1_1TriangularPrism.html',1,'pycanha::gmm']]],
+  ['triangulationconfig_14',['TriangulationConfig',['../structpycanha_1_1radiative_1_1TriangulationConfig.html',1,'pycanha::radiative']]],
+  ['trimesh_15',['TriMesh',['../classpycanha_1_1gmm_1_1TriMesh.html',1,'pycanha::gmm']]],
+  ['trimesh_3c_20double_20_3e_16',['TriMesh&lt; double &gt;',['../classpycanha_1_1gmm_1_1TriMesh.html',1,'pycanha::gmm']]],
+  ['trimesh_3c_20float_20_3e_17',['TriMesh&lt; float &gt;',['../classpycanha_1_1gmm_1_1TriMesh.html',1,'pycanha::gmm']]],
+  ['tscn_18',['TSCN',['../classpycanha_1_1TSCN.html',1,'pycanha']]],
+  ['tscnrl_19',['TSCNRL',['../classpycanha_1_1TSCNRL.html',1,'pycanha']]],
+  ['tscnrlds_20',['TSCNRLDS',['../classpycanha_1_1TSCNRLDS.html',1,'pycanha']]],
+  ['tscnrlds_5fjacobian_21',['TSCNRLDS_JACOBIAN',['../classpycanha_1_1TSCNRLDS__JACOBIAN.html',1,'pycanha']]]
 ];

@@ -28,7 +28,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.19</span>
+   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.20</span>
    </div>
    <div id="projectbrief">The C++ core of pycanha</div>
   </td>
@@ -193,57 +193,64 @@ $(function(){initNavTree('geometrymodel_8hpp_source.html','',''); });
 <div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>    <span class="comment">// becomes the part, expressed in that geometry&#39;s local frame with</span></div>
 <div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>    <span class="comment">// `transform` = its world placement) plus one remainder part in the world</span></div>
 <div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>    <span class="comment">// frame (identity transform, omitted when empty). Face ids stay GLOBAL:</span></div>
-<div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span>    <span class="comment">// the parts&#39; face_id sets partition the unified mesh()&#39;s, bit-identical</span></div>
-<div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span>    <span class="comment">// vertices included. part_id is the emission order (remainder first).</span></div>
-<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>    <span class="comment">// Throws std::invalid_argument on an unknown split name, a name nested</span></div>
-<div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span>    <span class="comment">// inside a cut group, or a duplicate.</span></div>
-<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>    [[nodiscard]] std::vector&lt;radiative::ScenePart&gt; mesh_parts(</div>
-<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>        std::span&lt;const std::string&gt; split = {}) <span class="keyword">const</span>;</div>
-<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span> </div>
-<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span>    <span class="comment">// Builds the per-face-slot material/activity tables from the per-side</span></div>
-<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>    <span class="comment">// ThermalMesh data (side1/side2 optical material + activity), indexed by</span></div>
-<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span>    <span class="comment">// global face slot (even/odd = side 1/2). Materials are deduplicated by</span></div>
-<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>    <span class="comment">// object identity; slots of items without an optical material get -1</span></div>
-<div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span>    <span class="comment">// (logged warning, one per item). Slots absent from the mesh (gaps after</span></div>
-<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>    <span class="comment">// cuts) are -1 and inactive.</span></div>
-<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>    [[nodiscard]] <a class="code hl_struct" href="structpycanha_1_1radiative_1_1MaterialTable.html">radiative::MaterialTable</a> material_table() <span class="keyword">const</span>;</div>
-<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span> </div>
-<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>  <span class="keyword">private</span>:</div>
-<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span>    [[nodiscard]] <span class="keyword">static</span> std::string canonicalize(<span class="keyword">const</span> std::string&amp; name);</div>
-<div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>    [[nodiscard]] std::shared_ptr&lt;Geometry&gt; find(<span class="keyword">const</span> std::string&amp; name) <span class="keyword">const</span>;</div>
-<div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>    <span class="keyword">static</span> <span class="keywordtype">void</span> collect_subtree(<span class="keyword">const</span> std::shared_ptr&lt;Geometry&gt;&amp; <span class="keywordtype">object</span>,</div>
-<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>                                std::vector&lt;std::shared_ptr&lt;Geometry&gt;&gt;&amp; out);</div>
-<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span>    <span class="keywordtype">void</span> register_node(<span class="keyword">const</span> std::shared_ptr&lt;Geometry&gt;&amp; node);</div>
-<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span>    <span class="keywordtype">void</span> unregister_node(<span class="keyword">const</span> std::shared_ptr&lt;Geometry&gt;&amp; node);</div>
-<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>    <span class="keywordtype">void</span> mark_structural_change() <span class="keyword">noexcept</span>;</div>
-<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span>    <span class="keywordtype">void</span> rebuild_mesh() <span class="keyword">const</span>;</div>
-<div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span>    <span class="keywordtype">void</span> rebuild_faces_of_node() <span class="keyword">const</span>;</div>
-<div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span> </div>
-<div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span>    std::string _name;</div>
-<div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span>    std::shared_ptr&lt;GeometryGroup&gt; _root;</div>
-<div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span> </div>
-<div class="line"><a id="l00128" name="l00128"></a><span class="lineno">  128</span>    std::unordered_map&lt;std::string, GeometryId&gt; _name_to_id;</div>
-<div class="line"><a id="l00129" name="l00129"></a><span class="lineno">  129</span>    std::unordered_map&lt;std::uint64_t, std::string&gt; _id_to_name;</div>
-<div class="line"><a id="l00130" name="l00130"></a><span class="lineno">  130</span>    std::unordered_map&lt;std::uint64_t, std::shared_ptr&lt;Geometry&gt;&gt; _by_id;</div>
-<div class="line"><a id="l00131" name="l00131"></a><span class="lineno">  131</span>    std::unordered_map&lt;std::uint64_t, std::shared_ptr&lt;GeometryGroup&gt;&gt;</div>
-<div class="line"><a id="l00132" name="l00132"></a><span class="lineno">  132</span>        _parent_of;</div>
-<div class="line"><a id="l00133" name="l00133"></a><span class="lineno">  133</span> </div>
-<div class="line"><a id="l00134" name="l00134"></a><span class="lineno">  134</span>    std::uint64_t _structure_version = 0;</div>
-<div class="line"><a id="l00135" name="l00135"></a><span class="lineno">  135</span>    <span class="comment">// Per-model counter seeding auto-generated &quot;geo_&lt;k&gt;&quot; names. Not atomic</span></div>
-<div class="line"><a id="l00136" name="l00136"></a><span class="lineno">  136</span>    <span class="comment">// (model mutation is single-threaded). Persisted natively; reseeded from</span></div>
-<div class="line"><a id="l00137" name="l00137"></a><span class="lineno">  137</span>    <span class="comment">// existing geo_&lt;N&gt; names when loading a foreign format.</span></div>
-<div class="line"><a id="l00138" name="l00138"></a><span class="lineno">  138</span>    std::uint64_t _auto_name_counter = 0;</div>
-<div class="line"><a id="l00139" name="l00139"></a><span class="lineno">  139</span>    <a class="code hl_struct" href="structpycanha_1_1gmm_1_1MeshOptions.html">MeshOptions</a> _default_mesh_options{};</div>
+<div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span>    <span class="comment">// the parts&#39; face_id sets partition the unified mesh()&#39;s. part_id is the</span></div>
+<div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span>    <span class="comment">// emission order (remainder first).</span></div>
+<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>    <span class="comment">//</span></div>
+<div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span>    <span class="comment">// Built from the same resolution walk as mesh(), so a cut group inside a</span></div>
+<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>    <span class="comment">// part is cut by exactly the cutters it would be in the model. A cutter</span></div>
+<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>    <span class="comment">// reaching across a part boundary is therefore baked into the part it cuts</span></div>
+<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>    <span class="comment">// — legitimate for a fixed configuration, wrong for an articulated one, so</span></div>
+<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span>    <span class="comment">// it is logged.</span></div>
+<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>    <span class="comment">//</span></div>
+<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span>    <span class="comment">// Throws std::invalid_argument on an unknown split name, a duplicate, or a</span></div>
+<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>    <span class="comment">// name that contributes no geometry.</span></div>
+<div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span>    [[nodiscard]] std::vector&lt;radiative::ScenePart&gt; mesh_parts(</div>
+<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>        std::span&lt;const std::string&gt; split = {}) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span> </div>
+<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>    <span class="comment">// Builds the per-face material/activity tables from the per-side</span></div>
+<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>    <span class="comment">// ThermalMesh data (side1/side2 optical material + activity), indexed by</span></div>
+<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span>    <span class="comment">// global face (even/odd = side 1/2). Materials are deduplicated by</span></div>
+<div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>    <span class="comment">// object identity; faces of items without an optical material get -1</span></div>
+<div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>    <span class="comment">// (logged warning, one per item). Faces absent from the mesh (gaps after</span></div>
+<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>    <span class="comment">// cuts) are -1 and inactive.</span></div>
+<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span>    [[nodiscard]] <a class="code hl_struct" href="structpycanha_1_1radiative_1_1MaterialTable.html">radiative::MaterialTable</a> material_table() <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span> </div>
+<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>  <span class="keyword">private</span>:</div>
+<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span>    [[nodiscard]] <span class="keyword">static</span> std::string canonicalize(<span class="keyword">const</span> std::string&amp; name);</div>
+<div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span>    [[nodiscard]] std::shared_ptr&lt;Geometry&gt; find(<span class="keyword">const</span> std::string&amp; name) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span>    <span class="keyword">static</span> <span class="keywordtype">void</span> collect_subtree(<span class="keyword">const</span> std::shared_ptr&lt;Geometry&gt;&amp; <span class="keywordtype">object</span>,</div>
+<div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span>                                std::vector&lt;std::shared_ptr&lt;Geometry&gt;&gt;&amp; out);</div>
+<div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span>    <span class="keywordtype">void</span> register_node(<span class="keyword">const</span> std::shared_ptr&lt;Geometry&gt;&amp; node);</div>
+<div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span>    <span class="keywordtype">void</span> unregister_node(<span class="keyword">const</span> std::shared_ptr&lt;Geometry&gt;&amp; node);</div>
+<div class="line"><a id="l00128" name="l00128"></a><span class="lineno">  128</span>    <span class="keywordtype">void</span> mark_structural_change() <span class="keyword">noexcept</span>;</div>
+<div class="line"><a id="l00129" name="l00129"></a><span class="lineno">  129</span>    <span class="keywordtype">void</span> rebuild_mesh() <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00130" name="l00130"></a><span class="lineno">  130</span>    <span class="keywordtype">void</span> rebuild_faces_of_node() <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00131" name="l00131"></a><span class="lineno">  131</span> </div>
+<div class="line"><a id="l00132" name="l00132"></a><span class="lineno">  132</span>    std::string _name;</div>
+<div class="line"><a id="l00133" name="l00133"></a><span class="lineno">  133</span>    std::shared_ptr&lt;GeometryGroup&gt; _root;</div>
+<div class="line"><a id="l00134" name="l00134"></a><span class="lineno">  134</span> </div>
+<div class="line"><a id="l00135" name="l00135"></a><span class="lineno">  135</span>    std::unordered_map&lt;std::string, GeometryId&gt; _name_to_id;</div>
+<div class="line"><a id="l00136" name="l00136"></a><span class="lineno">  136</span>    std::unordered_map&lt;std::uint64_t, std::string&gt; _id_to_name;</div>
+<div class="line"><a id="l00137" name="l00137"></a><span class="lineno">  137</span>    std::unordered_map&lt;std::uint64_t, std::shared_ptr&lt;Geometry&gt;&gt; _by_id;</div>
+<div class="line"><a id="l00138" name="l00138"></a><span class="lineno">  138</span>    std::unordered_map&lt;std::uint64_t, std::shared_ptr&lt;GeometryGroup&gt;&gt;</div>
+<div class="line"><a id="l00139" name="l00139"></a><span class="lineno">  139</span>        _parent_of;</div>
 <div class="line"><a id="l00140" name="l00140"></a><span class="lineno">  140</span> </div>
-<div class="line"><a id="l00141" name="l00141"></a><span class="lineno">  141</span>    <span class="keyword">mutable</span> <span class="keywordtype">bool</span> _mesh_dirty = <span class="keyword">true</span>;</div>
-<div class="line"><a id="l00142" name="l00142"></a><span class="lineno">  142</span>    <span class="keyword">mutable</span> TriMeshF _cached_mesh;</div>
-<div class="line"><a id="l00143" name="l00143"></a><span class="lineno">  143</span>    <span class="keyword">mutable</span> <span class="keywordtype">bool</span> _faces_of_node_dirty = <span class="keyword">true</span>;</div>
-<div class="line"><a id="l00144" name="l00144"></a><span class="lineno">  144</span>    <span class="keyword">mutable</span> std::unordered_map&lt;NodeNum, std::vector&lt;FaceId&gt;&gt;</div>
-<div class="line"><a id="l00145" name="l00145"></a><span class="lineno">  145</span>        _cached_faces_of_node;</div>
-<div class="line"><a id="l00146" name="l00146"></a><span class="lineno">  146</span>};</div>
-</div>
+<div class="line"><a id="l00141" name="l00141"></a><span class="lineno">  141</span>    std::uint64_t _structure_version = 0;</div>
+<div class="line"><a id="l00142" name="l00142"></a><span class="lineno">  142</span>    <span class="comment">// Per-model counter seeding auto-generated &quot;geo_&lt;k&gt;&quot; names. Not atomic</span></div>
+<div class="line"><a id="l00143" name="l00143"></a><span class="lineno">  143</span>    <span class="comment">// (model mutation is single-threaded). Persisted natively; reseeded from</span></div>
+<div class="line"><a id="l00144" name="l00144"></a><span class="lineno">  144</span>    <span class="comment">// existing geo_&lt;N&gt; names when loading a foreign format.</span></div>
+<div class="line"><a id="l00145" name="l00145"></a><span class="lineno">  145</span>    std::uint64_t _auto_name_counter = 0;</div>
+<div class="line"><a id="l00146" name="l00146"></a><span class="lineno">  146</span>    <a class="code hl_struct" href="structpycanha_1_1gmm_1_1MeshOptions.html">MeshOptions</a> _default_mesh_options{};</div>
 <div class="line"><a id="l00147" name="l00147"></a><span class="lineno">  147</span> </div>
-<div class="line"><a id="l00148" name="l00148"></a><span class="lineno">  148</span>}  <span class="comment">// namespace pycanha::gmm</span></div>
+<div class="line"><a id="l00148" name="l00148"></a><span class="lineno">  148</span>    <span class="keyword">mutable</span> <span class="keywordtype">bool</span> _mesh_dirty = <span class="keyword">true</span>;</div>
+<div class="line"><a id="l00149" name="l00149"></a><span class="lineno">  149</span>    <span class="keyword">mutable</span> TriMeshF _cached_mesh;</div>
+<div class="line"><a id="l00150" name="l00150"></a><span class="lineno">  150</span>    <span class="keyword">mutable</span> <span class="keywordtype">bool</span> _faces_of_node_dirty = <span class="keyword">true</span>;</div>
+<div class="line"><a id="l00151" name="l00151"></a><span class="lineno">  151</span>    <span class="keyword">mutable</span> std::unordered_map&lt;NodeNum, std::vector&lt;FaceId&gt;&gt;</div>
+<div class="line"><a id="l00152" name="l00152"></a><span class="lineno">  152</span>        _cached_faces_of_node;</div>
+<div class="line"><a id="l00153" name="l00153"></a><span class="lineno">  153</span>};</div>
+</div>
+<div class="line"><a id="l00154" name="l00154"></a><span class="lineno">  154</span> </div>
+<div class="line"><a id="l00155" name="l00155"></a><span class="lineno">  155</span>}  <span class="comment">// namespace pycanha::gmm</span></div>
 <div class="ttc" id="astructpycanha_1_1gmm_1_1MeshOptions_html"><div class="ttname"><a href="structpycanha_1_1gmm_1_1MeshOptions.html">pycanha::gmm::MeshOptions</a></div><div class="ttdef"><b>Definition</b> mesh_options.hpp:5</div></div>
 <div class="ttc" id="astructpycanha_1_1radiative_1_1MaterialTable_html"><div class="ttname"><a href="structpycanha_1_1radiative_1_1MaterialTable.html">pycanha::radiative::MaterialTable</a></div><div class="ttdef"><b>Definition</b> materials.hpp:16</div></div>
 </div><!-- fragment --></div><!-- contents -->

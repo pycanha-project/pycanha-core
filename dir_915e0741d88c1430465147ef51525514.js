@@ -5,6 +5,7 @@ var dir_915e0741d88c1430465147ef51525514 =
     [ "log_record.hpp", "log__record_8hpp_source.html", null ],
     [ "logger.hpp", "logger_8hpp_source.html", null ],
     [ "package_info.hpp", "package__info_8hpp_source.html", null ],
+    [ "parallel_for.hpp", "parallel__for_8hpp_source.html", null ],
     [ "profiling.hpp", "profiling_8hpp_source.html", null ],
     [ "RandomGenerators.hpp", "RandomGenerators_8hpp_source.html", null ],
     [ "SparseUtils.hpp", "SparseUtils_8hpp_source.html", null ]

@@ -25,7 +25,7 @@ var searchData=
   ['set_5ft_22',['set_T',['../classpycanha_1_1Node.html#acc6a025c4618c26b37148a339a4d53ac',1,'pycanha::Node::set_T()'],['../classpycanha_1_1Nodes.html#a6aa6d55b0065197751040c0ce579fa53',1,'pycanha::Nodes::set_T()']]],
   ['set_5fthermal_5fnodes_5fparent_23',['set_thermal_nodes_parent',['../classpycanha_1_1Node.html#aa6ed2994d3acaf711d8f0c12145a7983',1,'pycanha::Node']]],
   ['set_5ftype_24',['set_type',['../classpycanha_1_1Node.html#ae63b3c12229048934496f9d19a058aab',1,'pycanha::Node::set_type()'],['../classpycanha_1_1Nodes.html#a03c0a37e09d5c6085f4f55f5983eacce',1,'pycanha::Nodes::set_type()']]],
-  ['side_25',['side',['../structpycanha_1_1conduction_1_1CellLink.html#a335155cf6f579abd5d5a42d2af246338',1,'pycanha::conduction::CellLink']]],
+  ['side_25',['side',['../structpycanha_1_1conduction_1_1FacePairLink.html#a6e9e60a5b335f036d1f2703cafdc045d',1,'pycanha::conduction::FacePairLink']]],
   ['solaraccumimpl_26',['SolarAccumImpl',['../classpycanha_1_1radiative_1_1detail_1_1SolarAccumImpl.html',1,'pycanha::radiative::detail']]],
   ['solaraccumulator_27',['SolarAccumulator',['../classpycanha_1_1radiative_1_1SolarAccumulator.html',1,'pycanha::radiative']]],
   ['solarresult_28',['SolarResult',['../structpycanha_1_1radiative_1_1SolarResult.html',1,'pycanha::radiative']]],
@@ -41,5 +41,6 @@ var searchData=
   ['static_20analysis_20tools_38',['Static analysis tools',['../md_docs_2tools.html#autotoc_md10',1,'']]],
   ['status_39',['status',['../index.html#autotoc_md4',1,'Build and runtime status'],['../index.html#autotoc_md2',1,'Current implementation status']]],
   ['steadystatesolver_40',['SteadyStateSolver',['../classpycanha_1_1SteadyStateSolver.html',1,'pycanha']]],
-  ['symbolbinding_41',['SymbolBinding',['../structpycanha_1_1ExpressionFormula_1_1SymbolBinding.html',1,'pycanha::ExpressionFormula']]]
+  ['surface_5farea_41',['surface_area',['../classpycanha_1_1gmm_1_1TriangularPrism.html#a797fa848136ae195c53fa23a5e662630',1,'pycanha::gmm::TriangularPrism']]],
+  ['symbolbinding_42',['SymbolBinding',['../structpycanha_1_1ExpressionFormula_1_1SymbolBinding.html',1,'pycanha::ExpressionFormula']]]
 ];

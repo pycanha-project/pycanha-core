@@ -28,7 +28,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.19</span>
+   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.20</span>
    </div>
    <div id="projectbrief">The C++ core of pycanha</div>
   </td>
@@ -106,26 +106,26 @@ $(function(){initNavTree('links_8hpp_source.html','',''); });
 <div class="line"><a id="l00010" name="l00010"></a><span class="lineno">   10</span><span class="keyword">namespace </span>pycanha::conduction {</div>
 <div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span></div>
 <div class="foldopen" id="foldopen00023" data-start="{" data-end="};">
-<div class="line"><a id="l00023" name="l00023"></a><span class="lineno"><a class="line" href="structpycanha_1_1conduction_1_1CellLink.html">   23</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structpycanha_1_1conduction_1_1CellLink.html">CellLink</a> {</div>
-<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span>    pycanha::MeshIndex cell_a = 0;</div>
-<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span>    pycanha::MeshIndex cell_b = 0;</div>
-<div class="line"><a id="l00027" name="l00027"></a><span class="lineno"><a class="line" href="structpycanha_1_1conduction_1_1CellLink.html#a335155cf6f579abd5d5a42d2af246338">   27</a></span>    <span class="keywordtype">unsigned</span> <a class="code hl_variable" href="structpycanha_1_1conduction_1_1CellLink.html#a335155cf6f579abd5d5a42d2af246338">side</a> = 1U;</div>
-<div class="line"><a id="l00029" name="l00029"></a><span class="lineno"><a class="line" href="structpycanha_1_1conduction_1_1CellLink.html#a90db42285a740f412ff07be28b8548b1">   29</a></span>    <span class="keywordtype">double</span> <a class="code hl_variable" href="structpycanha_1_1conduction_1_1CellLink.html#a90db42285a740f412ff07be28b8548b1">conductance</a> = 0.0;</div>
+<div class="line"><a id="l00023" name="l00023"></a><span class="lineno"><a class="line" href="structpycanha_1_1conduction_1_1FacePairLink.html">   23</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structpycanha_1_1conduction_1_1FacePairLink.html">FacePairLink</a> {</div>
+<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span>    pycanha::MeshIndex face_pair_a = 0;</div>
+<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span>    pycanha::MeshIndex face_pair_b = 0;</div>
+<div class="line"><a id="l00027" name="l00027"></a><span class="lineno"><a class="line" href="structpycanha_1_1conduction_1_1FacePairLink.html#a6e9e60a5b335f036d1f2703cafdc045d">   27</a></span>    <span class="keywordtype">unsigned</span> <a class="code hl_variable" href="structpycanha_1_1conduction_1_1FacePairLink.html#a6e9e60a5b335f036d1f2703cafdc045d">side</a> = 1U;</div>
+<div class="line"><a id="l00029" name="l00029"></a><span class="lineno"><a class="line" href="structpycanha_1_1conduction_1_1FacePairLink.html#af59bee29789b0ef3aca384d43f37a130">   29</a></span>    <span class="keywordtype">double</span> <a class="code hl_variable" href="structpycanha_1_1conduction_1_1FacePairLink.html#af59bee29789b0ef3aca384d43f37a130">conductance</a> = 0.0;</div>
 <div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span>};</div>
 </div>
 <div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span></div>
-<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>[[nodiscard]] std::vector&lt;CellLink&gt; intra_primitive_links(</div>
-<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>    <span class="keyword">const</span> gmm::Primitive&amp; primitive, <span class="keyword">const</span> <a class="code hl_class" href="classpycanha_1_1gmm_1_1ThermalMesh.html">gmm::ThermalMesh</a>&amp; thermal_mesh,</div>
-<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>    <span class="keyword">const</span> <a class="code hl_struct" href="structpycanha_1_1conduction_1_1TmmBuildOptions.html">TmmBuildOptions</a>&amp; options);</div>
-<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span></div>
-<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>[[nodiscard]] <span class="keywordtype">double</span> through_thickness_conductance(</div>
-<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>    <span class="keyword">const</span> <a class="code hl_class" href="classpycanha_1_1gmm_1_1ThermalMesh.html">gmm::ThermalMesh</a>&amp; thermal_mesh, <span class="keywordtype">double</span> pair_area);</div>
-<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span> </div>
-<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>}  <span class="comment">// namespace pycanha::conduction</span></div>
+<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>[[nodiscard]] std::vector&lt;FacePairLink&gt; intra_primitive_links(</div>
+<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>    <span class="keyword">const</span> gmm::Primitive&amp; primitive, <span class="keyword">const</span> <a class="code hl_class" href="classpycanha_1_1gmm_1_1ThermalMesh.html">gmm::ThermalMesh</a>&amp; thermal_mesh,</div>
+<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>    <span class="keyword">const</span> <a class="code hl_struct" href="structpycanha_1_1conduction_1_1TmmBuildOptions.html">TmmBuildOptions</a>&amp; options);</div>
+<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span></div>
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>[[nodiscard]] <span class="keywordtype">double</span> through_thickness_conductance(</div>
+<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>    <span class="keyword">const</span> <a class="code hl_class" href="classpycanha_1_1gmm_1_1ThermalMesh.html">gmm::ThermalMesh</a>&amp; thermal_mesh, <span class="keywordtype">double</span> pair_area);</div>
+<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span> </div>
+<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>}  <span class="comment">// namespace pycanha::conduction</span></div>
 <div class="ttc" id="aclasspycanha_1_1gmm_1_1ThermalMesh_html"><div class="ttname"><a href="classpycanha_1_1gmm_1_1ThermalMesh.html">pycanha::gmm::ThermalMesh</a></div><div class="ttdoc">Per-primitive thermal discretization with full legacy parity.</div><div class="ttdef"><b>Definition</b> thermal_mesh.hpp:63</div></div>
-<div class="ttc" id="astructpycanha_1_1conduction_1_1CellLink_html"><div class="ttname"><a href="structpycanha_1_1conduction_1_1CellLink.html">pycanha::conduction::CellLink</a></div><div class="ttdoc">An in-plane conductor between two adjacent cells of one item.</div><div class="ttdef"><b>Definition</b> links.hpp:23</div></div>
-<div class="ttc" id="astructpycanha_1_1conduction_1_1CellLink_html_a335155cf6f579abd5d5a42d2af246338"><div class="ttname"><a href="structpycanha_1_1conduction_1_1CellLink.html#a335155cf6f579abd5d5a42d2af246338">pycanha::conduction::CellLink::side</a></div><div class="ttdeci">unsigned side</div><div class="ttdoc">1 or 2: which of the two sheets this conductor belongs to.</div><div class="ttdef"><b>Definition</b> links.hpp:27</div></div>
-<div class="ttc" id="astructpycanha_1_1conduction_1_1CellLink_html_a90db42285a740f412ff07be28b8548b1"><div class="ttname"><a href="structpycanha_1_1conduction_1_1CellLink.html#a90db42285a740f412ff07be28b8548b1">pycanha::conduction::CellLink::conductance</a></div><div class="ttdeci">double conductance</div><div class="ttdoc">W/K.</div><div class="ttdef"><b>Definition</b> links.hpp:29</div></div>
+<div class="ttc" id="astructpycanha_1_1conduction_1_1FacePairLink_html"><div class="ttname"><a href="structpycanha_1_1conduction_1_1FacePairLink.html">pycanha::conduction::FacePairLink</a></div><div class="ttdoc">An in-plane conductor between two adjacent face pairs of one item.</div><div class="ttdef"><b>Definition</b> links.hpp:23</div></div>
+<div class="ttc" id="astructpycanha_1_1conduction_1_1FacePairLink_html_a6e9e60a5b335f036d1f2703cafdc045d"><div class="ttname"><a href="structpycanha_1_1conduction_1_1FacePairLink.html#a6e9e60a5b335f036d1f2703cafdc045d">pycanha::conduction::FacePairLink::side</a></div><div class="ttdeci">unsigned side</div><div class="ttdoc">1 or 2: which of the two sheets this conductor belongs to.</div><div class="ttdef"><b>Definition</b> links.hpp:27</div></div>
+<div class="ttc" id="astructpycanha_1_1conduction_1_1FacePairLink_html_af59bee29789b0ef3aca384d43f37a130"><div class="ttname"><a href="structpycanha_1_1conduction_1_1FacePairLink.html#af59bee29789b0ef3aca384d43f37a130">pycanha::conduction::FacePairLink::conductance</a></div><div class="ttdeci">double conductance</div><div class="ttdoc">W/K.</div><div class="ttdef"><b>Definition</b> links.hpp:29</div></div>
 <div class="ttc" id="astructpycanha_1_1conduction_1_1TmmBuildOptions_html"><div class="ttname"><a href="structpycanha_1_1conduction_1_1TmmBuildOptions.html">pycanha::conduction::TmmBuildOptions</a></div><div class="ttdoc">Knobs of the gmm -&gt; tmm conduction build.</div><div class="ttdef"><b>Definition</b> options.hpp:12</div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->

@@ -1,4 +1,5 @@
 var searchData=
 [
-  ['_7enodes_0',['~Nodes',['../classpycanha_1_1Nodes.html#a367ddc89abf198442e1311564fae5e66',1,'pycanha::Nodes']]]
+  ['thermalmesh_0',['ThermalMesh',['../classpycanha_1_1gmm_1_1ThermalMesh.html#a5f3f0595e7974b0088a430ce83f5d7a2',1,'pycanha::gmm::ThermalMesh::ThermalMesh()'],['../classpycanha_1_1gmm_1_1ThermalMesh.html#a0e0d82e66d1889ef7cc4bf7b1bb15d49',1,'pycanha::gmm::ThermalMesh::ThermalMesh(std::vector&lt; double &gt; dir1_mesh, std::vector&lt; double &gt; dir2_mesh)']]],
+  ['to_5fuv_1',['to_uv',['../classpycanha_1_1gmm_1_1TriangularPrism.html#aa6ac971000789a35b42c3d0bf09e2369',1,'pycanha::gmm::TriangularPrism']]]
 ];

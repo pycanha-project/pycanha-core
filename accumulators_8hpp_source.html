@@ -28,7 +28,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.19</span>
+   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.20</span>
    </div>
    <div id="projectbrief">The C++ core of pycanha</div>
   </td>
@@ -118,9 +118,9 @@ $(function(){initNavTree('accumulators_8hpp_source.html','',''); });
 <div class="foldopen" id="foldopen00022" data-start="{" data-end="};">
 <div class="line"><a id="l00022" name="l00022"></a><span class="lineno"><a class="line" href="classpycanha_1_1radiative_1_1VfAccumulator.html">   22</a></span><span class="keyword">class </span>VfAccumulator {</div>
 <div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span>  <span class="keyword">public</span>:</div>
-<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span>    <span class="comment">// Dense allocates the full num_slots x num_slots buffer up front (the</span></div>
+<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span>    <span class="comment">// Dense allocates the full num_num_faces x num_faces buffer up front (the</span></div>
 <div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span>    <span class="comment">// small-model fast path); Tiled bounds GPU memory to tile_rows x</span></div>
-<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span>    <span class="comment">// num_slots and streams row blocks into host-side sparse storage. Both</span></div>
+<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span>    <span class="comment">// num_faces and streams row blocks into host-side sparse storage. Both</span></div>
 <div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span>    <span class="comment">// produce bit-identical results for the same seed.</span></div>
 <div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span>    <span class="keyword">explicit</span> VfAccumulator(<span class="keyword">const</span> <a class="code hl_class" href="classpycanha_1_1radiative_1_1RadiativeScene.html">RadiativeScene</a>&amp; scene,</div>
 <div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span>                           <a class="code hl_struct" href="structpycanha_1_1radiative_1_1AccumConfig.html">AccumConfig</a> config = {});</div>
@@ -173,7 +173,7 @@ $(function(){initNavTree('accumulators_8hpp_source.html','',''); });
 <div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>};</div>
 </div>
 <div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span> </div>
-<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span><span class="comment">// Solar-absorption accumulator: per-face-slot direct/total energy vectors</span></div>
+<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span><span class="comment">// Solar-absorption accumulator: per-face direct/total energy vectors</span></div>
 <div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span><span class="comment">// (the solar kernel is O(Nf); there is no matrix and no layout distinction).</span></div>
 <div class="foldopen" id="foldopen00078" data-start="{" data-end="};">
 <div class="line"><a id="l00078" name="l00078"></a><span class="lineno"><a class="line" href="classpycanha_1_1radiative_1_1SolarAccumulator.html">   78</a></span><span class="keyword">class </span>SolarAccumulator {</div>

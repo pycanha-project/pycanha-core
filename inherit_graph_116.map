@@ -1,17 +1,3 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="Node000000" href="$classpycanha_1_1Solver.html" title=" " alt="" coords="5,32,131,60"/>
-<area shape="rect" id="Node000001" href="$classpycanha_1_1SteadyStateSolver.html" title=" " alt="" coords="179,5,383,33"/>
-<area shape="poly" id="edge8_Node000000_Node000001" title=" " alt="" coords="146,33,181,31,176,33,147,39"/>
-<area shape="rect" id="Node000003" href="$classpycanha_1_1TransientSolver.html" title=" " alt="" coords="189,57,373,85"/>
-<area shape="poly" id="edge10_Node000000_Node000003" title=" " alt="" coords="146,52,191,60,185,60,146,58"/>
-<area shape="rect" id="Node000002" href="$classpycanha_1_1SSLU.html" title=" " alt="" coords="432,5,549,33"/>
-<area shape="poly" id="edge9_Node000001_Node000002" title=" " alt="" coords="398,17,434,19,429,19,399,22"/>
-<area shape="rect" id="Node000004" href="$classpycanha_1_1TSCN.html" title=" " alt="" coords="431,57,550,85"/>
-<area shape="poly" id="edge11_Node000003_Node000004" title=" " alt="" coords="389,69,433,71,428,71,389,74"/>
-<area shape="rect" id="Node000005" href="$classpycanha_1_1TSCNRL.html" title=" " alt="" coords="598,57,734,85"/>
-<area shape="poly" id="edge12_Node000004_Node000005" title=" " alt="" coords="566,69,600,71,595,71,566,74"/>
-<area shape="rect" id="Node000006" href="$classpycanha_1_1TSCNRLDS.html" title=" " alt="" coords="782,57,935,85"/>
-<area shape="poly" id="edge13_Node000005_Node000006" title=" " alt="" coords="749,69,784,71,778,71,749,74"/>
-<area shape="rect" id="Node000007" href="$classpycanha_1_1TSCNRLDS__JACOBIAN.html" title=" " alt="" coords="983,57,1207,85"/>
-<area shape="poly" id="edge14_Node000006_Node000007" title=" " alt="" coords="950,69,985,71,980,71,950,74"/>
+<area shape="rect" id="Node000000" href="$classpycanha_1_1RadiativeCouplings.html" title=" " alt="" coords="5,5,216,33"/>
 </map>

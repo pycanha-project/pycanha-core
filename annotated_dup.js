@@ -2,7 +2,7 @@ var annotated_dup =
 [
     [ "pycanha", "namespacepycanha.html", [
       [ "conduction", null, [
-        [ "CellLink", "structpycanha_1_1conduction_1_1CellLink.html", "structpycanha_1_1conduction_1_1CellLink" ],
+        [ "FacePairLink", "structpycanha_1_1conduction_1_1FacePairLink.html", "structpycanha_1_1conduction_1_1FacePairLink" ],
         [ "TmmBuildOptions", "structpycanha_1_1conduction_1_1TmmBuildOptions.html", "structpycanha_1_1conduction_1_1TmmBuildOptions" ],
         [ "BuildDiagnostic", "structpycanha_1_1conduction_1_1BuildDiagnostic.html", null ],
         [ "TmmBuildReport", "structpycanha_1_1conduction_1_1TmmBuildReport.html", "structpycanha_1_1conduction_1_1TmmBuildReport" ],
@@ -26,6 +26,8 @@ var annotated_dup =
           ] ]
         ] ],
         [ "detail", null, [
+          [ "ResolvedCutter", "structpycanha_1_1gmm_1_1detail_1_1ResolvedCutter.html", null ],
+          [ "ResolvedTarget", "structpycanha_1_1gmm_1_1detail_1_1ResolvedTarget.html", null ],
           [ "PlaneBasis", "structpycanha_1_1gmm_1_1detail_1_1PlaneBasis.html", null ],
           [ "SphereFrame", "structpycanha_1_1gmm_1_1detail_1_1SphereFrame.html", null ]
         ] ],
@@ -46,6 +48,7 @@ var annotated_dup =
         [ "Rectangle", "classpycanha_1_1gmm_1_1Rectangle.html", null ],
         [ "Sphere", "classpycanha_1_1gmm_1_1Sphere.html", null ],
         [ "Triangle", "classpycanha_1_1gmm_1_1Triangle.html", null ],
+        [ "TriangularPrism", "classpycanha_1_1gmm_1_1TriangularPrism.html", "classpycanha_1_1gmm_1_1TriangularPrism" ],
         [ "CoordinateTransformation", "classpycanha_1_1gmm_1_1CoordinateTransformation.html", null ],
         [ "Geometry", "classpycanha_1_1gmm_1_1Geometry.html", null ],
         [ "GeometryGroup", "classpycanha_1_1gmm_1_1GeometryGroup.html", null ],

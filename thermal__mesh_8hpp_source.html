@@ -28,7 +28,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.19</span>
+   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.20</span>
    </div>
    <div id="projectbrief">The C++ core of pycanha</div>
   </td>
@@ -216,7 +216,7 @@ $(function(){initNavTree('thermal__mesh_8hpp_source.html','',''); });
 <div class="line"><a id="l00155" name="l00155"></a><span class="lineno">  155</span>    }</div>
 <div class="line"><a id="l00156" name="l00156"></a><span class="lineno">  156</span> </div>
 <div class="line"><a id="l00157" name="l00157"></a><span class="lineno">  157</span>    <span class="comment">// --- Per-side tmm-node assignment ---</span></div>
-<div class="line"><a id="l00158" name="l00158"></a><span class="lineno">  158</span>    <span class="comment">// Cell index k for cell (i in dir1, j in dir2): k = i + j*(n1-1), i.e.</span></div>
+<div class="line"><a id="l00158" name="l00158"></a><span class="lineno">  158</span>    <span class="comment">// Index k of the face pair (i in dir1, j in dir2): k = i + j*(n1-1), i.e.</span></div>
 <div class="line"><a id="l00159" name="l00159"></a><span class="lineno">  159</span>    <span class="comment">// direction 1 varies fastest. That is the order STEP-TAS lists a meshed</span></div>
 <div class="line"><a id="l00160" name="l00160"></a><span class="lineno">  160</span>    <span class="comment">// surface&#39;s faces in, so k is also the face&#39;s index in an exchanged model.</span></div>
 <div class="line"><a id="l00161" name="l00161"></a><span class="lineno">  161</span>    <span class="comment">//   node_side1(k) = node1_start + k * node1_step</span></div>
@@ -281,8 +281,8 @@ $(function(){initNavTree('thermal__mesh_8hpp_source.html','',''); });
 <div class="ttc" id="aclasspycanha_1_1gmm_1_1Color_html"><div class="ttname"><a href="classpycanha_1_1gmm_1_1Color.html">pycanha::gmm::Color</a></div><div class="ttdoc">A 3-channel (RGB) color.</div><div class="ttdef"><b>Definition</b> color.hpp:18</div></div>
 <div class="ttc" id="aclasspycanha_1_1gmm_1_1ThermalMesh_html_a24556da698cfcb9839e484b3a10fe965"><div class="ttname"><a href="classpycanha_1_1gmm_1_1ThermalMesh.html#a24556da698cfcb9839e484b3a10fe965">pycanha::gmm::ThermalMesh::is_radiative_active</a></div><div class="ttdeci">bool is_radiative_active(unsigned side) const</div><div class="ttdoc">Per-side predicates. side must be 1 or 2, else std::invalid_argument.</div><div class="ttdef"><b>Definition</b> thermal_mesh.cpp:66</div></div>
 <div class="ttc" id="aclasspycanha_1_1gmm_1_1ThermalMesh_html_a5f3f0595e7974b0088a430ce83f5d7a2"><div class="ttname"><a href="classpycanha_1_1gmm_1_1ThermalMesh.html#a5f3f0595e7974b0088a430ce83f5d7a2">pycanha::gmm::ThermalMesh::ThermalMesh</a></div><div class="ttdeci">ThermalMesh()</div><div class="ttdoc">Default: unit square, one face pair, all defaults.</div><div class="ttdef"><b>Definition</b> thermal_mesh.cpp:18</div></div>
-<div class="ttc" id="aclasspycanha_1_1gmm_1_1ThermalMesh_html_aaa406f5c700d192f5631890c58bf0140"><div class="ttname"><a href="classpycanha_1_1gmm_1_1ThermalMesh.html#aaa406f5c700d192f5631890c58bf0140">pycanha::gmm::ThermalMesh::get_number_of_pair_faces</a></div><div class="ttdeci">MeshIndex get_number_of_pair_faces() const noexcept</div><div class="ttdoc">(n1 - 1) * (n2 - 1) face pairs.</div><div class="ttdef"><b>Definition</b> thermal_mesh.cpp:114</div></div>
-<div class="ttc" id="aclasspycanha_1_1gmm_1_1ThermalMesh_html_aac124a372d1692a68060071bf2c39b25"><div class="ttname"><a href="classpycanha_1_1gmm_1_1ThermalMesh.html#aac124a372d1692a68060071bf2c39b25">pycanha::gmm::ThermalMesh::node_of</a></div><div class="ttdeci">NodeNum node_of(MeshIndex i, MeshIndex j, unsigned side) const</div><div class="ttdef"><b>Definition</b> thermal_mesh.cpp:118</div></div>
+<div class="ttc" id="aclasspycanha_1_1gmm_1_1ThermalMesh_html_aaa406f5c700d192f5631890c58bf0140"><div class="ttname"><a href="classpycanha_1_1gmm_1_1ThermalMesh.html#aaa406f5c700d192f5631890c58bf0140">pycanha::gmm::ThermalMesh::get_number_of_pair_faces</a></div><div class="ttdeci">MeshIndex get_number_of_pair_faces() const noexcept</div><div class="ttdoc">(n1 - 1) * (n2 - 1) face pairs.</div><div class="ttdef"><b>Definition</b> thermal_mesh.cpp:115</div></div>
+<div class="ttc" id="aclasspycanha_1_1gmm_1_1ThermalMesh_html_aac124a372d1692a68060071bf2c39b25"><div class="ttname"><a href="classpycanha_1_1gmm_1_1ThermalMesh.html#aac124a372d1692a68060071bf2c39b25">pycanha::gmm::ThermalMesh::node_of</a></div><div class="ttdeci">NodeNum node_of(MeshIndex i, MeshIndex j, unsigned side) const</div><div class="ttdef"><b>Definition</b> thermal_mesh.cpp:119</div></div>
 <div class="ttc" id="aclasspycanha_1_1gmm_1_1ThermalMesh_html_aae3a47011c3fdce2cdea46bc30898856"><div class="ttname"><a href="classpycanha_1_1gmm_1_1ThermalMesh.html#aae3a47011c3fdce2cdea46bc30898856">pycanha::gmm::ThermalMesh::is_side_active</a></div><div class="ttdeci">bool is_side_active(unsigned side) const</div><div class="ttdef"><b>Definition</b> thermal_mesh.cpp:76</div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->

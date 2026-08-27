@@ -28,7 +28,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.19</span>
+   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.20</span>
    </div>
    <div id="projectbrief">The C++ core of pycanha</div>
   </td>
@@ -234,7 +234,7 @@ std::int32_t&#160;</td><td class="memItemRight" valign="bottom"><b>_node2_step</
 <div class="textblock"><p>Per-primitive thermal discretization with full legacy parity. </p>
 <p>Carries the UV cut vectors in the two parametric directions plus the two per-physics active-side selectors and, per side (side 1 = front, side 2 = back), thickness, color, bulk material and optical material. Adds four int32 fields driving the face -&gt; tmm-node assignment (see <a class="el" href="#aac124a372d1692a68060071bf2c39b25">node_of()</a>).</p>
 <p>NOTE on the public surface: there is intentionally no <span class="tt">Side</span> enum and no <span class="tt">face_id(i, j, side)</span> accessor. Internal face numbering (even = side 1, odd = side 2) is an implementation detail of the mesher.</p>
-<p>Validation is enforced on every setter: an invalid state throws std::invalid_argument (same contract as the legacy implementation). A <a class="el" href="classpycanha_1_1gmm_1_1ThermalMesh.html" title="Per-primitive thermal discretization with full legacy parity.">ThermalMesh</a> shared between two GeometryItems yields the SAME per-cell node number on both (the node fields are inputs, not per-item state). </p>
+<p>Validation is enforced on every setter: an invalid state throws std::invalid_argument (same contract as the legacy implementation). A <a class="el" href="classpycanha_1_1gmm_1_1ThermalMesh.html" title="Per-primitive thermal discretization with full legacy parity.">ThermalMesh</a> shared between two GeometryItems yields the SAME per-face-pair node number on both (the node fields are inputs, not per-item state). </p>
 </div><a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Member Function Documentation</h2>
 <a id="aae3a47011c3fdce2cdea46bc30898856" name="aae3a47011c3fdce2cdea46bc30898856"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#aae3a47011c3fdce2cdea46bc30898856">&#9670;&#160;</a></span>is_side_active()</h2>
@@ -294,7 +294,7 @@ shell exists at all" test. </p>
   </tr>
 </table>
 </div><div class="memdoc">
-<p><a class="el" href="classpycanha_1_1Node.html">Node</a> number for cell (i, j) on <code class="param">side</code> (1 or 2). Throws std::invalid_argument if side is not 1/2 or if (i, j) is outside the cell grid ((dir1-1) x (dir2-1)). </p>
+<p><a class="el" href="classpycanha_1_1Node.html">Node</a> number for face pair (i, j) on <code class="param">side</code> (1 or 2). Throws std::invalid_argument if side is not 1/2 or if (i, j) is outside the face-pair grid ((dir1-1) x (dir2-1)). </p>
 
 </div>
 </div>
