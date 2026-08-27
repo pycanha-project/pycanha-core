@@ -8,11 +8,10 @@
 #include <utility>
 #include <vector>
 
-#include "pycanha-core/globals.hpp"
 #include "pycanha-core/gmm/mesh/trimesh.hpp"
 #include "pycanha-core/gmm/scene/coordinate_transformation.hpp"
 #include "pycanha-core/gmm/scene/geometry.hpp"
-#include "pycanha-core/gmm/scene/scene_mesh_detail.hpp"
+#include "pycanha-core/gmm/scene/resolve.hpp"
 
 namespace pycanha::gmm {
 
@@ -57,14 +56,10 @@ std::span<const std::shared_ptr<Geometry>> GeometryGroup::children()
 }
 
 const TriMeshD& GeometryGroup::mesh() const {
-    _walk_result = TriMeshD{};
-    // Concatenate every child mesh into _walk_result, threading the running
-    // face-id offset through concatenate_offset.
-    pycanha::MeshIndex offset = 0;
-    for (const auto& child : _children) {
-        detail::concatenate_offset(_walk_result, child->mesh(), offset);
-    }
-    detail::apply_transform_in_place(_walk_result, _transform);
+    // Not a concatenation of the children's own meshes: the subtree is
+    // resolved with this group as the resolution root, so a cut group anywhere
+    // below it cuts its whole target subtree in one operation.
+    _walk_result = detail::resolve_subtree(*this);
     return _walk_result;
 }
 

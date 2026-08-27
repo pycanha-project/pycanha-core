@@ -403,7 +403,7 @@ void move_rows(Eigen::SparseMatrix<double, Eigen::RowMajor>& sparse,
     auto values_to_copy = std::vector<Values>(sz_it);
     // NOLINTEND(hicpp-avoid-c-arrays,cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays)
 
-    // Copy out the two row slots
+    // Copy out the two row faces
     std::memcpy(inner_from_copy.data(), inner + from_start_vidx,
                 sz_if * sizeof(StorageIndex));
     std::memcpy(values_from_copy.data(), vals + from_start_vidx,

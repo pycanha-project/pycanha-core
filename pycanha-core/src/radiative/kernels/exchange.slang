@@ -5,7 +5,7 @@
 // specular/transmission/diffuse choice is stochastic. Normalization on the
 // CPU: B[i][j] = deposited[i][j] / rays_i.
 //
-// The accumulator row stride is num_face_slots + 3: after the real face
+// The accumulator row stride is num_faces + 3: after the real face
 // columns come the virtual space / inactive / lost columns, so every
 // termination has an explicit, node-mappable destination.
 //
@@ -24,7 +24,7 @@ import common;
 
 // FpBuffer is a u64 cell on SPIR-V and a lo/hi u32 pair on Metal (same bytes);
 // deposits go through fp_add / fp_add_raw, never a raw InterlockedAdd here.
-[[vk::binding(10, 0)]] FpBuffer acc;
+[[vk::binding(9, 0)]] FpBuffer acc;
 
 [shader("compute")]
 [numthreads(64, 1, 1)]
@@ -34,20 +34,20 @@ void csMain(uint3 gid: SV_DispatchThreadID) {
     if (ray_local >= pc.rays_this_chunk || e >= pc.num_emitters) {
         return;
     }
-    // The emitter slot comes from the emitters buffer, NEVER from gid
-    // arithmetic over slots; ray_index includes the chunk offset so results
+    // The emitter face comes from the emitters buffer, NEVER from gid
+    // arithmetic over faces; ray_index includes the chunk offset so results
     // are invariant under dispatch chunking.
-    uint face_slot = emitters[e];
+    uint face = emitters[e];
     uint ray_index = pc.ray_index_offset + ray_local;
-    Rng rng = rng_init(face_slot, ray_index, pc.batch_seed);
-    uint stride = pc.num_face_slots + 3u;
+    Rng rng = rng_init(face, ray_index, pc.batch_seed);
+    uint stride = pc.num_faces + 3u;
     // Block-relative accumulator row base.
-    uint row_base = (face_slot - pc.row_offset) * stride;
-    uint space_col = pc.num_face_slots;
-    uint inactive_col = pc.num_face_slots + 1u;
-    uint lost_col = pc.num_face_slots + 2u;
+    uint row_base = (face - pc.row_offset) * stride;
+    uint space_col = pc.num_faces;
+    uint inactive_col = pc.num_faces + 1u;
+    uint lost_col = pc.num_faces + 2u;
 
-    EmittedRay ray = emit_from_face(face_slot, rng);
+    EmittedRay ray = emit_from_face(face, rng);
     float3 origin = ray.origin;
     float3 dir = ray.direction;
     float energy = 1.0;
@@ -61,13 +61,17 @@ void csMain(uint3 gid: SV_DispatchThreadID) {
             fp_add_raw(acc, row_base + space_col, fp_remaining);
             return;
         }
-        if ((face_flags[hit.slot] & FACE_FLAG_PLANET) != 0u) {
+        // One load per bounce: the flags and the material index live in the
+        // same word, and both of the tests below plus the optical lookup read
+        // it from here.
+        uint record = face_record[hit.face];
+        if ((record & FACE_FLAG_PLANET) != 0u) {
             // The planet absorbs every band; its radiance is CPU
             // post-processing over the VF matrix, not a kernel concern.
-            fp_add_raw(acc, row_base + hit.slot, fp_remaining);
+            fp_add_raw(acc, row_base + hit.face, fp_remaining);
             return;
         }
-        if ((face_flags[hit.slot] & FACE_FLAG_ACTIVE) == 0u) {
+        if ((record & FACE_FLAG_ACTIVE) == 0u) {
             // Non-radiative face: absorbed, but scored apart so the
             // consumer can decide what that energy means.
             fp_add_raw(acc, row_base + inactive_col, fp_remaining);
@@ -77,9 +81,9 @@ void csMain(uint3 gid: SV_DispatchThreadID) {
         float a;
         float s;
         float t;
-        if (!band_properties(hit.slot, a, s, t)) {
+        if (!band_properties_of(record, a, s, t)) {
             // No material assigned: blackbody, absorbs the remainder.
-            fp_add_raw(acc, row_base + hit.slot, fp_remaining);
+            fp_add_raw(acc, row_base + hit.face, fp_remaining);
             return;
         }
         // Diffuse reflectance is the clamped remainder; never renormalize
@@ -90,7 +94,7 @@ void csMain(uint3 gid: SV_DispatchThreadID) {
         // would bias the estimate).
         float energy_after = energy * (1.0 - a);
         uint64_t fp_after = to_fp(energy_after);
-        fp_add_raw(acc, row_base + hit.slot, fp_remaining - fp_after);
+        fp_add_raw(acc, row_base + hit.face, fp_remaining - fp_after);
         fp_remaining = fp_after;
         energy = energy_after;
         if (fp_remaining == uint64_t(0)) {

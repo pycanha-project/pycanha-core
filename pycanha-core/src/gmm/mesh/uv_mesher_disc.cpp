@@ -28,15 +28,20 @@ TriMeshD mesh_primitive(const Disc& disc, const ThermalMesh& thermal_mesh,
             std::vector<int>(thermal_mesh.get_dir2_mesh().size() - 1U, 1),
         .dir1_sample = make_linear_dir_sampler(thermal_mesh.get_dir1_mesh()),
         .dir2_sample = make_linear_dir_sampler(thermal_mesh.get_dir2_mesh()),
-        .point_at = [&disc](double dir1, double dir2) {
-            const double angle =
-                disc.start_angle() +
-                (dir1 * (disc.end_angle() - disc.start_angle()));
-            const double radius =
-                disc.inner_radius() +
-                (dir2 * (disc.outer_radius() - disc.inner_radius()));
-            return disc.to_cartesian({angle * radius, radius});
-        }};
+        .point_at =
+            [&disc](double dir1, double dir2) {
+                const double angle =
+                    disc.start_angle() +
+                    (dir1 * (disc.end_angle() - disc.start_angle()));
+                const double radius =
+                    disc.inner_radius() +
+                    (dir2 * (disc.outer_radius() - disc.inner_radius()));
+                return disc.to_cartesian({angle * radius, radius});
+            },
+        // d/dangle x d/dradius = -radius * axis, so the raw grid winding is
+        // the face the axis points away from. Disc::normal_at_uv is the axis,
+        // and the primitive is what defines side 1.
+        .reverse_winding = true};
     return build_mesh_from_plan(thermal_mesh, plan);
 }
 

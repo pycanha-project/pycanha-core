@@ -468,7 +468,7 @@ void has_same_structure_test() {
         k2.makeCompressed();
         REQUIRE(has_same_structure(k1, k2));
 
-        // Value change only in existing slot -> true
+        // Value change only in existing face -> true
         Index r = 0;
         Index c = 0;
         if (pick_nonzero(k1, r, c)) {

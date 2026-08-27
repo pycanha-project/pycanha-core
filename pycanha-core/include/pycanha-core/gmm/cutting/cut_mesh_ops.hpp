@@ -23,8 +23,8 @@ void dedup_vertices(TriMeshD& mesh, double tolerance);
 void remove_degenerate_triangles(TriMeshD& mesh, double area_tolerance);
 
 // Assigns the per-side face_id to triangle `triangle_index` of `mesh` by
-// projecting its centroid onto `primitive` and locating the owning UV cell in
-// `thermal_mesh`. Even result = side 1, odd = side 2 (the former Side enum,
+// projecting its centroid onto `primitive` and locating the owning UV face pair
+// in `thermal_mesh`. Even result = side 1, odd = side 2 (the former Side enum,
 // inlined). Returns a MeshIndex face_id.
 [[nodiscard]] pycanha::MeshIndex classify_triangle_by_centroid(
     const TriMeshD& mesh, Eigen::Index triangle_index,

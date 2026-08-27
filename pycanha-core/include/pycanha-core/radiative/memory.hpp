@@ -13,7 +13,7 @@ class RadiativeScene;
 // tile_rows against Device::memory_budget() — so runs fail fast with a clear
 // message instead of exhausting device memory mid-trace.
 struct MemoryEstimate {
-    // Full num_slots x (num_slots + virtual columns) accumulator, sized for
+    // Full num_faces x (num_faces + virtual columns) accumulator, sized for
     // the u64 exchange cells (vf counting cells take half).
     std::uint64_t gpu_bytes_dense = 0;
     // One row of the tiled block scratch (+ nothing else — the scratch is

@@ -1,7 +1,9 @@
 #include "pycanha-core/gmm/ops/distance.hpp"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
+#include <cstddef>
 #include <limits>
 #include <numbers>
 #include <type_traits>
@@ -19,6 +21,7 @@
 #include "pycanha-core/gmm/primitives/rectangle.hpp"
 #include "pycanha-core/gmm/primitives/sphere.hpp"
 #include "pycanha-core/gmm/primitives/triangle.hpp"
+#include "pycanha-core/gmm/primitives/triangular_prism.hpp"
 
 namespace pycanha::gmm::ops {
 namespace {
@@ -95,28 +98,50 @@ constexpr double full_turn = 2.0 * std::numbers::pi;
     return std::abs(ap.dot(ab.cross(ac).normalized()));
 }
 
-template <typename Surface>
-[[nodiscard]] double distance_to_planar_patch(const Point3D& point,
-                                              const Surface& surface,
-                                              double max_u, double max_v) {
-    const Point2D uv = surface.to_uv(point);
-    const Point2D clamped_uv{clamp_scalar(uv.x(), 0.0, max_u),
-                             clamp_scalar(uv.y(), 0.0, max_v)};
-    return (point - surface.to_cartesian(clamped_uv)).norm();
+[[nodiscard]] double distance_to_segment(const Point3D& point,
+                                         const Point3D& start,
+                                         const Point3D& end) {
+    const Vector3D segment = end - start;
+    const double length_squared = segment.squaredNorm();
+    if (length_squared <= LENGTH_TOL * LENGTH_TOL) {
+        return (point - start).norm();
+    }
+    const double along =
+        clamp_scalar((point - start).dot(segment) / length_squared, 0.0, 1.0);
+    return (point - (start + (along * segment))).norm();
 }
 
+// uv is normalised for planar primitives, so a point inside the patch is one
+// whose parameters both land in [0, 1]. A rectangle's map is linear, so
+// clamping the parameters lands on the nearest boundary point; a
+// quadrilateral's is bilinear, where a clamped parameter is NOT the nearest
+// point, so the outside case walks the four edges instead.
 [[nodiscard]] double distance_impl(const Rectangle& rectangle,
                                    const Point3D& point) {
-    return distance_to_planar_patch(point, rectangle,
-                                    (rectangle.p2() - rectangle.p1()).norm(),
-                                    rectangle.to_uv(rectangle.p3()).y());
+    const Point2D uv = rectangle.to_uv(point);
+    const Point2D clamped_uv{clamp_scalar(uv.x(), 0.0, 1.0),
+                             clamp_scalar(uv.y(), 0.0, 1.0)};
+    return (point - rectangle.to_cartesian(clamped_uv)).norm();
 }
 
 [[nodiscard]] double distance_impl(const Quadrilateral& quadrilateral,
                                    const Point3D& point) {
-    return distance_to_planar_patch(
-        point, quadrilateral, (quadrilateral.p2() - quadrilateral.p1()).norm(),
-        quadrilateral.to_uv(quadrilateral.p4()).y());
+    const Point2D uv = quadrilateral.to_uv(point);
+    if (uv.x() >= 0.0 && uv.x() <= 1.0 && uv.y() >= 0.0 && uv.y() <= 1.0) {
+        return (point - quadrilateral.to_cartesian(uv)).norm();
+    }
+
+    const std::array<Point3D, 4> corners{quadrilateral.p1(), quadrilateral.p2(),
+                                         quadrilateral.p3(),
+                                         quadrilateral.p4()};
+    double closest = std::numeric_limits<double>::infinity();
+    for (std::size_t corner = 0; corner < corners.size(); ++corner) {
+        closest = std::min(
+            closest,
+            distance_to_segment(point, corners.at(corner),
+                                corners.at((corner + 1U) % corners.size())));
+    }
+    return closest;
 }
 
 [[nodiscard]] double distance_impl(const Disc& disc, const Point3D& point) {
@@ -298,6 +323,45 @@ template <typename Surface>
     const Point3D closest =
         paraboloid.p1() + best_height * axis + best_radius * clamped_direction;
     return (point - closest).norm();
+}
+
+// Distance to the closed prism: negative-free, matching Cube -- zero on the
+// surface, the depth inside, the gap outside. The solid is the intersection of
+// five half-spaces (two bases, three walls), so the outside distance is the
+// largest of the signed plane distances and the inside depth the smallest.
+[[nodiscard]] double distance_impl(const TriangularPrism& prism,
+                                   const Point3D& point) {
+    const Vector3D extrusion = prism.height();
+    const Point3D top = prism.p1() + extrusion;
+    const Vector3D base_normal =
+        (prism.p2() - prism.p1()).cross(prism.p3() - prism.p1()).normalized();
+
+    // Base normal points along the extrusion, so it is the INWARD normal of
+    // the bottom face and the outward normal of the top one.
+    std::array<double, 5> plane_distances{
+        (prism.p1() - point).dot(base_normal),
+        (point - top).dot(base_normal),
+        0.0,
+        0.0,
+        0.0,
+    };
+
+    const std::array<Point3D, 3> base{prism.p1(), prism.p2(), prism.p3()};
+    for (std::size_t edge = 0; edge < base.size(); ++edge) {
+        const Point3D& start = base.at(edge);
+        const Point3D& end = base.at((edge + 1U) % base.size());
+        const Vector3D outward = (end - start).cross(extrusion).normalized();
+        plane_distances.at(edge + 2U) = (point - start).dot(outward);
+    }
+
+    double outside_squared = 0.0;
+    double deepest_inside = std::numeric_limits<double>::infinity();
+    for (const double signed_distance : plane_distances) {
+        const double outside = std::max(signed_distance, 0.0);
+        outside_squared += outside * outside;
+        deepest_inside = std::min(deepest_inside, -signed_distance);
+    }
+    return outside_squared > 0.0 ? std::sqrt(outside_squared) : deepest_inside;
 }
 
 [[nodiscard]] double distance_impl(const Cube& cube, const Point3D& point) {

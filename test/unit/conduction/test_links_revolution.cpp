@@ -24,7 +24,7 @@
 
 namespace {
 
-using pycanha::conduction::CellLink;
+using pycanha::conduction::FacePairLink;
 using pycanha::conduction::intra_primitive_links;
 using pycanha::conduction::MeridianProfile;
 using pycanha::conduction::profile_of;
@@ -51,13 +51,15 @@ constexpr double pi = std::numbers::pi;
     return mesh;
 }
 
-[[nodiscard]] double link_value(const std::vector<CellLink>& links,
-                                pycanha::MeshIndex cell_a,
-                                pycanha::MeshIndex cell_b) {
+[[nodiscard]] double link_value(const std::vector<FacePairLink>& links,
+                                pycanha::MeshIndex face_pair_a,
+                                pycanha::MeshIndex face_pair_b) {
     double total = 0.0;
     for (const auto& link : links) {
-        const bool matches = (link.cell_a == cell_a && link.cell_b == cell_b) ||
-                             (link.cell_a == cell_b && link.cell_b == cell_a);
+        const bool matches = (link.face_pair_a == face_pair_a &&
+                              link.face_pair_b == face_pair_b) ||
+                             (link.face_pair_a == face_pair_b &&
+                              link.face_pair_b == face_pair_a);
         if (matches) {
             total += link.conductance;
         }
@@ -74,7 +76,7 @@ TEST_CASE("revolution links: disc azimuthal conductance",
     const double angle = pi / 2.0;
     const Primitive disc = Disc({0.0, 0.0, 0.0}, {0.0, 0.0, 1.0},
                                 {outer, 0.0, 0.0}, inner, outer, 0.0, angle);
-    // Two angular cells over the quadrant, one radial band.
+    // Two angular face pairs over the quadrant, one radial band.
     const ThermalMesh mesh = unit_shell({0.0, 0.5, 1.0}, {0.0, 1.0});
 
     const auto links = intra_primitive_links(disc, mesh, TmmBuildOptions{});
@@ -91,7 +93,7 @@ TEST_CASE("revolution links: a full annulus radial conductor",
     const double outer = 2.0;
     const Primitive disc = Disc({0.0, 0.0, 0.0}, {0.0, 0.0, 1.0},
                                 {outer, 0.0, 0.0}, inner, outer, 0.0, 2.0 * pi);
-    // One angular cell spanning the whole revolution, two radial bands.
+    // One angular face pair spanning the whole revolution, two radial bands.
     const ThermalMesh mesh = unit_shell({0.0, 1.0}, {0.0, 0.5, 1.0});
 
     const auto links = intra_primitive_links(disc, mesh, TmmBuildOptions{});
@@ -216,8 +218,8 @@ TEST_CASE("revolution links: the near-axis conductance is mesh independent",
     const Primitive disc = Disc({0.0, 0.0, 0.0}, {0.0, 0.0, 1.0},
                                 {1.0, 0.0, 0.0}, 0.0, 1.0, 0.0, 2.0 * pi);
     for (const double first_cut : {0.5, 0.1, 0.01}) {
-        // Four angular cells, so cells 0 and 1 meet at one seam only; with two
-        // the wrap would join the same pair a second time.
+        // Four angular face pairs, so face pairs 0 and 1 meet at one seam only;
+        // with two the wrap would join the same pair a second time.
         const ThermalMesh mesh =
             unit_shell({0.0, 0.25, 0.5, 0.75, 1.0}, {0.0, first_cut, 1.0});
         const auto links = intra_primitive_links(disc, mesh, TmmBuildOptions{});
@@ -264,7 +266,7 @@ TEST_CASE("revolution links: a sphere polar cap over its reference latitude",
 
     const auto links = intra_primitive_links(sphere, mesh, TmmBuildOptions{});
     // Latitudes run 0 to pi/2, so the polar band is [pi/4, pi/2] with its
-    // reference at 3*pi/8. Cells 4 and 5 are the first two of that band.
+    // reference at 3*pi/8. Face pairs 4 and 5 are the first two of that band.
     const double latitude_span = pi / 4.0;
     const double expected =
         (latitude_span / std::cos(3.0 * pi / 8.0)) / (pi / 2.0);

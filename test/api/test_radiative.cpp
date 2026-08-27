@@ -34,7 +34,7 @@ namespace {
     return model;
 }
 
-// Sizing mechanism for the (Python-side) memory policy: 4 slots plus the 3
+// Sizing mechanism for the (Python-side) memory policy: 4 faces plus the 3
 // virtual columns, 8-byte cells.
 void require_memory_estimates(const rad::RadiativeScene& scene) {
     const rad::MemoryEstimate estimate = rad::estimate_memory(scene);
@@ -50,7 +50,7 @@ void require_memory_estimates(const rad::RadiativeScene& scene) {
     REQUIRE(tiled.host_bytes_block == 2 * tiled.gpu_bytes_per_tile_row);
 }
 
-// Matrix shape: face-slot rows, face-slot + virtual bucket columns; the
+// Matrix shape: face rows, face + virtual bucket columns; the
 // explicit space column closes every emitted row exactly.
 void require_result_shape(const rad::VfResult& result) {
     REQUIRE(result.vf.rows() == 4);
@@ -81,7 +81,7 @@ TEST_CASE("api: radiative view factors end to end", "[api][radiative][gpu]") {
 
     // Build once, trace many.
     rad::RadiativeScene scene(device, std::move(parts), std::move(materials));
-    REQUIRE(scene.num_face_slots() == 4);
+    REQUIRE(scene.num_faces() == 4);
     REQUIRE(scene.face_areas().size() == 4);
     require_memory_estimates(scene);
 

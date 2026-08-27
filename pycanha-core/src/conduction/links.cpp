@@ -12,6 +12,7 @@
 #include "pycanha-core/globals.hpp"
 #include "pycanha-core/gmm/mesh/thermal_mesh.hpp"
 #include "pycanha-core/gmm/primitives/primitive.hpp"
+#include "pycanha-core/gmm/primitives/quadrilateral.hpp"
 #include "pycanha-core/gmm/primitives/triangle.hpp"
 
 namespace pycanha::conduction {
@@ -43,10 +44,10 @@ namespace {
     return 0.5 * (low + high);
 }
 
-[[nodiscard]] pycanha::MeshIndex cell_index(std::size_t dir1_idx,
-                                            std::size_t dir2_idx,
-                                            std::size_t dir1_cells) noexcept {
-    return to_meshidx((dir2_idx * dir1_cells) + dir1_idx);
+[[nodiscard]] pycanha::MeshIndex face_pair_index(
+    std::size_t dir1_idx, std::size_t dir2_idx,
+    std::size_t dir1_face_pairs) noexcept {
+    return to_meshidx((dir2_idx * dir1_face_pairs) + dir1_idx);
 }
 
 // Transverse extent of a direction-2 band: what the around-the-axis
@@ -57,7 +58,7 @@ namespace {
 // around-the-axis temperature difference is the same at every rho of the band.
 // That assumption fails where the band reaches the axis (a disc down to r = 0,
 // a cone or paraboloid apex, a sphere pole): the temperature field is analytic
-// there, so the difference between two neighbouring angular cells vanishes
+// there, so the difference between two neighbouring angular face pairs vanishes
 // linearly with rho instead of staying constant, and the naive integral
 // diverges. Imposing the correct behaviour, dT(rho) = dT(rho_ref) * rho /
 // rho_ref, cancels the 1/rho and leaves the band's meridian arc length over the
@@ -75,8 +76,8 @@ namespace {
     return profile.potential(high) - profile.potential(low);
 }
 
-// Two half-resistances in series, each from a cell's reference line to the
-// shared edge, each divided by the transverse extent shared by both cells.
+// Two half-resistances in series, each from a face pair's reference line to the
+// shared edge, each divided by the transverse extent shared by both face pairs.
 [[nodiscard]] double series_conductance(double half_a, double half_b,
                                         double conductance_thickness,
                                         double transverse_extent) {
@@ -91,13 +92,14 @@ namespace {
     return 1.0 / resistance;
 }
 
-void append_link(std::vector<CellLink>& links, pycanha::MeshIndex cell_a,
-                 pycanha::MeshIndex cell_b, unsigned side, double conductance) {
+void append_link(std::vector<FacePairLink>& links,
+                 pycanha::MeshIndex face_pair_a, pycanha::MeshIndex face_pair_b,
+                 unsigned side, double conductance) {
     if (conductance > 0.0 && std::isfinite(conductance)) {
-        links.push_back(CellLink{.cell_a = cell_a,
-                                 .cell_b = cell_b,
-                                 .side = side,
-                                 .conductance = conductance});
+        links.push_back(FacePairLink{.face_pair_a = face_pair_a,
+                                     .face_pair_b = face_pair_b,
+                                     .side = side,
+                                     .conductance = conductance});
     }
 }
 
@@ -105,14 +107,14 @@ void profile_links(const MeridianProfile& profile,
                    std::span<const double> dir1_cuts,
                    std::span<const double> dir2_cuts, unsigned side,
                    double conductance_thickness, const TmmBuildOptions& options,
-                   std::vector<CellLink>& links) {
-    const std::size_t dir1_cells = dir1_cuts.size() - 1U;
-    const std::size_t dir2_cells = dir2_cuts.size() - 1U;
+                   std::vector<FacePairLink>& links) {
+    const std::size_t dir1_face_pairs = dir1_cuts.size() - 1U;
+    const std::size_t dir2_face_pairs = dir2_cuts.size() - 1U;
 
     // Direction 1: heat flows around the axis. The strips at different rho are
     // parallel resistors, so the band's potential span multiplies the
     // conductance and the angular distance divides it.
-    for (std::size_t dir2_idx = 0; dir2_idx < dir2_cells; ++dir2_idx) {
+    for (std::size_t dir2_idx = 0; dir2_idx < dir2_face_pairs; ++dir2_idx) {
         const double band = band_transverse_extent(profile, dir2_cuts[dir2_idx],
                                                    dir2_cuts[dir2_idx + 1U]);
 
@@ -127,76 +129,77 @@ void profile_links(const MeridianProfile& profile,
                                       conductance_thickness, band);
         };
 
-        for (std::size_t dir1_idx = 0; dir1_idx + 1U < dir1_cells; ++dir1_idx) {
-            append_link(links, cell_index(dir1_idx, dir2_idx, dir1_cells),
-                        cell_index(dir1_idx + 1U, dir2_idx, dir1_cells), side,
-                        angular_link(dir1_idx, dir1_idx + 1U,
-                                     dir1_cuts[dir1_idx + 1U]));
+        for (std::size_t dir1_idx = 0; dir1_idx + 1U < dir1_face_pairs;
+             ++dir1_idx) {
+            append_link(
+                links, face_pair_index(dir1_idx, dir2_idx, dir1_face_pairs),
+                face_pair_index(dir1_idx + 1U, dir2_idx, dir1_face_pairs), side,
+                angular_link(dir1_idx, dir1_idx + 1U,
+                             dir1_cuts[dir1_idx + 1U]));
         }
 
         // A full revolution wraps: the seam at the start angle is an ordinary
-        // interior edge, with the last cell's half-distance measured to the
-        // end of the range and the first cell's from its start.
+        // interior edge, with the last face pair's half-distance measured to
+        // the end of the range and the first face pair's from its start.
         if (options.close_full_revolution && profile.closes_ring() &&
-            dir1_cells >= 2U) {
-            const double last_ref = profile.dir1_coordinate(
-                midpoint(dir1_cuts[dir1_cells - 1U], dir1_cuts[dir1_cells]));
+            dir1_face_pairs >= 2U) {
+            const double last_ref = profile.dir1_coordinate(midpoint(
+                dir1_cuts[dir1_face_pairs - 1U], dir1_cuts[dir1_face_pairs]));
             const double first_ref =
                 profile.dir1_coordinate(midpoint(dir1_cuts[0], dir1_cuts[1]));
             const double half_last =
-                profile.dir1_coordinate(dir1_cuts[dir1_cells]) - last_ref;
+                profile.dir1_coordinate(dir1_cuts[dir1_face_pairs]) - last_ref;
             const double half_first =
                 first_ref - profile.dir1_coordinate(dir1_cuts[0]);
             append_link(links,
-                        cell_index(dir1_cells - 1U, dir2_idx, dir1_cells),
-                        cell_index(0U, dir2_idx, dir1_cells), side,
+                        face_pair_index(dir1_face_pairs - 1U, dir2_idx,
+                                        dir1_face_pairs),
+                        face_pair_index(0U, dir2_idx, dir1_face_pairs), side,
                         series_conductance(half_last, half_first,
                                            conductance_thickness, band));
         }
     }
 
     // Direction 2: heat flows along the meridian. The strips are in series, so
-    // the potential span divides the conductance and the cell's own angular
-    // span multiplies it.
-    for (std::size_t dir1_idx = 0; dir1_idx < dir1_cells; ++dir1_idx) {
+    // the potential span divides the conductance and the face pair's own
+    // angular span multiplies it.
+    for (std::size_t dir1_idx = 0; dir1_idx < dir1_face_pairs; ++dir1_idx) {
         const double angular_extent =
             profile.dir1_coordinate(dir1_cuts[dir1_idx + 1U]) -
             profile.dir1_coordinate(dir1_cuts[dir1_idx]);
 
-        for (std::size_t dir2_idx = 0; dir2_idx + 1U < dir2_cells; ++dir2_idx) {
+        for (std::size_t dir2_idx = 0; dir2_idx + 1U < dir2_face_pairs;
+             ++dir2_idx) {
             const double edge = profile.potential(dir2_cuts[dir2_idx + 1U]);
             const double ref_lo = profile.potential(
                 midpoint(dir2_cuts[dir2_idx], dir2_cuts[dir2_idx + 1U]));
             const double ref_hi = profile.potential(
                 midpoint(dir2_cuts[dir2_idx + 1U], dir2_cuts[dir2_idx + 2U]));
             append_link(
-                links, cell_index(dir1_idx, dir2_idx, dir1_cells),
-                cell_index(dir1_idx, dir2_idx + 1U, dir1_cells), side,
+                links, face_pair_index(dir1_idx, dir2_idx, dir1_face_pairs),
+                face_pair_index(dir1_idx, dir2_idx + 1U, dir1_face_pairs), side,
                 series_conductance(edge - ref_lo, ref_hi - edge,
                                    conductance_thickness, angular_extent));
         }
     }
 }
 
-// Discrete fallback for the triangle fan. The primitive is planar, so the
-// standard finite-difference form applies: the shared edge carries the flow
-// and the two reference points sit at their own distances from its midpoint.
-void triangle_links(const gmm::Triangle& triangle,
-                    std::span<const double> dir1_cuts,
-                    std::span<const double> dir2_cuts, unsigned side,
-                    double conductance_thickness,
-                    std::vector<CellLink>& links) {
-    const std::size_t dir1_cells = dir1_cuts.size() - 1U;
-    const std::size_t dir2_cells = dir2_cuts.size() - 1U;
-    const Vector3D edge_1 = triangle.p2() - triangle.p1();
-    const Vector3D edge_2 = triangle.p3() - triangle.p1();
-
-    // The mesher fans the triangle from p1: dir1 walks out from the apex and
-    // dir2 blends the two edges.
-    const auto point_at = [&](double fan, double blend) {
-        return Point3D{triangle.p1() +
-                       (fan * (((1.0 - blend) * edge_1) + (blend * edge_2)))};
-    };
+// Discrete path for a planar primitive whose face grid is not a uniform
+// rectangle: the triangle's fan, whose parametrisation is not orthogonal, and
+// the quadrilateral's bilinear patch, whose faces change width along direction
+// 2. The primitive is planar either way, so the standard finite-difference
+// form applies: the shared edge carries the flow and the two reference points
+// sit at their own distances from its midpoint. `point_at` maps the
+// primitive's normalised (dir1, dir2) parameters to a point on it, which is
+// exactly its to_cartesian.
+template <typename PointFunction>
+void planar_patch_links(const PointFunction& point_at,
+                        std::span<const double> dir1_cuts,
+                        std::span<const double> dir2_cuts, unsigned side,
+                        double conductance_thickness,
+                        std::vector<FacePairLink>& links) {
+    const std::size_t dir1_face_pairs = dir1_cuts.size() - 1U;
+    const std::size_t dir2_face_pairs = dir2_cuts.size() - 1U;
 
     const auto discrete_link = [&](const Point3D& edge_start,
                                    const Point3D& edge_end,
@@ -209,14 +212,15 @@ void triangle_links(const gmm::Triangle& triangle,
                                   shared_length);
     };
 
-    for (std::size_t dir2_idx = 0; dir2_idx < dir2_cells; ++dir2_idx) {
+    for (std::size_t dir2_idx = 0; dir2_idx < dir2_face_pairs; ++dir2_idx) {
         const double blend_ref =
             midpoint(dir2_cuts[dir2_idx], dir2_cuts[dir2_idx + 1U]);
-        for (std::size_t dir1_idx = 0; dir1_idx + 1U < dir1_cells; ++dir1_idx) {
+        for (std::size_t dir1_idx = 0; dir1_idx + 1U < dir1_face_pairs;
+             ++dir1_idx) {
             const double fan_edge = dir1_cuts[dir1_idx + 1U];
             append_link(
-                links, cell_index(dir1_idx, dir2_idx, dir1_cells),
-                cell_index(dir1_idx + 1U, dir2_idx, dir1_cells), side,
+                links, face_pair_index(dir1_idx, dir2_idx, dir1_face_pairs),
+                face_pair_index(dir1_idx + 1U, dir2_idx, dir1_face_pairs), side,
                 discrete_link(
                     point_at(fan_edge, dir2_cuts[dir2_idx]),
                     point_at(fan_edge, dir2_cuts[dir2_idx + 1U]),
@@ -227,14 +231,15 @@ void triangle_links(const gmm::Triangle& triangle,
         }
     }
 
-    for (std::size_t dir1_idx = 0; dir1_idx < dir1_cells; ++dir1_idx) {
+    for (std::size_t dir1_idx = 0; dir1_idx < dir1_face_pairs; ++dir1_idx) {
         const double fan_ref =
             midpoint(dir1_cuts[dir1_idx], dir1_cuts[dir1_idx + 1U]);
-        for (std::size_t dir2_idx = 0; dir2_idx + 1U < dir2_cells; ++dir2_idx) {
+        for (std::size_t dir2_idx = 0; dir2_idx + 1U < dir2_face_pairs;
+             ++dir2_idx) {
             const double blend_edge = dir2_cuts[dir2_idx + 1U];
             append_link(
-                links, cell_index(dir1_idx, dir2_idx, dir1_cells),
-                cell_index(dir1_idx, dir2_idx + 1U, dir1_cells), side,
+                links, face_pair_index(dir1_idx, dir2_idx, dir1_face_pairs),
+                face_pair_index(dir1_idx, dir2_idx + 1U, dir1_face_pairs), side,
                 discrete_link(
                     point_at(dir1_cuts[dir1_idx], blend_edge),
                     point_at(dir1_cuts[dir1_idx + 1U], blend_edge),
@@ -248,17 +253,19 @@ void triangle_links(const gmm::Triangle& triangle,
 
 }  // namespace
 
-std::vector<CellLink> intra_primitive_links(
+std::vector<FacePairLink> intra_primitive_links(
     const gmm::Primitive& primitive, const gmm::ThermalMesh& thermal_mesh,
     const TmmBuildOptions& options) {
-    std::vector<CellLink> links;
+    std::vector<FacePairLink> links;
     if (!thermal_mesh.is_valid()) {
         return links;
     }
 
     const std::optional<MeridianProfile> profile = profile_of(primitive);
     const auto* triangle = std::get_if<gmm::Triangle>(&primitive);
-    if (!profile.has_value() && triangle == nullptr) {
+    const auto* quadrilateral = std::get_if<gmm::Quadrilateral>(&primitive);
+    if (!profile.has_value() && triangle == nullptr &&
+        quadrilateral == nullptr) {
         return links;  // Cube: cutter-only, it never produces faces.
     }
 
@@ -272,10 +279,20 @@ std::vector<CellLink> intra_primitive_links(
             profile_links(*profile, thermal_mesh.get_dir1_mesh(),
                           thermal_mesh.get_dir2_mesh(), side,
                           conductance_thickness, options, links);
+        } else if (triangle != nullptr) {
+            planar_patch_links(
+                [triangle](double dir1, double dir2) {
+                    return triangle->to_cartesian({dir1, dir2});
+                },
+                thermal_mesh.get_dir1_mesh(), thermal_mesh.get_dir2_mesh(),
+                side, conductance_thickness, links);
         } else {
-            triangle_links(*triangle, thermal_mesh.get_dir1_mesh(),
-                           thermal_mesh.get_dir2_mesh(), side,
-                           conductance_thickness, links);
+            planar_patch_links(
+                [quadrilateral](double dir1, double dir2) {
+                    return quadrilateral->to_cartesian({dir1, dir2});
+                },
+                thermal_mesh.get_dir1_mesh(), thermal_mesh.get_dir2_mesh(),
+                side, conductance_thickness, links);
         }
     }
     return links;

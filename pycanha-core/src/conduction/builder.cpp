@@ -47,7 +47,7 @@ namespace {
 using gmm::GeometryItem;
 using gmm::NO_NODE;
 
-// What one node accumulates over all the face slots that map to it.
+// What one node accumulates over all the faces that map to it.
 struct NodeAccumulator {
     double capacitance = 0.0;
     double area = 0.0;
@@ -56,7 +56,7 @@ struct NodeAccumulator {
     bool mixed_bulk = false;
 };
 
-// Per-slot geometry read once off the world mesh, so the item transforms and
+// Per-face geometry read once off the world mesh, so the item transforms and
 // the tessellation are accounted for exactly as the radiative path sees them.
 struct SlotGeometry {
     std::vector<double> area;
@@ -111,7 +111,7 @@ using NodePair = std::pair<NodeNum, NodeNum>;
 // until every item has been walked.
 struct BuildContext {
     const gmm::TriMeshD* world_mesh;
-    SlotGeometry slots;
+    SlotGeometry faces;
     TmmBuildOptions options;
     std::map<NodeNum, NodeAccumulator> node_accumulators;
     std::map<NodePair, double> conductors;
@@ -123,10 +123,10 @@ struct BuildContext {
 }
 
 [[nodiscard]] SlotGeometry slot_geometry(const gmm::TriMeshD& mesh) {
-    const auto slots = to_sizet(to_idx(mesh.nf()));
+    const auto faces = to_sizet(to_idx(mesh.nf()));
     SlotGeometry geometry{
-        .area = std::vector<double>(slots, 0.0),
-        .weighted_position = std::vector<Vector3D>(slots, Vector3D::Zero())};
+        .area = std::vector<double>(faces, 0.0),
+        .weighted_position = std::vector<Vector3D>(faces, Vector3D::Zero())};
 
     for (Eigen::Index tri_idx = 0; tri_idx < mesh.triangles.rows(); ++tri_idx) {
         const auto triangle = mesh.triangles.row(tri_idx);
@@ -138,23 +138,23 @@ struct BuildContext {
         const Point3D centroid = (vertex_0 + vertex_1 + vertex_2) / 3.0;
 
         // The two sides of a face pair share the pair's area and centroid.
-        const auto slot = to_sizet(to_idx(mesh.face_ids(tri_idx)));
-        geometry.area[slot] += area;
-        geometry.area[slot + 1U] += area;
-        geometry.weighted_position[slot] += area * centroid;
-        geometry.weighted_position[slot + 1U] += area * centroid;
+        const auto face = to_sizet(to_idx(mesh.face_ids(tri_idx)));
+        geometry.area[face] += area;
+        geometry.area[face + 1U] += area;
+        geometry.weighted_position[face] += area * centroid;
+        geometry.weighted_position[face + 1U] += area * centroid;
     }
     return geometry;
 }
 
 // Whether a diagnostic describes expected behaviour rather than something the
-// build had to drop or assume. An approximated triangle fan, a cell band
+// build had to drop or assume. The discrete link path, a face-pair band
 // reaching the axis and a side excluded by the active-side selector are all
 // normal, as is an item meshed for the radiative path alone and therefore
 // carrying no node numbers.
 [[nodiscard]] bool is_benign(const DiagnosticCode code) noexcept {
     switch (code) {
-        case DiagnosticCode::TriangleApproximated:
+        case DiagnosticCode::DiscreteLinkFallback:
         case DiagnosticCode::AxisSingularity:
         case DiagnosticCode::InactiveSideSkipped:
         case DiagnosticCode::NoNodeNumbers:
@@ -222,7 +222,7 @@ void report_diagnostic(TmmBuildReport& report, DiagnosticCode code,
                               cut_group->name(),
                               "cut group '" + cut_group->name() +
                                   "' skipped: a boolean-cut mesh has no intact "
-                                  "cell grid to integrate over");
+                                  "face-pair grid to integrate over");
             inside_cut = true;
         }
 
@@ -244,15 +244,15 @@ void report_diagnostic(TmmBuildReport& report, DiagnosticCode code,
 
 // A band reaching the axis of revolution is the one place the plain
 // around-the-axis integral does not apply, because the temperature difference
-// between two neighbouring angular cells vanishes there instead of staying
+// between two neighbouring angular face pairs vanishes there instead of staying
 // constant across the band. Worth recording which form was used.
 void report_axis_singularity(const MeridianProfile& profile,
                              const gmm::ThermalMesh& thermal_mesh,
                              const std::string& item_name,
                              TmmBuildReport& report) {
     if (thermal_mesh.get_dir1_mesh().size() < 3U) {
-        // A single angular cell has no around-the-axis conductor at all, not
-        // even a ring closure, so nothing is truncated.
+        // A single angular face pair has no around-the-axis conductor at all,
+        // not even a ring closure, so nothing is truncated.
         return;
     }
     if (!profile.on_axis(0.0) && !profile.on_axis(1.0)) {
@@ -261,10 +261,10 @@ void report_axis_singularity(const MeridianProfile& profile,
     report_diagnostic(
         report, DiagnosticCode::AxisSingularity, item_name,
         "'" + item_name +
-            "' has a cell band reaching the axis of revolution; its "
+            "' has a face-pair band reaching the axis of revolution; its "
             "around-the-axis conductance uses the near-axis form (meridian "
             "length over the reference radius), since the temperature "
-            "difference between angular cells vanishes at the axis");
+            "difference between angular face pairs vanishes at the axis");
 }
 
 void describe_side(const gmm::ThermalMesh& thermal_mesh, unsigned side,
@@ -346,76 +346,80 @@ void accumulate_node(NodeAccumulator& accumulator, double area,
     }
 }
 
-// One item's cell grid, resolved against the world mesh: the slot of a cell
-// side and the node number it carries.
-class ItemCells {
+// One item's face-pair grid, resolved against the world mesh: the face of a
+// face pair side and the node number it carries.
+class ItemFacePairs {
   public:
-    ItemCells(const gmm::TriMeshD& world_mesh,
-              const gmm::TriMeshD::PrimitiveRange& range,
-              const gmm::ThermalMesh& thermal_mesh)
+    ItemFacePairs(const gmm::TriMeshD& world_mesh,
+                  const gmm::TriMeshD::PrimitiveRange& range,
+                  const gmm::ThermalMesh& thermal_mesh)
         : _world_mesh(&world_mesh),
-          _first_slot(to_idx(range.first_face_id)),
+          _first_face(to_idx(range.first_face_id)),
           _count((thermal_mesh.get_dir1_mesh().size() - 1U) *
                  (thermal_mesh.get_dir2_mesh().size() - 1U)) {}
 
     [[nodiscard]] std::size_t count() const noexcept { return _count; }
 
-    [[nodiscard]] Eigen::Index slot_of(std::size_t cell,
+    [[nodiscard]] Eigen::Index face_of(std::size_t face_pair,
                                        unsigned side) const noexcept {
-        return _first_slot + to_idx(2U * cell) + to_idx(side - 1U);
+        return _first_face + to_idx(2U * face_pair) + to_idx(side - 1U);
     }
 
     // Node numbers come from the world mesh rather than from the ThermalMesh
-    // directly, so cells the mesher dropped as degenerate stay unassigned
+    // directly, so face pairs the mesher dropped as degenerate stay unassigned
     // instead of inventing a node.
-    [[nodiscard]] NodeNum node_of(std::size_t cell,
+    [[nodiscard]] NodeNum node_of(std::size_t face_pair,
                                   unsigned side) const noexcept {
-        const Eigen::Index slot = slot_of(cell, side);
-        if (slot >= _world_mesh->node_numbers.rows()) {
+        const Eigen::Index face = face_of(face_pair, side);
+        if (face >= _world_mesh->node_numbers.rows()) {
             return NO_NODE;
         }
-        return _world_mesh->node_numbers(slot);
+        return _world_mesh->node_numbers(face);
     }
 
   private:
     const gmm::TriMeshD* _world_mesh;
-    Eigen::Index _first_slot;
+    Eigen::Index _first_face;
     std::size_t _count;
 };
 
-void accumulate_item_nodes(const ItemCells& cells, const ItemSides& sides,
-                           BuildContext& context) {
-    for (std::size_t cell = 0; cell < cells.count(); ++cell) {
+void accumulate_item_nodes(const ItemFacePairs& face_pairs,
+                           const ItemSides& sides, BuildContext& context) {
+    for (std::size_t face_pair = 0; face_pair < face_pairs.count();
+         ++face_pair) {
         for (const unsigned side : {1U, 2U}) {
             const SideProperties& properties = sides.of(side);
-            // Per slot, so when both sides map to one node only the sides that
+            // Per face, so when both sides map to one node only the sides that
             // are actually there hand it area and mass.
             if (!properties.active) {
                 continue;
             }
-            const NodeNum node = cells.node_of(cell, side);
+            const NodeNum node = face_pairs.node_of(face_pair, side);
             if (node == NO_NODE) {
                 continue;
             }
-            const auto slot = to_sizet(cells.slot_of(cell, side));
+            const auto face = to_sizet(face_pairs.face_of(face_pair, side));
             accumulate_node(context.node_accumulators[node],
-                            context.slots.area[slot],
-                            context.slots.weighted_position[slot], properties);
+                            context.faces.area[face],
+                            context.faces.weighted_position[face], properties);
         }
     }
 }
 
 void accumulate_item_conductors(const GeometryItem& item,
-                                const ItemCells& cells, BuildContext& context) {
+                                const ItemFacePairs& face_pairs,
+                                BuildContext& context) {
     const gmm::ThermalMesh& thermal_mesh = item.thermal_mesh();
 
     if (context.options.intra_primitive_conductors) {
         const auto links = intra_primitive_links(item.primitive(), thermal_mesh,
                                                  context.options);
-        context.report.cell_links_computed += links.size();
+        context.report.face_pair_links_computed += links.size();
         for (const auto& link : links) {
-            const NodeNum node_a = cells.node_of(link.cell_a, link.side);
-            const NodeNum node_b = cells.node_of(link.cell_b, link.side);
+            const NodeNum node_a =
+                face_pairs.node_of(link.face_pair_a, link.side);
+            const NodeNum node_b =
+                face_pairs.node_of(link.face_pair_b, link.side);
             if (node_a == NO_NODE || node_b == NO_NODE || node_a == node_b) {
                 continue;  // unassigned, or the same node on both ends
             }
@@ -427,15 +431,16 @@ void accumulate_item_conductors(const GeometryItem& item,
     if (!context.options.through_thickness_conductors) {
         return;
     }
-    for (std::size_t cell = 0; cell < cells.count(); ++cell) {
-        const NodeNum node_1 = cells.node_of(cell, 1U);
-        const NodeNum node_2 = cells.node_of(cell, 2U);
+    for (std::size_t face_pair = 0; face_pair < face_pairs.count();
+         ++face_pair) {
+        const NodeNum node_1 = face_pairs.node_of(face_pair, 1U);
+        const NodeNum node_2 = face_pairs.node_of(face_pair, 2U);
         if (node_1 == NO_NODE || node_2 == NO_NODE || node_1 == node_2) {
             continue;
         }
-        const auto slot = to_sizet(cells.slot_of(cell, 1U));
+        const auto face = to_sizet(face_pairs.face_of(face_pair, 1U));
         const double conductance = through_thickness_conductance(
-            thermal_mesh, context.slots.area[slot]);
+            thermal_mesh, context.faces.area[face]);
         if (conductance > 0.0) {
             context.conductors[ordered_pair(node_1, node_2)] += conductance;
         }
@@ -447,13 +452,14 @@ void process_item(const std::shared_ptr<GeometryItem>& item,
                   BuildContext& context) {
     const std::string& item_name = item->name();
     const gmm::ThermalMesh& thermal_mesh = item->thermal_mesh();
-    const ItemCells cells(*context.world_mesh, range, thermal_mesh);
+    const ItemFacePairs face_pairs(*context.world_mesh, range, thermal_mesh);
 
     ItemSides sides;
     for (const unsigned side : {1U, 2U}) {
         SideProperties& properties = sides.of(side);
-        for (std::size_t cell = 0; cell < cells.count(); ++cell) {
-            if (cells.node_of(cell, side) != NO_NODE) {
+        for (std::size_t face_pair = 0; face_pair < face_pairs.count();
+             ++face_pair) {
+            if (face_pairs.node_of(face_pair, side) != NO_NODE) {
                 properties.has_nodes = true;
                 break;
             }
@@ -477,7 +483,7 @@ void process_item(const std::shared_ptr<GeometryItem>& item,
     }
 
     ++context.report.items_processed;
-    accumulate_item_nodes(cells, sides, context);
+    accumulate_item_nodes(face_pairs, sides, context);
 
     // Both of these describe how the in-plane conductors are obtained, so
     // neither has anything to say when they are turned off, nor on an item
@@ -490,15 +496,14 @@ void process_item(const std::shared_ptr<GeometryItem>& item,
                                     context.report);
         } else {
             report_diagnostic(
-                context.report, DiagnosticCode::TriangleApproximated, item_name,
+                context.report, DiagnosticCode::DiscreteLinkFallback, item_name,
                 "'" + item_name +
-                    "' is a Triangle: its fan parametrisation is not "
-                    "orthogonal, so its conductors come from the discrete "
-                    "shared-edge fallback");
+                    "' has no closed-form conduction profile, so its "
+                    "conductors come from the discrete shared-edge path");
         }
     }
 
-    accumulate_item_conductors(*item, cells, context);
+    accumulate_item_conductors(*item, face_pairs, context);
 }
 
 void require_empty_tmm(const ThermalMathematicalModel& tmm) {
@@ -521,7 +526,7 @@ void commit(ThermalMathematicalModel& tmm, BuildContext& context) {
             report_diagnostic(
                 context.report, DiagnosticCode::MixedBulkOnNode, "",
                 "node " + std::to_string(node_num) +
-                    " gathers slots with different bulk materials; their "
+                    " gathers faces with different bulk materials; their "
                     "capacitances are summed as they stand");
         }
 
@@ -568,12 +573,12 @@ std::string_view to_string(DiagnosticCode code) noexcept {
             return "ZeroConductivity";
         case DiagnosticCode::MixedBulkOnNode:
             return "MixedBulkOnNode";
-        case DiagnosticCode::TriangleApproximated:
-            return "TriangleApproximated";
+        case DiagnosticCode::DiscreteLinkFallback:
+            return "DiscreteLinkFallback";
         case DiagnosticCode::NoNodeNumbers:
             return "NoNodeNumbers";
-        case DiagnosticCode::DegenerateCell:
-            return "DegenerateCell";
+        case DiagnosticCode::DegenerateFacePair:
+            return "DegenerateFacePair";
         case DiagnosticCode::AxisSingularity:
             return "AxisSingularity";
     }
@@ -588,7 +593,7 @@ TmmBuildReport build_tmm_from_gmm(ThermalModel& model,
     const gmm::GeometryModel& geometry = model.gmm();
     const gmm::TriMeshD& world_mesh = geometry.root_group_mesh();
     BuildContext context{.world_mesh = &world_mesh,
-                         .slots = slot_geometry(world_mesh),
+                         .faces = slot_geometry(world_mesh),
                          .options = options,
                          .node_accumulators = {},
                          .conductors = {},

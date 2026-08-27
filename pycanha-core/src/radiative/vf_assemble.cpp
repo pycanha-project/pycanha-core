@@ -33,7 +33,7 @@ namespace pycanha::radiative::detail {
 
 namespace {
 
-// Per-slot precomputation. A_i/N_i is at once the variance proxy the weight
+// Per-face precomputation. A_i/N_i is at once the variance proxy the weight
 // is built from and the factor that turns a raw count into the extensive
 // A_i * count / N_i, so hoisting it out of the pair loop removes a multiply
 // and a divide from every cell and leaves the weight a function of two
@@ -46,9 +46,9 @@ namespace {
     std::span<const double> areas,
     std::span<const std::uint64_t> rays_per_row) {
     std::vector<double> ratio(areas.size(), 0.0);
-    for (std::size_t slot = 0; slot < areas.size(); ++slot) {
-        if (rays_per_row[slot] > 0) {
-            ratio[slot] = areas[slot] / static_cast<double>(rays_per_row[slot]);
+    for (std::size_t face = 0; face < areas.size(); ++face) {
+        if (rays_per_row[face] > 0) {
+            ratio[face] = areas[face] / static_cast<double>(rays_per_row[face]);
         }
     }
     return ratio;
@@ -84,7 +84,7 @@ struct RowStats {
 
 // Thresholding compares the INTENSIVE max(F_ij, F_ji) = G / min(A_i, A_j),
 // so the knob keeps its units and a pair goes only when both directions are
-// negligible. A slot with no area carries no geometry and cannot be hit, so
+// negligible. A face with no area carries no geometry and cannot be hit, so
 // there the guard keeps whatever arrived rather than dividing by zero.
 [[nodiscard]] bool keep_pair(double value, double area_i, double area_j,
                              double threshold) {
@@ -98,7 +98,7 @@ struct RowStats {
 // --- pass A: closure, standard errors, optional full matrix ---------------
 
 struct ScanInputs {
-    std::size_t slots = 0;
+    std::size_t faces = 0;
     std::span<const std::uint64_t> rays_per_row;
     std::span<const double> ratio;
     double threshold = 0.0;
@@ -114,7 +114,7 @@ struct ScanOutputs {
 template <typename Cells>
 void scan_rows(const Cells& cells, const ScanInputs& in, const ScanOutputs& out,
                unsigned threads) {
-    parallel_for_index(in.slots, threads, [&](std::size_t row) {
+    parallel_for_index(in.faces, threads, [&](std::size_t row) {
         const std::uint64_t rays = in.rays_per_row[row];
         if (rays == 0) {
             return;
@@ -128,7 +128,7 @@ void scan_rows(const Cells& cells, const ScanInputs& in, const ScanOutputs& out,
             // Closure accounting runs over every column and BEFORE any
             // thresholding, so pruning tiny entries never corrupts it.
             row_sum += vf;
-            if (column < in.slots) {
+            if (column < in.faces) {
                 // Binomial standard error of the per-entry estimate (real
                 // face columns only).
                 const double entry_stderr =
@@ -234,9 +234,9 @@ class VfEmit {
     std::span<const double> areas,
     std::span<const std::uint64_t> rays_per_row) {
     std::vector<double> targets(areas.size(), 0.0);
-    for (std::size_t slot = 0; slot < areas.size(); ++slot) {
-        if (rays_per_row[slot] > 0) {
-            targets[slot] = areas[slot];
+    for (std::size_t face = 0; face < areas.size(); ++face) {
+        if (rays_per_row[face] > 0) {
+            targets[face] = areas[face];
         }
     }
     return targets;
@@ -245,14 +245,14 @@ class VfEmit {
 // Drops the negligible entries the projection was deliberately not allowed
 // to drop earlier. Buckets are closure accounting and always survive.
 void prune_rows(std::span<RowEntries> rows, std::span<const double> areas,
-                double threshold, std::size_t slots, unsigned threads) {
+                double threshold, std::size_t faces, unsigned threads) {
     parallel_for_index(rows.size(), threads, [&](std::size_t row) {
         RowEntries kept;
         const RowEntries& entries = rows[row];
         for (std::size_t at = 0; at < entries.values.size(); ++at) {
             const auto column = static_cast<std::size_t>(entries.columns[at]);
             const double value = entries.values[at];
-            if (column >= slots ||
+            if (column >= faces ||
                 keep_pair(value, areas[row], areas[column], threshold)) {
                 kept.push(column, value);
             }
@@ -282,54 +282,54 @@ void reduce_stats(std::span<const RowStats> rows, TraceStats& stats) {
 VfResult assemble_vf(CountSource counts, std::span<const double> areas,
                      std::span<const std::uint64_t> rays_per_row,
                      const AccumConfig& config, const AssemblyTuning& tuning) {
-    const std::size_t slots = areas.size();
-    if (rays_per_row.size() != slots) {
+    const std::size_t faces = areas.size();
+    if (rays_per_row.size() != faces) {
         throw std::invalid_argument(
             "pycanha::radiative: rays_per_row must have one entry per face "
-            "slot");
+            "face");
     }
-    const std::size_t cols = matrix_columns(slots);
+    const std::size_t cols = matrix_columns(faces);
     const std::vector<double> ratio = slot_ratios(areas, rays_per_row);
     const Weighting weighting(config.triangulation, tuning);
     const bool keep_full = config.triangulation.keep_full_matrix;
 
     VfResult result;
-    result.row_sums = Eigen::VectorXd::Zero(static_cast<Eigen::Index>(slots));
-    std::vector<RowStats> row_stats(slots);
-    std::vector<RowEntries> rows(slots);
-    std::vector<RowEntries> full_rows(keep_full ? slots : 0);
-    std::vector<double> residual(slots, 0.0);
+    result.row_sums = Eigen::VectorXd::Zero(static_cast<Eigen::Index>(faces));
+    std::vector<RowStats> row_stats(faces);
+    std::vector<RowEntries> rows(faces);
+    std::vector<RowEntries> full_rows(keep_full ? faces : 0);
+    std::vector<double> residual(faces, 0.0);
 
-    const ScanInputs scan_in{.slots = slots,
+    const ScanInputs scan_in{.faces = faces,
                              .rays_per_row = rays_per_row,
                              .ratio = ratio,
                              .threshold = config.sparse_threshold,
                              .keep_full_matrix = keep_full};
     const ScanOutputs scan_out{
-        .row_sums = std::span<double>(result.row_sums.data(), slots),
+        .row_sums = std::span<double>(result.row_sums.data(), faces),
         .stats = row_stats,
         .full_rows = full_rows};
     const VfEmit emit(areas, ratio, weighting, config.sparse_threshold, rows,
                       residual);
-    const unsigned scan_threads = worker_count(tuning, slots, slots * cols);
+    const unsigned scan_threads = worker_count(tuning, faces, faces * cols);
 
     if (const auto* mapped =
             std::get_if<std::span<const std::uint32_t>>(&counts)) {
-        const DenseCells<std::uint32_t> dense = copy_dense(*mapped, slots);
+        const DenseCells<std::uint32_t> dense = copy_dense(*mapped, faces);
         scan_rows(dense, scan_in, scan_out, scan_threads);
-        walk_dense_pairs(dense, slots, tuning, emit);
+        walk_dense_pairs(dense, faces, tuning, emit);
     } else {
         const SparseCells sparse =
-            build_sparse(std::get<std::span<const HostCountRow>>(counts), slots,
+            build_sparse(std::get<std::span<const HostCountRow>>(counts), faces,
                          scan_threads);
         scan_rows(sparse, scan_in, scan_out, scan_threads);
-        walk_sparse_pairs(sparse, slots, tuning, emit);
+        walk_sparse_pairs(sparse, faces, tuning, emit);
     }
 
     if (config.triangulation.mode ==
         TriangulationMode::ConstrainedLeastSquares) {
-        project_onto_closure(rows, closure_targets(areas, rays_per_row), slots);
-        prune_rows(rows, areas, config.sparse_threshold, slots, scan_threads);
+        project_onto_closure(rows, closure_targets(areas, rays_per_row), faces);
+        prune_rows(rows, areas, config.sparse_threshold, faces, scan_threads);
     }
 
     result.vf = pack_rows(rows, static_cast<Eigen::Index>(cols), scan_threads);

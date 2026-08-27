@@ -1,7 +1,6 @@
 #include "pycanha-core/gmm/scene/geometry_group_cutted.hpp"
 
 #include <algorithm>
-#include <iterator>
 #include <memory>
 #include <span>
 #include <stdexcept>
@@ -10,22 +9,17 @@
 #include <variant>
 #include <vector>
 
-#include "pycanha-core/globals.hpp"
-#include "pycanha-core/gmm/cutting/manifold_cut_backend.hpp"
-#include "pycanha-core/gmm/geometrymodel.hpp"
-#include "pycanha-core/gmm/mesh/mesh_options.hpp"
-#include "pycanha-core/gmm/mesh/node_numbering.hpp"
 #include "pycanha-core/gmm/mesh/trimesh.hpp"
-#include "pycanha-core/gmm/ops/transform.hpp"
 #include "pycanha-core/gmm/primitives/cone.hpp"
 #include "pycanha-core/gmm/primitives/cube.hpp"
 #include "pycanha-core/gmm/primitives/cylinder.hpp"
 #include "pycanha-core/gmm/primitives/primitive.hpp"
 #include "pycanha-core/gmm/primitives/sphere.hpp"
+#include "pycanha-core/gmm/primitives/triangular_prism.hpp"
 #include "pycanha-core/gmm/scene/coordinate_transformation.hpp"
 #include "pycanha-core/gmm/scene/geometry.hpp"
 #include "pycanha-core/gmm/scene/geometry_item.hpp"
-#include "pycanha-core/gmm/scene/scene_mesh_detail.hpp"
+#include "pycanha-core/gmm/scene/resolve.hpp"
 
 namespace pycanha::gmm {
 
@@ -33,7 +27,8 @@ bool is_closed_solid(const Primitive& primitive) noexcept {
     return std::holds_alternative<Sphere>(primitive) ||
            std::holds_alternative<Cylinder>(primitive) ||
            std::holds_alternative<Cone>(primitive) ||
-           std::holds_alternative<Cube>(primitive);
+           std::holds_alternative<Cube>(primitive) ||
+           std::holds_alternative<TriangularPrism>(primitive);
 }
 
 namespace {
@@ -49,7 +44,7 @@ void validate_cutter(const std::shared_ptr<GeometryItem>& cutter) {
     if (!is_closed_solid(cutter->primitive())) {
         throw std::invalid_argument(
             "GeometryGroupCutted: cutter primitive must be a closed solid "
-            "(Sphere, Cylinder, Cone, Cube)");
+            "(Sphere, Cylinder, Cone, Cube, TriangularPrism)");
     }
 }
 
@@ -101,63 +96,18 @@ std::span<const std::shared_ptr<Geometry>> GeometryGroupCutted::children()
     return _all_children;
 }
 
-MeshOptions GeometryGroupCutted::effective_options() const {
-    if (_owning_model != nullptr) {
-        return _owning_model->default_mesh_options();
-    }
-    return MeshOptions{};
-}
-
-TriMeshD GeometryGroupCutted::build_mesh() const {
-    const MeshOptions options = effective_options();
-    const cutting::ManifoldCutBackend backend;
-
-    std::vector<Primitive> cutter_primitives;
-    cutter_primitives.reserve(_cutters.size());
-    std::ranges::transform(_cutters, std::back_inserter(cutter_primitives),
-                           [](const std::shared_ptr<GeometryItem>& cutter) {
-                               return ops::transform(cutter->primitive(),
-                                                     cutter->transform());
-                           });
-
-    TriMeshD combined;
-    pycanha::MeshIndex offset = 0;
-    for (const auto& target : _targets) {
-        const auto item = std::dynamic_pointer_cast<GeometryItem>(target);
-        if (item == nullptr) {
-            throw std::invalid_argument(
-                "GeometryGroupCutted: cut targets must be GeometryItems");
-        }
-
-        TriMeshD piece;
-        if (_cutters.empty()) {
-            piece = item->mesh();  // already in this group's local frame
-        } else {
-            piece = backend.cut(*item, cutter_primitives, item->transform(),
-                                options);
-            mesh::fill_node_numbers(piece, item->thermal_mesh());
-            piece.primitives.assign(
-                1, TriMeshD::PrimitiveRange{
-                       .geometry_id = item->id(),
-                       .first_face_id = 0U,
-                       .last_face_id = piece.nf() > 0U ? piece.nf() - 2U : 0U});
-        }
-        detail::concatenate_offset(combined, piece, offset);
-    }
-
-    detail::apply_transform_in_place(combined, _transform);
-    return combined;
-}
-
 const TriMeshD& GeometryGroupCutted::mesh() const {
-    if (!_cached_mesh.has_value()) {
-        _cached_mesh = build_mesh();
-    }
-    return *_cached_mesh;
+    // Resolved with this group as the resolution root, so its own cutters and
+    // any nested ones apply to the whole target subtree at once. Targets may
+    // be any Geometry; only the items inside them produce faces.
+    _walk_result = detail::resolve_subtree(*this);
+    return _walk_result;
 }
 
-void GeometryGroupCutted::create_mesh() { _cached_mesh = build_mesh(); }
-
-void GeometryGroupCutted::invalidate_cache() { _cached_mesh.reset(); }
+void GeometryGroupCutted::create_mesh() {
+    for (const auto& target : _targets) {
+        target->create_mesh();
+    }
+}
 
 }  // namespace pycanha::gmm

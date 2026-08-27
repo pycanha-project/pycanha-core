@@ -27,7 +27,7 @@
 
 namespace {
 
-using pycanha::conduction::CellLink;
+using pycanha::conduction::FacePairLink;
 using pycanha::conduction::intra_primitive_links;
 using pycanha::conduction::MeridianProfile;
 using pycanha::conduction::profile_of;
@@ -56,11 +56,11 @@ constexpr double pi = std::numbers::pi;
 }
 
 // Resistance of the whole chain of direction-2 links of the single column of
-// cells, walked in order.
-[[nodiscard]] double series_resistance(const std::vector<CellLink>& links) {
+// face pairs, walked in order.
+[[nodiscard]] double series_resistance(const std::vector<FacePairLink>& links) {
     return std::transform_reduce(
         links.begin(), links.end(), 0.0, std::plus<>{},
-        [](const CellLink& link) { return 1.0 / link.conductance; });
+        [](const FacePairLink& link) { return 1.0 / link.conductance; });
 }
 
 // The chain must telescope: the half-resistances that meet at each interior
@@ -131,7 +131,7 @@ TEST_CASE("link invariants: refining a mesh keeps the end-to-end resistance",
     const Primitive cone = Cone({0.0, 0.0, 0.0}, {0.0, 0.0, 2.0},
                                 {1.5, 0.0, 0.0}, 0.4, 1.5, 0.0, pi / 2.0);
 
-    // Same first and last cells, different subdivision in between: the
+    // Same first and last face pairs, different subdivision in between: the
     // resistance between the two end reference lines cannot move.
     const std::vector<double> coarse{0.0, 0.2, 0.8, 1.0};
     const std::vector<double> fine{0.0, 0.2, 0.35, 0.5, 0.62, 0.8, 1.0};
@@ -167,12 +167,12 @@ TEST_CASE("link invariants: mirroring the mesh mirrors the conductors",
     }
 }
 
-TEST_CASE("link invariants: a degenerate cell carries no conductor",
+TEST_CASE("link invariants: a degenerate face pair carries no conductor",
           "[conduction][links]") {
     const Primitive rectangle =
         Rectangle({0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, {0.0, 1.0, 0.0});
-    // A repeated cut leaves a zero-width cell; a zero distance would otherwise
-    // make the conductance unbounded.
+    // A repeated cut leaves a zero-width face pair; a zero distance would
+    // otherwise make the conductance unbounded.
     const auto links = intra_primitive_links(
         rectangle, unit_shell({0.0, 0.5, 0.5, 1.0}, {0.0, 1.0}),
         TmmBuildOptions{});

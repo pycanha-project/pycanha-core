@@ -18,16 +18,16 @@ struct MaterialTable {
     // [eps_ir, spec_ir, tau_ir, alpha_sol, spec_sol, tau_sol] — matches
     // gmm::OpticalMaterial::Properties exactly.
     Eigen::Matrix<float, Eigen::Dynamic, 6> properties;
-    // Per face SLOT (global, both sides): row index into `properties`, or -1
+    // Per face (global, both sides): row index into `properties`, or -1
     // for "no material assigned" (treated as blackbody; warned at build).
     Eigen::VectorXi face_material;
-    // Per face SLOT: emission/reception activity (ThermalMesh side activity).
+    // Per face: emission/reception activity (ThermalMesh side activity).
     Eigen::Matrix<bool, Eigen::Dynamic, 1> face_active;
 
     [[nodiscard]] Eigen::Index num_materials() const noexcept {
         return properties.rows();
     }
-    [[nodiscard]] Eigen::Index num_face_slots() const noexcept {
+    [[nodiscard]] Eigen::Index num_faces() const noexcept {
         return face_material.rows();
     }
 };

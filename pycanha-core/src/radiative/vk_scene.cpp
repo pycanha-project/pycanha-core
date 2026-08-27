@@ -15,6 +15,7 @@
 #include <utility>
 #include <vector>
 
+#include "face_record.hpp"
 #include "pycanha-core/globals.hpp"
 #include "pycanha-core/gmm/mesh/ops/compute_areas.hpp"
 #include "pycanha-core/gmm/mesh/trimesh.hpp"
@@ -42,7 +43,7 @@ constexpr std::uint64_t max_rays_per_chunk_total = 1U << 22U;
 constexpr std::uint32_t workgroup_size_x = 64;
 // Bindings 0-9 are the shared scene tables; 10-12 are the per-kernel
 // accumulator buffers (kernels that use fewer leave the rest on a dummy).
-constexpr std::uint32_t num_bindings = 13;
+constexpr std::uint32_t num_bindings = 12;
 
 // Host mirrors of the kernel flag bits in common.slang.
 constexpr std::uint32_t flag_normal_emission = 1;
@@ -257,10 +258,10 @@ SceneImpl::SceneImpl(DeviceImpl& device, std::vector<ScenePart> parts,
         throw std::invalid_argument(
             "pycanha::radiative: a scene needs at least one part");
     }
-    _num_slots = static_cast<std::uint32_t>(_materials.face_material.rows());
-    if (_num_slots == 0 || (_num_slots % 2) != 0) {
+    _num_faces = static_cast<std::uint32_t>(_materials.face_material.rows());
+    if (_num_faces == 0 || (_num_faces % 2) != 0) {
         throw std::invalid_argument(
-            "pycanha::radiative: material table has no face slots (build it "
+            "pycanha::radiative: material table has no faces (build it "
             "from the same model as the parts)");
     }
     validate_material_properties(_materials);
@@ -275,7 +276,7 @@ SceneImpl::SceneImpl(DeviceImpl& device, std::vector<ScenePart> parts,
                                         std::to_string(i) +
                                         " has an empty mesh");
         }
-        if (static_cast<std::uint32_t>(parts[i].mesh.nf()) > _num_slots) {
+        if (static_cast<std::uint32_t>(parts[i].mesh.nf()) > _num_faces) {
             throw std::invalid_argument(
                 "pycanha::radiative: part " + std::to_string(i) +
                 " has face ids beyond the material table");
@@ -306,8 +307,8 @@ SceneImpl::SceneImpl(DeviceImpl& device, std::vector<ScenePart> parts,
     _scene_bytes = _allocated_bytes;
 
     SPDLOG_LOGGER_INFO(pycanha::get_logger(),
-                       "radiative: scene built ({} parts, {} face slots)",
-                       parts.size(), _num_slots);
+                       "radiative: scene built ({} parts, {} faces)",
+                       parts.size(), _num_faces);
 }
 
 SceneImpl::~SceneImpl() {
@@ -348,8 +349,7 @@ SceneImpl::~SceneImpl() {
     destroy_buffer(_tlas_storage);
     destroy_buffer(_tlas_scratch);
     destroy_buffer(_materials_buf);
-    destroy_buffer(_face_material_buf);
-    destroy_buffer(_face_flags_buf);
+    destroy_buffer(_face_record_buf);
     destroy_buffer(_face_areas_buf);
     destroy_buffer(_emit_tri_offset_buf);
     destroy_buffer(_emit_tri_part_buf);
@@ -366,7 +366,7 @@ SceneImpl::~SceneImpl() {
 }
 
 void SceneImpl::upload_geometry(const std::vector<ScenePart>& parts) {
-    _face_areas.assign(_num_slots, 0.0);
+    _face_areas.assign(_num_faces, 0.0);
     _parts.resize(parts.size());
     _instances_host.resize(parts.size());
 
@@ -421,10 +421,9 @@ void SceneImpl::upload_part(const ScenePart& part, std::size_t index,
                                         geometry_usage);
 
     // Rigid transforms preserve areas: part-local areas are world areas.
-    const Eigen::VectorXd part_areas =
-        gmm::mesh::ops::compute_face_slot_areas(mesh);
-    for (Eigen::Index slot = 0; slot < part_areas.rows(); ++slot) {
-        _face_areas[static_cast<std::size_t>(slot)] += part_areas(slot);
+    const Eigen::VectorXd part_areas = gmm::mesh::ops::compute_face_areas(mesh);
+    for (Eigen::Index face = 0; face < part_areas.rows(); ++face) {
+        _face_areas[static_cast<std::size_t>(face)] += part_areas(face);
     }
 
     InstanceDataGpu& instance = _instances_host[index];
@@ -451,54 +450,33 @@ void SceneImpl::upload_part(const ScenePart& part, std::size_t index,
 }
 
 void SceneImpl::build_face_tables(const std::vector<ScenePart>& parts) {
-    // Global per-slot tables. Missing material (-1) is tolerated (treated
-    // as blackbody by the exchange kernels); inactive slots never emit.
+    // Global per-face tables. Missing material (-1) is tolerated (treated
+    // as blackbody by the exchange kernels); inactive faces never emit.
     const std::vector<float> material_rows = pack_material_rows(_materials);
-    std::vector<std::int32_t> face_material(_num_slots);
-    std::vector<std::uint32_t> face_flags(_num_slots, 0);
-    for (std::uint32_t slot = 0; slot < _num_slots; ++slot) {
-        face_material[slot] = _materials.face_material(slot);
-        if (_materials.face_active(slot)) {
-            face_flags[slot] |= 1U;
-        }
-    }
-    for (const ScenePart& part : parts) {
-        if (part.kind != PartKind::CelestialBody) {
-            continue;
-        }
-        const auto num_triangles = static_cast<Eigen::Index>(part.mesh.nt());
-        for (Eigen::Index t = 0; t < num_triangles; ++t) {
-            const auto base = part.mesh.face_ids(t);
-            face_flags[base] |= 2U;
-            face_flags[base + 1U] |= 2U;
-        }
-    }
+    const std::vector<std::uint32_t> face_records =
+        detail::pack_face_records(_materials, parts, _num_faces);
 
     constexpr VkBufferUsageFlags table_usage =
         VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
     _materials_buf =
         upload_to_new_buffer(material_rows.data(),
                              material_rows.size() * sizeof(float), table_usage);
-    _face_material_buf = upload_to_new_buffer(
-        face_material.data(), face_material.size() * sizeof(std::int32_t),
+    _face_record_buf = upload_to_new_buffer(
+        face_records.data(), face_records.size() * sizeof(std::uint32_t),
         table_usage);
-    _face_flags_buf = upload_to_new_buffer(
-        face_flags.data(), face_flags.size() * sizeof(std::uint32_t),
-        table_usage);
-    std::vector<float> face_areas_f32(_num_slots);
-    for (std::uint32_t slot = 0; slot < _num_slots; ++slot) {
-        face_areas_f32[slot] = static_cast<float>(_face_areas[slot]);
+    std::vector<float> face_areas_f32(_num_faces);
+    for (std::uint32_t face = 0; face < _num_faces; ++face) {
+        face_areas_f32[face] = static_cast<float>(_face_areas[face]);
     }
     _face_areas_buf = upload_to_new_buffer(
         face_areas_f32.data(), face_areas_f32.size() * sizeof(float),
         table_usage);
 
-    // Default emitter list: active, non-planet slots with geometry.
+    // Default emitter list: active, non-planet faces with geometry.
     _default_emitters.clear();
-    for (std::uint32_t slot = 0; slot < _num_slots; ++slot) {
-        if ((face_flags[slot] & 1U) != 0U && (face_flags[slot] & 2U) == 0U &&
-            _face_areas[slot] > 0.0) {
-            _default_emitters.push_back(slot);
+    for (std::uint32_t face = 0; face < _num_faces; ++face) {
+        if (detail::face_emits(face_records[face]) && _face_areas[face] > 0.0) {
+            _default_emitters.push_back(face);
         }
     }
 }
@@ -523,20 +501,20 @@ void SceneImpl::build_emission_tables(const std::vector<ScenePart>& parts) {
                              .area = areas(t)});
         }
     }
-    // Face slots partition across parts, so a stable sort by slot keeps the
+    // Faces partition across parts, so a stable sort by face keeps the
     // per-part triangle order within each face.
     std::ranges::stable_sort(triangles, {}, &EmitTriangle::pair_base);
 
-    // Per-slot offsets: even slot = first triangle of the pair, odd slot =
+    // Per-face offsets: even face = first triangle of the pair, odd face =
     // one past the last (both sides of a pair share the triangle list, so
     // the shader reads [pair_base] and [pair_base + 1]).
-    std::vector<std::uint32_t> offsets(_num_slots, 0);
+    std::vector<std::uint32_t> offsets(_num_faces, 0);
     std::vector<std::uint32_t> part_ids(triangles.size());
     std::vector<std::uint32_t> prim_ids(triangles.size());
     std::vector<float> cum_area(triangles.size());
 
     std::size_t index = 0;
-    for (std::uint32_t pair = 0; pair < _num_slots; pair += 2) {
+    for (std::uint32_t pair = 0; pair < _num_faces; pair += 2) {
         offsets[pair] = static_cast<std::uint32_t>(index);
         const std::size_t begin = index;
         double total = 0.0;
@@ -900,23 +878,22 @@ void SceneImpl::create_pipelines() {
     tlas_write.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
     vkUpdateDescriptorSets(_device.device, 1, &tlas_write, 0, nullptr);
 
-    // Static bindings (1-4, 6-9) are written once; the emitter list (5) and
-    // the accumulator bindings (10-12) are (re)written per accumulate call.
+    // Static bindings (1-3, 5-8) are written once; the emitter list (4) and
+    // the accumulator bindings (9-11) are (re)written per accumulate call.
     // The dummy keeps every binding valid until then.
     _dummy_buf = create_buffer(4, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
                                /*host_visible=*/false);
     write_storage_descriptor(1, _instance_ssbo.buffer);
     write_storage_descriptor(2, _materials_buf.buffer);
-    write_storage_descriptor(3, _face_material_buf.buffer);
-    write_storage_descriptor(4, _face_flags_buf.buffer);
-    write_storage_descriptor(5, _dummy_buf.buffer);
-    write_storage_descriptor(6, _emit_tri_offset_buf.buffer);
-    write_storage_descriptor(7, _emit_tri_part_buf.buffer);
-    write_storage_descriptor(8, _emit_tri_prim_buf.buffer);
-    write_storage_descriptor(9, _emit_cum_area_buf.buffer);
+    write_storage_descriptor(3, _face_record_buf.buffer);
+    write_storage_descriptor(4, _dummy_buf.buffer);
+    write_storage_descriptor(5, _emit_tri_offset_buf.buffer);
+    write_storage_descriptor(6, _emit_tri_part_buf.buffer);
+    write_storage_descriptor(7, _emit_tri_prim_buf.buffer);
+    write_storage_descriptor(8, _emit_cum_area_buf.buffer);
+    write_storage_descriptor(9, _dummy_buf.buffer);
     write_storage_descriptor(10, _dummy_buf.buffer);
     write_storage_descriptor(11, _dummy_buf.buffer);
-    write_storage_descriptor(12, _dummy_buf.buffer);
 }
 
 void SceneImpl::write_storage_descriptor(std::uint32_t binding,
@@ -947,12 +924,12 @@ std::vector<std::uint32_t> SceneImpl::resolve_emitters(
     if (list.empty()) {
         list = _default_emitters;
     }
-    const std::uint32_t num_slots = _num_slots;
-    if (std::ranges::any_of(list, [num_slots](const std::uint32_t slot) {
-            return slot >= num_slots;
+    const std::uint32_t face_count = _num_faces;
+    if (std::ranges::any_of(list, [face_count](const std::uint32_t face) {
+            return face >= face_count;
         })) {
         throw std::invalid_argument(
-            "pycanha::radiative: emitter slot out of range");
+            "pycanha::radiative: emitter face out of range");
     }
     return list;
 }
@@ -975,24 +952,24 @@ void SceneImpl::accumulate_vf(VfAccumImpl& acc, const TraceSettings& settings,
     KernelDispatch kernel;
     kernel.pipeline = _vf_pipeline;
     kernel.flags = settings.normal_emission ? flag_normal_emission : 0U;
-    write_storage_descriptor(10, acc.buffer());
+    write_storage_descriptor(9, acc.buffer());
+    write_storage_descriptor(10, _dummy_buf.buffer);
     write_storage_descriptor(11, _dummy_buf.buffer);
-    write_storage_descriptor(12, _dummy_buf.buffer);
 
     if (acc.layout() == AccumLayout::Dense) {
         dispatch_rows(kernel, list, settings);
     } else {
         // Row blocks of tile_rows emitters; the scratch buffer is zeroed and
         // absorbed into the host accumulation per block. Chunking/tiling
-        // never changes results: the RNG is keyed on (slot, ray, seed).
+        // never changes results: the RNG is keyed on (face, ray, seed).
         const std::uint32_t tile_rows = acc.tile_rows();
-        for (std::uint32_t row_offset = 0; row_offset < _num_slots;
+        for (std::uint32_t row_offset = 0; row_offset < _num_faces;
              row_offset += tile_rows) {
             std::vector<std::uint32_t> block;
             std::ranges::copy_if(
                 list, std::back_inserter(block),
-                [row_offset, tile_rows](const std::uint32_t slot) {
-                    return slot >= row_offset && slot < row_offset + tile_rows;
+                [row_offset, tile_rows](const std::uint32_t face) {
+                    return face >= row_offset && face < row_offset + tile_rows;
                 });
             if (block.empty()) {
                 continue;
@@ -1024,21 +1001,21 @@ void SceneImpl::accumulate_exchange(ExchangeAccumImpl& acc,
         kernel.flags |= flag_normal_emission;
     }
     kernel.fp_scale = fp_scale;
-    write_storage_descriptor(10, acc.buffer());
+    write_storage_descriptor(9, acc.buffer());
+    write_storage_descriptor(10, _dummy_buf.buffer);
     write_storage_descriptor(11, _dummy_buf.buffer);
-    write_storage_descriptor(12, _dummy_buf.buffer);
 
     if (acc.layout() == AccumLayout::Dense) {
         dispatch_rows(kernel, list, settings);
     } else {
         const std::uint32_t tile_rows = acc.tile_rows();
-        for (std::uint32_t row_offset = 0; row_offset < _num_slots;
+        for (std::uint32_t row_offset = 0; row_offset < _num_faces;
              row_offset += tile_rows) {
             std::vector<std::uint32_t> block;
             std::ranges::copy_if(
                 list, std::back_inserter(block),
-                [row_offset, tile_rows](const std::uint32_t slot) {
-                    return slot >= row_offset && slot < row_offset + tile_rows;
+                [row_offset, tile_rows](const std::uint32_t face) {
+                    return face >= row_offset && face < row_offset + tile_rows;
                 });
             if (block.empty()) {
                 continue;
@@ -1069,9 +1046,9 @@ void SceneImpl::accumulate_solar(const SolarState& sun, SolarAccumImpl& acc,
     kernel.flags = flag_solar_band;
     kernel.fp_scale = setup.fp_scale;
     kernel.sun_dir = setup.sun_dir;
-    write_storage_descriptor(10, acc.direct_buffer());
-    write_storage_descriptor(11, acc.total_buffer());
-    write_storage_descriptor(12, _face_areas_buf.buffer);
+    write_storage_descriptor(9, acc.direct_buffer());
+    write_storage_descriptor(10, acc.total_buffer());
+    write_storage_descriptor(11, _face_areas_buf.buffer);
     dispatch_rows(kernel, list, settings);
 
     acc.record_batch(settings.rays_per_face, list.size());
@@ -1125,7 +1102,7 @@ void SceneImpl::dispatch_rows(const KernelDispatch& kernel,
     vmaFlushAllocation(_device.allocator, _emitters_buf.allocation, 0,
                        VK_WHOLE_SIZE);
 
-    write_storage_descriptor(5, _emitters_buf.buffer);
+    write_storage_descriptor(4, _emitters_buf.buffer);
 
     PushConstants push{
         .row_offset = kernel.row_offset,
@@ -1135,7 +1112,7 @@ void SceneImpl::dispatch_rows(const KernelDispatch& kernel,
         .batch_seed = settings.seed,
         .max_bounces = settings.max_bounces,
         .flags = kernel.flags,
-        .num_face_slots = _num_slots,
+        .num_faces = _num_faces,
         .energy_threshold = settings.energy_threshold,
         .fp_scale = kernel.fp_scale,
         .inv_fp_scale = 1.0F / kernel.fp_scale,

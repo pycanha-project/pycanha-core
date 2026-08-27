@@ -96,18 +96,25 @@ class GeometryModel {
     // becomes the part, expressed in that geometry's local frame with
     // `transform` = its world placement) plus one remainder part in the world
     // frame (identity transform, omitted when empty). Face ids stay GLOBAL:
-    // the parts' face_id sets partition the unified mesh()'s, bit-identical
-    // vertices included. part_id is the emission order (remainder first).
-    // Throws std::invalid_argument on an unknown split name, a name nested
-    // inside a cut group, or a duplicate.
+    // the parts' face_id sets partition the unified mesh()'s. part_id is the
+    // emission order (remainder first).
+    //
+    // Built from the same resolution walk as mesh(), so a cut group inside a
+    // part is cut by exactly the cutters it would be in the model. A cutter
+    // reaching across a part boundary is therefore baked into the part it cuts
+    // — legitimate for a fixed configuration, wrong for an articulated one, so
+    // it is logged.
+    //
+    // Throws std::invalid_argument on an unknown split name, a duplicate, or a
+    // name that contributes no geometry.
     [[nodiscard]] std::vector<radiative::ScenePart> mesh_parts(
         std::span<const std::string> split = {}) const;
 
-    // Builds the per-face-slot material/activity tables from the per-side
+    // Builds the per-face material/activity tables from the per-side
     // ThermalMesh data (side1/side2 optical material + activity), indexed by
-    // global face slot (even/odd = side 1/2). Materials are deduplicated by
-    // object identity; slots of items without an optical material get -1
-    // (logged warning, one per item). Slots absent from the mesh (gaps after
+    // global face (even/odd = side 1/2). Materials are deduplicated by
+    // object identity; faces of items without an optical material get -1
+    // (logged warning, one per item). Faces absent from the mesh (gaps after
     // cuts) are -1 and inactive.
     [[nodiscard]] radiative::MaterialTable material_table() const;
 

@@ -32,7 +32,7 @@ namespace {
 
 // The dense solve is O(n^3) time and O(n^2) memory; past this size the
 // node-level adjoint path is the intended tool.
-constexpr Eigen::Index max_dense_slots = 20'000;
+constexpr Eigen::Index max_dense_faces = 20'000;
 
 void validate_gebhart_inputs(const SparseMatrix& vf,
                              const Eigen::VectorXd& emissivity,
@@ -40,7 +40,7 @@ void validate_gebhart_inputs(const SparseMatrix& vf,
                              double space_fraction_policy) {
     // Traced VF results carry the virtual space/inactive/lost columns; a
     // hand-built plain square matrix is equally fine. Columns beyond the
-    // face slots never re-emit, so both shapes solve the same system.
+    // faces never re-emit, so both shapes solve the same system.
     if (vf.cols() != vf.rows() &&
         vf.cols() != vf.rows() + num_virtual_columns) {
         throw std::invalid_argument(
@@ -53,12 +53,12 @@ void validate_gebhart_inputs(const SparseMatrix& vf,
             "pycanha::radiative: emissivity/face_areas size must match the "
             "VF matrix");
     }
-    for (Eigen::Index slot = 0; slot < emissivity.rows(); ++slot) {
-        const double eps = emissivity(slot);
+    for (Eigen::Index face = 0; face < emissivity.rows(); ++face) {
+        const double eps = emissivity(face);
         if (std::isnan(eps) || eps < 0.0 || eps > 1.0) {
             throw std::invalid_argument(
-                "pycanha::radiative: emissivity of slot " +
-                std::to_string(slot) + " is outside [0, 1]");
+                "pycanha::radiative: emissivity of face " +
+                std::to_string(face) + " is outside [0, 1]");
         }
     }
     if (std::isnan(space_fraction_policy) || space_fraction_policy < 0.0 ||
@@ -156,12 +156,12 @@ SparseMatrix gebhart_factors(const SparseMatrix& vf,
                              std::span<const double> face_areas,
                              double space_fraction_policy) {
     validate_gebhart_inputs(vf, emissivity, face_areas, space_fraction_policy);
-    if (vf.rows() > max_dense_slots) {
+    if (vf.rows() > max_dense_faces) {
         throw std::invalid_argument(
             "pycanha::radiative: gebhart_factors solves a dense " +
             std::to_string(vf.rows()) + "x" + std::to_string(vf.rows()) +
-            " system, which is limited to " + std::to_string(max_dense_slots) +
-            " face slots; use gebhart_node_factors for large models");
+            " system, which is limited to " + std::to_string(max_dense_faces) +
+            " faces; use gebhart_node_factors for large models");
     }
     const Eigen::Index n = vf.rows();
     const SparseMatrix expanded = expand_view_factors(vf, face_areas);
@@ -203,12 +203,12 @@ SparseMatrix gebhart_node_factors(const SparseMatrix& vf,
         return SparseMatrix{};
     }
     std::vector<Eigen::Index> node_of(static_cast<std::size_t>(n), -1);
-    for (std::size_t slot = 0; slot < node_numbers.size(); ++slot) {
-        if (node_numbers[slot] == NO_NODE) {
+    for (std::size_t face = 0; face < node_numbers.size(); ++face) {
+        if (node_numbers[face] == NO_NODE) {
             continue;
         }
-        const auto it = std::ranges::lower_bound(nodes, node_numbers[slot]);
-        node_of[slot] = std::distance(nodes.begin(), it);
+        const auto it = std::ranges::lower_bound(nodes, node_numbers[face]);
+        node_of[face] = std::distance(nodes.begin(), it);
     }
 
     // Sparse system (I - F R) and the tall-skinny RHS F E V (columns =
@@ -249,14 +249,14 @@ SparseMatrix gebhart_node_factors(const SparseMatrix& vf,
 
     // GR = W^T (B V) with W(i, m) = A_i * eps_i for faces of node m.
     Eigen::MatrixXd gr = Eigen::MatrixXd::Zero(num_nodes, num_nodes);
-    for (Eigen::Index slot = 0; slot < n; ++slot) {
-        const Eigen::Index node_row = node_of[static_cast<std::size_t>(slot)];
+    for (Eigen::Index face = 0; face < n; ++face) {
+        const Eigen::Index node_row = node_of[static_cast<std::size_t>(face)];
         if (node_row < 0) {
             continue;
         }
         const double weight =
-            face_areas[static_cast<std::size_t>(slot)] * emissivity(slot);
-        gr.row(node_row) += weight * y.row(slot);
+            face_areas[static_cast<std::size_t>(face)] * emissivity(face);
+        gr.row(node_row) += weight * y.row(face);
     }
     return pack_dense(gr);
 }

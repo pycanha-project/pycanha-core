@@ -3,11 +3,15 @@
 #include <manifold/common.h>
 #include <manifold/manifold.h>
 
+#include <array>
 #include <cmath>
+#include <cstdint>
 #include <numbers>
 #include <stdexcept>
 #include <type_traits>
+#include <utility>
 #include <variant>
+#include <vector>
 
 #include "pycanha-core/globals.hpp"
 #include "pycanha-core/gmm/ops/transform.hpp"
@@ -16,6 +20,7 @@
 #include "pycanha-core/gmm/primitives/cylinder.hpp"
 #include "pycanha-core/gmm/primitives/primitive.hpp"
 #include "pycanha-core/gmm/primitives/sphere.hpp"
+#include "pycanha-core/gmm/primitives/triangular_prism.hpp"
 #include "pycanha-core/gmm/scene/coordinate_transformation.hpp"
 
 namespace pycanha::gmm::cutting {
@@ -102,6 +107,53 @@ namespace {
         .Translate(to_manifold_vec(sphere.p1()));
 }
 
+[[nodiscard]] manifold::Manifold build_triangular_prism(
+    const TriangularPrism& prism) {
+    if (!prism.is_valid()) {
+        throw std::logic_error(
+            "TriangularPrism cutters must enclose a volume: the base must be a "
+            "real triangle and the extrusion must leave its plane");
+    }
+
+    // Vertices 0-2 are the base, 3-5 the extruded copy in the same order.
+    const Vector3D extrusion = prism.height();
+    const std::array<Point3D, 6> corners{prism.p1(),
+                                         prism.p2(),
+                                         prism.p3(),
+                                         Point3D{prism.p1() + extrusion},
+                                         Point3D{prism.p2() + extrusion},
+                                         Point3D{prism.p3() + extrusion}};
+
+    // The base is ordered so (p2 - p1) x (p3 - p1) points ALONG the extrusion,
+    // so the base triangle faces into the solid and is wound backwards here;
+    // the top keeps the base order. Each wall is the quad between one base
+    // edge and its extruded copy, split into two triangles.
+    std::vector<std::uint64_t> tri_verts{
+        0U, 2U, 1U,  // base, reversed to face outward
+        3U, 4U, 5U,  // top
+    };
+    for (std::uint64_t edge = 0U; edge < 3U; ++edge) {
+        const std::uint64_t next = (edge + 1U) % 3U;
+        tri_verts.insert(tri_verts.end(), {edge, next, next + 3U});
+        tri_verts.insert(tri_verts.end(), {edge, next + 3U, edge + 3U});
+    }
+
+    manifold::MeshGL64 mesh;
+    mesh.numProp = 3U;
+    mesh.vertProperties.reserve(corners.size() * 3U);
+    for (const Point3D& corner : corners) {
+        mesh.vertProperties.insert(mesh.vertProperties.end(),
+                                   {corner.x(), corner.y(), corner.z()});
+    }
+    mesh.triVerts = std::move(tri_verts);
+
+    const manifold::Manifold solid(mesh);
+    if (solid.Status() != manifold::Manifold::Error::NoError) {
+        throw std::logic_error("TriangularPrism cutter is not a closed solid");
+    }
+    return solid;
+}
+
 [[nodiscard]] manifold::Manifold build_cube(const Cube& cube) {
     return manifold::Manifold::Cube(to_manifold_vec(cube.extent()),
                                     /*center=*/true)
@@ -125,6 +177,8 @@ manifold::Manifold build_cutter(
                 return build_cone(concrete_cutter);
             } else if constexpr (std::is_same_v<T, Cube>) {
                 return build_cube(concrete_cutter);
+            } else if constexpr (std::is_same_v<T, TriangularPrism>) {
+                return build_triangular_prism(concrete_cutter);
             } else {
                 throw std::logic_error(
                     "CutGroup cutters must be closed solid primitives");

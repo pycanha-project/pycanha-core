@@ -32,7 +32,8 @@ using pycanha::gmm::ThermalMesh;
     return values;
 }
 
-// Two dir1 cells, one dir2 cell. side1 node = 100 + k, side2 node = 7 + k.
+// Two dir1 face pairs, one dir2 face pair. side1 node = 100 + k, side2 node = 7
+// + k.
 [[nodiscard]] std::shared_ptr<GeometryItem> make_panel() {
     ThermalMesh thermal_mesh{{0.0, 0.5, 1.0}, {0.0, 1.0}};
     thermal_mesh.set_node1_start(100);
@@ -52,7 +53,7 @@ TEST_CASE("GeometryModel reverse node -> face_ids from node_numbers",
     model.add(make_panel());
     model.create_mesh();
 
-    // Cell k=0 -> face_id 0 (side1) / 1 (side2); cell k=1 -> 2 / 3.
+    // Face pair k=0 -> face_id 0 (side1) / 1 (side2); face pair k=1 -> 2 / 3.
     REQUIRE(as_raw(model.faces_of_node(100)) == std::vector<std::uint32_t>{0U});
     REQUIRE(as_raw(model.faces_of_node(101)) == std::vector<std::uint32_t>{2U});
     REQUIRE(as_raw(model.faces_of_node(7)) == std::vector<std::uint32_t>{1U});

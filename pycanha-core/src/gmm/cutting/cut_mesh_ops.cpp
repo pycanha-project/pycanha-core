@@ -1,5 +1,7 @@
 #include "pycanha-core/gmm/cutting/cut_mesh_ops.hpp"
 
+#include <spdlog/spdlog.h>
+
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -15,6 +17,7 @@
 #include <variant>
 #include <vector>
 
+#include "pycanha-core/config.hpp"
 #include "pycanha-core/globals.hpp"
 #include "pycanha-core/gmm/mesh/thermal_mesh.hpp"
 #include "pycanha-core/gmm/mesh/trimesh.hpp"
@@ -28,6 +31,8 @@
 #include "pycanha-core/gmm/primitives/rectangle.hpp"
 #include "pycanha-core/gmm/primitives/sphere.hpp"
 #include "pycanha-core/gmm/primitives/triangle.hpp"
+#include "pycanha-core/gmm/primitives/triangular_prism.hpp"
+#include "pycanha-core/utils/logger.hpp"
 
 namespace pycanha::gmm::cutting {
 namespace {
@@ -86,10 +91,11 @@ void compact_referenced_vertices(TriMeshD& mesh) {
     mesh.vertices = std::move(compacted_vertices);
 }
 
-// ---- centroid -> uv-cell classification (was face_id_from_uv.cpp) ---------
+// ---- centroid -> uv face-pair classification (was face_id_from_uv.cpp)
+// ---------
 
-[[nodiscard]] std::size_t find_cell(std::span<const double> cuts,
-                                    double normalized_value) {
+[[nodiscard]] std::size_t find_face_pair(std::span<const double> cuts,
+                                         double normalized_value) {
     const double clamped = std::clamp(normalized_value, 0.0, 1.0);
     const auto upper = std::ranges::upper_bound(cuts, clamped);
     if (upper == cuts.begin()) {
@@ -123,42 +129,21 @@ void compact_referenced_vertices(TriMeshD& mesh) {
     return best;
 }
 
-[[nodiscard]] std::pair<double, double> normalized_uv(const Triangle& triangle,
-                                                      const Point2D& uv) {
-    const Vector3D edge_1 = triangle.p2() - triangle.p1();
-    const Vector3D edge_2 = triangle.p3() - triangle.p1();
-    const Vector3D u_axis = edge_1.normalized();
-    const Vector3D v_axis = (edge_2 - edge_2.dot(u_axis) * u_axis).normalized();
-    const double edge_1_length = edge_1.norm();
-    const double edge_2_along_u = edge_2.dot(u_axis);
-    const double edge_2_along_v = edge_2.dot(v_axis);
-
-    const double along_edge_2 =
-        edge_2_along_v > LENGTH_TOL ? uv.y() / edge_2_along_v : 0.0;
-    const double along_edge_1 =
-        edge_1_length > LENGTH_TOL
-            ? (uv.x() - (along_edge_2 * edge_2_along_u)) / edge_1_length
-            : 0.0;
-
-    const double dir1 = std::clamp(along_edge_1 + along_edge_2, 0.0, 1.0);
-    const double dir2 =
-        dir1 > LENGTH_TOL ? std::clamp(along_edge_2 / dir1, 0.0, 1.0) : 0.0;
-
-    return {dir1, dir2};
+// Planar primitives already parametrise on [0, 1]^2, so there is nothing to
+// normalise. The curved ones below still measure uv in arc length and height.
+[[nodiscard]] std::pair<double, double> normalized_uv(
+    const Triangle& /*triangle*/, const Point2D& uv) {
+    return {std::clamp(uv.x(), 0.0, 1.0), std::clamp(uv.y(), 0.0, 1.0)};
 }
 
 [[nodiscard]] std::pair<double, double> normalized_uv(
-    const Rectangle& rectangle, const Point2D& uv) {
-    return {normalize_linear(uv.x(), (rectangle.p2() - rectangle.p1()).norm()),
-            normalize_linear(uv.y(), rectangle.to_uv(rectangle.p3()).y())};
+    const Rectangle& /*rectangle*/, const Point2D& uv) {
+    return {std::clamp(uv.x(), 0.0, 1.0), std::clamp(uv.y(), 0.0, 1.0)};
 }
 
 [[nodiscard]] std::pair<double, double> normalized_uv(
-    const Quadrilateral& quadrilateral, const Point2D& uv) {
-    return {
-        normalize_linear(uv.x(),
-                         (quadrilateral.p2() - quadrilateral.p1()).norm()),
-        normalize_linear(uv.y(), quadrilateral.to_uv(quadrilateral.p4()).y())};
+    const Quadrilateral& /*quadrilateral*/, const Point2D& uv) {
+    return {std::clamp(uv.x(), 0.0, 1.0), std::clamp(uv.y(), 0.0, 1.0)};
 }
 
 [[nodiscard]] std::pair<double, double> normalized_uv(const Disc& disc,
@@ -233,6 +218,12 @@ void compact_referenced_vertices(TriMeshD& mesh) {
     [[maybe_unused]] const Cube& cube, [[maybe_unused]] const Point2D& uv) {
     throw std::logic_error(
         "Cube face classification requires a face topology definition");
+}
+
+[[nodiscard]] std::pair<double, double> normalized_uv(
+    [[maybe_unused]] const TriangularPrism& prism,
+    [[maybe_unused]] const Point2D& uv) {
+    throw std::logic_error("TriangularPrism is cutter-only: it has no faces");
 }
 
 }  // namespace
@@ -353,8 +344,22 @@ pycanha::MeshIndex classify_triangle_by_centroid(
             return concrete_primitive.normal_at_uv(uv);
         },
         primitive);
-    // Even face_id = side 1 (front), odd = side 2 (back).
-    const bool is_back = triangle_normal.dot(primitive_normal) < 0.0;
+    // Choosing the subdivision is this function's job; choosing the side is
+    // not. A triangle always defines both faces of its pair, so it carries the
+    // even id and its winding is side 1 by definition. A cut result whose
+    // winding disagrees with the primitive is an orientation bug in the mesher
+    // or the boolean, not a side-2 triangle: returning an odd id here would
+    // make the item's face count odd and shift the parity of every later item
+    // in the model.
+    if (triangle_normal.dot(primitive_normal) < 0.0) {
+        SPDLOG_LOGGER_WARN(
+            pycanha::get_logger(),
+            "cut result triangle {} is wound against the primitive normal; "
+            "assigning it to side 1 anyway",
+            triangle_index);
+        PYCANHA_ASSERT(false,
+                       "cut result triangle wound against the primitive");
+    }
 
     const auto [dir1, dir2] = std::visit(
         [&uv](const auto& concrete_primitive) {
@@ -362,13 +367,15 @@ pycanha::MeshIndex classify_triangle_by_centroid(
         },
         primitive);
 
-    const std::size_t cell_i = find_cell(thermal_mesh.get_dir1_mesh(), dir1);
-    const std::size_t cell_j = find_cell(thermal_mesh.get_dir2_mesh(), dir2);
-    // Direction 1 varies fastest, as everywhere else cells are numbered.
+    const std::size_t face_pair_i =
+        find_face_pair(thermal_mesh.get_dir1_mesh(), dir1);
+    const std::size_t face_pair_j =
+        find_face_pair(thermal_mesh.get_dir2_mesh(), dir2);
+    // Direction 1 varies fastest, as everywhere else face pairs are numbered.
     const std::size_t linear_index =
-        (cell_j * (thermal_mesh.get_dir1_mesh().size() - 1U)) + cell_i;
-    return static_cast<pycanha::MeshIndex>((2U * linear_index) +
-                                           (is_back ? 1U : 0U));
+        (face_pair_j * (thermal_mesh.get_dir1_mesh().size() - 1U)) +
+        face_pair_i;
+    return static_cast<pycanha::MeshIndex>(2U * linear_index);
 }
 
 }  // namespace pycanha::gmm::cutting

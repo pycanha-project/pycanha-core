@@ -33,7 +33,7 @@ TEST_CASE("UvMesher builds watertight spheres with pole collapse",
     const auto mesh = mesher.mesh(sphere, thermal_mesh, MeshOptions{1e-3});
 
     REQUIRE(mesh_ops::is_watertight(mesh));
-    REQUIRE(gmm_test::face_ids_cover_all_cells(mesh, thermal_mesh));
+    REQUIRE(gmm_test::face_ids_cover_all_face_pairs(mesh, thermal_mesh));
     REQUIRE(gmm_test::count_vertices_near(mesh, Point3D(0.0, 0.0, 1.0),
                                           pycanha::LENGTH_TOL) == 1U);
     REQUIRE(gmm_test::count_vertices_near(mesh, Point3D(0.0, 0.0, -1.0),

@@ -32,7 +32,7 @@ using radiative_fixtures::make_materials;
 
 namespace {
 
-// A unit plate (slots 0/1, side 1 up) under a full sphere of radius 1
+// A unit plate (faces 0/1, side 1 up) under a full sphere of radius 1
 // centered 3 above it, grouped as "planet" so mesh_parts() splits it into
 // its own rigid part.
 [[nodiscard]] std::unique_ptr<pycanha::gmm::GeometryModel>
@@ -71,7 +71,7 @@ TEST_CASE("radiative planet: a celestial part blocks, scores and never emits",
     // mesh_parts marks split groups Articulated; a planet is the caller's
     // decision.
     parts[1].kind = rad::PartKind::CelestialBody;
-    const auto planet_first_slot =
+    const auto planet_first_face =
         static_cast<std::int32_t>(parts[0].mesh.nf());
 
     const auto num_pairs = static_cast<std::size_t>(model->mesh().nf()) / 2;
@@ -97,8 +97,8 @@ TEST_CASE("radiative planet: a celestial part blocks, scores and never emits",
     // columns; the sphere at distance 3 subtends ~sin^2(asin(1/3)) of the
     // upward hemisphere.
     double to_planet_extensive = 0.0;
-    const auto slots = static_cast<std::int32_t>(scene.num_face_slots());
-    for (std::int32_t col = planet_first_slot; col < slots; ++col) {
+    const auto faces = static_cast<std::int32_t>(scene.num_faces());
+    for (std::int32_t col = planet_first_face; col < faces; ++col) {
         to_planet_extensive += csr_value(result.factors, 0, col);
     }
     // The stored value is the extensive A_i eps_i B_ij; dividing the
@@ -121,7 +121,7 @@ TEST_CASE("radiative planet: a celestial part blocks, scores and never emits",
     scene.accumulate_vf(vf_acc, settings);
     const rad::VfResult vf = vf_acc.result();
     double vf_to_planet = 0.0;
-    for (std::int32_t col = planet_first_slot; col < slots; ++col) {
+    for (std::int32_t col = planet_first_face; col < faces; ++col) {
         vf_to_planet += csr_value(vf.vf, 0, col);
     }
     REQUIRE(vf_to_planet / scene.face_areas()[0] ==

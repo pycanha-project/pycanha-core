@@ -63,8 +63,9 @@ using pycanha::gmm::Triangle;
     return mesh;
 }
 
-// A one-cell shell whose two sides carry their own node number and their own
-// thickness over the same unit bulk. Both sides start active in both physics.
+// A one-face pair shell whose two sides carry their own node number and their
+// own thickness over the same unit bulk. Both sides start active in both
+// physics.
 [[nodiscard]] ThermalMesh two_sided_shell(pycanha::NodeNum node1,
                                           pycanha::NodeNum node2, double thick1,
                                           double thick2) {
@@ -111,7 +112,7 @@ TEST_CASE("builder: a split plate produces one node pair and one conductor",
     REQUIRE(report.items_processed == 1U);
     REQUIRE(report.nodes_created == 2U);
     REQUIRE(report.conductors_created == 1U);
-    REQUIRE(report.cell_links_computed == 1U);
+    REQUIRE(report.face_pair_links_computed == 1U);
     REQUIRE(num_conductors(model) == 1);
     // 1 m shared edge over a 0.5 m distance between the two references.
     REQUIRE(model.tmm().conductive_couplings().get_coupling_value(100, 101) ==
@@ -133,7 +134,7 @@ TEST_CASE("builder: parallel paths between the same node pair are summed",
     const TmmBuildReport report = model.build_tmm_from_gmm();
     REQUIRE(report.nodes_created == 2U);
     // The interior seam and the wrap, reduced onto the single node pair.
-    REQUIRE(report.cell_links_computed == 2U);
+    REQUIRE(report.face_pair_links_computed == 2U);
     REQUIRE(report.conductors_created == 1U);
     // Each seam carries height / (radius * PI), and the two add.
     REQUIRE(model.tmm().conductive_couplings().get_coupling_value(1, 2) ==
@@ -142,14 +143,14 @@ TEST_CASE("builder: parallel paths between the same node pair are summed",
 
 TEST_CASE("builder: a self-coupling is dropped", "[conduction][builder]") {
     ThermalModel model("one_node");
-    // step 0: every cell of the plate is the same node, so no in-plane
+    // step 0: every face pair of the plate is the same node, so no in-plane
     // conductor survives.
     model.gmm().add(make_plate(
         "plate", side1_shell({0.0, 0.5, 1.0}, {0.0, 0.5, 1.0}, 9, 0)));
 
     const TmmBuildReport report = model.build_tmm_from_gmm();
     REQUIRE(report.nodes_created == 1U);
-    REQUIRE(report.cell_links_computed == 4U);
+    REQUIRE(report.face_pair_links_computed == 4U);
     REQUIRE(report.conductors_created == 0U);
     REQUIRE(num_conductors(model) == 0);
 }
@@ -234,16 +235,16 @@ TEST_CASE("builder: intra-primitive conductors can be switched off",
     options.intra_primitive_conductors = false;
     const TmmBuildReport report = model.build_tmm_from_gmm(options);
     REQUIRE(report.nodes_created == 2U);
-    REQUIRE(report.cell_links_computed == 0U);
+    REQUIRE(report.face_pair_links_computed == 0U);
     REQUIRE(report.conductors_created == 0U);
 }
 
 TEST_CASE("builder: an item that only radiates still builds its nodes",
           "[conduction][builder]") {
     ThermalModel model("radiative_only_item");
-    // Two cells, so there would be an in-plane link on each side if any side
-    // conducted.
-    // The default step of 0 puts both cells of a side on that side's node.
+    // Two face pairs, so there would be an in-plane link on each side if any
+    // side conducted. The default step of 0 puts both face pairs of a side on
+    // that side's node.
     ThermalMesh mesh = two_sided_shell(1, 2, 1.0, 2.0);
     mesh.set_dir1_mesh({0.0, 0.5, 1.0});
     mesh.set_conductive_active_side(ActiveSide::None);
@@ -253,10 +254,10 @@ TEST_CASE("builder: an item that only radiates still builds its nodes",
     const TmmBuildReport report = model.build_tmm_from_gmm();
     REQUIRE(report.items_processed == 1U);
     REQUIRE(report.nodes_created == 2U);
-    // Both cells of a side feed that side's node.
+    // Both face pairs of a side feed that side's node.
     REQUIRE(model.tmm().nodes().get_a(1) == Catch::Approx(1.0));
     REQUIRE(model.tmm().nodes().get_C(2) == Catch::Approx(2.0));
-    REQUIRE(report.cell_links_computed == 0U);
+    REQUIRE(report.face_pair_links_computed == 0U);
     REQUIRE(report.conductors_created == 0U);
     REQUIRE(num_conductors(model) == 0);
 }
@@ -322,7 +323,7 @@ TEST_CASE("builder: a triangle reports its discrete fallback",
         std::move(mesh)));
 
     const TmmBuildReport report = model.build_tmm_from_gmm();
-    REQUIRE(has_code(report, DiagnosticCode::TriangleApproximated));
+    REQUIRE(has_code(report, DiagnosticCode::DiscreteLinkFallback));
     REQUIRE(report.nodes_created == 2U);
     REQUIRE(report.conductors_created == 1U);
 }

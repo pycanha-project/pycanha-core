@@ -89,7 +89,7 @@ TEST_CASE("capacitance: a dual-surfaced node picks up both thicknesses",
     REQUIRE(report.nodes_created == 1U);
     // The two sides add: rho * cp * (t1 + t2) * A.
     REQUIRE(model.tmm().nodes().get_C(7) == Catch::Approx(2.0 * 3.0 * 0.07));
-    // Each active side counts its own slot area.
+    // Each active side counts its own face area.
     REQUIRE(model.tmm().nodes().get_a(7) == Catch::Approx(2.0));
     // The two sides are the same node, so no through-thickness conductor.
     REQUIRE(report.conductors_created == 0U);

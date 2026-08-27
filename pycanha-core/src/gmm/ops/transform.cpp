@@ -12,6 +12,7 @@
 #include "pycanha-core/gmm/primitives/rectangle.hpp"
 #include "pycanha-core/gmm/primitives/sphere.hpp"
 #include "pycanha-core/gmm/primitives/triangle.hpp"
+#include "pycanha-core/gmm/primitives/triangular_prism.hpp"
 #include "pycanha-core/gmm/scene/coordinate_transformation.hpp"
 
 namespace pycanha::gmm::ops {
@@ -82,6 +83,14 @@ namespace {
                       transformation.apply(paraboloid.p3()),
                       paraboloid.radius(), paraboloid.start_angle(),
                       paraboloid.end_angle());
+}
+
+[[nodiscard]] Primitive transform(
+    const TriangularPrism& prism,
+    const CoordinateTransformation& transformation) {
+    return TriangularPrism(
+        transformation.apply(prism.p1()), transformation.apply(prism.p2()),
+        transformation.apply(prism.p3()), transformation.apply(prism.p4()));
 }
 
 [[nodiscard]] Primitive transform(

@@ -34,7 +34,7 @@ TEST_CASE("UvMesher refines annular disc boundaries independently",
     REQUIRE(fine_mesh.triangles.rows() > coarse_mesh.triangles.rows());
     REQUIRE(gmm_test::absolute_area_error(fine_mesh, disc.surface_area()) <
             gmm_test::absolute_area_error(coarse_mesh, disc.surface_area()));
-    REQUIRE(gmm_test::face_ids_cover_all_cells(fine_mesh, thermal_mesh));
+    REQUIRE(gmm_test::face_ids_cover_all_face_pairs(fine_mesh, thermal_mesh));
 }
 
 TEST_CASE("UvMesher collapses the full-disc center into one fan vertex",
@@ -50,7 +50,7 @@ TEST_CASE("UvMesher collapses the full-disc center into one fan vertex",
         gmm_test::count_vertices_near(mesh, disc.p1(), pycanha::LENGTH_TOL);
 
     REQUIRE(center_vertex_count == 1U);
-    REQUIRE(gmm_test::face_ids_cover_all_cells(mesh, thermal_mesh));
+    REQUIRE(gmm_test::face_ids_cover_all_face_pairs(mesh, thermal_mesh));
     REQUIRE(gmm_test::sum_triangle_areas(mesh) ==
             Catch::Approx(disc.surface_area()).epsilon(0.002));
 }

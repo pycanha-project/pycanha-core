@@ -371,11 +371,11 @@ void GeometryModel::rebuild_faces_of_node() const {
     }
     _cached_faces_of_node.clear();
     const auto& node_numbers = _cached_mesh.node_numbers;
-    for (Eigen::Index slot = 0; slot < node_numbers.rows(); ++slot) {
-        const NodeNum node_num = node_numbers(slot);
+    for (Eigen::Index face = 0; face < node_numbers.rows(); ++face) {
+        const NodeNum node_num = node_numbers(face);
         if (node_num != NO_NODE) {
             _cached_faces_of_node[node_num].push_back(
-                static_cast<FaceId>(static_cast<pycanha::MeshIndex>(slot)));
+                static_cast<FaceId>(static_cast<pycanha::MeshIndex>(face)));
         }
     }
     _faces_of_node_dirty = false;

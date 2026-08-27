@@ -40,7 +40,7 @@ struct SolarState {
 class RadiativeScene {
   public:
     // `device` must outlive the scene. Parts keep their global face ids, so
-    // every matrix this scene produces is indexed by the model's face-slot
+    // every matrix this scene produces is indexed by the model's face
     // space. Throws std::invalid_argument on empty/inconsistent inputs.
     RadiativeScene(Device& device, std::vector<ScenePart> parts,
                    MaterialTable materials);
@@ -59,7 +59,7 @@ class RadiativeScene {
 
     // Traces settings.rays_per_face rays per emitting face and ADDS the
     // first-hit counts into `acc`. `emitters` empty => all active
-    // (non-planet) faces emit; otherwise only the listed face slots.
+    // (non-planet) faces emit; otherwise only the listed faces.
     void accumulate_vf(VfAccumulator& acc, const TraceSettings& settings,
                        std::span<const std::uint32_t> emitters = {});
 
@@ -80,10 +80,10 @@ class RadiativeScene {
     // face_material mapping and activity — only the property rows change.
     void update_materials(const MaterialTable& materials);
 
-    // Total face slots (rows/cols of every result matrix).
-    [[nodiscard]] std::uint32_t num_face_slots() const noexcept;
+    // Total faces (rows/cols of every result matrix).
+    [[nodiscard]] std::uint32_t num_faces() const noexcept;
     [[nodiscard]] const MaterialTable& materials() const noexcept;
-    // Per-slot areas in the part-local mesh (sides share the pair area).
+    // Per-face areas in the part-local mesh (sides share the pair area).
     [[nodiscard]] std::span<const double> face_areas() const noexcept;
 
     [[nodiscard]] detail::SceneImpl& impl() const noexcept;

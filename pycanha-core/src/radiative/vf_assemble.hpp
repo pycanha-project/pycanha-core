@@ -36,8 +36,8 @@ namespace pycanha::radiative::detail {
 using CountSource =
     std::variant<std::span<const std::uint32_t>, std::span<const HostCountRow>>;
 
-// `areas` and `rays_per_row` are per face slot; the result matrix has one
-// row per slot and num_virtual_columns extra bucket columns. Ray counts and
+// `areas` and `rays_per_row` are per face; the result matrix has one
+// row per face and num_virtual_columns extra bucket columns. Ray counts and
 // trace timings that belong to the accumulator rather than the counts
 // (total_rays, rays_per_face, gpu_time) are filled in by the caller.
 [[nodiscard]] VfResult assemble_vf(CountSource counts,

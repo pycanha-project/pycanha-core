@@ -9,7 +9,7 @@
 namespace pycanha::radiative {
 
 // CPU Gebhart services (no Vulkan, built unconditionally): re-derive
-// radiative exchange factors from a geometric VF matrix and per-face-slot
+// radiative exchange factors from a geometric VF matrix and per-face
 // band emissivities without re-tracing — the diffuse-gray fast path. The
 // MCRT exchange kernel computes the same quantity directly, so the two
 // paths are cross-checkable within Monte-Carlo tolerance.
@@ -31,7 +31,7 @@ namespace pycanha::radiative {
 
 // Face-level Gebhart factors B = (I - F R)^-1 F E with R = diag(1 - eps),
 // E = diag(eps). The dense solve limits this to small models (the guard
-// throws above ~20k face slots, pointing at gebhart_node_factors).
+// throws above ~20k faces, pointing at gebhart_node_factors).
 [[nodiscard]] SparseMatrix gebhart_factors(const SparseMatrix& vf,
                                            const Eigen::VectorXd& emissivity,
                                            std::span<const double> face_areas,
@@ -41,7 +41,7 @@ namespace pycanha::radiative {
 // GR(m, n) = sum_{i in m} sum_{j in n} A_i eps_i B_ij, computed with one
 // sparse factorization of (I - F R) and n_nodes sparse solves instead of a
 // dense inverse. Rows/cols are indexed by position in
-// aggregate_nodes(node_numbers); NO_NODE slots are dropped.
+// aggregate_nodes(node_numbers); NO_NODE faces are dropped.
 [[nodiscard]] SparseMatrix gebhart_node_factors(
     const SparseMatrix& vf, const Eigen::VectorXd& emissivity,
     std::span<const NodeNum> node_numbers, std::span<const double> face_areas,

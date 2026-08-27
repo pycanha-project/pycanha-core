@@ -42,7 +42,7 @@ TEST_CASE("radiative vf: a closed enclosure sees no space",
     // Every inward face row is fully closed: the space column stays at (or
     // extremely near — corner rays offset by epsilon may slip through a
     // seam) zero, and rows still sum to exactly one by construction.
-    const auto space_col = static_cast<Eigen::Index>(scene.num_face_slots());
+    const auto space_col = static_cast<Eigen::Index>(scene.num_faces());
     for (Eigen::Index row = 0; row < 12; row += 2) {
         REQUIRE(csr_value(result.vf, row, space_col) < 1e-3);
         REQUIRE(result.row_sums(row) == Catch::Approx(1.0).margin(1e-12));
@@ -80,14 +80,14 @@ TEST_CASE("radiative vf: an emitter subset reproduces the full run's rows",
     scene.accumulate_vf(full, settings);
     const rad::VfResult full_result = full.result();
 
-    // The RNG is keyed on (slot, ray, seed), so tracing only the floor's
+    // The RNG is keyed on (face, ray, seed), so tracing only the floor's
     // rows reproduces them bit-identically; other rows must be absent.
     const std::vector<std::uint32_t> subset{0};
     rad::VfAccumulator partial(scene, config);
     scene.accumulate_vf(partial, settings, subset);
     const rad::VfResult subset_result = partial.result();
 
-    const auto cols = static_cast<Eigen::Index>(scene.num_face_slots()) +
+    const auto cols = static_cast<Eigen::Index>(scene.num_faces()) +
                       static_cast<Eigen::Index>(rad::num_virtual_columns);
     for (Eigen::Index col = 0; col < cols; ++col) {
         REQUIRE(csr_value(subset_result.vf, 0, col) ==
@@ -123,7 +123,7 @@ TEST_CASE("radiative vf: normal emission fires straight along the normal",
     // Plate B sits directly above plate A: every normal-emitted ray hits
     // it, so the entry is exactly one and space exactly zero.
     REQUIRE(csr_value(result.vf, 0, 2) == 1.0);
-    const auto space_col = static_cast<Eigen::Index>(scene.num_face_slots());
+    const auto space_col = static_cast<Eigen::Index>(scene.num_faces());
     REQUIRE(csr_value(result.vf, 0, space_col) == 0.0);
 }
 

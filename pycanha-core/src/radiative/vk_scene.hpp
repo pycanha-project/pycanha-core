@@ -65,7 +65,7 @@ struct PushConstants {
     std::uint32_t batch_seed;
     std::uint32_t max_bounces;
     std::uint32_t flags;
-    std::uint32_t num_face_slots;
+    std::uint32_t num_faces;
     float energy_threshold;
     float fp_scale;
     float inv_fp_scale;
@@ -98,8 +98,8 @@ class SceneImpl {
                           const TraceSettings& settings);
     void update_materials(const MaterialTable& materials);
 
-    [[nodiscard]] std::uint32_t num_face_slots() const noexcept {
-        return _num_slots;
+    [[nodiscard]] std::uint32_t num_faces() const noexcept {
+        return _num_faces;
     }
     [[nodiscard]] const MaterialTable& materials() const noexcept {
         return _materials;
@@ -184,7 +184,7 @@ class SceneImpl {
 
     DeviceImpl& _device;
     MaterialTable _materials;
-    std::uint32_t _num_slots = 0;
+    std::uint32_t _num_faces = 0;
     std::vector<double> _face_areas;
     std::vector<std::uint32_t> _default_emitters;
     float _ray_tmin_scale = 1e-4F;
@@ -203,8 +203,7 @@ class SceneImpl {
     VkAccelerationStructureKHR _tlas = VK_NULL_HANDLE;
 
     GpuBuffer _materials_buf;
-    GpuBuffer _face_material_buf;
-    GpuBuffer _face_flags_buf;
+    GpuBuffer _face_record_buf;
     GpuBuffer _face_areas_buf;  // f32 pair areas (solar kernel weighting)
     GpuBuffer _emit_tri_offset_buf;
     GpuBuffer _emit_tri_part_buf;

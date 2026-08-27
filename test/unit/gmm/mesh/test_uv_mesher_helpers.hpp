@@ -1,7 +1,10 @@
 #pragma once
 
 #include <Eigen/Dense>
+#include <algorithm>
+#include <array>
 #include <cstdint>
+#include <span>
 #include <unordered_set>
 
 #include "pycanha-core/globals.hpp"
@@ -18,21 +21,22 @@ namespace pycanha::gmm::test {
 [[nodiscard]] inline std::unordered_set<std::uint64_t> valid_face_ids(
     const ThermalMesh& thermal_mesh) {
     std::unordered_set<std::uint64_t> face_ids;
-    const std::size_t num_dir2_cells = thermal_mesh.get_dir2_mesh().size() - 1U;
+    const std::size_t num_dir2_face_pairs =
+        thermal_mesh.get_dir2_mesh().size() - 1U;
     for (std::size_t dir1_idx = 0;
          dir1_idx + 1U < thermal_mesh.get_dir1_mesh().size(); ++dir1_idx) {
         for (std::size_t dir2_idx = 0;
              dir2_idx + 1U < thermal_mesh.get_dir2_mesh().size(); ++dir2_idx) {
             // Even local face id = side 1 (front).
             const std::size_t linear_index =
-                (dir1_idx * num_dir2_cells) + dir2_idx;
+                (dir1_idx * num_dir2_face_pairs) + dir2_idx;
             face_ids.insert(2U * static_cast<std::uint64_t>(linear_index));
         }
     }
     return face_ids;
 }
 
-[[nodiscard]] inline bool face_ids_cover_all_cells(
+[[nodiscard]] inline bool face_ids_cover_all_face_pairs(
     const TriMeshD& mesh, const ThermalMesh& thermal_mesh) {
     const auto expected_ids = valid_face_ids(thermal_mesh);
     std::unordered_set<std::uint64_t> actual_ids;
@@ -57,6 +61,17 @@ namespace pycanha::gmm::test {
         }
     }
     return count;
+}
+
+// True when every listed point appears exactly once among the mesh vertices.
+// Corners are the cheapest evidence that a primitive was meshed as the shape
+// it is rather than as an approximation of it.
+[[nodiscard]] inline bool corners_present(const TriMeshD& mesh,
+                                          std::span<const Point3D> corners,
+                                          double tolerance) {
+    return std::ranges::all_of(corners, [&](const Point3D& corner) {
+        return count_vertices_near(mesh, corner, tolerance) == 1U;
+    });
 }
 
 [[nodiscard]] inline bool has_no_degenerate_triangles(const TriMeshD& mesh,

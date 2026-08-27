@@ -18,7 +18,7 @@ using SparseMatrix = Eigen::SparseMatrix<double, Eigen::RowMajor>;
 using SparseIndex = SparseMatrix::StorageIndex;
 
 // Matrix results carry three VIRTUAL bucket columns appended after the
-// num_face_slots real columns, so every parcel of emitted energy has an
+// num_faces real columns, so every parcel of emitted energy has an
 // explicit, node-mappable destination:
 //  - space:    rays/energy that escaped the scene,
 //  - inactive: energy absorbed at inactive (non-radiative) faces
@@ -54,8 +54,8 @@ struct TraceStats {
     std::chrono::nanoseconds gpu_time{0};
 };
 
-// Matrix rows are face slots (global, both sides); columns are the same
-// slots plus the virtual bucket columns above (cols == rows +
+// Matrix rows are faces (global, both sides); columns are the same
+// faces plus the virtual bucket columns above (cols == rows +
 // num_virtual_columns). The consumer maps the buckets to real nodes (e.g.
 // the space node) or drops them.
 //
@@ -68,7 +68,7 @@ struct TraceStats {
 // makes that lossless: both view factors come back as F_ij = G_ij/A_i and
 // F_ji = G_ij/A_j from the face areas the scene already owns, whereas an
 // upper-triangular F would silently discard one direction. The diagonal is
-// retained even though a planar face slot cannot see itself, so nothing is
+// retained even though a planar face cannot see itself, so nothing is
 // dropped without saying so. The three bucket columns are always > i, have
 // no transpose partner, and pass through untriangulated.
 struct VfResult {
@@ -88,8 +88,8 @@ struct VfResult {
     TraceStats stats;
 };
 
-// Same shape and the same convention as VfResult: rows are face slots,
-// columns are the slots plus the virtual bucket columns, and only the UPPER
+// Same shape and the same convention as VfResult: rows are faces,
+// columns are the faces plus the virtual bucket columns, and only the UPPER
 // TRIANGLE of the real face columns is kept.
 //
 // The stored value is the SYMMETRIC, EXTENSIVE quantity
@@ -102,7 +102,7 @@ struct VfResult {
 // storing it is what makes the upper triangle lossless: both factors come
 // back as B_ij = H_ij/(A_i eps_i) and B_ji = H_ij/(A_j eps_j).
 //
-// A slot with eps = 0 in the traced band is the one case where that does not
+// A face with eps = 0 in the traced band is the one case where that does not
 // invert. It needs no special handling because there is nothing to recover:
 // such a face absorbs nothing, so B_ji = 0 for every j, and it emits nothing,
 // so its row transports no heat whatever the kernel's unit-energy rays did.
@@ -121,7 +121,7 @@ struct ExchangeResult {
     TraceStats stats;
 };
 
-// Per-face-slot absorbed power; the solar kernel is O(Nf) and needs no
+// Per-face absorbed power; the solar kernel is O(Nf) and needs no
 // matrix. Watts (extensive): node mapping is a plain per-node sum, and
 // flux is watts / face area when needed.
 struct SolarResult {

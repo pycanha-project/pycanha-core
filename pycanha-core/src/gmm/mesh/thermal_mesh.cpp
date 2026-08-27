@@ -97,7 +97,8 @@ void ThermalMesh::set_side2_thick(double thick) {
 
 bool ThermalMesh::is_valid() const noexcept {
     // Guard against face-id overflow: 2 * n1_cells * n2_cells must fit in
-    // MeshIndex. Use cut sizes (one more than the cell count) as a safe bound.
+    // MeshIndex. Use cut sizes (one more than the face pair count) as a safe
+    // bound.
     const bool fits =
         2U * _dir1_mesh.size() * _dir2_mesh.size() <=
         static_cast<std::size_t>(std::numeric_limits<MeshIndex>::max());
@@ -122,17 +123,17 @@ NodeNum ThermalMesh::node_of(MeshIndex i, MeshIndex j, unsigned side) const {
     }
     if (i >= _dir1_mesh.size() - 1U || j >= _dir2_mesh.size() - 1U) {
         throw std::invalid_argument(
-            "ThermalMesh::node_of: cell (i, j) is out of range");
+            "ThermalMesh::node_of: face_pair (i, j) is out of range");
     }
-    // Direction 1 varies fastest: cell = i + j * n1. This is the face order
-    // STEP-TAS uses for a meshed surface, so a face's index here is the index
-    // it has in an exchanged model.
-    const auto cell = (static_cast<std::int64_t>(j) *
-                       static_cast<std::int64_t>(_dir1_mesh.size() - 1U)) +
-                      static_cast<std::int64_t>(i);
+    // Direction 1 varies fastest: face_pair = i + j * n1. This is the face
+    // order STEP-TAS uses for a meshed surface, so a face's index here is the
+    // index it has in an exchanged model.
+    const auto face_pair = (static_cast<std::int64_t>(j) *
+                            static_cast<std::int64_t>(_dir1_mesh.size() - 1U)) +
+                           static_cast<std::int64_t>(i);
     const std::int64_t start = side == 2U ? _node2_start : _node1_start;
     const std::int64_t step = side == 2U ? _node2_step : _node1_step;
-    return static_cast<NodeNum>(start + (cell * step));
+    return static_cast<NodeNum>(start + (face_pair * step));
 }
 
 void ThermalMesh::validate() const {

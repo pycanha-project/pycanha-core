@@ -24,25 +24,25 @@ using gmm::NO_NODE;
 
 namespace {
 
-// Position of each slot's node in the sorted unique node list; -1 for
-// NO_NODE slots.
+// Position of each face's node in the sorted unique node list; -1 for
+// NO_NODE faces.
 [[nodiscard]] std::vector<std::int64_t> slot_to_node_index(
     std::span<const NodeNum> node_numbers, const std::vector<NodeNum>& nodes) {
     std::vector<std::int64_t> mapping(node_numbers.size(), -1);
-    for (std::size_t slot = 0; slot < node_numbers.size(); ++slot) {
-        if (node_numbers[slot] == NO_NODE) {
+    for (std::size_t face = 0; face < node_numbers.size(); ++face) {
+        if (node_numbers[face] == NO_NODE) {
             continue;
         }
-        const auto it = std::ranges::lower_bound(nodes, node_numbers[slot]);
-        mapping[slot] = std::distance(nodes.begin(), it);
+        const auto it = std::ranges::lower_bound(nodes, node_numbers[face]);
+        mapping[face] = std::distance(nodes.begin(), it);
     }
     return mapping;
 }
 
-void check_sizes(std::size_t slots, std::span<const NodeNum> node_numbers) {
-    if (node_numbers.size() != slots) {
+void check_sizes(std::size_t faces, std::span<const NodeNum> node_numbers) {
+    if (node_numbers.size() != faces) {
         throw std::invalid_argument(
-            "pycanha::radiative: node_numbers size must match the face-slot "
+            "pycanha::radiative: node_numbers size must match the face "
             "count");
     }
 }
@@ -87,8 +87,8 @@ namespace {
 
 AggregateResult aggregate_matrix(const SparseMatrix& face_matrix,
                                  std::span<const NodeNum> node_numbers) {
-    const auto slots = static_cast<std::size_t>(face_matrix.rows());
-    check_sizes(slots, node_numbers);
+    const auto faces = static_cast<std::size_t>(face_matrix.rows());
+    check_sizes(faces, node_numbers);
     if (face_matrix.cols() < face_matrix.rows()) {
         throw std::invalid_argument(
             "pycanha::radiative: the face matrix cannot have fewer columns "
@@ -101,7 +101,7 @@ AggregateResult aggregate_matrix(const SparseMatrix& face_matrix,
 
     AggregateResult result;
     std::vector<std::map<SparseIndex, double>> rows(nodes.size());
-    for (std::size_t face_row = 0; face_row < slots; ++face_row) {
+    for (std::size_t face_row = 0; face_row < faces; ++face_row) {
         const std::int64_t node_row = node_of[face_row];
         if (node_row < 0) {
             continue;
@@ -112,7 +112,7 @@ AggregateResult aggregate_matrix(const SparseMatrix& face_matrix,
             const auto face_col = static_cast<std::size_t>(entry.col());
             // Bucket columns carry no node label of their own here; the
             // row/column overload is what maps them.
-            if (face_col >= slots) {
+            if (face_col >= faces) {
                 continue;
             }
             const std::int64_t node_col = node_of[face_col];
@@ -137,13 +137,13 @@ AggregateResult aggregate_matrix(const SparseMatrix& face_matrix,
 AggregateResult aggregate_matrix(const SparseMatrix& face_matrix,
                                  std::span<const NodeNum> row_node_numbers,
                                  std::span<const NodeNum> col_node_numbers) {
-    const auto slots = static_cast<std::size_t>(face_matrix.rows());
-    check_sizes(slots, row_node_numbers);
+    const auto faces = static_cast<std::size_t>(face_matrix.rows());
+    check_sizes(faces, row_node_numbers);
     if (col_node_numbers.size() !=
         static_cast<std::size_t>(face_matrix.cols())) {
         throw std::invalid_argument(
             "pycanha::radiative: col_node_numbers size must match the "
-            "matrix column count (real face slots plus the virtual bucket "
+            "matrix column count (real faces plus the virtual bucket "
             "columns)");
     }
 
@@ -155,7 +155,7 @@ AggregateResult aggregate_matrix(const SparseMatrix& face_matrix,
         slot_to_node_index(col_node_numbers, col_nodes);
 
     std::vector<std::map<SparseIndex, double>> rows(row_nodes.size());
-    for (std::size_t face_row = 0; face_row < slots; ++face_row) {
+    for (std::size_t face_row = 0; face_row < faces; ++face_row) {
         const std::int64_t node_row = row_node_of[face_row];
         if (node_row < 0) {
             continue;
@@ -179,11 +179,11 @@ AggregateResult aggregate_matrix(const SparseMatrix& face_matrix,
 Eigen::VectorXd aggregate_flux(const Eigen::VectorXd& face_flux_w_m2,
                                std::span<const NodeNum> node_numbers,
                                std::span<const double> face_areas) {
-    const auto slots = static_cast<std::size_t>(face_flux_w_m2.rows());
-    check_sizes(slots, node_numbers);
-    if (face_areas.size() != slots) {
+    const auto faces = static_cast<std::size_t>(face_flux_w_m2.rows());
+    check_sizes(faces, node_numbers);
+    if (face_areas.size() != faces) {
         throw std::invalid_argument(
-            "pycanha::radiative: face_areas size must match the face-slot "
+            "pycanha::radiative: face_areas size must match the face "
             "count");
     }
 
@@ -193,13 +193,13 @@ Eigen::VectorXd aggregate_flux(const Eigen::VectorXd& face_flux_w_m2,
 
     Eigen::VectorXd out =
         Eigen::VectorXd::Zero(static_cast<Eigen::Index>(nodes.size()));
-    for (std::size_t slot = 0; slot < slots; ++slot) {
-        const std::int64_t node = node_of[slot];
+    for (std::size_t face = 0; face < faces; ++face) {
+        const std::int64_t node = node_of[face];
         if (node < 0) {
             continue;
         }
         out(static_cast<Eigen::Index>(node)) +=
-            face_flux_w_m2(static_cast<Eigen::Index>(slot)) * face_areas[slot];
+            face_flux_w_m2(static_cast<Eigen::Index>(face)) * face_areas[face];
     }
     return out;
 }

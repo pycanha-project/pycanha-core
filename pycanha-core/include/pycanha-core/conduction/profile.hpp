@@ -70,8 +70,8 @@ class MeridianProfile {
 
     [[nodiscard]] Kind kind() const noexcept { return _kind; }
 
-    /// True when direction 1 spans a full revolution, so the last angular cell
-    /// is adjacent to the first one.
+    /// True when direction 1 spans a full revolution, so the last angular face
+    /// pair is adjacent to the first one.
     [[nodiscard]] bool closes_ring() const noexcept { return _closes_ring; }
 
     /// Coordinate along direction 1 at cut fraction @p fraction: radians for a
@@ -117,8 +117,11 @@ class MeridianProfile {
 };
 
 /// The conduction profile of @p primitive, or std::nullopt when it has no
-/// closed form: a Triangle (its fan parametrisation is not orthogonal, so the
-/// discrete fallback handles it) or a Cube (cutter-only, it never meshes).
+/// closed form: a Triangle (its fan parametrisation is not orthogonal), a
+/// Quadrilateral (a bilinear patch, so its faces vary in width along direction
+/// 2 and no constant-width planar profile represents it) -- both handled by
+/// the discrete shared-edge path -- or a Cube, which is cutter-only and never
+/// meshes.
 [[nodiscard]] std::optional<MeridianProfile> profile_of(
     const gmm::Primitive& primitive);
 

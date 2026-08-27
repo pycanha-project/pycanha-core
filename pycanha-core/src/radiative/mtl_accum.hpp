@@ -6,8 +6,8 @@
 // so the shared scene.cpp compiles against either backend. Matrix
 // accumulators (VF counts, exchange fixed-point energy) come in two layouts,
 // one result:
-//  - Dense: one num_slots x num_slots buffer, cells stay on the GPU.
-//  - Tiled: a tile_rows x num_slots scratch buffer reused per row block;
+//  - Dense: one num_num_faces x num_faces buffer, cells stay on the GPU.
+//  - Tiled: a tile_rows x num_faces scratch buffer reused per row block;
 //    cells stream into per-row host maps after every block.
 // Cells are integers, so both layouts produce bit-identical results for the
 // same seed — a property the tests assert. The solar accumulator is two
@@ -59,7 +59,7 @@ class VfAccumImpl {
     // Tiled only: zeroes the block scratch before a new row block.
     void clear_block_scratch();
     // Tiled only: reads the scratch rows of `block_emitters` (block-relative
-    // row = slot - row_offset) and adds nonzero cells into the host maps.
+    // row = face - row_offset) and adds nonzero cells into the host maps.
     void absorb_block(std::span<const std::uint32_t> block_emitters,
                       std::uint32_t row_offset);
     void record_batch(std::span<const std::uint32_t> emitters,
@@ -112,7 +112,7 @@ class ExchangeAccumImpl {
     // Tiled only: zeroes the block scratch before a new row block.
     void clear_block_scratch();
     // Tiled only: adds the scratch rows of `block_emitters` into the host
-    // maps (block-relative row = slot - row_offset).
+    // maps (block-relative row = face - row_offset).
     void absorb_block(std::span<const std::uint32_t> block_emitters,
                       std::uint32_t row_offset);
     void record_batch(std::span<const std::uint32_t> emitters,
@@ -128,7 +128,7 @@ class ExchangeAccumImpl {
     SceneImpl& _scene;
     Band _band;
     AccumConfig _config;
-    GpuBuffer _cells;  // u64 fixed-point deposits, row stride slots + 3
+    GpuBuffer _cells;  // u64 fixed-point deposits, row stride faces + 3
     // Tiled layout: host-side accumulation (Dense reads the GPU buffer).
     std::vector<HostCountRow> _host_rows;
     std::vector<std::uint64_t> _rays_per_row;
@@ -173,8 +173,8 @@ class SolarAccumImpl {
 
   private:
     SceneImpl& _scene;
-    GpuBuffer _direct;  // u64 fixed-point absorbed direct energy per slot
-    GpuBuffer _total;   // u64 fixed-point absorbed total energy per slot
+    GpuBuffer _direct;  // u64 fixed-point absorbed direct energy per face
+    GpuBuffer _total;   // u64 fixed-point absorbed total energy per face
     SolarState _sun{};
     bool _sun_recorded = false;
     double _fp_scale = 0.0;

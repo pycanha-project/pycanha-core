@@ -51,14 +51,14 @@ constexpr int table_significand_bits = 24;
 
 }  // namespace
 
-std::size_t matrix_columns(std::size_t slots) {
-    return slots + static_cast<std::size_t>(num_virtual_columns);
+std::size_t matrix_columns(std::size_t faces) {
+    return faces + static_cast<std::size_t>(num_virtual_columns);
 }
 
 void throw_dense_size_mismatch() {
     throw std::invalid_argument(
         "pycanha::radiative: the dense cell buffer does not match the "
-        "face-slot count");
+        "face count");
 }
 
 WeightTable::WeightTable(double exponent) : _exponent(exponent) {
@@ -177,14 +177,14 @@ namespace {
 void sort_sparse_rows(SparseCells& cells,
                       std::span<const HostCountRow> host_rows,
                       unsigned threads) {
-    const std::size_t slots = host_rows.size();
-    cells.row_start.assign(slots + 1, 0);
-    for (std::size_t row = 0; row < slots; ++row) {
+    const std::size_t faces = host_rows.size();
+    cells.row_start.assign(faces + 1, 0);
+    for (std::size_t row = 0; row < faces; ++row) {
         cells.row_start[row + 1] = cells.row_start[row] + host_rows[row].size();
     }
-    cells.column.resize(cells.row_start[slots]);
-    cells.value.resize(cells.row_start[slots]);
-    parallel_for_index(slots, threads, [&](std::size_t row) {
+    cells.column.resize(cells.row_start[faces]);
+    cells.value.resize(cells.row_start[faces]);
+    parallel_for_index(faces, threads, [&](std::size_t row) {
         using Entry = std::pair<std::uint32_t, std::uint64_t>;
         std::vector<Entry> entries(host_rows[row].begin(),
                                    host_rows[row].end());
@@ -198,27 +198,27 @@ void sort_sparse_rows(SparseCells& cells,
     });
 }
 
-void transpose_sparse_rows(SparseCells& cells, std::size_t slots) {
-    std::vector<std::size_t> per_column(slots + 1, 0);
+void transpose_sparse_rows(SparseCells& cells, std::size_t faces) {
+    std::vector<std::size_t> per_column(faces + 1, 0);
     for (const std::uint32_t column : cells.column) {
-        if (column < slots) {
+        if (column < faces) {
             ++per_column[static_cast<std::size_t>(column) + 1];
         }
     }
-    cells.transposed_start.assign(slots + 1, 0);
+    cells.transposed_start.assign(faces + 1, 0);
     std::inclusive_scan(per_column.begin() + 1, per_column.end(),
                         cells.transposed_start.begin() + 1);
-    cells.transposed_row.resize(cells.transposed_start[slots]);
-    cells.transposed_value.resize(cells.transposed_start[slots]);
+    cells.transposed_row.resize(cells.transposed_start[faces]);
+    cells.transposed_value.resize(cells.transposed_start[faces]);
     std::vector<std::size_t> cursor(cells.transposed_start.begin(),
                                     cells.transposed_start.end() - 1);
     // Rows are visited in ascending order, so every transposed row comes out
     // sorted by source row without a second sort.
-    for (std::size_t row = 0; row < slots; ++row) {
+    for (std::size_t row = 0; row < faces; ++row) {
         for (std::size_t at = cells.row_start[row];
              at < cells.row_start[row + 1]; ++at) {
             const std::uint32_t column = cells.column[at];
-            if (column >= slots) {
+            if (column >= faces) {
                 continue;
             }
             const std::size_t target = cursor[column]++;
@@ -231,15 +231,15 @@ void transpose_sparse_rows(SparseCells& cells, std::size_t slots) {
 }  // namespace
 
 SparseCells build_sparse(std::span<const HostCountRow> host_rows,
-                         std::size_t slots, unsigned threads) {
-    if (host_rows.size() != slots) {
+                         std::size_t faces, unsigned threads) {
+    if (host_rows.size() != faces) {
         throw std::invalid_argument(
             "pycanha::radiative: the tiled cell rows do not match the "
-            "face-slot count");
+            "face count");
     }
     SparseCells cells;
     sort_sparse_rows(cells, host_rows, threads);
-    transpose_sparse_rows(cells, slots);
+    transpose_sparse_rows(cells, faces);
     return cells;
 }
 

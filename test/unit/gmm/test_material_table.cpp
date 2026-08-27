@@ -40,18 +40,18 @@ struct Fixture {
     GeometryModel model{"scene"};
 
     Fixture() {
-        ThermalMesh panel_mesh;  // one face pair -> slots 0/1
+        ThermalMesh panel_mesh;  // one face pair -> faces 0/1
         panel_mesh.set_side1_optical(white_paint);
         panel_mesh.set_side2_optical(black);
         panel_mesh.set_radiative_active_side(ActiveSide::Side1);
         model.add(make_panel("panel", std::move(panel_mesh)));
 
-        ThermalMesh shared_mesh;  // slots 2/3
+        ThermalMesh shared_mesh;  // faces 2/3
         shared_mesh.set_side1_optical(white_paint);
         shared_mesh.set_side2_optical(white_paint);
         model.add(make_panel("shared", std::move(shared_mesh)));
 
-        model.add(make_panel("bare", ThermalMesh{}));  // slots 4/5
+        model.add(make_panel("bare", ThermalMesh{}));  // faces 4/5
     }
 };
 
@@ -80,7 +80,7 @@ TEST_CASE("material_table: row layout matches OpticalMaterial",
     }
 }
 
-TEST_CASE("material_table: per-face-slot indices", "[gmm][materials]") {
+TEST_CASE("material_table: per-face indices", "[gmm][materials]") {
     const Fixture fixture;
     const auto table = fixture.model.material_table();
 
@@ -130,9 +130,9 @@ TEST_CASE("material_table: only the radiative selector is read",
 TEST_CASE("material_table: table tracks the mesh", "[gmm][materials]") {
     const Fixture fixture;
     const auto table = fixture.model.material_table();
-    const auto num_slots = static_cast<Eigen::Index>(fixture.model.mesh().nf());
+    const auto num_faces = static_cast<Eigen::Index>(fixture.model.mesh().nf());
 
-    REQUIRE(table.face_material.rows() == num_slots);
-    REQUIRE(table.face_active.rows() == num_slots);
-    REQUIRE(num_slots == 6);
+    REQUIRE(table.face_material.rows() == num_faces);
+    REQUIRE(table.face_active.rows() == num_faces);
+    REQUIRE(num_faces == 6);
 }

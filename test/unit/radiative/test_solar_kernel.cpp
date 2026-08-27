@@ -26,7 +26,7 @@ namespace {
 
 constexpr double solar_constant = 1361.0;
 
-// One unit plate at z = 0, side 1 (slot 0) facing +z.
+// One unit plate at z = 0, side 1 (face 0) facing +z.
 [[nodiscard]] std::unique_ptr<pycanha::gmm::GeometryModel> make_single_plate() {
     using pycanha::gmm::GeometryItem;
     using pycanha::gmm::Rectangle;
@@ -39,7 +39,7 @@ constexpr double solar_constant = 1361.0;
 }
 
 // The mirror-bench source and 45-degree mirror WITHOUT the catcher (which
-// would shade a sun coming from +x): slots 0/1 source, 2/3 mirror.
+// would shade a sun coming from +x): faces 0/1 source, 2/3 mirror.
 [[nodiscard]] std::unique_ptr<pycanha::gmm::GeometryModel>
 make_source_and_mirror() {
     using pycanha::gmm::GeometryItem;
@@ -136,7 +136,7 @@ TEST_CASE("radiative solar: occlusion shadows completely",
     // Plate B sits exactly between plate A and the sun: every shadow ray
     // from A hits it, so A gets zero — the eclipse mechanism.
     REQUIRE(result.direct(0) == 0.0);
-    // B's top side (slot 3) is in full sun; its bottom side faces away.
+    // B's top side (face 3) is in full sun; its bottom side faces away.
     REQUIRE(result.direct(3) ==
             Catch::Approx(solar_constant).margin(1e-3 * solar_constant));
     REQUIRE(result.direct(2) == 0.0);

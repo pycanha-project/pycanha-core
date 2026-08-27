@@ -12,7 +12,8 @@
 namespace pycanha::gmm {
 
 // A transform applied to a collection of child geometries. Holds shared_ptr
-// children directly. Does NOT cache: mesh() recomputes by walking children.
+// children directly. Does NOT cache: mesh() re-resolves the subtree with this
+// group as the resolution root (see gmm/scene/resolve.hpp).
 class GeometryGroup : public Geometry {
   public:
     explicit GeometryGroup(std::string name,

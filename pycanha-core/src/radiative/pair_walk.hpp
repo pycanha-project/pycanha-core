@@ -9,7 +9,7 @@
 // pinned by bit-identity tests.
 //
 // What is deliberately NOT here is everything that knows what a cell means:
-// how a raw cell becomes a physical quantity, which per-slot scalars weight
+// how a raw cell becomes a physical quantity, which per-face scalars weight
 // the two directions against each other, and when an entry is negligible.
 // Each assembly supplies that as an `Emit` object with two members:
 //
@@ -17,7 +17,7 @@
 //         one face pair, column >= row, cells widened to u64. Called once
 //         per pair where at least one direction is nonzero.
 //     emit.bucket(row, column, cell)
-//         one virtual bucket column, column >= slots, cell != 0. Buckets
+//         one virtual bucket column, column >= faces, cell != 0. Buckets
 //         have no transpose partner and are never combined.
 //
 // Both are called with ascending `column` within a row, which is what makes
@@ -36,6 +36,7 @@
 
 #include "pycanha-core/radiative/results.hpp"
 #include "pycanha-core/radiative/settings.hpp"
+#include "pycanha-core/utils/parallel_for.hpp"
 
 namespace pycanha::radiative::detail {
 
@@ -44,7 +45,7 @@ using HostCountRow = std::unordered_map<std::uint32_t, std::uint64_t>;
 
 // Matrix row stride: the real face columns plus the virtual
 // space/inactive/lost bucket columns.
-[[nodiscard]] std::size_t matrix_columns(std::size_t slots);
+[[nodiscard]] std::size_t matrix_columns(std::size_t faces);
 
 // Weight of the forward estimate when the two Monte-Carlo estimates of a
 // face pair are combined:
@@ -54,7 +55,7 @@ using HostCountRow = std::unordered_map<std::uint32_t, std::uint64_t>;
 // with u and v the two estimator variances up to a factor that cancels
 // (A_i/N_i and A_j/N_j for both assemblies). |Y|^n is tabulated rather than
 // handed to std::pow because the inner loop runs once per matrix cell: at
-// 1e4 face slots a pow per pair costs roughly ten times the memory traffic
+// 1e4 faces a pow per pair costs roughly ten times the memory traffic
 // of the entire pass, which would turn a streaming, bandwidth-bound assembly
 // into a compute-bound one. It also removes the only transcendental from an
 // otherwise IEEE-exact pipeline, which is what keeps results reproducible
@@ -138,33 +139,7 @@ class Weighting {
     WeightTable _table;
 };
 
-// Runs `body(index)` for every index in [0, count) across `threads` workers,
-// handing indices out dynamically because a row-tile's work shrinks as its
-// index grows. Every work item writes only its own output range, so which
-// worker takes which index cannot change the result.
-template <typename Body>
-void parallel_for_index(std::size_t count, unsigned threads, const Body& body) {
-    if (count == 0) {
-        return;
-    }
-    if (threads <= 1) {
-        for (std::size_t index = 0; index < count; ++index) {
-            body(index);
-        }
-        return;
-    }
-    std::atomic<std::size_t> next{0};
-    std::vector<std::jthread> workers;
-    workers.reserve(threads);
-    for (unsigned worker = 0; worker < threads; ++worker) {
-        workers.emplace_back([&] {
-            for (std::size_t index = next.fetch_add(1); index < count;
-                 index = next.fetch_add(1)) {
-                body(index);
-            }
-        });
-    }
-}
+using pycanha::utils::parallel_for_index;
 
 // Threading a small matrix costs more than the pass itself, so the automatic
 // choice stays serial until the cell count justifies it. An explicit request
@@ -219,9 +194,9 @@ struct DenseCells {
 // Row-major CSR of the tiled layout's per-row maps, plus the transpose of
 // its real-column block. Building the transpose once as a counting sort is
 // linear in the stored entries; the alternative those hash maps invite — one
-// lookup per column of every row — is quadratic in the slot count.
+// lookup per column of every row — is quadratic in the face count.
 struct SparseCells {
-    std::vector<std::size_t> row_start;  // slots + 1
+    std::vector<std::size_t> row_start;  // faces + 1
     std::vector<std::uint32_t> column;
     std::vector<std::uint64_t> value;
     // Transpose of the real-column block only; bucket columns have no
@@ -234,17 +209,17 @@ struct SparseCells {
 };
 
 [[nodiscard]] SparseCells build_sparse(std::span<const HostCountRow> host_rows,
-                                       std::size_t slots, unsigned threads);
+                                       std::size_t faces, unsigned threads);
 
-// Thrown by copy_dense when the mapped block is not slots x matrix_columns.
+// Thrown by copy_dense when the mapped block is not faces x matrix_columns.
 [[noreturn]] void throw_dense_size_mismatch();
 
 template <typename Cell>
 [[nodiscard]] DenseCells<Cell> copy_dense(std::span<const Cell> mapped,
-                                          std::size_t slots) {
+                                          std::size_t faces) {
     DenseCells<Cell> cells;
-    cells.cols = matrix_columns(slots);
-    if (mapped.size() != slots * cells.cols) {
+    cells.cols = matrix_columns(faces);
+    if (mapped.size() != faces * cells.cols) {
         throw_dense_size_mismatch();
     }
     cells.cells.assign(mapped.begin(), mapped.end());
@@ -339,15 +314,15 @@ void offset_block(const DenseCells<Cell>& cells, std::size_t row_begin,
 // block I, so the row-tile index is a private, contiguous output range and
 // the walk parallelises with no contention and no atomics.
 template <typename Cell, typename Emit>
-void row_tile(const DenseCells<Cell>& cells, std::size_t slots,
+void row_tile(const DenseCells<Cell>& cells, std::size_t faces,
               std::size_t tile, std::size_t index, std::span<Cell> scratch,
               const Emit& emit) {
     const std::size_t row_begin = index * tile;
-    const std::size_t row_end = std::min(row_begin + tile, slots);
+    const std::size_t row_end = std::min(row_begin + tile, faces);
     const std::size_t height = row_end - row_begin;
-    for (std::size_t col_begin = row_begin; col_begin < slots;
+    for (std::size_t col_begin = row_begin; col_begin < faces;
          col_begin += tile) {
-        const std::size_t width = std::min(col_begin + tile, slots) - col_begin;
+        const std::size_t width = std::min(col_begin + tile, faces) - col_begin;
         if (col_begin == row_begin) {
             diagonal_block(cells, row_begin, row_end, emit);
             continue;
@@ -358,10 +333,10 @@ void row_tile(const DenseCells<Cell>& cells, std::size_t slots,
                      emit);
     }
     for (std::size_t row = row_begin; row < row_end; ++row) {
-        const std::span<const Cell> buckets = cells.row(row).subspan(slots);
+        const std::span<const Cell> buckets = cells.row(row).subspan(faces);
         for (std::size_t offset = 0; offset < buckets.size(); ++offset) {
             if (buckets[offset] != 0) {
-                emit.bucket(row, slots + offset,
+                emit.bucket(row, faces + offset,
                             static_cast<std::uint64_t>(buckets[offset]));
             }
         }
@@ -373,7 +348,7 @@ void row_tile(const DenseCells<Cell>& cells, std::size_t slots,
 // both streams, and a pair present in only one direction merges against an
 // implicit zero — exactly the degenerate case the weight already handles.
 template <typename Emit>
-void sparse_row(const SparseCells& cells, std::size_t slots, std::size_t row,
+void sparse_row(const SparseCells& cells, std::size_t faces, std::size_t row,
                 const Emit& emit) {
     std::size_t at = cells.row_start[row];
     const std::size_t row_end = cells.row_start[row + 1];
@@ -387,16 +362,16 @@ void sparse_row(const SparseCells& cells, std::size_t slots, std::size_t row,
         ++transposed;
     }
     while (true) {
-        // The slot count doubles as the end sentinel: past it lie only the
+        // The face count doubles as the end sentinel: past it lie only the
         // bucket columns, which never take part in a merge.
         const std::size_t forward_column =
-            (at < row_end && cells.column[at] < slots) ? cells.column[at]
-                                                       : slots;
+            (at < row_end && cells.column[at] < faces) ? cells.column[at]
+                                                       : faces;
         const std::size_t backward_column =
             transposed < transposed_end ? cells.transposed_row[transposed]
-                                        : slots;
+                                        : faces;
         const std::size_t column = std::min(forward_column, backward_column);
-        if (column >= slots) {
+        if (column >= faces) {
             break;
         }
         std::uint64_t forward_cell = 0;
@@ -417,32 +392,32 @@ void sparse_row(const SparseCells& cells, std::size_t slots, std::size_t row,
 }  // namespace pair_walk_detail
 
 template <typename Cell, typename Emit>
-void walk_dense_pairs(const DenseCells<Cell>& cells, std::size_t slots,
+void walk_dense_pairs(const DenseCells<Cell>& cells, std::size_t faces,
                       const AssemblyTuning& tuning, const Emit& emit) {
     // Tile 0 asks for the plain row-by-row walk: one tile spanning the whole
     // matrix degenerates to exactly that, transposed reads and all.
     const std::size_t tile =
-        tuning.tile > 0 ? tuning.tile : std::max<std::size_t>(slots, 1);
-    const std::size_t row_tiles = (slots + tile - 1) / tile;
+        tuning.tile > 0 ? tuning.tile : std::max<std::size_t>(faces, 1);
+    const std::size_t row_tiles = (faces + tile - 1) / tile;
     const unsigned threads =
-        worker_count(tuning, row_tiles, slots * cells.cols);
+        worker_count(tuning, row_tiles, faces * cells.cols);
     // A single row-tile means only the diagonal block runs, which reads the
     // transpose in place and never touches the scratch buffer.
     const std::size_t scratch_size = row_tiles > 1 ? tile * tile : 0;
     parallel_for_index(row_tiles, threads, [&](std::size_t index) {
         std::vector<Cell> scratch(scratch_size, 0);
-        pair_walk_detail::row_tile(cells, slots, tile, index,
+        pair_walk_detail::row_tile(cells, faces, tile, index,
                                    std::span<Cell>(scratch), emit);
     });
 }
 
 template <typename Emit>
-void walk_sparse_pairs(const SparseCells& cells, std::size_t slots,
+void walk_sparse_pairs(const SparseCells& cells, std::size_t faces,
                        const AssemblyTuning& tuning, const Emit& emit) {
     const unsigned threads =
-        worker_count(tuning, slots, slots * matrix_columns(slots));
-    parallel_for_index(slots, threads, [&](std::size_t row) {
-        pair_walk_detail::sparse_row(cells, slots, row, emit);
+        worker_count(tuning, faces, faces * matrix_columns(faces));
+    parallel_for_index(faces, threads, [&](std::size_t row) {
+        pair_walk_detail::sparse_row(cells, faces, row, emit);
     });
 }
 

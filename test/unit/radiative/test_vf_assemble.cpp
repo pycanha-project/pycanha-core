@@ -33,13 +33,13 @@ namespace {
 // Dense/Tiled comparison meaningful.
 class Counts {
   public:
-    explicit Counts(std::size_t slots)
-        : _slots(slots),
-          _cols(slots + static_cast<std::size_t>(rad::num_virtual_columns)),
-          _areas(slots, 1.0),
-          _rays(slots, 0),
-          _cells(slots * _cols, 0),
-          _rows(slots) {}
+    explicit Counts(std::size_t faces)
+        : _slots(faces),
+          _cols(faces + static_cast<std::size_t>(rad::num_virtual_columns)),
+          _areas(faces, 1.0),
+          _rays(faces, 0),
+          _cells(faces * _cols, 0),
+          _rows(faces) {}
 
     void set(std::size_t row, std::size_t column, std::uint32_t count) {
         _cells[(row * _cols) + column] = count;
@@ -54,14 +54,14 @@ class Counts {
         return _cells[(row * _cols) + column];
     }
 
-    void set_area(std::size_t slot, double area) { _areas[slot] = area; }
-    void set_rays(std::size_t slot, std::uint64_t rays) { _rays[slot] = rays; }
+    void set_area(std::size_t face, double area) { _areas[face] = area; }
+    void set_rays(std::size_t face, std::uint64_t rays) { _rays[face] = rays; }
 
-    [[nodiscard]] std::size_t slots() const { return _slots; }
+    [[nodiscard]] std::size_t faces() const { return _slots; }
     [[nodiscard]] std::size_t space_column() const { return _slots; }
-    [[nodiscard]] double area(std::size_t slot) const { return _areas[slot]; }
-    [[nodiscard]] std::uint64_t rays(std::size_t slot) const {
-        return _rays[slot];
+    [[nodiscard]] double area(std::size_t face) const { return _areas[face]; }
+    [[nodiscard]] std::uint64_t rays(std::size_t face) const {
+        return _rays[face];
     }
 
     [[nodiscard]] rad::VfResult dense(
@@ -119,19 +119,19 @@ class Counts {
     return true;
 }
 
-// Enough slots to span several tiles at the sizes the tests sweep, with a
-// deliberately non-emitting slot (7) and ray counts that differ between
+// Enough faces to span several tiles at the sizes the tests sweep, with a
+// deliberately non-emitting face (7) and ray counts that differ between
 // rows so the two directions of a pair really are weighted differently.
 // Every row closes exactly: whatever the real columns did not take goes to
 // the space bucket.
-[[nodiscard]] Counts make_scene(std::size_t slots = 40) {
-    Counts counts(slots);
+[[nodiscard]] Counts make_scene(std::size_t faces = 40) {
+    Counts counts(faces);
     std::uint32_t state = 20260807U;
     const auto next = [&state]() {
         state = (state * 1664525U) + 1013904223U;
         return (state >> 16U) % 50U;
     };
-    for (std::size_t row = 0; row < slots; ++row) {
+    for (std::size_t row = 0; row < faces; ++row) {
         counts.set_area(row, 0.5 + (0.25 * static_cast<double>(row % 5)));
         const std::uint64_t rays =
             row == 7 ? 0 : (std::uint64_t{1} << (14U + (row % 3)));
@@ -140,7 +140,7 @@ class Counts {
             continue;
         }
         std::uint64_t scored = 0;
-        for (std::size_t column = 0; column < slots; ++column) {
+        for (std::size_t column = 0; column < faces; ++column) {
             const std::uint32_t count = next();
             if (count < 40) {
                 continue;  // most pairs never see each other
@@ -177,15 +177,15 @@ class Counts {
 // in the row itself plus, because only the upper triangle is kept, the
 // entries stored above it at this row's column.
 [[nodiscard]] double closure_of(const rad::SparseMatrix& matrix,
-                                Eigen::Index slot, Eigen::Index slots) {
+                                Eigen::Index face, Eigen::Index faces) {
     double total = 0.0;
-    for (rad::SparseMatrix::InnerIterator entry(matrix, slot); entry; ++entry) {
+    for (rad::SparseMatrix::InnerIterator entry(matrix, face); entry; ++entry) {
         total += entry.value();
     }
-    for (Eigen::Index row = 0; row < slot; ++row) {
+    for (Eigen::Index row = 0; row < face; ++row) {
         for (rad::SparseMatrix::InnerIterator entry(matrix, row); entry;
              ++entry) {
-            if (entry.col() == slot && slot < slots) {
+            if (entry.col() == face && face < faces) {
                 total += entry.value();
             }
         }
@@ -200,8 +200,8 @@ TEST_CASE("radiative assemble: only the upper triangle is stored",
     const Counts counts = make_scene();
     const rad::VfResult result = counts.dense(ray_density());
 
-    REQUIRE(result.vf.rows() == static_cast<Eigen::Index>(counts.slots()));
-    REQUIRE(result.vf.cols() == static_cast<Eigen::Index>(counts.slots()) +
+    REQUIRE(result.vf.rows() == static_cast<Eigen::Index>(counts.faces()));
+    REQUIRE(result.vf.cols() == static_cast<Eigen::Index>(counts.faces()) +
                                     rad::num_virtual_columns);
     for (Eigen::Index row = 0; row < result.vf.rows(); ++row) {
         for (rad::SparseMatrix::InnerIterator entry(result.vf, row); entry;
@@ -228,11 +228,11 @@ TEST_CASE("radiative assemble: the stored value is reciprocal by construction",
                 continue;  // bucket column, no partner
             }
             const auto column = static_cast<std::size_t>(entry.col());
-            const auto slot = static_cast<std::size_t>(row);
-            const double forward = entry.value() / counts.area(slot);
+            const auto face = static_cast<std::size_t>(row);
+            const double forward = entry.value() / counts.area(face);
             const double backward = entry.value() / counts.area(column);
             REQUIRE(
-                counts.area(slot) * forward ==
+                counts.area(face) * forward ==
                 Catch::Approx(counts.area(column) * backward).epsilon(1e-15));
             ++checked;
         }
@@ -245,13 +245,13 @@ TEST_CASE("radiative assemble: closure is the raw estimate over all columns",
     const Counts counts = make_scene();
     for (const rad::AccumConfig& config : {untriangulated(), ray_density()}) {
         const rad::VfResult result = counts.dense(config);
-        for (std::size_t slot = 0; slot < counts.slots(); ++slot) {
-            const auto row = static_cast<Eigen::Index>(slot);
+        for (std::size_t face = 0; face < counts.faces(); ++face) {
+            const auto row = static_cast<Eigen::Index>(face);
             // Closure is computed from the raw counts before anything is
             // combined or pruned, so it is exactly 1 for every emitting row
             // and untouched by the triangulation mode.
             REQUIRE(result.row_sums(row) ==
-                    (counts.rays(slot) > 0 ? 1.0 : 0.0));
+                    (counts.rays(face) > 0 ? 1.0 : 0.0));
         }
     }
 }
@@ -263,14 +263,14 @@ TEST_CASE("radiative assemble: bucket columns pass through untriangulated",
     const rad::VfResult combined = counts.dense(ray_density());
     const auto space = static_cast<Eigen::Index>(counts.space_column());
 
-    for (std::size_t slot = 0; slot < counts.slots(); ++slot) {
-        const auto row = static_cast<Eigen::Index>(slot);
+    for (std::size_t face = 0; face < counts.faces(); ++face) {
+        const auto row = static_cast<Eigen::Index>(face);
         const double expected =
-            counts.rays(slot) == 0 ? 0.0
-                                   : counts.area(slot) *
+            counts.rays(face) == 0 ? 0.0
+                                   : counts.area(face) *
                                          static_cast<double>(counts.at(
-                                             slot, counts.space_column())) /
-                                         static_cast<double>(counts.rays(slot));
+                                             face, counts.space_column())) /
+                                         static_cast<double>(counts.rays(face));
         REQUIRE(value_at(raw.vf, row, space) == expected);
         REQUIRE(value_at(combined.vf, row, space) == expected);
     }
@@ -325,7 +325,7 @@ TEST_CASE("radiative assemble: the tabulated weight tracks std::pow",
     }
 }
 
-TEST_CASE("radiative assemble: a non-emitting slot still gets its coupling",
+TEST_CASE("radiative assemble: a non-emitting face still gets its coupling",
           "[radiative][vf][assemble]") {
     Counts counts(2);
     counts.set_area(0, 2.0);
@@ -334,7 +334,7 @@ TEST_CASE("radiative assemble: a non-emitting slot still gets its coupling",
     counts.set_rays(1, 1024);
     counts.set(1, 0, 256);
 
-    // With no rays of its own slot 0 has an infinite A/N, so the weight
+    // With no rays of its own face 0 has an infinite A/N, so the weight
     // passes entirely to the reverse direction and the coupling is sourced
     // from it alone. No division by zero and nothing dropped.
     const rad::VfResult result = counts.dense(ray_density());
@@ -508,23 +508,23 @@ TEST_CASE("radiative assemble: least squares closes every row exactly",
     const Counts counts = make_scene();
     const rad::VfResult combined = counts.dense(ray_density());
     const rad::VfResult projected = counts.dense(least_squares());
-    const auto slots = static_cast<Eigen::Index>(counts.slots());
+    const auto faces = static_cast<Eigen::Index>(counts.faces());
 
     // Weighting each pair on its own leaves rows no longer summing to their
     // own area; the projection is the smallest weighted move that restores
     // that, and it restores it exactly rather than approximately.
     bool ray_density_missed = false;
-    for (std::size_t slot = 0; slot < counts.slots(); ++slot) {
-        const auto row = static_cast<Eigen::Index>(slot);
-        if (counts.rays(slot) == 0) {
+    for (std::size_t face = 0; face < counts.faces(); ++face) {
+        const auto row = static_cast<Eigen::Index>(face);
+        if (counts.rays(face) == 0) {
             continue;  // emitted nothing, so there is nothing to close
         }
-        if (closure_of(combined.vf, row, slots) !=
-            Catch::Approx(counts.area(slot)).epsilon(1e-9)) {
+        if (closure_of(combined.vf, row, faces) !=
+            Catch::Approx(counts.area(face)).epsilon(1e-9)) {
             ray_density_missed = true;
         }
-        REQUIRE(closure_of(projected.vf, row, slots) ==
-                Catch::Approx(counts.area(slot)).epsilon(1e-9));
+        REQUIRE(closure_of(projected.vf, row, faces) ==
+                Catch::Approx(counts.area(face)).epsilon(1e-9));
     }
     REQUIRE(ray_density_missed);
 }
@@ -548,9 +548,9 @@ TEST_CASE("radiative assemble: least squares keeps reciprocity structural",
 
 TEST_CASE("radiative assemble: the least-squares correction is exact",
           "[radiative][vf][assemble][closure]") {
-    // Two unit slots that see each other and space, with disagreeing
-    // estimates: forward says 1/4 of row 0 reaches slot 1, backward says 1/2
-    // of row 1 reaches slot 0. Equal ray densities put the unconstrained
+    // Two unit faces that see each other and space, with disagreeing
+    // estimates: forward says 1/4 of row 0 reaches face 1, backward says 1/2
+    // of row 1 reaches face 0. Equal ray densities put the unconstrained
     // combination at 3/8, which leaves row 0 over-full and row 1 short.
     Counts counts(2);
     counts.set_area(0, 1.0);

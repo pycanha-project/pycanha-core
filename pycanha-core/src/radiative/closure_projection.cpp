@@ -36,13 +36,13 @@ struct RowBudget {
     std::vector<char> constrained;
 };
 
-// One pass over the stored entries. An entry (i, j) with j < slots belongs
+// One pass over the stored entries. An entry (i, j) with j < faces belongs
 // to BOTH row i's and row j's constraint — that is exactly what makes the
 // system couple rows instead of decomposing into independent per-row
 // renormalizations. The diagonal entry (i, i) belongs to row i once.
 [[nodiscard]] RowBudget row_budget(std::span<const RowEntries> rows,
                                    std::span<const double> targets,
-                                   std::size_t slots) {
+                                   std::size_t faces) {
     RowBudget budget;
     budget.capacity.assign(rows.size(), 0.0);
     budget.sum.assign(rows.size(), 0.0);
@@ -53,7 +53,7 @@ struct RowBudget {
             const auto column = static_cast<std::size_t>(entries.columns[at]);
             budget.capacity[row] += entries.variances[at];
             budget.sum[row] += entries.values[at];
-            if (column < slots && column != row) {
+            if (column < faces && column != row) {
                 budget.capacity[column] += entries.variances[at];
                 budget.sum[column] += entries.values[at];
             }
@@ -74,7 +74,7 @@ struct ClosureSystem {
 [[nodiscard]] ClosureSystem build_system(std::span<const RowEntries> rows,
                                          std::span<const double> targets,
                                          const RowBudget& budget,
-                                         std::size_t slots) {
+                                         std::size_t faces) {
     const std::size_t count = rows.size();
     const auto size = static_cast<Eigen::Index>(count);
     // Triplets are indexed by the matrix's own StorageIndex, which is
@@ -104,7 +104,7 @@ struct ClosureSystem {
         const RowEntries& entries = rows[row];
         for (std::size_t at = 0; at < entries.values.size(); ++at) {
             const auto column = static_cast<std::size_t>(entries.columns[at]);
-            if (column >= slots || column == row ||
+            if (column >= faces || column == row ||
                 budget.constrained[column] == 0) {
                 continue;
             }
@@ -161,7 +161,7 @@ struct ClosureSystem {
 }
 
 void apply_correction(std::span<RowEntries> rows,
-                      const Eigen::VectorXd& multiplier, std::size_t slots) {
+                      const Eigen::VectorXd& multiplier, std::size_t faces) {
     const std::size_t count = rows.size();
     const unsigned threads = worker_count({}, count, count);
     parallel_for_index(count, threads, [&](std::size_t row) {
@@ -170,7 +170,7 @@ void apply_correction(std::span<RowEntries> rows,
         for (std::size_t at = 0; at < entries.values.size(); ++at) {
             const auto column = static_cast<std::size_t>(entries.columns[at]);
             double total = own;
-            if (column < slots && column != row) {
+            if (column < faces && column != row) {
                 total += multiplier(static_cast<Eigen::Index>(column));
             }
             entries.values[at] += entries.variances[at] * total;
@@ -212,7 +212,7 @@ BlueEstimate blue_combine(double forward, double backward, double u_forward,
 }
 
 void project_onto_closure(std::span<RowEntries> rows,
-                          std::span<const double> targets, std::size_t slots) {
+                          std::span<const double> targets, std::size_t faces) {
     if (targets.size() != rows.size()) {
         throw std::invalid_argument(
             "pycanha::radiative: the closure projection needs one target per "
@@ -221,9 +221,9 @@ void project_onto_closure(std::span<RowEntries> rows,
     if (rows.empty()) {
         return;  // nothing to close, and no system to build
     }
-    const RowBudget budget = row_budget(rows, targets, slots);
-    const ClosureSystem system = build_system(rows, targets, budget, slots);
-    apply_correction(rows, solve_multipliers(system), slots);
+    const RowBudget budget = row_budget(rows, targets, faces);
+    const ClosureSystem system = build_system(rows, targets, budget, faces);
+    apply_correction(rows, solve_multipliers(system), faces);
 }
 
 }  // namespace pycanha::radiative::detail

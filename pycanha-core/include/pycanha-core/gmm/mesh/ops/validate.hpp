@@ -56,9 +56,22 @@ template <class Scalar>
                        [](const auto& entry) { return entry.second == 2; });
 }
 
+// A mesh is consistent when every triangle has a face id, every id is even (a
+// triangle carries the side-1 id of its pair and defines both sides), and
+// every id falls inside the face count the mesh declares. A cut may leave a
+// face with no triangles, but never a triangle outside the declared faces.
 template <class Scalar>
 [[nodiscard]] bool has_consistent_face_ids(const TriMesh<Scalar>& mesh) {
-    return mesh.face_ids.rows() == mesh.triangles.rows();
+    if (mesh.face_ids.rows() != mesh.triangles.rows()) {
+        return false;
+    }
+    for (Eigen::Index tri_idx = 0; tri_idx < mesh.face_ids.rows(); ++tri_idx) {
+        const auto face_id = mesh.face_ids(tri_idx);
+        if ((face_id % 2U) != 0U || face_id >= mesh.nf()) {
+            return false;
+        }
+    }
+    return true;
 }
 
 }  // namespace pycanha::gmm::mesh::ops

@@ -37,7 +37,7 @@ void require_refinement_improves_area(const PrimitiveType& primitive,
     REQUIRE(
         gmm_test::absolute_area_error(fine_mesh, primitive.surface_area()) <
         gmm_test::absolute_area_error(coarse_mesh, primitive.surface_area()));
-    REQUIRE(gmm_test::face_ids_cover_all_cells(fine_mesh, thermal_mesh));
+    REQUIRE(gmm_test::face_ids_cover_all_face_pairs(fine_mesh, thermal_mesh));
 }
 
 }  // namespace
@@ -61,7 +61,7 @@ TEST_CASE("UvMesher refines cones and collapses the apex", "[gmm][mesh]") {
 
     REQUIRE(gmm_test::count_vertices_near(fine_mesh, cone.p1(),
                                           pycanha::LENGTH_TOL) == 1U);
-    REQUIRE(gmm_test::face_ids_cover_all_cells(fine_mesh, thermal_mesh));
+    REQUIRE(gmm_test::face_ids_cover_all_face_pairs(fine_mesh, thermal_mesh));
     require_refinement_improves_area(cone, thermal_mesh, 0.2, 0.01);
 }
 
@@ -80,6 +80,6 @@ TEST_CASE("UvMesher refines paraboloids and collapses the apex",
     REQUIRE(gmm_test::count_vertices_near(fine_mesh, paraboloid.p1(),
                                           pycanha::LENGTH_TOL) == 1U);
     REQUIRE(gmm_test::has_no_degenerate_triangles(fine_mesh, 1e-12));
-    REQUIRE(gmm_test::face_ids_cover_all_cells(fine_mesh, thermal_mesh));
+    REQUIRE(gmm_test::face_ids_cover_all_face_pairs(fine_mesh, thermal_mesh));
     require_refinement_improves_area(paraboloid, thermal_mesh, 0.25, 0.01);
 }

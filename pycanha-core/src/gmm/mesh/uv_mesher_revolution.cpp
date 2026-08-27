@@ -99,9 +99,11 @@ TriMeshD mesh_primitive(const Paraboloid& paraboloid,
         .dir1_sample = make_linear_dir_sampler(thermal_mesh.get_dir1_mesh()),
         .dir2_sample =
             [local_dir2_cuts = std::move(local_dir2_cuts)](
-                std::size_t cell_index, int step, int step_count) {
-                const double start = std::sqrt(local_dir2_cuts[cell_index]);
-                const double end = std::sqrt(local_dir2_cuts[cell_index + 1U]);
+                std::size_t face_pair_index, int step, int step_count) {
+                const double start =
+                    std::sqrt(local_dir2_cuts[face_pair_index]);
+                const double end =
+                    std::sqrt(local_dir2_cuts[face_pair_index + 1U]);
                 const double t = step_count > 0
                                      ? static_cast<double>(step) /
                                            static_cast<double>(step_count)

@@ -34,8 +34,9 @@ using pycanha::gmm::Triangle;
 
 constexpr double pi = std::numbers::pi;
 
-// profile_of returns an optional because a Triangle and a Cube have no closed
-// form; every other primitive must have one, so unwrap it once here.
+// profile_of returns an optional because a Triangle, a Quadrilateral and a
+// Cube have no closed form; every other primitive must have one, so unwrap it
+// once here.
 [[nodiscard]] MeridianProfile require_profile(
     const pycanha::gmm::Primitive& primitive) {
     std::optional<MeridianProfile> profile = profile_of(primitive);
@@ -88,16 +89,16 @@ TEST_CASE("profile: a rectangle is the degenerate rho == 1 case",
             Catch::Approx(2.0));
 }
 
-TEST_CASE("profile: a quadrilateral uses its equivalent rectangle",
+TEST_CASE("profile: a quadrilateral has no closed-form profile",
           "[conduction][profile]") {
-    // p3 is skewed away from the rectangle corner; the mesher (and therefore
-    // the profile) spans p2 - p1 and the orthogonal part of p4 - p1 instead.
+    // A bilinear patch's faces change width along direction 2, so no
+    // constant-width planar profile describes it. Treating one as its
+    // "equivalent rectangle" -- the shape spanned by p2 - p1 and the
+    // orthogonal part of p4 - p1 -- silently discards p3 and with it up to
+    // half the area; the discrete shared-edge path handles it instead.
     const Quadrilateral quadrilateral({0.0, 0.0, 0.0}, {3.0, 0.0, 0.0},
                                       {2.5, 2.0, 0.0}, {0.0, 2.0, 0.0});
-    const MeridianProfile profile = require_profile(quadrilateral);
-    REQUIRE(profile.dir1_coordinate(1.0) == Catch::Approx(3.0));
-    REQUIRE(profile.potential(1.0) - profile.potential(0.0) ==
-            Catch::Approx(2.0));
+    REQUIRE_FALSE(profile_of(quadrilateral).has_value());
 }
 
 TEST_CASE("profile: disc potential is the log of the radius",
@@ -135,7 +136,7 @@ TEST_CASE("profile: a disc reaching the centre is on the axis there",
     const MeridianProfile profile = require_profile(disc);
     REQUIRE(profile.on_axis(0.0));
     REQUIRE_FALSE(profile.on_axis(1e-6));
-    // The reference line of a cell never sits on the axis, so the radial
+    // The reference line of a face pair never sits on the axis, so the radial
     // conductance across the innermost band stays bounded.
     REQUIRE(std::isfinite(profile.potential(0.25)));
     REQUIRE(profile.potential(0.5) - profile.potential(0.25) ==

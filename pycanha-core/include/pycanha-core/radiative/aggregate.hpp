@@ -10,9 +10,9 @@
 namespace pycanha::radiative {
 
 // Face -> node reduction (results are kept at face level; node views are
-// computed on demand). `node_numbers` is the GMM per-face-slot node array
+// computed on demand). `node_numbers` is the GMM per-face node array
 // (NO_NODE = unassigned, dropped from every aggregate); `face_areas` the
-// per-slot areas. Rows/cols of the aggregated outputs are indexed by the
+// per-face areas. Rows/cols of the aggregated outputs are indexed by the
 // position of the node in aggregate_nodes(node_numbers).
 
 // Sorted unique node numbers with NO_NODE removed — the row/col labels of
@@ -41,13 +41,13 @@ struct AggregateResult {
 //
 // Two things do not survive the mapping from faces to nodes, and both are
 // handled here:
-//  - node numbers are assigned independently of face-slot numbering, so a
+//  - node numbers are assigned independently of face numbering, so a
 //    face pair i < j can land on a node pair m > n; every write is
 //    canonicalised to (min(m, n), max(m, n)) or the output would be an
 //    arbitrary mix of both triangles rather than a triangle,
 //  - pairs whose faces share a node fall on the diagonal. A node is
 //    isothermal by definition, so radiation it exchanges with itself
-//    transports no heat and the coupling network has no slot for it; the
+//    transports no heat and the coupling network has no face for it; the
 //    diagonal is dropped and its total reported.
 //
 // Matrix results carry the virtual space/inactive/lost bucket columns after

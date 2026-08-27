@@ -1,5 +1,6 @@
 #include "pycanha-core/gmm/primitives/triangle.hpp"
 
+#include <cmath>
 #include <utility>
 
 #include "pycanha-core/globals.hpp"
@@ -47,23 +48,38 @@ bool Triangle::is_valid() const noexcept {
            triangle_normal_unnormalized(*this).norm() > LENGTH_TOL;
 }
 
+// uv is normalised to [0, 1]^2 for every planar primitive. For a triangle
+// that is the strip parametrisation the mesher subdivides in: u runs from the
+// p1 corner out to the opposite edge, and v slides along that edge from p2 to
+// p3, so the whole domain maps onto the triangle and u = 0 collapses to p1.
 Point2D Triangle::to_uv(const Point3D& point) const {
     const Vector3D edge_1 = triangle_edge_1(*this);
     const Vector3D edge_2 = triangle_edge_2(*this);
-    const Vector3D u_axis = edge_1.normalized();
-    const Vector3D v_axis = (edge_2 - edge_2.dot(u_axis) * u_axis).normalized();
     const Vector3D delta = point - _p1;
 
-    return {delta.dot(u_axis), delta.dot(v_axis)};
+    // Components of delta in the (edge_1, edge_2) basis, which is not
+    // orthogonal in general.
+    const double d11 = edge_1.squaredNorm();
+    const double d12 = edge_1.dot(edge_2);
+    const double d22 = edge_2.squaredNorm();
+    const double denominator = (d11 * d22) - (d12 * d12);
+    if (std::abs(denominator) <= LENGTH_TOL * LENGTH_TOL) {
+        return {0.0, 0.0};
+    }
+    const double delta_1 = delta.dot(edge_1);
+    const double delta_2 = delta.dot(edge_2);
+    const double along_1 = ((delta_1 * d22) - (delta_2 * d12)) / denominator;
+    const double along_2 = ((delta_2 * d11) - (delta_1 * d12)) / denominator;
+
+    // delta = u(1 - v) * edge_1 + u * v * edge_2.
+    const double u = along_1 + along_2;
+    return {u, std::abs(u) > LENGTH_TOL ? along_2 / u : 0.0};
 }
 
 Point3D Triangle::to_cartesian(const Point2D& uv) const {
     const Vector3D edge_1 = triangle_edge_1(*this);
     const Vector3D edge_2 = triangle_edge_2(*this);
-    const Vector3D u_axis = edge_1.normalized();
-    const Vector3D v_axis = (edge_2 - edge_2.dot(u_axis) * u_axis).normalized();
-
-    return _p1 + uv.x() * u_axis + uv.y() * v_axis;
+    return _p1 + (uv.x() * (((1.0 - uv.y()) * edge_1) + (uv.y() * edge_2)));
 }
 
 Vector3D Triangle::normal_at_uv(const Point2D& /*uv*/) const noexcept {
