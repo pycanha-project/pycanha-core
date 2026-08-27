@@ -18,6 +18,7 @@
 #include "pycanha-core/gmm/primitives/rectangle.hpp"
 #include "pycanha-core/gmm/primitives/sphere.hpp"
 #include "pycanha-core/gmm/primitives/triangle.hpp"
+#include "pycanha-core/gmm/primitives/triangular_prism.hpp"
 
 namespace pycanha::gmm::mesh::detail {
 
@@ -30,6 +31,11 @@ struct SamplingPlan {
     DirSampler dir1_sample;
     DirSampler dir2_sample;
     SurfacePointFunction point_at;
+    // Triangles are wound so that their normal is side 1, which for a
+    // (dir1, dir2) grid means d/ddir1 x d/ddir2. Set this where that cross
+    // product points AGAINST the primitive's own normal_at_uv, so the
+    // triangulation and the primitive agree on which side is side 1.
+    bool reverse_winding = false;
 };
 
 [[nodiscard]] double lerp(double start, double end, double t) noexcept;
@@ -44,9 +50,6 @@ struct SamplingPlan {
 [[nodiscard]] DirSampler make_linear_dir_sampler(std::span<const double> cuts);
 [[nodiscard]] TriMeshD build_mesh_from_plan(const ThermalMesh& thermal_mesh,
                                             const SamplingPlan& plan);
-[[nodiscard]] Point3D triangle_strip_point(const Triangle& triangle,
-                                           double dir1, double dir2);
-
 [[nodiscard]] TriMeshD mesh_primitive(const Triangle& triangle,
                                       const ThermalMesh& thermal_mesh,
                                       const MeshOptions& options);
@@ -72,6 +75,9 @@ struct SamplingPlan {
                                       const ThermalMesh& thermal_mesh,
                                       const MeshOptions& options);
 [[nodiscard]] TriMeshD mesh_primitive(const Cube& cube,
+                                      const ThermalMesh& thermal_mesh,
+                                      const MeshOptions& options);
+[[nodiscard]] TriMeshD mesh_primitive(const TriangularPrism& prism,
                                       const ThermalMesh& thermal_mesh,
                                       const MeshOptions& options);
 

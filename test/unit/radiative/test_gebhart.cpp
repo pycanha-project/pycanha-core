@@ -38,8 +38,8 @@ namespace {
     return out;
 }
 
-// Two facing unit surfaces (slots 0 and 2) seeing each other with F = 0.4;
-// slots 1 and 3 look into space. Unit areas make the stored extensive
+// Two facing unit surfaces (faces 0 and 2) seeing each other with F = 0.4;
+// faces 1 and 3 look into space. Unit areas make the stored extensive
 // coupling numerically equal to the view factor.
 constexpr std::array<double, 4> unit_areas{1.0, 1.0, 1.0, 1.0};
 
@@ -174,7 +174,7 @@ TEST_CASE("radiative gebhart: matrix path agrees with the MCRT kernel",
     scene.accumulate_vf(vf_acc, settings);
     const rad::VfResult vf = vf_acc.result();
     const Eigen::VectorXd emissivity = Eigen::VectorXd::Constant(
-        static_cast<Eigen::Index>(scene.num_face_slots()), eps);
+        static_cast<Eigen::Index>(scene.num_faces()), eps);
     const rad::SparseMatrix gebhart =
         rad::gebhart_factors(vf.vf, emissivity, scene.face_areas());
 

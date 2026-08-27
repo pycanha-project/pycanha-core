@@ -2,7 +2,7 @@
 // resolution, fixed-point deposits, shared scene bindings and push constants.
 //
 // Determinism contract: the per-ray random stream depends only on
-// (face_slot, ray_index, batch_seed), and the number of RNG draws per step
+// (face, ray_index, batch_seed), and the number of RNG draws per step
 // is FROZEN (see the draw counts noted at each sampling function) — never
 // insert a draw, only append at the end of a step, or every golden-value
 // test and the CPU reference implementation silently break.
@@ -24,7 +24,7 @@ public struct Push {
     public uint batch_seed;        // settings.seed + batch_index
     public uint max_bounces;
     public uint flags;             // bit0: normal-emission mode
-    public uint num_face_slots;    // total face slots (accumulator row stride)
+    public uint num_faces;    // total faces (accumulator row stride)
     public float energy_threshold;
     public float fp_scale;         // fixed-point scale S of the deposits
     public float inv_fp_scale;     // 1/S
@@ -67,7 +67,7 @@ public static const uint FLAG_SOLAR_BAND = 2u;
 public struct InstanceData {
     public uint64_t vertices_addr;  // devaddr float3[] (12 B stride, scalar)
     public uint64_t indices_addr;   // devaddr uint3[]
-    public uint64_t tri_face_addr;  // devaddr uint[] (even side-1 slot / tri)
+    public uint64_t tri_face_addr;  // devaddr uint[] (even side-1 face / tri)
     public uint part_id;
     public uint flags;              // bit0: is_planet_part
     // Part -> world as three explicit row vectors (xyz = rotation row,
@@ -93,21 +93,27 @@ public float3 transform_direction(InstanceData inst, float3 d) {
 [[vk::binding(0, 0)]] public RaytracingAccelerationStructure tlas;
 [[vk::binding(1, 0)]] public StructuredBuffer<InstanceData> instance_data;
 [[vk::binding(2, 0)]] public StructuredBuffer<float> materials;  // 6*M floats
-[[vk::binding(3, 0)]] public StructuredBuffer<int> face_material;
-[[vk::binding(4, 0)]] public StructuredBuffer<uint> face_flags;
-[[vk::binding(5, 0)]] public StructuredBuffer<uint> emitters;  // this block
-[[vk::binding(6, 0)]] public StructuredBuffer<uint> emit_tri_offset;
-[[vk::binding(7, 0)]] public StructuredBuffer<uint> emit_tri_part;
-[[vk::binding(8, 0)]] public StructuredBuffer<uint> emit_tri_prim;
-[[vk::binding(9, 0)]] public StructuredBuffer<float> emit_cum_area;
+// One word per face: the activity/planet flags in the low bits and the
+// material index above them. Flags and material used to be two buffers
+// indexed by the same face id, so a bounce touched two cache lines for what
+// is conceptually one per-face record.
+[[vk::binding(3, 0)]] public StructuredBuffer<uint> face_record;
+[[vk::binding(4, 0)]] public StructuredBuffer<uint> emitters;  // this block
+[[vk::binding(5, 0)]] public StructuredBuffer<uint> emit_tri_offset;
+[[vk::binding(6, 0)]] public StructuredBuffer<uint> emit_tri_part;
+[[vk::binding(7, 0)]] public StructuredBuffer<uint> emit_tri_prim;
+[[vk::binding(8, 0)]] public StructuredBuffer<float> emit_cum_area;
 
 public static const uint FACE_FLAG_ACTIVE = 1u;
 public static const uint FACE_FLAG_PLANET = 2u;
+// The material index sits above the flags, biased by one so that zero means
+// "no material assigned" and material row 0 stays usable.
+public static const uint FACE_MATERIAL_SHIFT = 2u;
 public static const uint INSTANCE_FLAG_PLANET = 1u;
 
 // ---------------------------------------------------------------------------
 // RNG — counter-based and grouping-invariant (PCG-XSH-RR style hash +
-// stream). Streams depend ONLY on (face_slot, ray_index, batch_seed) —
+// stream). Streams depend ONLY on (face, ray_index, batch_seed) —
 // never on thread id, dispatch shape, tile size or emitter order — so any
 // chunking/tiling of the dispatch reproduces bit-identical results.
 // ---------------------------------------------------------------------------
@@ -121,9 +127,9 @@ public uint pcg_hash(uint x) {
     return (w >> 22u) ^ w;
 }
 
-public Rng rng_init(uint face_slot, uint ray_index, uint batch_seed) {
+public Rng rng_init(uint face, uint ray_index, uint batch_seed) {
     Rng r;
-    r.state = pcg_hash(face_slot ^ pcg_hash(ray_index ^ pcg_hash(batch_seed)));
+    r.state = pcg_hash(face ^ pcg_hash(ray_index ^ pcg_hash(batch_seed)));
     return r;
 }
 
@@ -191,23 +197,31 @@ public void fp_add(FpBuffer buf, uint idx, float value) {
     fp_add_raw(buf, idx, to_fp(value));
 }
 
-// Band-selected optical triplet of a face slot: absorptivity, specular
+// Band-selected optical triplet of a face: absorptivity, specular
 // reflectance, transmittance. The band comes from pc.flags (FLAG_SOLAR_BAND).
-// Slots without a material (-1) are blackbodies: a=1, s=t=0, returns false.
-public bool band_properties(uint slot, out float a, out float s, out float t) {
-    int material_index = face_material[slot];
-    if (material_index < 0) {
+// Faces without a material (-1) are blackbodies: a=1, s=t=0, returns false.
+public bool band_properties_of(uint record, out float a, out float s,
+                               out float t) {
+    uint biased_material = record >> FACE_MATERIAL_SHIFT;
+    if (biased_material == 0u) {
         a = 1.0;
         s = 0.0;
         t = 0.0;
         return false;
     }
-    uint base = uint(material_index) * 6u +
+    uint base = (biased_material - 1u) * 6u +
                 (((pc.flags & FLAG_SOLAR_BAND) != 0u) ? 3u : 0u);
     a = materials[base];
     s = materials[base + 1u];
     t = materials[base + 2u];
     return true;
+}
+
+// Convenience for callers that have not already loaded the record. A hit path
+// that needs the flags too should read the record ONCE and use the overload
+// above instead of paying for a second load.
+public bool band_properties(uint face, out float a, out float s, out float t) {
+    return band_properties_of(face_record[face], a, s, t);
 }
 
 // ---------------------------------------------------------------------------
@@ -268,8 +282,8 @@ public struct SurfaceSample {
 
 // Draws u0 (triangle pick) + u1/u2 (barycentric point) — the first three
 // draws of the frozen emission order.
-public SurfaceSample sample_face_point(uint face_slot, inout Rng rng) {
-    uint pair_base = face_slot & ~1u;  // even side-1 slot of the pair
+public SurfaceSample sample_face_point(uint face, inout Rng rng) {
+    uint pair_base = face & ~1u;  // even side-1 face of the pair
 
     // 1. Area-weighted triangle pick: binary search u0 in the face's
     //    cumulative-area table (normalized to 1.0 at the last triangle).
@@ -306,10 +320,10 @@ public SurfaceSample sample_face_point(uint face_slot, inout Rng rng) {
     float3 p_world = transform_point(inst, p_local);
 
     // 3. Geometric normal, world-rotated. Winding: n points off side 1
-    //    (even slot); odd slots (side 2) flip.
+    //    (even face); odd faces (side 2) flip.
     float3 n_local = normalize(cross(v1 - v0, v2 - v0));
     float3 n = normalize(transform_direction(inst, n_local));
-    if ((face_slot & 1u) != 0u) {
+    if ((face & 1u) != 0u) {
         n = -n;
     }
 
@@ -319,8 +333,8 @@ public SurfaceSample sample_face_point(uint face_slot, inout Rng rng) {
     return sample;
 }
 
-public EmittedRay emit_from_face(uint face_slot, inout Rng rng) {
-    SurfaceSample sample = sample_face_point(face_slot, rng);
+public EmittedRay emit_from_face(uint face, inout Rng rng) {
+    SurfaceSample sample = sample_face_point(face, rng);
 
     // 4. Direction: cosine hemisphere (2 draws) or the normal itself.
     float3 dir;
@@ -338,13 +352,13 @@ public EmittedRay emit_from_face(uint face_slot, inout Rng rng) {
 
 // ---------------------------------------------------------------------------
 // Hit resolution — the ONLY place face-side parity is decided (front face
-// <=> side 1 <=> even slot). Emission uses the same winding convention; a
+// <=> side 1 <=> even face). Emission uses the same winding convention; a
 // sign mismatch between the two produces view-factor matrices that are
 // almost right, which is why parity lives in exactly one function.
 // ---------------------------------------------------------------------------
 public struct Hit {
     public bool miss;
-    public uint slot;      // global face slot (side-resolved)
+    public uint face;      // global face (side-resolved)
     public float3 normal;  // geometric, flipped so dot(n, ray_dir) < 0
     public float3 position;
 };
@@ -363,7 +377,7 @@ public Hit trace_ray(float3 origin, float3 direction) {
     Hit hit;
     if (q.CommittedStatus() != COMMITTED_TRIANGLE_HIT) {
         hit.miss = true;
-        hit.slot = 0u;
+        hit.face = 0u;
         hit.normal = float3(0.0, 0.0, 1.0);
         hit.position = origin;
         return hit;
@@ -373,7 +387,7 @@ public Hit trace_ray(float3 origin, float3 direction) {
     uint prim = q.CommittedPrimitiveIndex();
     InstanceData inst = instance_data[inst_index];
     uint *tri_face = (uint *)inst.tri_face_addr;
-    uint base = tri_face[prim];  // even side-1 slot
+    uint base = tri_face[prim];  // even side-1 face
 
     uint3 *indices = (uint3 *)inst.indices_addr;
     float3 *vertices = (float3 *)inst.vertices_addr;
@@ -391,7 +405,7 @@ public Hit trace_ray(float3 origin, float3 direction) {
     // The two forms are kept apart because slangc's Metal back end has no
     // working CommittedTriangleFrontFace() (it emits an accessor MSL does not
     // declare), while on SPIR-V deriving `front` from `n` forces the vertex
-    // fetch before the slot is known and the compiler then emits the triangle
+    // fetch before the face is known and the compiler then emits the triangle
     // fetch twice (measured: +23 executable instructions in the vf kernel).
 #if defined(PYCANHA_METAL_BACKEND)
     bool front = dot(n, direction) < 0.0;
@@ -400,7 +414,7 @@ public Hit trace_ray(float3 origin, float3 direction) {
 #endif
 
     hit.miss = false;
-    hit.slot = front ? base : base + 1u;
+    hit.face = front ? base : base + 1u;
     hit.position = origin + q.CommittedRayT() * direction;
     // Flip toward the incoming ray (same convention as the parity above:
     // front face <=> side 1 <=> winding normal against the ray).

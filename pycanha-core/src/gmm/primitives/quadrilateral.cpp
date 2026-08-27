@@ -82,22 +82,35 @@ bool Quadrilateral::is_valid() const noexcept {
 }
 
 Point2D Quadrilateral::to_uv(const Point3D& point) const {
-    const auto basis = detail::make_plane_basis(_p2 - _p1, _p4 - _p1);
-    const Vector3D delta = point - _p1;
-    return {delta.dot(basis.u), delta.dot(basis.v)};
+    const Vector3D edge_u = _p2 - _p1;
+    const Vector3D edge_v = _p4 - _p1;
+    const Vector3D twist = _p1 - _p2 + _p3 - _p4;
+    return detail::invert_bilinear(point - _p1, edge_u, edge_v, twist,
+                                   normal_at_uv({0.0, 0.0}));
 }
 
 Point3D Quadrilateral::to_cartesian(const Point2D& uv) const {
-    const auto basis = detail::make_plane_basis(_p2 - _p1, _p4 - _p1);
-    return _p1 + uv.x() * basis.u + uv.y() * basis.v;
+    const double u = uv.x();
+    const double v = uv.y();
+    // Bilinear patch on the four corners in cyclic order: direction 1 runs
+    // p1 -> p2, direction 2 runs p1 -> p4, and P(1, 1) is p3. The corner that
+    // makes the shape a quadrilateral rather than a rectangle is p3, so it has
+    // to appear here.
+    return ((1.0 - u) * (1.0 - v) * _p1) + (u * (1.0 - v) * _p2) +
+           (u * v * _p3) + ((1.0 - u) * v * _p4);
 }
 
 Vector3D Quadrilateral::normal_at_uv(const Point2D& /*uv*/) const noexcept {
+    // is_valid() requires the four corners to be coplanar, so the patch is
+    // flat and its normal is the same everywhere.
     return ((_p2 - _p1).cross(_p4 - _p1)).normalized();
 }
 
 double Quadrilateral::surface_area() const noexcept {
-    return ((_p2 - _p1).cross(_p4 - _p1)).norm();
+    // Half the cross product of the diagonals: the exact area of a planar
+    // quadrilateral, which for a general one is NOT the parallelogram area of
+    // its first two edges.
+    return 0.5 * ((_p3 - _p1).cross(_p4 - _p2)).norm();
 }
 
 }  // namespace pycanha::gmm

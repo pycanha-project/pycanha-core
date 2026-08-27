@@ -30,15 +30,23 @@ bool Rectangle::is_valid() const noexcept {
            detail::are_orthogonal(edge_1, edge_2);
 }
 
+// uv is normalised to [0, 1]^2 for every planar primitive: a general
+// quadrilateral has no single length scale to measure uv in, and two meanings
+// of uv inside one Primitive variant is exactly the confusion this convention
+// exists to prevent.
 Point2D Rectangle::to_uv(const Point3D& point) const {
-    const auto basis = detail::make_plane_basis(_p2 - _p1, _p3 - _p1);
+    const Vector3D edge_u = _p2 - _p1;
+    const Vector3D edge_v = _p3 - _p1;
     const Vector3D delta = point - _p1;
-    return {delta.dot(basis.u), delta.dot(basis.v)};
+    const double u_scale = edge_u.squaredNorm();
+    const double v_scale = edge_v.squaredNorm();
+    return {
+        u_scale > LENGTH_TOL * LENGTH_TOL ? delta.dot(edge_u) / u_scale : 0.0,
+        v_scale > LENGTH_TOL * LENGTH_TOL ? delta.dot(edge_v) / v_scale : 0.0};
 }
 
 Point3D Rectangle::to_cartesian(const Point2D& uv) const {
-    const auto basis = detail::make_plane_basis(_p2 - _p1, _p3 - _p1);
-    return _p1 + uv.x() * basis.u + uv.y() * basis.v;
+    return _p1 + (uv.x() * (_p2 - _p1)) + (uv.y() * (_p3 - _p1));
 }
 
 Vector3D Rectangle::normal_at_uv(const Point2D& /*uv*/) const noexcept {

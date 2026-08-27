@@ -33,7 +33,7 @@ using pycanha::radiative::ScenePart;
 
 [[nodiscard]] std::shared_ptr<GeometryItem> make_panel(
     const std::string& name, CoordinateTransformation transform = {}) {
-    // Two dir1 cells -> two face pairs (4 slots) per panel.
+    // Two dir1 face pairs -> two face pairs (4 faces) per panel.
     ThermalMesh thermal_mesh{{0.0, 0.5, 1.0}, {0.0, 1.0}};
     return std::make_shared<GeometryItem>(
         name, Rectangle({0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}),

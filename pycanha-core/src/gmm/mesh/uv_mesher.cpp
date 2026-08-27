@@ -19,7 +19,6 @@
 #include "pycanha-core/gmm/mesh/thermal_mesh.hpp"
 #include "pycanha-core/gmm/mesh/trimesh.hpp"
 #include "pycanha-core/gmm/primitives/primitive.hpp"
-#include "pycanha-core/gmm/primitives/triangle.hpp"
 #include "uv_mesher_internal.hpp"
 
 namespace pycanha::gmm {
@@ -125,6 +124,26 @@ void append_triangle(std::vector<std::array<Eigen::Index, 3>>& triangles,
     face_ids.push_back(face_id_value);
 }
 
+// Splits one grid quad into the two triangles of its face, wound so that their
+// normal is the primitive's side 1.
+void append_grid_quad(std::vector<std::array<Eigen::Index, 3>>& triangles,
+                      std::vector<std::uint64_t>& face_ids,
+                      const std::vector<Point3D>& vertices, Eigen::Index v00,
+                      Eigen::Index v10, Eigen::Index v11, Eigen::Index v01,
+                      std::uint64_t face_id_value, bool reverse_winding) {
+    if (reverse_winding) {
+        append_triangle(triangles, face_ids, vertices, v00, v11, v10,
+                        face_id_value);
+        append_triangle(triangles, face_ids, vertices, v00, v01, v11,
+                        face_id_value);
+        return;
+    }
+    append_triangle(triangles, face_ids, vertices, v00, v10, v11,
+                    face_id_value);
+    append_triangle(triangles, face_ids, vertices, v00, v11, v01,
+                    face_id_value);
+}
+
 }  // namespace
 
 double lerp(double start, double end, double t) noexcept {
@@ -191,12 +210,13 @@ int solve_paraboloid_row_segments(double max_radius, double height,
 
 DirSampler make_linear_dir_sampler(std::span<const double> cuts) {
     std::vector<double> local_cuts(cuts.begin(), cuts.end());
-    return [local_cuts = std::move(local_cuts)](std::size_t cell_index,
+    return [local_cuts = std::move(local_cuts)](std::size_t face_pair_index,
                                                 int step, int step_count) {
         const double t = step_count > 0 ? static_cast<double>(step) /
                                               static_cast<double>(step_count)
                                         : 0.0;
-        return lerp(local_cuts[cell_index], local_cuts[cell_index + 1U], t);
+        return lerp(local_cuts[face_pair_index],
+                    local_cuts[face_pair_index + 1U], t);
     };
 }
 
@@ -204,11 +224,11 @@ TriMeshD build_mesh_from_plan(const ThermalMesh& thermal_mesh,
                               const SamplingPlan& plan) {
     const auto dir1_cuts = thermal_mesh.get_dir1_mesh();
     const auto dir2_cuts = thermal_mesh.get_dir2_mesh();
-    const std::size_t num_dir1_cells = dir1_cuts.size() - 1U;
-    const std::size_t num_dir2_cells = dir2_cuts.size() - 1U;
+    const std::size_t num_dir1_face_pairs = dir1_cuts.size() - 1U;
+    const std::size_t num_dir2_face_pairs = dir2_cuts.size() - 1U;
 
-    if (plan.dir1_segments.size() != num_dir1_cells ||
-        plan.dir2_segments.size() != num_dir2_cells) {
+    if (plan.dir1_segments.size() != num_dir1_face_pairs ||
+        plan.dir2_segments.size() != num_dir2_face_pairs) {
         throw std::invalid_argument("Sampling plan does not match ThermalMesh");
     }
 
@@ -218,28 +238,30 @@ TriMeshD build_mesh_from_plan(const ThermalMesh& thermal_mesh,
     std::vector<std::array<Eigen::Index, 3>> triangles;
     std::vector<std::uint64_t> face_ids;
 
-    // Cells are numbered with direction 1 varying fastest, matching the face
-    // order STEP-TAS gives a meshed surface. The loops are nested to follow
-    // that, so face ids come out ascending.
-    for (std::size_t dir2_idx = 0; dir2_idx < num_dir2_cells; ++dir2_idx) {
+    // Face pairs are numbered with direction 1 varying fastest, matching the
+    // face order STEP-TAS gives a meshed surface. The loops are nested to
+    // follow that, so face ids come out ascending.
+    for (std::size_t dir2_idx = 0; dir2_idx < num_dir2_face_pairs; ++dir2_idx) {
         const int dir2_segments = std::max(plan.dir2_segments[dir2_idx], 1);
-        for (std::size_t dir1_idx = 0; dir1_idx < num_dir1_cells; ++dir1_idx) {
+        for (std::size_t dir1_idx = 0; dir1_idx < num_dir1_face_pairs;
+             ++dir1_idx) {
             const int dir1_segments = std::max(plan.dir1_segments[dir1_idx], 1);
             // Even-numbered local face id = side 1 (front). Side parity is an
             // internal convention; node assignment happens later.
             const std::size_t linear_index =
-                (dir2_idx * num_dir1_cells) + dir1_idx;
+                (dir2_idx * num_dir1_face_pairs) + dir1_idx;
             const auto face_id_value =
                 2U * static_cast<std::uint64_t>(linear_index);
 
-            std::vector<Eigen::Index> cell_vertices(static_cast<std::size_t>(
-                (dir1_segments + 1) * (dir2_segments + 1)));
+            std::vector<Eigen::Index> face_pair_vertices(
+                static_cast<std::size_t>((dir1_segments + 1) *
+                                         (dir2_segments + 1)));
 
-            const auto cell_vertex_index = [dir2_segments](int local_dir1,
-                                                           int local_dir2) {
-                return static_cast<std::size_t>(
-                    (local_dir1 * (dir2_segments + 1)) + local_dir2);
-            };
+            const auto face_pair_vertex_index =
+                [dir2_segments](int local_dir1, int local_dir2) {
+                    return static_cast<std::size_t>(
+                        (local_dir1 * (dir2_segments + 1)) + local_dir2);
+                };
 
             for (int local_dir1 = 0; local_dir1 <= dir1_segments;
                  ++local_dir1) {
@@ -249,7 +271,8 @@ TriMeshD build_mesh_from_plan(const ThermalMesh& thermal_mesh,
                      ++local_dir2) {
                     const double dir2 =
                         plan.dir2_sample(dir2_idx, local_dir2, dir2_segments);
-                    cell_vertices[cell_vertex_index(local_dir1, local_dir2)] =
+                    face_pair_vertices[face_pair_vertex_index(local_dir1,
+                                                              local_dir2)] =
                         append_vertex(vertices, vertex_lookup,
                                       plan.point_at(dir1, dir2));
                 }
@@ -258,25 +281,32 @@ TriMeshD build_mesh_from_plan(const ThermalMesh& thermal_mesh,
             for (int local_dir1 = 0; local_dir1 < dir1_segments; ++local_dir1) {
                 for (int local_dir2 = 0; local_dir2 < dir2_segments;
                      ++local_dir2) {
-                    const Eigen::Index v00 = cell_vertices[cell_vertex_index(
-                        local_dir1, local_dir2)];
-                    const Eigen::Index v10 = cell_vertices[cell_vertex_index(
-                        local_dir1 + 1, local_dir2)];
-                    const Eigen::Index v11 = cell_vertices[cell_vertex_index(
-                        local_dir1 + 1, local_dir2 + 1)];
-                    const Eigen::Index v01 = cell_vertices[cell_vertex_index(
-                        local_dir1, local_dir2 + 1)];
+                    const Eigen::Index v00 =
+                        face_pair_vertices[face_pair_vertex_index(local_dir1,
+                                                                  local_dir2)];
+                    const Eigen::Index v10 =
+                        face_pair_vertices[face_pair_vertex_index(
+                            local_dir1 + 1, local_dir2)];
+                    const Eigen::Index v11 =
+                        face_pair_vertices[face_pair_vertex_index(
+                            local_dir1 + 1, local_dir2 + 1)];
+                    const Eigen::Index v01 =
+                        face_pair_vertices[face_pair_vertex_index(
+                            local_dir1, local_dir2 + 1)];
 
-                    append_triangle(triangles, face_ids, vertices, v00, v10,
-                                    v11, face_id_value);
-                    append_triangle(triangles, face_ids, vertices, v00, v11,
-                                    v01, face_id_value);
+                    append_grid_quad(triangles, face_ids, vertices, v00, v10,
+                                     v11, v01, face_id_value,
+                                     plan.reverse_winding);
                 }
             }
         }
     }
 
     TriMeshD mesh;
+    // Every subdivision owns a face pair, whether or not it produced
+    // triangles.
+    mesh.num_faces = static_cast<pycanha::MeshIndex>(2U * num_dir1_face_pairs *
+                                                     num_dir2_face_pairs);
     mesh.vertices.resize(static_cast<Eigen::Index>(vertices.size()), 3);
     for (Eigen::Index vertex_idx = 0;
          std::cmp_less(vertex_idx, vertices.size()); ++vertex_idx) {
@@ -299,13 +329,6 @@ TriMeshD build_mesh_from_plan(const ThermalMesh& thermal_mesh,
     }
 
     return mesh;
-}
-
-Point3D triangle_strip_point(const Triangle& triangle, double dir1,
-                             double dir2) {
-    const Vector3D edge_1 = triangle.p2() - triangle.p1();
-    const Vector3D edge_2 = triangle.p3() - triangle.p1();
-    return triangle.p1() + dir1 * ((1.0 - dir2) * edge_1 + dir2 * edge_2);
 }
 
 }  // namespace pycanha::gmm::mesh::detail

@@ -90,7 +90,7 @@ void RadiativeScene::accumulate_solar(const SolarState& /*sun*/,
 void RadiativeScene::update_materials(const MaterialTable& /*materials*/) {
     throw_unavailable();
 }
-std::uint32_t RadiativeScene::num_face_slots() const noexcept { return 0; }
+std::uint32_t RadiativeScene::num_faces() const noexcept { return 0; }
 const MaterialTable& RadiativeScene::materials() const noexcept {
     static const MaterialTable none;
     return none;

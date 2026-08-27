@@ -57,8 +57,8 @@ enum class ActiveSide : std::uint8_t {
  *
  * Validation is enforced on every setter: an invalid state throws
  * std::invalid_argument (same contract as the legacy implementation). A
- * ThermalMesh shared between two GeometryItems yields the SAME per-cell node
- * number on both (the node fields are inputs, not per-item state).
+ * ThermalMesh shared between two GeometryItems yields the SAME per-face-pair
+ * node number on both (the node fields are inputs, not per-item state).
  */
 class ThermalMesh {
   public:
@@ -155,7 +155,7 @@ class ThermalMesh {
     }
 
     // --- Per-side tmm-node assignment ---
-    // Cell index k for cell (i in dir1, j in dir2): k = i + j*(n1-1), i.e.
+    // Index k of the face pair (i in dir1, j in dir2): k = i + j*(n1-1), i.e.
     // direction 1 varies fastest. That is the order STEP-TAS lists a meshed
     // surface's faces in, so k is also the face's index in an exchanged model.
     //   node_side1(k) = node1_start + k * node1_step
@@ -181,9 +181,9 @@ class ThermalMesh {
     void set_node2_start(std::int32_t value) noexcept { _node2_start = value; }
     void set_node2_step(std::int32_t value) noexcept { _node2_step = value; }
 
-    /// Node number for cell (i, j) on @p side (1 or 2).
+    /// Node number for face pair (i, j) on @p side (1 or 2).
     /// Throws std::invalid_argument if side is not 1/2 or if (i, j) is outside
-    /// the cell grid ((dir1-1) x (dir2-1)).
+    /// the face-pair grid ((dir1-1) x (dir2-1)).
     [[nodiscard]] NodeNum node_of(MeshIndex i, MeshIndex j,
                                   unsigned side) const;
 

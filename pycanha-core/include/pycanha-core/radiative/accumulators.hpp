@@ -21,9 +21,9 @@ class SolarAccumImpl;
 // bit-deterministic for a given seed regardless of dispatch shape.
 class VfAccumulator {
   public:
-    // Dense allocates the full num_slots x num_slots buffer up front (the
+    // Dense allocates the full num_num_faces x num_faces buffer up front (the
     // small-model fast path); Tiled bounds GPU memory to tile_rows x
-    // num_slots and streams row blocks into host-side sparse storage. Both
+    // num_faces and streams row blocks into host-side sparse storage. Both
     // produce bit-identical results for the same seed.
     explicit VfAccumulator(const RadiativeScene& scene,
                            AccumConfig config = {});
@@ -73,7 +73,7 @@ class ExchangeAccumulator {
     std::unique_ptr<detail::ExchangeAccumImpl> _impl;
 };
 
-// Solar-absorption accumulator: per-face-slot direct/total energy vectors
+// Solar-absorption accumulator: per-face direct/total energy vectors
 // (the solar kernel is O(Nf); there is no matrix and no layout distinction).
 class SolarAccumulator {
   public:

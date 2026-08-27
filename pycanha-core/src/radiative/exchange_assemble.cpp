@@ -34,7 +34,7 @@ namespace pycanha::radiative::detail {
 
 namespace {
 
-// Per-slot precomputation, hoisted out of the pair loop so the inner loop
+// Per-face precomputation, hoisted out of the pair loop so the inner loop
 // only ever multiplies.
 struct SlotScales {
     // A_i eps_i / N_i: turns a de-scaled cell energy straight into the
@@ -57,18 +57,18 @@ struct SlotScales {
 [[nodiscard]] SlotScales slot_scales(
     std::span<const double> areas, std::span<const double> emissivity,
     std::span<const std::uint64_t> rays_per_row) {
-    const std::size_t slots = areas.size();
+    const std::size_t faces = areas.size();
     SlotScales scales;
-    scales.emission.assign(slots, 0.0);
-    scales.ratio.assign(slots, 0.0);
-    scales.emissive_area.assign(slots, 0.0);
+    scales.emission.assign(faces, 0.0);
+    scales.ratio.assign(faces, 0.0);
+    scales.emissive_area.assign(faces, 0.0);
     scales.emissivity.assign(emissivity.begin(), emissivity.end());
-    for (std::size_t slot = 0; slot < slots; ++slot) {
-        scales.emissive_area[slot] = areas[slot] * emissivity[slot];
-        if (rays_per_row[slot] > 0) {
-            const auto rays = static_cast<double>(rays_per_row[slot]);
-            scales.emission[slot] = scales.emissive_area[slot] / rays;
-            scales.ratio[slot] = areas[slot] / rays;
+    for (std::size_t face = 0; face < faces; ++face) {
+        scales.emissive_area[face] = areas[face] * emissivity[face];
+        if (rays_per_row[face] > 0) {
+            const auto rays = static_cast<double>(rays_per_row[face]);
+            scales.emission[face] = scales.emissive_area[face] / rays;
+            scales.ratio[face] = areas[face] / rays;
         }
     }
     return scales;
@@ -85,7 +85,7 @@ struct RowStats {
 // --- pass A: statistics, lost energy, optional raw matrix -----------------
 
 struct ScanInputs {
-    std::size_t slots = 0;
+    std::size_t faces = 0;
     std::size_t lost_column = 0;
     std::span<const std::uint64_t> rays_per_row;
     double inv_scale = 0.0;
@@ -101,7 +101,7 @@ struct ScanOutputs {
 template <typename Cells>
 void scan_rows(const Cells& cells, const ScanInputs& in, const ScanOutputs& out,
                unsigned threads) {
-    parallel_for_index(in.slots, threads, [&](std::size_t row) {
+    parallel_for_index(in.faces, threads, [&](std::size_t row) {
         const std::uint64_t rays = in.rays_per_row[row];
         if (rays == 0) {
             return;
@@ -123,7 +123,7 @@ void scan_rows(const Cells& cells, const ScanInputs& in, const ScanOutputs& out,
             if (column == in.lost_column) {
                 stats.lost_energy += energy;
             }
-            if (column < in.slots) {
+            if (column < in.faces) {
                 // Conservative per-entry standard error: a ray's deposit
                 // into one cell is in [0, 1], so the Bernoulli bound
                 // dominates the true variance.
@@ -286,7 +286,7 @@ class ExchangeEmit {
 // to drop earlier. Buckets are closure accounting and always survive.
 void prune_rows(std::span<RowEntries> rows,
                 std::span<const double> emissive_area, double threshold,
-                std::size_t slots, unsigned threads) {
+                std::size_t faces, unsigned threads) {
     parallel_for_index(rows.size(), threads, [&](std::size_t row) {
         RowEntries kept;
         const RowEntries& entries = rows[row];
@@ -296,7 +296,7 @@ void prune_rows(std::span<RowEntries> rows,
             if (value == 0.0) {
                 continue;
             }
-            if (column < slots) {
+            if (column < faces) {
                 const double smaller =
                     std::min(emissive_area[row], emissive_area[column]);
                 if (smaller > 0.0 &&
@@ -337,15 +337,15 @@ void reduce_stats(std::span<const RowStats> rows,
 }  // namespace
 
 std::vector<double> band_emissivity(const MaterialTable& materials, Band band) {
-    const auto slots = static_cast<std::size_t>(materials.num_face_slots());
+    const auto faces = static_cast<std::size_t>(materials.num_faces());
     // No material assigned means blackbody, matching the kernel's fallback.
-    std::vector<double> emissivity(slots, 1.0);
+    std::vector<double> emissivity(faces, 1.0);
     const Eigen::Index column = band == Band::Solar ? 3 : 0;
-    for (std::size_t slot = 0; slot < slots; ++slot) {
+    for (std::size_t face = 0; face < faces; ++face) {
         const int material =
-            materials.face_material(static_cast<Eigen::Index>(slot));
+            materials.face_material(static_cast<Eigen::Index>(face));
         if (material >= 0) {
-            emissivity[slot] = materials.properties(material, column);
+            emissivity[face] = materials.properties(material, column);
         }
     }
     return emissivity;
@@ -354,26 +354,26 @@ std::vector<double> band_emissivity(const MaterialTable& materials, Band band) {
 ExchangeResult assemble_exchange(const ExchangeInputs& in,
                                  const AccumConfig& config,
                                  const AssemblyTuning& tuning) {
-    const std::size_t slots = in.rays_per_row.size();
-    if (in.areas.size() != slots || in.emissivity.size() != slots) {
+    const std::size_t faces = in.rays_per_row.size();
+    if (in.areas.size() != faces || in.emissivity.size() != faces) {
         throw std::invalid_argument(
             "pycanha::radiative: areas and emissivity must have one entry per "
-            "face slot");
+            "face");
     }
-    const std::size_t cols = matrix_columns(slots);
+    const std::size_t cols = matrix_columns(faces);
     const SlotScales scales =
         slot_scales(in.areas, in.emissivity, in.rays_per_row);
     const Weighting weighting(config.triangulation, tuning);
     const bool keep_full = config.triangulation.keep_full_matrix;
 
-    std::vector<RowStats> row_stats(slots);
-    std::vector<RowEntries> rows(slots);
-    std::vector<RowEntries> full_rows(keep_full ? slots : 0);
-    std::vector<double> residual(slots, 0.0);
+    std::vector<RowStats> row_stats(faces);
+    std::vector<RowEntries> rows(faces);
+    std::vector<RowEntries> full_rows(keep_full ? faces : 0);
+    std::vector<double> residual(faces, 0.0);
 
     const ScanInputs scan_in{
-        .slots = slots,
-        .lost_column = slots + static_cast<std::size_t>(lost_column_offset),
+        .faces = faces,
+        .lost_column = faces + static_cast<std::size_t>(lost_column_offset),
         .rays_per_row = in.rays_per_row,
         .inv_scale = in.fp_scale > 0.0 ? 1.0 / in.fp_scale : 0.0,
         .threshold = config.sparse_threshold,
@@ -382,22 +382,22 @@ ExchangeResult assemble_exchange(const ExchangeInputs& in,
     const ExchangeEmit emit(scales, weighting, scan_in.inv_scale,
                             config.sparse_threshold, scan_in.lost_column, rows,
                             residual);
-    const unsigned scan_threads = worker_count(tuning, slots, slots * cols);
+    const unsigned scan_threads = worker_count(tuning, faces, faces * cols);
 
     // Nothing was ever traced: no scale was chosen, so there is nothing to
     // divide by and nothing to report.
     if (in.fp_scale > 0.0) {
         if (const auto* mapped =
                 std::get_if<std::span<const std::uint64_t>>(&in.cells)) {
-            const DenseCells<std::uint64_t> dense = copy_dense(*mapped, slots);
+            const DenseCells<std::uint64_t> dense = copy_dense(*mapped, faces);
             scan_rows(dense, scan_in, scan_out, scan_threads);
-            walk_dense_pairs(dense, slots, tuning, emit);
+            walk_dense_pairs(dense, faces, tuning, emit);
         } else {
             const SparseCells sparse =
                 build_sparse(std::get<std::span<const HostCountRow>>(in.cells),
-                             slots, scan_threads);
+                             faces, scan_threads);
             scan_rows(sparse, scan_in, scan_out, scan_threads);
-            walk_sparse_pairs(sparse, slots, tuning, emit);
+            walk_sparse_pairs(sparse, faces, tuning, emit);
         }
         if (config.triangulation.mode ==
             TriangulationMode::ConstrainedLeastSquares) {
@@ -405,15 +405,15 @@ ExchangeResult assemble_exchange(const ExchangeInputs& in,
             // emitted, A_i eps_i, across all columns. A row that emitted
             // nothing — or that emits nothing because its emissivity is zero
             // — carries no constraint, which is what a zero target says.
-            std::vector<double> targets(slots, 0.0);
-            for (std::size_t slot = 0; slot < slots; ++slot) {
-                if (in.rays_per_row[slot] > 0) {
-                    targets[slot] = scales.emissive_area[slot];
+            std::vector<double> targets(faces, 0.0);
+            for (std::size_t face = 0; face < faces; ++face) {
+                if (in.rays_per_row[face] > 0) {
+                    targets[face] = scales.emissive_area[face];
                 }
             }
-            project_onto_closure(rows, targets, slots);
+            project_onto_closure(rows, targets, faces);
             prune_rows(rows, scales.emissive_area, config.sparse_threshold,
-                       slots, scan_threads);
+                       faces, scan_threads);
         }
     }
 
@@ -437,8 +437,8 @@ std::uint64_t exchange_conservation_error(
     if (fp_scale <= 0.0) {
         return 0;
     }
-    const std::size_t slots = rays_per_row.size();
-    const std::size_t cols = matrix_columns(slots);
+    const std::size_t faces = rays_per_row.size();
+    const std::size_t cols = matrix_columns(faces);
     const auto scale = static_cast<std::uint64_t>(fp_scale);
     // Everything wraps mod 2^64 — the identity the kernel maintains. The
     // virtual columns are part of the balance, so the full row accounts for
@@ -451,10 +451,10 @@ std::uint64_t exchange_conservation_error(
     std::uint64_t max_error = 0;
     if (const auto* mapped =
             std::get_if<std::span<const std::uint64_t>>(&cells)) {
-        if (mapped->size() != slots * cols) {
+        if (mapped->size() != faces * cols) {
             throw_dense_size_mismatch();
         }
-        for (std::size_t row = 0; row < slots; ++row) {
+        for (std::size_t row = 0; row < faces; ++row) {
             if (rays_per_row[row] == 0) {
                 continue;
             }
@@ -467,12 +467,12 @@ std::uint64_t exchange_conservation_error(
         return max_error;
     }
     const auto host_rows = std::get<std::span<const HostCountRow>>(cells);
-    if (host_rows.size() != slots) {
+    if (host_rows.size() != faces) {
         throw std::invalid_argument(
             "pycanha::radiative: the tiled cell rows do not match the "
-            "face-slot count");
+            "face count");
     }
-    for (std::size_t row = 0; row < slots; ++row) {
+    for (std::size_t row = 0; row < faces; ++row) {
         if (rays_per_row[row] == 0) {
             continue;
         }

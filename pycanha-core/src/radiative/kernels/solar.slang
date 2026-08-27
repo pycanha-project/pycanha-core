@@ -1,4 +1,4 @@
-// Solar kernel: direct + reflected absorbed solar energy per face slot.
+// Solar kernel: direct + reflected absorbed solar energy per face.
 // The source is a parallel sun along sun_direction() (unit, sun -> scene); the
 // host sets FLAG_SOLAR_BAND so every material lookup uses the solar triplet.
 // Each thread samples one point on its face, casts a shadow ray toward the
@@ -22,9 +22,9 @@ import common;
 
 // FpBuffer is a u64 cell on SPIR-V and a lo/hi u32 pair on Metal (same bytes);
 // deposits go through fp_add, never a raw InterlockedAdd here.
-[[vk::binding(10, 0)]] FpBuffer direct_acc;
-[[vk::binding(11, 0)]] FpBuffer total_acc;
-[[vk::binding(12, 0)]] StructuredBuffer<float> face_areas;
+[[vk::binding(9, 0)]] FpBuffer direct_acc;
+[[vk::binding(10, 0)]] FpBuffer total_acc;
+[[vk::binding(11, 0)]] StructuredBuffer<float> face_areas;
 
 // Post-interaction survival: Russian roulette below the threshold (1 draw
 // when triggered). Returns false when the ray dies.
@@ -66,14 +66,14 @@ void csMain(uint3 gid: SV_DispatchThreadID) {
     if (ray_local >= pc.rays_this_chunk || e >= pc.num_emitters) {
         return;
     }
-    uint face_slot = emitters[e];
+    uint face = emitters[e];
     uint ray_index = pc.ray_index_offset + ray_local;
-    Rng rng = rng_init(face_slot, ray_index, pc.batch_seed);
+    Rng rng = rng_init(face, ray_index, pc.batch_seed);
     // The push constant stores the direction as three scalars (identical
     // layout on both backends); rebuild the vector once per thread.
     float3 sun_dir = sun_direction();
 
-    SurfaceSample sample = sample_face_point(face_slot, rng);
+    SurfaceSample sample = sample_face_point(face, rng);
     float cos_theta = dot(sample.normal, -sun_dir);
     if (cos_theta <= 0.0) {
         return;  // this side faces away from the sun
@@ -87,12 +87,12 @@ void csMain(uint3 gid: SV_DispatchThreadID) {
     float a;
     float s;
     float t;
-    band_properties(face_slot, a, s, t);
+    band_properties(face, a, s, t);
     float d = max(1.0 - a - s - t, 0.0);
 
-    float e0 = cos_theta * face_areas[face_slot];
-    fp_add(direct_acc, face_slot, e0 * a);
-    fp_add(total_acc, face_slot, e0 * a);
+    float e0 = cos_theta * face_areas[face];
+    fp_add(direct_acc, face, e0 * a);
+    fp_add(total_acc, face, e0 * a);
 
     // Follow the non-absorbed part: the incoming light travels along the sun
     // direction when it interacts with the surface.
@@ -108,16 +108,18 @@ void csMain(uint3 gid: SV_DispatchThreadID) {
         if (hit.miss) {
             return;  // escaped to space
         }
-        if ((face_flags[hit.slot] & FACE_FLAG_PLANET) != 0u) {
+        // One load per bounce: both tests and the optical lookup share it.
+        uint record = face_record[hit.face];
+        if ((record & FACE_FLAG_PLANET) != 0u) {
             return;  // the planet absorbs everything, nothing to score
         }
-        if ((face_flags[hit.slot] & FACE_FLAG_ACTIVE) == 0u) {
+        if ((record & FACE_FLAG_ACTIVE) == 0u) {
             return;
         }
-        band_properties(hit.slot, a, s, t);
+        band_properties_of(record, a, s, t);
         d = max(1.0 - a - s - t, 0.0);
 
-        fp_add(total_acc, hit.slot, energy * a);
+        fp_add(total_acc, hit.face, energy * a);
         energy *= (1.0 - a);
         if (!roulette(energy, rng)) {
             return;

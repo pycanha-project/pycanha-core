@@ -23,7 +23,7 @@ namespace {
     return matrix;
 }
 
-// 6 face slots mapped to nodes {5, 5, 7, NO_NODE, 7, 9}. One stored entry
+// 6 faces mapped to nodes {5, 5, 7, NO_NODE, 7, 9}. One stored entry
 // per row for hand-checkable sums.
 constexpr std::array<NodeNum, 6> node_numbers = {5, 5, 7, NO_NODE, 7, 9};
 
@@ -93,7 +93,7 @@ TEST_CASE("radiative aggregate: extensive entries sum into the upper triangle",
 
 TEST_CASE("radiative aggregate: shuffled node numbers stay upper-triangular",
           "[radiative]") {
-    // Node numbers that run OPPOSITE to the face-slot order, so every face
+    // Node numbers that run OPPOSITE to the face order, so every face
     // pair i < j maps to a node pair m > n. A fixture whose node numbering
     // happens to follow face numbering would pass even without the
     // canonicalisation this checks.
@@ -191,7 +191,7 @@ TEST_CASE("radiative aggregate: flux to watts per node", "[radiative]") {
         rad::aggregate_flux(flux, node_numbers, areas);
 
     REQUIRE(watts.size() == 3);
-    // n5: 10*1 + 20*2; n7: 30*3 + 50*5; n9: 60*6. Slot 3 (NO_NODE) dropped.
+    // n5: 10*1 + 20*2; n7: 30*3 + 50*5; n9: 60*6. Face 3 (NO_NODE) dropped.
     REQUIRE(watts(0) == Catch::Approx(50.0));
     REQUIRE(watts(1) == Catch::Approx(340.0));
     REQUIRE(watts(2) == Catch::Approx(360.0));

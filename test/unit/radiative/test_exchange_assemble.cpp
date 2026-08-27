@@ -39,14 +39,14 @@ constexpr double fp_scale = 1024.0;
 // Dense/Tiled comparison meaningful.
 class Cells {
   public:
-    explicit Cells(std::size_t slots)
-        : _slots(slots),
-          _cols(slots + static_cast<std::size_t>(rad::num_virtual_columns)),
-          _areas(slots, 1.0),
-          _emissivity(slots, 1.0),
-          _rays(slots, 0),
-          _cells(slots * _cols, 0),
-          _rows(slots) {}
+    explicit Cells(std::size_t faces)
+        : _slots(faces),
+          _cols(faces + static_cast<std::size_t>(rad::num_virtual_columns)),
+          _areas(faces, 1.0),
+          _emissivity(faces, 1.0),
+          _rays(faces, 0),
+          _cells(faces * _cols, 0),
+          _rows(faces) {}
 
     void set(std::size_t row, std::size_t column, std::uint64_t cell) {
         _cells[(row * _cols) + column] = cell;
@@ -66,24 +66,24 @@ class Cells {
         _rows[row][static_cast<std::uint32_t>(column)] = cell;
     }
 
-    void set_slot(std::size_t slot, double area, double emissivity,
+    void set_slot(std::size_t face, double area, double emissivity,
                   std::uint64_t rays) {
-        _areas[slot] = area;
-        _emissivity[slot] = emissivity;
-        _rays[slot] = rays;
+        _areas[face] = area;
+        _emissivity[face] = emissivity;
+        _rays[face] = rays;
     }
 
-    [[nodiscard]] std::size_t slots() const { return _slots; }
+    [[nodiscard]] std::size_t faces() const { return _slots; }
     [[nodiscard]] std::size_t space_column() const { return _slots; }
     [[nodiscard]] std::size_t lost_column() const {
         return _slots + static_cast<std::size_t>(rad::lost_column_offset);
     }
-    [[nodiscard]] double area(std::size_t slot) const { return _areas[slot]; }
-    [[nodiscard]] double emissivity(std::size_t slot) const {
-        return _emissivity[slot];
+    [[nodiscard]] double area(std::size_t face) const { return _areas[face]; }
+    [[nodiscard]] double emissivity(std::size_t face) const {
+        return _emissivity[face];
     }
-    [[nodiscard]] std::uint64_t rays(std::size_t slot) const {
-        return _rays[slot];
+    [[nodiscard]] std::uint64_t rays(std::size_t face) const {
+        return _rays[face];
     }
 
     [[nodiscard]] rad::ExchangeResult dense(
@@ -176,8 +176,8 @@ class Cells {
     return config;
 }
 
-// Four slots whose A/N ratios put the weight at exactly 3/4 for the pair
-// (0, 1) and exactly 1/2 for the pair (0, 2), plus slot 3 with ZERO
+// Four faces whose A/N ratios put the weight at exactly 3/4 for the pair
+// (0, 1) and exactly 1/2 for the pair (0, 2), plus face 3 with ZERO
 // emissivity — a perfect reflector, which absorbs nothing (so no column
 // deposits into it) while still emitting rays of its own. Every row balances
 // exactly: whatever the real columns did not take goes to the space bucket,
@@ -206,17 +206,17 @@ class Cells {
     return cells;
 }
 
-// A wider scene for the invariance sweeps: enough slots to span several
+// A wider scene for the invariance sweeps: enough faces to span several
 // tiles, ray counts and areas that differ between rows so the two directions
-// of a pair really are weighted differently, and one slot that never emits.
-[[nodiscard]] Cells make_wide_scene(std::size_t slots = 40) {
-    Cells cells(slots);
+// of a pair really are weighted differently, and one face that never emits.
+[[nodiscard]] Cells make_wide_scene(std::size_t faces = 40) {
+    Cells cells(faces);
     std::uint32_t state = 20260808U;
     const auto next = [&state]() {
         state = (state * 1664525U) + 1013904223U;
         return (state >> 16U) % 64U;
     };
-    for (std::size_t row = 0; row < slots; ++row) {
+    for (std::size_t row = 0; row < faces; ++row) {
         const std::uint64_t rays =
             row == 7 ? 0 : (std::uint64_t{1} << (10U + (row % 3)));
         cells.set_slot(row, 0.5 + (0.25 * static_cast<double>(row % 5)),
@@ -225,7 +225,7 @@ class Cells {
             continue;
         }
         std::uint64_t scored = 0;
-        for (std::size_t column = 0; column < slots; ++column) {
+        for (std::size_t column = 0; column < faces; ++column) {
             // A quarter of a deposit unit per count, so that even a row
             // where every column scores the maximum stays well inside the
             // energy its rays carried and the space bucket cannot wrap.
@@ -247,9 +247,9 @@ class Cells {
     return std::vector<double>(3, 1.0);
 }
 
-// Assembles a three-slot scene from whatever is handed in, so the validation
+// Assembles a three-face scene from whatever is handed in, so the validation
 // tests can feed it deliberately inconsistent shapes.
-rad::ExchangeResult assemble_three_slots(detail::ExchangeCellSource cells,
+rad::ExchangeResult assemble_three_faces(detail::ExchangeCellSource cells,
                                          std::span<const double> areas) {
     const std::vector<double> emissivity = three_ones();
     const std::vector<std::uint64_t> rays(3, 1024);
@@ -271,8 +271,8 @@ TEST_CASE("radiative exchange assemble: only the upper triangle is stored",
     const rad::ExchangeResult result = cells.dense(ray_density());
 
     REQUIRE(result.band == rad::Band::IR);
-    REQUIRE(result.factors.rows() == static_cast<Eigen::Index>(cells.slots()));
-    REQUIRE(result.factors.cols() == static_cast<Eigen::Index>(cells.slots()) +
+    REQUIRE(result.factors.rows() == static_cast<Eigen::Index>(cells.faces()));
+    REQUIRE(result.factors.cols() == static_cast<Eigen::Index>(cells.faces()) +
                                          rad::num_virtual_columns);
     for (Eigen::Index row = 0; row < result.factors.rows(); ++row) {
         for (rad::SparseMatrix::InnerIterator entry(result.factors, row); entry;
@@ -327,9 +327,9 @@ TEST_CASE("radiative exchange assemble: reciprocity is structural",
             if (entry.col() >= result.factors.rows()) {
                 continue;  // bucket column, no partner
             }
-            const auto slot = static_cast<std::size_t>(row);
+            const auto face = static_cast<std::size_t>(row);
             const auto column = static_cast<std::size_t>(entry.col());
-            const double emissive_i = cells.area(slot) * cells.emissivity(slot);
+            const double emissive_i = cells.area(face) * cells.emissivity(face);
             const double emissive_j =
                 cells.area(column) * cells.emissivity(column);
             const double forward = entry.value() / emissive_i;
@@ -342,14 +342,14 @@ TEST_CASE("radiative exchange assemble: reciprocity is structural",
     REQUIRE(checked > 0);
 }
 
-TEST_CASE("radiative exchange assemble: a zero-emissivity slot stores nothing",
+TEST_CASE("radiative exchange assemble: a zero-emissivity face stores nothing",
           "[radiative][exchange][assemble]") {
     rad::AccumConfig config = ray_density();
     config.triangulation.keep_full_matrix = true;
     const Cells cells = make_scene();
     const rad::ExchangeResult result = cells.dense(config);
 
-    // Slot 3 absorbs nothing and emits nothing, so every coupling it takes
+    // Face 3 absorbs nothing and emits nothing, so every coupling it takes
     // part in carries exactly zero heat — including its own row, whose rays
     // were traced but whose emissive power is zero. Nothing is stored, and
     // that is the physics rather than a loss.
@@ -404,8 +404,8 @@ TEST_CASE("radiative exchange assemble: buckets pass through untriangulated",
     const rad::ExchangeResult combined = cells.dense(ray_density());
     const auto space = static_cast<Eigen::Index>(cells.space_column());
 
-    for (std::size_t slot = 0; slot < cells.slots(); ++slot) {
-        const auto row = static_cast<Eigen::Index>(slot);
+    for (std::size_t face = 0; face < cells.faces(); ++face) {
+        const auto row = static_cast<Eigen::Index>(face);
         REQUIRE(value_at(raw.factors, row, space) ==
                 value_at(combined.factors, row, space));
     }
@@ -577,22 +577,22 @@ TEST_CASE("radiative exchange assemble: a mismatched cell buffer is rejected",
     const std::vector<std::uint64_t> too_small(3 * 3, 0);
     const std::vector<detail::HostCountRow> too_few_rows(2);
     REQUIRE_THROWS_AS(
-        assemble_three_slots(std::span<const std::uint64_t>(too_small),
+        assemble_three_faces(std::span<const std::uint64_t>(too_small),
                              three_ones()),
         std::invalid_argument);
     REQUIRE_THROWS_AS(
-        assemble_three_slots(
+        assemble_three_faces(
             std::span<const detail::HostCountRow>(too_few_rows), three_ones()),
         std::invalid_argument);
 }
 
 TEST_CASE(
-    "radiative exchange assemble: mismatched per-slot inputs are rejected",
+    "radiative exchange assemble: mismatched per-face inputs are rejected",
     "[radiative][exchange][assemble]") {
     const std::vector<std::uint64_t> cells(
         3 * (3 + static_cast<std::size_t>(rad::num_virtual_columns)), 0);
     const std::vector<double> too_few_areas(2, 1.0);
-    REQUIRE_THROWS_AS(assemble_three_slots(
+    REQUIRE_THROWS_AS(assemble_three_faces(
                           std::span<const std::uint64_t>(cells), too_few_areas),
                       std::invalid_argument);
 }
@@ -644,16 +644,16 @@ TEST_CASE("radiative exchange assemble: least squares closes the energy",
     config.triangulation.mode = rad::TriangulationMode::ConstrainedLeastSquares;
     const Cells cells = make_wide_scene();
     const rad::ExchangeResult projected = cells.dense(config);
-    const auto slots = static_cast<Eigen::Index>(cells.slots());
+    const auto faces = static_cast<Eigen::Index>(cells.faces());
 
     // A row's closure target is the energy it actually emitted, A_i eps_i,
     // and the projection restores it exactly across every column the row
     // takes part in — its own entries plus the ones stored above it.
-    for (std::size_t slot = 0; slot < cells.slots(); ++slot) {
-        if (cells.rays(slot) == 0 || !(cells.emissivity(slot) > 0.0)) {
+    for (std::size_t face = 0; face < cells.faces(); ++face) {
+        if (cells.rays(face) == 0 || !(cells.emissivity(face) > 0.0)) {
             continue;  // emitted no energy, so there is nothing to close
         }
-        const auto row = static_cast<Eigen::Index>(slot);
+        const auto row = static_cast<Eigen::Index>(face);
         double total = 0.0;
         for (rad::SparseMatrix::InnerIterator entry(projected.factors, row);
              entry; ++entry) {
@@ -663,13 +663,13 @@ TEST_CASE("radiative exchange assemble: least squares closes the energy",
             for (rad::SparseMatrix::InnerIterator entry(projected.factors,
                                                         above);
                  entry; ++entry) {
-                if (entry.col() == row && row < slots) {
+                if (entry.col() == row && row < faces) {
                     total += entry.value();
                 }
             }
         }
         REQUIRE(total ==
-                Catch::Approx(cells.area(slot) * cells.emissivity(slot))
+                Catch::Approx(cells.area(face) * cells.emissivity(face))
                     .epsilon(1e-9));
     }
 }
@@ -693,7 +693,7 @@ TEST_CASE("radiative exchange assemble: a zero-emissivity row is unconstrained",
           "[radiative][exchange][assemble][closure]") {
     rad::AccumConfig config;
     config.triangulation.mode = rad::TriangulationMode::ConstrainedLeastSquares;
-    // Slot 3 emits rays but has no emissivity, so it transports no energy and
+    // Face 3 emits rays but has no emissivity, so it transports no energy and
     // there is nothing to close. It must not acquire an equation, and it must
     // still store nothing.
     const Cells cells = make_scene();

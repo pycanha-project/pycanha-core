@@ -18,6 +18,7 @@ namespace mesh_ops = pycanha::gmm::mesh::ops;
     mesh.triangles << 0, 1, 2, 0, 2, 3;
     mesh.face_ids.resize(2);
     mesh.face_ids << 0U, 0U;
+    mesh.num_faces = 2U;
     return mesh;
 }
 
@@ -41,19 +42,21 @@ TEST_CASE("TriMeshD mesh ops compute geometry metrics", "[gmm][mesh]") {
     REQUIRE(bbox.max().isApprox(Eigen::Vector3d(1.0, 1.0, 0.0)));
 }
 
-TEST_CASE("TriMeshD mesh ops compute per-face-slot areas", "[gmm][mesh]") {
+TEST_CASE("TriMeshD mesh ops compute per-face areas", "[gmm][mesh]") {
     TriMeshD mesh = make_square_mesh();
 
-    const auto slot_areas = mesh_ops::compute_face_slot_areas(mesh);
+    const auto slot_areas = mesh_ops::compute_face_areas(mesh);
 
-    // One face pair (slots 0/1): both sides share the full pair area.
+    // One face pair (faces 0/1): both sides share the full pair area.
     REQUIRE(slot_areas.size() == 2);
     REQUIRE(slot_areas[0] == Catch::Approx(1.0));
     REQUIRE(slot_areas[1] == Catch::Approx(1.0));
 
-    // A gap slot pair (face id 2 unused after a cut) stays 0.
+    // A gap pair (face id 2 unused after a cut) stays 0. The face count is
+    // declared by the mesh, not inferred from the surviving triangles.
     mesh.face_ids << 0U, 4U;
-    const auto gapped = mesh_ops::compute_face_slot_areas(mesh);
+    mesh.num_faces = 6U;
+    const auto gapped = mesh_ops::compute_face_areas(mesh);
     REQUIRE(gapped.size() == 6);
     REQUIRE(gapped[0] == Catch::Approx(0.5));
     REQUIRE(gapped[1] == Catch::Approx(0.5));

@@ -1,6 +1,5 @@
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
-#include <cstddef>
 #include <memory>
 #include <utility>
 #include <vector>
@@ -16,7 +15,7 @@
 
 namespace {
 
-using pycanha::conduction::CellLink;
+using pycanha::conduction::FacePairLink;
 using pycanha::conduction::intra_primitive_links;
 using pycanha::conduction::through_thickness_conductance;
 using pycanha::conduction::TmmBuildOptions;
@@ -40,13 +39,16 @@ using pycanha::gmm::ThermalMesh;
     return mesh;
 }
 
-[[nodiscard]] double link_value(const std::vector<CellLink>& links,
-                                pycanha::MeshIndex cell_a,
-                                pycanha::MeshIndex cell_b, unsigned side = 1U) {
+[[nodiscard]] double link_value(const std::vector<FacePairLink>& links,
+                                pycanha::MeshIndex face_pair_a,
+                                pycanha::MeshIndex face_pair_b,
+                                unsigned side = 1U) {
     double total = 0.0;
     for (const auto& link : links) {
-        const bool matches = (link.cell_a == cell_a && link.cell_b == cell_b) ||
-                             (link.cell_a == cell_b && link.cell_b == cell_a);
+        const bool matches = (link.face_pair_a == face_pair_a &&
+                              link.face_pair_b == face_pair_b) ||
+                             (link.face_pair_a == face_pair_b &&
+                              link.face_pair_b == face_pair_a);
         if (matches && link.side == side) {
             total += link.conductance;
         }
@@ -54,12 +56,23 @@ using pycanha::gmm::ThermalMesh;
     return total;
 }
 
+// A symmetric trapezoid: the p1-p2 edge is 4 m long, the p4-p3 edge 2 m, and
+// they sit 2 m apart. Its bilinear faces are trapezoids too, so both the
+// shared edge and the reference distances have to come from the patch itself.
+// Every number in the tests below is worked out by hand from
+//   P(u, v) = (4u - 2uv + v,  2v,  0)
+// which is the bilinear map on these four corners.
+[[nodiscard]] Primitive make_trapezoid() {
+    return Quadrilateral({0.0, 0.0, 0.0}, {4.0, 0.0, 0.0}, {3.0, 2.0, 0.0},
+                         {1.0, 2.0, 0.0});
+}
+
 }  // namespace
 
 TEST_CASE("planar links: a split rectangle gives k t L / x",
           "[conduction][links]") {
     // 3 m along direction 1, 2 m along direction 2, cut once in the middle of
-    // direction 1: the two cells are 1.5 m apart and share a 2 m edge.
+    // direction 1: the two face pairs are 1.5 m apart and share a 2 m edge.
     const Primitive rectangle =
         Rectangle({0.0, 0.0, 0.0}, {3.0, 0.0, 0.0}, {0.0, 2.0, 0.0});
     const ThermalMesh mesh = unit_shell({0.0, 0.5, 1.0}, {0.0, 1.0});
@@ -74,7 +87,7 @@ TEST_CASE("planar links: a uniform grid conducts in both directions",
           "[conduction][links]") {
     const Primitive rectangle =
         Rectangle({0.0, 0.0, 0.0}, {4.0, 0.0, 0.0}, {0.0, 3.0, 0.0});
-    // 4 x 3 cells of 1 m x 1 m.
+    // 4 x 3 face pairs of 1 m x 1 m.
     const ThermalMesh mesh = unit_shell({0.0, 0.25, 0.5, 0.75, 1.0},
                                         {0.0, 1.0 / 3.0, 2.0 / 3.0, 1.0});
 
@@ -96,7 +109,8 @@ TEST_CASE("planar links: non-uniform cuts use the reference midpoints",
           "[conduction][links]") {
     const Primitive rectangle =
         Rectangle({0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, {0.0, 1.0, 0.0});
-    // Cells [0, 0.2] and [0.2, 1.0]: references at 0.1 and 0.6, so 0.5 apart.
+    // Face pairs [0, 0.2] and [0.2, 1.0]: references at 0.1 and 0.6, so 0.5
+    // apart.
     const ThermalMesh mesh = unit_shell({0.0, 0.2, 1.0}, {0.0, 1.0});
 
     const auto links =
@@ -104,24 +118,46 @@ TEST_CASE("planar links: non-uniform cuts use the reference midpoints",
     REQUIRE(link_value(links, 0U, 1U) == Catch::Approx(1.0 / 0.5));
 }
 
-TEST_CASE("planar links: a quadrilateral matches its equivalent rectangle",
+TEST_CASE("planar links: a trapezoid conducts across its own shared edges",
           "[conduction][links]") {
-    const Primitive rectangle =
-        Rectangle({0.0, 0.0, 0.0}, {3.0, 0.0, 0.0}, {0.0, 2.0, 0.0});
-    // p3 is pulled sideways; the mesher ignores it, so the links must not move.
-    const Primitive quadrilateral = Quadrilateral(
-        {0.0, 0.0, 0.0}, {3.0, 0.0, 0.0}, {2.2, 2.0, 0.0}, {0.0, 2.0, 0.0});
-    const ThermalMesh mesh = unit_shell({0.0, 0.5, 1.0}, {0.0, 0.5, 1.0});
+    SECTION("split along direction 1") {
+        // The shared edge runs from P(0.5, 0) = (2, 0) to P(0.5, 1) = (2, 2),
+        // so it is 2 m long. The reference points are P(0.25, 0.5) = (1.25, 1)
+        // and P(0.75, 0.5) = (2.75, 1), each 0.75 m from the edge midpoint
+        // (2, 1). With k t = 1 the conductance is 2 / (0.75 + 0.75).
+        const auto links = intra_primitive_links(
+            make_trapezoid(), unit_shell({0.0, 0.5, 1.0}, {0.0, 1.0}),
+            TmmBuildOptions{});
+        REQUIRE(link_value(links, 0U, 1U) == Catch::Approx(2.0 / 1.5));
+    }
+
+    SECTION("split along direction 2") {
+        // The shared edge runs from P(0, 0.5) = (0.5, 1) to P(1, 0.5) =
+        // (3.5, 1): 3 m long, the trapezoid's mid-height width. The reference
+        // points are (2, 0.5) and (2, 1.5), each 0.5 m from the edge midpoint.
+        const auto links = intra_primitive_links(
+            make_trapezoid(), unit_shell({0.0, 1.0}, {0.0, 0.5, 1.0}),
+            TmmBuildOptions{});
+        REQUIRE(link_value(links, 0U, 1U) == Catch::Approx(3.0 / 1.0));
+    }
+}
+
+TEST_CASE("planar links: a trapezoid is not its equivalent rectangle",
+          "[conduction][links]") {
+    // The rule this replaces spanned p2 - p1 and the orthogonal part of
+    // p4 - p1, which for this trapezoid is a 4 m x 2 m rectangle -- a third
+    // more area than the shape has, and a direction-2 conductance to match.
+    const ThermalMesh mesh = unit_shell({0.0, 1.0}, {0.0, 0.5, 1.0});
+    const Primitive equivalent_rectangle =
+        Rectangle({0.0, 0.0, 0.0}, {4.0, 0.0, 0.0}, {0.0, 2.0, 0.0});
 
     const auto rectangle_links =
-        intra_primitive_links(rectangle, mesh, TmmBuildOptions{});
-    const auto quadrilateral_links =
-        intra_primitive_links(quadrilateral, mesh, TmmBuildOptions{});
-    REQUIRE(rectangle_links.size() == quadrilateral_links.size());
-    for (std::size_t index = 0; index < rectangle_links.size(); ++index) {
-        REQUIRE(quadrilateral_links[index].conductance ==
-                Catch::Approx(rectangle_links[index].conductance));
-    }
+        intra_primitive_links(equivalent_rectangle, mesh, TmmBuildOptions{});
+    const auto trapezoid_links =
+        intra_primitive_links(make_trapezoid(), mesh, TmmBuildOptions{});
+
+    REQUIRE(link_value(rectangle_links, 0U, 1U) == Catch::Approx(4.0));
+    REQUIRE(link_value(trapezoid_links, 0U, 1U) == Catch::Approx(3.0));
 }
 
 TEST_CASE("planar links: the two sides are independent sheets",

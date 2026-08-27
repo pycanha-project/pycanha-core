@@ -18,6 +18,7 @@
 #include <utility>
 #include <vector>
 
+#include "face_record.hpp"
 #include "mtl_accum.hpp"
 #include "mtl_device.hpp"
 #include "pycanha-core/globals.hpp"
@@ -68,12 +69,10 @@ void write_transform_rows(const gmm::CoordinateTransformation& tf,
     const Vector3D& translation = tf.translation();
     for (std::size_t row = 0; row < 3; ++row) {
         for (std::size_t col = 0; col < 3; ++col) {
-            rows.at(row).at(col) =
-                static_cast<float>(rotation(static_cast<Eigen::Index>(row),
-                                            static_cast<Eigen::Index>(col)));
+            rows.at(row).at(col) = static_cast<float>(
+                rotation(static_cast<Eigen::Index>(row), static_cast<Eigen::Index>(col)));
         }
-        rows.at(row).at(3) =
-            static_cast<float>(translation(static_cast<Eigen::Index>(row)));
+        rows.at(row).at(3) = static_cast<float>(translation(static_cast<Eigen::Index>(row)));
     }
 }
 
@@ -85,13 +84,10 @@ void validate_material_properties(const MaterialTable& materials) {
             const float a = materials.properties(row, band_offset);
             const float s = materials.properties(row, band_offset + 1);
             const float t = materials.properties(row, band_offset + 2);
-            if (a < 0.0F || s < 0.0F || t < 0.0F ||
-                a + s + t > 1.0F + property_sum_slack) {
+            if (a < 0.0F || s < 0.0F || t < 0.0F || a + s + t > 1.0F + property_sum_slack) {
                 throw std::invalid_argument(
-                    "pycanha::radiative: material row " + std::to_string(row) +
-                    " has an invalid " +
-                    (band_offset == 0 ? std::string("IR")
-                                      : std::string("solar")) +
+                    "pycanha::radiative: material row " + std::to_string(row) + " has an invalid " +
+                    (band_offset == 0 ? std::string("IR") : std::string("solar")) +
                     " property triplet (each in [0, 1], sum <= 1)");
             }
         }
@@ -100,15 +96,12 @@ void validate_material_properties(const MaterialTable& materials) {
 
 // Packs the 6-DOF property rows into the tightly-packed float layout the
 // shaders index by flat offset.
-[[nodiscard]] std::vector<float> pack_material_rows(
-    const MaterialTable& materials) {
-    std::vector<float> rows(
-        static_cast<std::size_t>(materials.properties.rows()) * 6);
+[[nodiscard]] std::vector<float> pack_material_rows(const MaterialTable& materials) {
+    std::vector<float> rows(static_cast<std::size_t>(materials.properties.rows()) * 6);
     for (Eigen::Index row = 0; row < materials.properties.rows(); ++row) {
         const std::size_t base = static_cast<std::size_t>(row) * 6;
         for (int dof = 0; dof < 6; ++dof) {
-            rows[base + static_cast<std::size_t>(dof)] =
-                materials.properties(row, dof);
+            rows[base + static_cast<std::size_t>(dof)] = materials.properties(row, dof);
         }
     }
     return rows;
@@ -116,18 +109,15 @@ void validate_material_properties(const MaterialTable& materials) {
 
 // Autoreleased; use inside an @autoreleasepool.
 [[nodiscard]] MTLInstanceAccelerationStructureDescriptor* make_tlas_descriptor(
-    id<MTLBuffer> instances, std::size_t count,
-    NSArray<id<MTLAccelerationStructure>>* structures) {
+    id<MTLBuffer> instances, std::size_t count, NSArray<id<MTLAccelerationStructure>>* structures) {
     MTLInstanceAccelerationStructureDescriptor* descriptor =
         [MTLInstanceAccelerationStructureDescriptor descriptor];
     descriptor.instanceDescriptorBuffer = instances;
     descriptor.instanceDescriptorBufferOffset = 0;
-    descriptor.instanceDescriptorStride =
-        sizeof(MTLAccelerationStructureInstanceDescriptor);
+    descriptor.instanceDescriptorStride = sizeof(MTLAccelerationStructureInstanceDescriptor);
     descriptor.instanceCount = count;
     descriptor.instancedAccelerationStructures = structures;
-    descriptor.instanceDescriptorType =
-        MTLAccelerationStructureInstanceDescriptorTypeDefault;
+    descriptor.instanceDescriptorType = MTLAccelerationStructureInstanceDescriptorTypeDefault;
     return descriptor;
 }
 
@@ -160,13 +150,10 @@ GpuBuffer SceneImpl::create_buffer(std::size_t size) {
     // some hardware), so no explicit alignment request is necessary.
     const std::size_t bytes = std::max<std::size_t>(size, 16);
     GpuBuffer out;
-    out.buffer =
-        [_device.device newBufferWithLength:bytes
-                                    options:MTLResourceStorageModeShared];
+    out.buffer = [_device.device newBufferWithLength:bytes options:MTLResourceStorageModeShared];
     if (out.buffer == nil) {
-        throw std::runtime_error(
-            "pycanha::radiative: Metal buffer allocation failed (" +
-            std::to_string(bytes) + " bytes)");
+        throw std::runtime_error("pycanha::radiative: Metal buffer allocation failed (" +
+                                 std::to_string(bytes) + " bytes)");
     }
     out.size = bytes;
     _allocated_bytes += bytes;
@@ -180,8 +167,7 @@ void SceneImpl::destroy_buffer(GpuBuffer& buffer) noexcept {
     }
 }
 
-GpuBuffer SceneImpl::upload_to_new_buffer(const void* data,
-                                          std::size_t bytes) {
+GpuBuffer SceneImpl::upload_to_new_buffer(const void* data, std::size_t bytes) {
     GpuBuffer buffer = create_buffer(bytes);
     if (bytes > 0) {
         std::memcpy(checked_mapped(buffer), data, bytes);
@@ -194,32 +180,27 @@ void SceneImpl::submit_once(Record&& record) {
     @autoreleasepool {
         id<MTLCommandBuffer> cmd = [_device.queue commandBuffer];
         if (cmd == nil) {
-            throw std::runtime_error(
-                "pycanha::radiative: Metal command buffer allocation failed");
+            throw std::runtime_error("pycanha::radiative: Metal command buffer allocation failed");
         }
         std::forward<Record>(record)(cmd);
         [cmd commit];
         [cmd waitUntilCompleted];
         if ([cmd error] != nil) {
-            throw std::runtime_error(
-                "pycanha::radiative: GPU command buffer failed: " +
-                error_text([cmd error]));
+            throw std::runtime_error("pycanha::radiative: GPU command buffer failed: " +
+                                     error_text([cmd error]));
         }
     }
 }
 
-SceneImpl::SceneImpl(DeviceImpl& device, std::vector<ScenePart> parts,
-                     MaterialTable materials)
+SceneImpl::SceneImpl(DeviceImpl& device, std::vector<ScenePart> parts, MaterialTable materials)
     : _device(device), _materials(std::move(materials)) {
     if (parts.empty()) {
-        throw std::invalid_argument(
-            "pycanha::radiative: a scene needs at least one part");
+        throw std::invalid_argument("pycanha::radiative: a scene needs at least one part");
     }
-    _num_slots = static_cast<std::uint32_t>(_materials.face_material.rows());
-    if (_num_slots == 0 || (_num_slots % 2) != 0) {
-        throw std::invalid_argument(
-            "pycanha::radiative: material table has no face slots (build it "
-            "from the same model as the parts)");
+    _num_faces = static_cast<std::uint32_t>(_materials.face_material.rows());
+    if (_num_faces == 0 || (_num_faces % 2) != 0) {
+        throw std::invalid_argument("pycanha::radiative: material table has no faces (build it "
+                                    "from the same model as the parts)");
     }
     validate_material_properties(_materials);
     for (std::size_t i = 0; i < parts.size(); ++i) {
@@ -229,14 +210,12 @@ SceneImpl::SceneImpl(DeviceImpl& device, std::vector<ScenePart> parts,
                 "in the vector");
         }
         if (parts[i].mesh.nt() == 0) {
-            throw std::invalid_argument("pycanha::radiative: part " +
-                                        std::to_string(i) +
+            throw std::invalid_argument("pycanha::radiative: part " + std::to_string(i) +
                                         " has an empty mesh");
         }
-        if (static_cast<std::uint32_t>(parts[i].mesh.nf()) > _num_slots) {
-            throw std::invalid_argument(
-                "pycanha::radiative: part " + std::to_string(i) +
-                " has face ids beyond the material table");
+        if (static_cast<std::uint32_t>(parts[i].mesh.nf()) > _num_faces) {
+            throw std::invalid_argument("pycanha::radiative: part " + std::to_string(i) +
+                                        " has face ids beyond the material table");
         }
     }
 
@@ -248,9 +227,8 @@ SceneImpl::SceneImpl(DeviceImpl& device, std::vector<ScenePart> parts,
     create_pipelines();
     _scene_bytes = _allocated_bytes;
 
-    SPDLOG_LOGGER_INFO(pycanha::get_logger(),
-                       "radiative: scene built ({} parts, {} face slots)",
-                       parts.size(), _num_slots);
+    SPDLOG_LOGGER_INFO(pycanha::get_logger(), "radiative: scene built ({} parts, {} faces)",
+                       parts.size(), _num_faces);
 }
 
 // Every submission in this file waits for completion, so nothing is in
@@ -259,7 +237,7 @@ SceneImpl::SceneImpl(DeviceImpl& device, std::vector<ScenePart> parts,
 SceneImpl::~SceneImpl() = default;
 
 void SceneImpl::upload_geometry(const std::vector<ScenePart>& parts) {
-    _face_areas.assign(_num_slots, 0.0);
+    _face_areas.assign(_num_faces, 0.0);
     _parts.resize(parts.size());
     _instances_host.resize(parts.size());
 
@@ -269,8 +247,7 @@ void SceneImpl::upload_geometry(const std::vector<ScenePart>& parts) {
     for (std::size_t p = 0; p < parts.size(); ++p) {
         upload_part(parts[p], p, world_box);
     }
-    const double characteristic =
-        world_box.isEmpty() ? 1.0 : world_box.diagonal().norm();
+    const double characteristic = world_box.isEmpty() ? 1.0 : world_box.diagonal().norm();
     _ray_tmin_scale = static_cast<float>(1e-4 * std::max(characteristic, 1e-6));
 
     build_face_tables(parts);
@@ -293,10 +270,8 @@ void SceneImpl::upload_part(const ScenePart& part, std::size_t index,
         vertices[base + 1] = mesh.vertices(v, 1);
         vertices[base + 2] = mesh.vertices(v, 2);
     }
-    std::vector<std::uint32_t> indices(static_cast<std::size_t>(num_triangles) *
-                                       3);
-    std::vector<std::uint32_t> tri_face(
-        static_cast<std::size_t>(num_triangles));
+    std::vector<std::uint32_t> indices(static_cast<std::size_t>(num_triangles) * 3);
+    std::vector<std::uint32_t> tri_face(static_cast<std::size_t>(num_triangles));
     for (Eigen::Index t = 0; t < num_triangles; ++t) {
         const std::size_t base = static_cast<std::size_t>(t) * 3;
         indices[base + 0] = mesh.triangles(t, 0);
@@ -305,18 +280,14 @@ void SceneImpl::upload_part(const ScenePart& part, std::size_t index,
         tri_face[static_cast<std::size_t>(t)] = mesh.face_ids(t);
     }
 
-    gpu.vertices =
-        upload_to_new_buffer(vertices.data(), vertices.size() * sizeof(float));
-    gpu.indices = upload_to_new_buffer(
-        indices.data(), indices.size() * sizeof(std::uint32_t));
-    gpu.tri_face = upload_to_new_buffer(
-        tri_face.data(), tri_face.size() * sizeof(std::uint32_t));
+    gpu.vertices = upload_to_new_buffer(vertices.data(), vertices.size() * sizeof(float));
+    gpu.indices = upload_to_new_buffer(indices.data(), indices.size() * sizeof(std::uint32_t));
+    gpu.tri_face = upload_to_new_buffer(tri_face.data(), tri_face.size() * sizeof(std::uint32_t));
 
     // Rigid transforms preserve areas: part-local areas are world areas.
-    const Eigen::VectorXd part_areas =
-        gmm::mesh::ops::compute_face_slot_areas(mesh);
-    for (Eigen::Index slot = 0; slot < part_areas.rows(); ++slot) {
-        _face_areas[static_cast<std::size_t>(slot)] += part_areas(slot);
+    const Eigen::VectorXd part_areas = gmm::mesh::ops::compute_face_areas(mesh);
+    for (Eigen::Index face = 0; face < part_areas.rows(); ++face) {
+        _face_areas[static_cast<std::size_t>(face)] += part_areas(face);
     }
 
     InstanceDataGpu& instance = _instances_host[index];
@@ -326,16 +297,11 @@ void SceneImpl::upload_part(const ScenePart& part, std::size_t index,
 
     if (part.kind != PartKind::CelestialBody) {
         constexpr std::array<Eigen::AlignedBox3d::CornerType, 8> corners = {
-            Eigen::AlignedBox3d::BottomLeftFloor,
-            Eigen::AlignedBox3d::BottomRightFloor,
-            Eigen::AlignedBox3d::TopLeftFloor,
-            Eigen::AlignedBox3d::TopRightFloor,
-            Eigen::AlignedBox3d::BottomLeftCeil,
-            Eigen::AlignedBox3d::BottomRightCeil,
-            Eigen::AlignedBox3d::TopLeftCeil,
-            Eigen::AlignedBox3d::TopRightCeil};
-        const Eigen::AlignedBox3d local_box =
-            gmm::mesh::ops::bounding_box(mesh);
+            Eigen::AlignedBox3d::BottomLeftFloor, Eigen::AlignedBox3d::BottomRightFloor,
+            Eigen::AlignedBox3d::TopLeftFloor,    Eigen::AlignedBox3d::TopRightFloor,
+            Eigen::AlignedBox3d::BottomLeftCeil,  Eigen::AlignedBox3d::BottomRightCeil,
+            Eigen::AlignedBox3d::TopLeftCeil,     Eigen::AlignedBox3d::TopRightCeil};
+        const Eigen::AlignedBox3d local_box = gmm::mesh::ops::bounding_box(mesh);
         for (const auto corner : corners) {
             world_box.extend(part.transform.apply(local_box.corner(corner)));
         }
@@ -343,48 +309,28 @@ void SceneImpl::upload_part(const ScenePart& part, std::size_t index,
 }
 
 void SceneImpl::build_face_tables(const std::vector<ScenePart>& parts) {
-    // Global per-slot tables. Missing material (-1) is tolerated (treated
-    // as blackbody by the exchange kernels); inactive slots never emit.
+    // Global per-face tables. Missing material (-1) is tolerated (treated
+    // as blackbody by the exchange kernels); inactive faces never emit.
     const std::vector<float> material_rows = pack_material_rows(_materials);
-    std::vector<std::int32_t> face_material(_num_slots);
-    std::vector<std::uint32_t> face_flags(_num_slots, 0);
-    for (std::uint32_t slot = 0; slot < _num_slots; ++slot) {
-        face_material[slot] = _materials.face_material(slot);
-        if (_materials.face_active(slot)) {
-            face_flags[slot] |= 1U;
-        }
-    }
-    for (const ScenePart& part : parts) {
-        if (part.kind != PartKind::CelestialBody) {
-            continue;
-        }
-        const auto num_triangles = static_cast<Eigen::Index>(part.mesh.nt());
-        for (Eigen::Index t = 0; t < num_triangles; ++t) {
-            const auto base = part.mesh.face_ids(t);
-            face_flags[base] |= 2U;
-            face_flags[base + 1U] |= 2U;
-        }
-    }
+    const std::vector<std::uint32_t> face_records =
+        detail::pack_face_records(_materials, parts, _num_faces);
 
-    _materials_buf = upload_to_new_buffer(material_rows.data(),
-                                          material_rows.size() * sizeof(float));
-    _face_material_buf = upload_to_new_buffer(
-        face_material.data(), face_material.size() * sizeof(std::int32_t));
-    _face_flags_buf = upload_to_new_buffer(
-        face_flags.data(), face_flags.size() * sizeof(std::uint32_t));
-    std::vector<float> face_areas_f32(_num_slots);
-    for (std::uint32_t slot = 0; slot < _num_slots; ++slot) {
-        face_areas_f32[slot] = static_cast<float>(_face_areas[slot]);
+    _materials_buf =
+        upload_to_new_buffer(material_rows.data(), material_rows.size() * sizeof(float));
+    _face_record_buf =
+        upload_to_new_buffer(face_records.data(), face_records.size() * sizeof(std::uint32_t));
+    std::vector<float> face_areas_f32(_num_faces);
+    for (std::uint32_t face = 0; face < _num_faces; ++face) {
+        face_areas_f32[face] = static_cast<float>(_face_areas[face]);
     }
-    _face_areas_buf = upload_to_new_buffer(
-        face_areas_f32.data(), face_areas_f32.size() * sizeof(float));
+    _face_areas_buf =
+        upload_to_new_buffer(face_areas_f32.data(), face_areas_f32.size() * sizeof(float));
 
-    // Default emitter list: active, non-planet slots with geometry.
+    // Default emitter list: active, non-planet faces with geometry.
     _default_emitters.clear();
-    for (std::uint32_t slot = 0; slot < _num_slots; ++slot) {
-        if ((face_flags[slot] & 1U) != 0U && (face_flags[slot] & 2U) == 0U &&
-            _face_areas[slot] > 0.0) {
-            _default_emitters.push_back(slot);
+    for (std::uint32_t face = 0; face < _num_faces; ++face) {
+        if (detail::face_emits(face_records[face]) && _face_areas[face] > 0.0) {
+            _default_emitters.push_back(face);
         }
     }
 }
@@ -402,27 +348,26 @@ void SceneImpl::build_emission_tables(const std::vector<ScenePart>& parts) {
         const Eigen::VectorXd areas = gmm::mesh::ops::compute_areas(mesh);
         const auto num_triangles = static_cast<Eigen::Index>(mesh.nt());
         for (Eigen::Index t = 0; t < num_triangles; ++t) {
-            triangles.push_back(
-                EmitTriangle{.pair_base = mesh.face_ids(t),
-                             .part = static_cast<std::uint32_t>(p),
-                             .prim = static_cast<std::uint32_t>(t),
-                             .area = areas(t)});
+            triangles.push_back(EmitTriangle{.pair_base = mesh.face_ids(t),
+                                             .part = static_cast<std::uint32_t>(p),
+                                             .prim = static_cast<std::uint32_t>(t),
+                                             .area = areas(t)});
         }
     }
-    // Face slots partition across parts, so a stable sort by slot keeps the
+    // Face faces partition across parts, so a stable sort by face keeps the
     // per-part triangle order within each face.
     std::ranges::stable_sort(triangles, {}, &EmitTriangle::pair_base);
 
-    // Per-slot offsets: even slot = first triangle of the pair, odd slot =
+    // Per-face offsets: even face = first triangle of the pair, odd face =
     // one past the last (both sides of a pair share the triangle list, so
     // the shader reads [pair_base] and [pair_base + 1]).
-    std::vector<std::uint32_t> offsets(_num_slots, 0);
+    std::vector<std::uint32_t> offsets(_num_faces, 0);
     std::vector<std::uint32_t> part_ids(triangles.size());
     std::vector<std::uint32_t> prim_ids(triangles.size());
     std::vector<float> cum_area(triangles.size());
 
     std::size_t index = 0;
-    for (std::uint32_t pair = 0; pair < _num_slots; pair += 2) {
+    for (std::uint32_t pair = 0; pair < _num_faces; pair += 2) {
         offsets[pair] = static_cast<std::uint32_t>(index);
         const std::size_t begin = index;
         double total = 0.0;
@@ -438,20 +383,18 @@ void SceneImpl::build_emission_tables(const std::vector<ScenePart>& parts) {
             // Normalize to exactly 1.0 at the last triangle so the binary
             // search never falls off the end; zero-area pairs cannot be
             // emitters (filtered by area in the default list).
-            cum_area[i] =
-                total > 0.0 ? static_cast<float>(running / total) : 1.0F;
+            cum_area[i] = total > 0.0 ? static_cast<float>(running / total) : 1.0F;
         }
         offsets[pair + 1U] = static_cast<std::uint32_t>(index);
     }
 
-    _emit_tri_offset_buf = upload_to_new_buffer(
-        offsets.data(), offsets.size() * sizeof(std::uint32_t));
-    _emit_tri_part_buf = upload_to_new_buffer(
-        part_ids.data(), part_ids.size() * sizeof(std::uint32_t));
-    _emit_tri_prim_buf = upload_to_new_buffer(
-        prim_ids.data(), prim_ids.size() * sizeof(std::uint32_t));
-    _emit_cum_area_buf =
-        upload_to_new_buffer(cum_area.data(), cum_area.size() * sizeof(float));
+    _emit_tri_offset_buf =
+        upload_to_new_buffer(offsets.data(), offsets.size() * sizeof(std::uint32_t));
+    _emit_tri_part_buf =
+        upload_to_new_buffer(part_ids.data(), part_ids.size() * sizeof(std::uint32_t));
+    _emit_tri_prim_buf =
+        upload_to_new_buffer(prim_ids.data(), prim_ids.size() * sizeof(std::uint32_t));
+    _emit_cum_area_buf = upload_to_new_buffer(cum_area.data(), cum_area.size() * sizeof(float));
 }
 
 void SceneImpl::build_blas(const std::vector<ScenePart>& parts) {
@@ -481,22 +424,18 @@ void SceneImpl::build_blas(const std::vector<ScenePart>& parts) {
             descriptor.geometryDescriptors = @[ geometry ];
 
             const MTLAccelerationStructureSizes sizes =
-                [_device.device accelerationStructureSizesWithDescriptor:
-                                    descriptor];
+                [_device.device accelerationStructureSizesWithDescriptor:descriptor];
             const NSUInteger blas_size = sizes.accelerationStructureSize;
-            gpu.blas =
-                [_device.device newAccelerationStructureWithSize:blas_size];
+            gpu.blas = [_device.device newAccelerationStructureWithSize:blas_size];
             if (gpu.blas == nil) {
-                throw std::runtime_error(
-                    "pycanha::radiative: BLAS creation failed for part " +
-                    std::to_string(p));
+                throw std::runtime_error("pycanha::radiative: BLAS creation failed for part " +
+                                         std::to_string(p));
             }
             _allocated_bytes += sizes.accelerationStructureSize;
             GpuBuffer scratch = create_buffer(sizes.buildScratchBufferSize);
             id<MTLAccelerationStructure> blas = gpu.blas;
             id<MTLBuffer> scratch_buffer = scratch.buffer;
-            submit_once([blas, descriptor,
-                         scratch_buffer](id<MTLCommandBuffer> cmd) {
+            submit_once([blas, descriptor, scratch_buffer](id<MTLCommandBuffer> cmd) {
                 id<MTLAccelerationStructureCommandEncoder> encoder =
                     [cmd accelerationStructureCommandEncoder];
                 [encoder buildAccelerationStructure:blas
@@ -518,12 +457,10 @@ void SceneImpl::write_instance_buffers() {
     const std::size_t count = _instances_host.size();
     if (_instance_ssbo.buffer == nil) {
         _instance_ssbo = create_buffer(count * sizeof(InstanceDataGpu));
-        _tlas_instances = create_buffer(
-            count * sizeof(MTLAccelerationStructureInstanceDescriptor));
+        _tlas_instances = create_buffer(count * sizeof(MTLAccelerationStructureInstanceDescriptor));
     }
     const std::span<MTLAccelerationStructureInstanceDescriptor> tlas_span(
-        static_cast<MTLAccelerationStructureInstanceDescriptor*>(
-            checked_mapped(_tlas_instances)),
+        static_cast<MTLAccelerationStructureInstanceDescriptor*>(checked_mapped(_tlas_instances)),
         count);
     for (std::size_t p = 0; p < count; ++p) {
         InstanceDataGpu& instance = _instances_host[p];
@@ -549,19 +486,17 @@ void SceneImpl::write_instance_buffers() {
 void SceneImpl::build_tlas_first() {
     @autoreleasepool {
         MTLInstanceAccelerationStructureDescriptor* descriptor =
-            make_tlas_descriptor(_tlas_instances.buffer, _parts.size(),
-                                 _blas_array);
-        const MTLAccelerationStructureSizes sizes = [_device.device
-            accelerationStructureSizesWithDescriptor:descriptor];
+            make_tlas_descriptor(_tlas_instances.buffer, _parts.size(), _blas_array);
+        const MTLAccelerationStructureSizes sizes =
+            [_device.device accelerationStructureSizesWithDescriptor:descriptor];
         const NSUInteger tlas_size = sizes.accelerationStructureSize;
         _tlas = [_device.device newAccelerationStructureWithSize:tlas_size];
         if (_tlas == nil) {
-            throw std::runtime_error(
-                "pycanha::radiative: TLAS creation failed");
+            throw std::runtime_error("pycanha::radiative: TLAS creation failed");
         }
         _allocated_bytes += sizes.accelerationStructureSize;
-        _tlas_scratch = create_buffer(std::max(sizes.buildScratchBufferSize,
-                                               sizes.refitScratchBufferSize));
+        _tlas_scratch =
+            create_buffer(std::max(sizes.buildScratchBufferSize, sizes.refitScratchBufferSize));
     }
     rebuild_tlas();
 }
@@ -571,8 +506,7 @@ void SceneImpl::rebuild_tlas() {
     // traversal quality under large rotations.
     @autoreleasepool {
         MTLInstanceAccelerationStructureDescriptor* descriptor =
-            make_tlas_descriptor(_tlas_instances.buffer, _parts.size(),
-                                 _blas_array);
+            make_tlas_descriptor(_tlas_instances.buffer, _parts.size(), _blas_array);
         id<MTLAccelerationStructure> tlas = _tlas;
         id<MTLBuffer> scratch = _tlas_scratch.buffer;
         submit_once([tlas, descriptor, scratch](id<MTLCommandBuffer> cmd) {
@@ -587,8 +521,8 @@ void SceneImpl::rebuild_tlas() {
     }
 }
 
-void SceneImpl::set_part_transform(
-    std::uint32_t part_id, const gmm::CoordinateTransformation& world_tf) {
+void SceneImpl::set_part_transform(std::uint32_t part_id,
+                                   const gmm::CoordinateTransformation& world_tf) {
     if (part_id >= _instances_host.size()) {
         throw std::invalid_argument("pycanha::radiative: unknown part_id " +
                                     std::to_string(part_id));
@@ -605,29 +539,25 @@ id<MTLComputePipelineState> SceneImpl::build_compute_pipeline(
     std::span<const std::uint8_t> metallib, const char* what) const {
     id<MTLComputePipelineState> pipeline = nil;
     @autoreleasepool {
-        dispatch_data_t data =
-            dispatch_data_create(metallib.data(), metallib.size(), nullptr,
-                                 DISPATCH_DATA_DESTRUCTOR_DEFAULT);
+        dispatch_data_t data = dispatch_data_create(metallib.data(), metallib.size(), nullptr,
+                                                    DISPATCH_DATA_DESTRUCTOR_DEFAULT);
         NSError* error = nil;
-        id<MTLLibrary> library = [_device.device newLibraryWithData:data
-                                                              error:&error];
+        id<MTLLibrary> library = [_device.device newLibraryWithData:data error:&error];
         if (library == nil) {
-            throw std::runtime_error(std::string("pycanha::radiative: ") +
-                                     what + " failed: " + error_text(error));
+            throw std::runtime_error(std::string("pycanha::radiative: ") + what +
+                                     " failed: " + error_text(error));
         }
         // MSL keeps the Slang entry-point name (only SPIR-V renames it).
         id<MTLFunction> function = [library newFunctionWithName:@"csMain"];
         if (function == nil) {
-            throw std::runtime_error(std::string("pycanha::radiative: ") +
-                                     what +
+            throw std::runtime_error(std::string("pycanha::radiative: ") + what +
                                      " failed: no csMain entry point in the "
                                      "compiled Metal library");
         }
-        pipeline = [_device.device newComputePipelineStateWithFunction:function
-                                                                 error:&error];
+        pipeline = [_device.device newComputePipelineStateWithFunction:function error:&error];
         if (pipeline == nil) {
-            throw std::runtime_error(std::string("pycanha::radiative: ") +
-                                     what + " failed: " + error_text(error));
+            throw std::runtime_error(std::string("pycanha::radiative: ") + what +
+                                     " failed: " + error_text(error));
         }
     }
     return pipeline;
@@ -637,59 +567,51 @@ void SceneImpl::create_pipelines() {
     // Buffer indices come from the shader reflection at build time: Metal
     // ignores the [[vk::binding]] attributes and numbers each kernel's
     // buffers independently, so these tables are NOT interchangeable.
-    _vf_bindings = KernelBindings{
-        .acc = kernels::vf_binding_acc,
-        .pc = kernels::vf_binding_pc,
-        .tlas = kernels::vf_binding_tlas,
-        .instance_data = kernels::vf_binding_instance_data,
-        .materials = kernels::vf_binding_materials,
-        .face_material = kernels::vf_binding_face_material,
-        .face_flags = kernels::vf_binding_face_flags,
-        .emitters = kernels::vf_binding_emitters,
-        .emit_tri_offset = kernels::vf_binding_emit_tri_offset,
-        .emit_tri_part = kernels::vf_binding_emit_tri_part,
-        .emit_tri_prim = kernels::vf_binding_emit_tri_prim,
-        .emit_cum_area = kernels::vf_binding_emit_cum_area};
-    _exchange_bindings = KernelBindings{
-        .acc = kernels::exchange_binding_acc,
-        .pc = kernels::exchange_binding_pc,
-        .tlas = kernels::exchange_binding_tlas,
-        .instance_data = kernels::exchange_binding_instance_data,
-        .materials = kernels::exchange_binding_materials,
-        .face_material = kernels::exchange_binding_face_material,
-        .face_flags = kernels::exchange_binding_face_flags,
-        .emitters = kernels::exchange_binding_emitters,
-        .emit_tri_offset = kernels::exchange_binding_emit_tri_offset,
-        .emit_tri_part = kernels::exchange_binding_emit_tri_part,
-        .emit_tri_prim = kernels::exchange_binding_emit_tri_prim,
-        .emit_cum_area = kernels::exchange_binding_emit_cum_area};
-    _solar_bindings = KernelBindings{
-        .acc = kernels::solar_binding_direct_acc,
-        .total_acc = kernels::solar_binding_total_acc,
-        .face_areas = kernels::solar_binding_face_areas,
-        .pc = kernels::solar_binding_pc,
-        .tlas = kernels::solar_binding_tlas,
-        .instance_data = kernels::solar_binding_instance_data,
-        .materials = kernels::solar_binding_materials,
-        .face_material = kernels::solar_binding_face_material,
-        .face_flags = kernels::solar_binding_face_flags,
-        .emitters = kernels::solar_binding_emitters,
-        .emit_tri_offset = kernels::solar_binding_emit_tri_offset,
-        .emit_tri_part = kernels::solar_binding_emit_tri_part,
-        .emit_tri_prim = kernels::solar_binding_emit_tri_prim,
-        .emit_cum_area = kernels::solar_binding_emit_cum_area};
+    _vf_bindings = KernelBindings{.acc = kernels::vf_binding_acc,
+                                  .pc = kernels::vf_binding_pc,
+                                  .tlas = kernels::vf_binding_tlas,
+                                  .instance_data = kernels::vf_binding_instance_data,
+                                  .materials = kernels::vf_binding_materials,
+                                  .face_record = kernels::vf_binding_face_record,
+                                  .emitters = kernels::vf_binding_emitters,
+                                  .emit_tri_offset = kernels::vf_binding_emit_tri_offset,
+                                  .emit_tri_part = kernels::vf_binding_emit_tri_part,
+                                  .emit_tri_prim = kernels::vf_binding_emit_tri_prim,
+                                  .emit_cum_area = kernels::vf_binding_emit_cum_area};
+    _exchange_bindings =
+        KernelBindings{.acc = kernels::exchange_binding_acc,
+                       .pc = kernels::exchange_binding_pc,
+                       .tlas = kernels::exchange_binding_tlas,
+                       .instance_data = kernels::exchange_binding_instance_data,
+                       .materials = kernels::exchange_binding_materials,
+                       .face_record = kernels::exchange_binding_face_record,
+                       .emitters = kernels::exchange_binding_emitters,
+                       .emit_tri_offset = kernels::exchange_binding_emit_tri_offset,
+                       .emit_tri_part = kernels::exchange_binding_emit_tri_part,
+                       .emit_tri_prim = kernels::exchange_binding_emit_tri_prim,
+                       .emit_cum_area = kernels::exchange_binding_emit_cum_area};
+    _solar_bindings = KernelBindings{.acc = kernels::solar_binding_direct_acc,
+                                     .total_acc = kernels::solar_binding_total_acc,
+                                     .face_areas = kernels::solar_binding_face_areas,
+                                     .pc = kernels::solar_binding_pc,
+                                     .tlas = kernels::solar_binding_tlas,
+                                     .instance_data = kernels::solar_binding_instance_data,
+                                     .materials = kernels::solar_binding_materials,
+                                     .face_record = kernels::solar_binding_face_record,
+                                     .emitters = kernels::solar_binding_emitters,
+                                     .emit_tri_offset = kernels::solar_binding_emit_tri_offset,
+                                     .emit_tri_part = kernels::solar_binding_emit_tri_part,
+                                     .emit_tri_prim = kernels::solar_binding_emit_tri_prim,
+                                     .emit_cum_area = kernels::solar_binding_emit_cum_area};
 
     _vf_pipeline = build_compute_pipeline(
-        std::span<const std::uint8_t>(kernels::vf_metallib,
-                                      kernels::vf_metallib_size),
+        std::span<const std::uint8_t>(kernels::vf_metallib, kernels::vf_metallib_size),
         "VF pipeline creation");
     _exchange_pipeline = build_compute_pipeline(
-        std::span<const std::uint8_t>(kernels::exchange_metallib,
-                                      kernels::exchange_metallib_size),
+        std::span<const std::uint8_t>(kernels::exchange_metallib, kernels::exchange_metallib_size),
         "exchange pipeline creation");
     _solar_pipeline = build_compute_pipeline(
-        std::span<const std::uint8_t>(kernels::solar_metallib,
-                                      kernels::solar_metallib_size),
+        std::span<const std::uint8_t>(kernels::solar_metallib, kernels::solar_metallib_size),
         "solar pipeline creation");
 
     // Keeps every accumulator index a kernel declares pointing at a real
@@ -697,25 +619,20 @@ void SceneImpl::create_pipelines() {
     _dummy_buf = create_buffer(4);
 }
 
-void SceneImpl::bind_resources(id<MTLComputeCommandEncoder> encoder,
-                               const KernelDispatch& kernel,
+void SceneImpl::bind_resources(id<MTLComputeCommandEncoder> encoder, const KernelDispatch& kernel,
                                const PushConstants& push) const {
     const KernelBindings& bindings = *kernel.bindings;
-    const auto set_buffer = [encoder](std::uint32_t index,
-                                      id<MTLBuffer> buffer) {
+    const auto set_buffer = [encoder](std::uint32_t index, id<MTLBuffer> buffer) {
         if (index != no_binding) {
             [encoder setBuffer:buffer offset:0 atIndex:index];
         }
     };
-    set_buffer(bindings.acc,
-               kernel.acc != nil ? kernel.acc : _dummy_buf.buffer);
-    set_buffer(bindings.total_acc,
-               kernel.total_acc != nil ? kernel.total_acc : _dummy_buf.buffer);
+    set_buffer(bindings.acc, kernel.acc != nil ? kernel.acc : _dummy_buf.buffer);
+    set_buffer(bindings.total_acc, kernel.total_acc != nil ? kernel.total_acc : _dummy_buf.buffer);
     set_buffer(bindings.face_areas, _face_areas_buf.buffer);
     set_buffer(bindings.instance_data, _instance_ssbo.buffer);
     set_buffer(bindings.materials, _materials_buf.buffer);
-    set_buffer(bindings.face_material, _face_material_buf.buffer);
-    set_buffer(bindings.face_flags, _face_flags_buf.buffer);
+    set_buffer(bindings.face_record, _face_record_buf.buffer);
     set_buffer(bindings.emitters, _emitters_buf.buffer);
     set_buffer(bindings.emit_tri_offset, _emit_tri_offset_buf.buffer);
     set_buffer(bindings.emit_tri_part, _emit_tri_part_buf.buffer);
@@ -723,9 +640,7 @@ void SceneImpl::bind_resources(id<MTLComputeCommandEncoder> encoder,
     set_buffer(bindings.emit_cum_area, _emit_cum_area_buf.buffer);
     if (bindings.pc != no_binding) {
         // 64 bytes, once per chunk: well inside the small-argument fast path.
-        [encoder setBytes:&push
-                   length:sizeof(PushConstants)
-                  atIndex:bindings.pc];
+        [encoder setBytes:&push length:sizeof(PushConstants) atIndex:bindings.pc];
     }
     if (bindings.tlas != no_binding) {
         [encoder setAccelerationStructure:_tlas atBufferIndex:bindings.tlas];
@@ -746,9 +661,8 @@ void SceneImpl::bind_resources(id<MTLComputeCommandEncoder> encoder,
     [encoder useResource:_tlas usage:MTLResourceUsageRead];
 }
 
-std::vector<std::uint32_t> SceneImpl::resolve_emitters(
-    std::span<const std::uint32_t> emitters,
-    const TraceSettings& settings) const {
+std::vector<std::uint32_t> SceneImpl::resolve_emitters(std::span<const std::uint32_t> emitters,
+                                                       const TraceSettings& settings) const {
     if (settings.rays_per_face == 0) {
         return {};
     }
@@ -756,29 +670,25 @@ std::vector<std::uint32_t> SceneImpl::resolve_emitters(
     if (list.empty()) {
         list = _default_emitters;
     }
-    const std::uint32_t num_slots = _num_slots;
-    if (std::ranges::any_of(list, [num_slots](const std::uint32_t slot) {
-            return slot >= num_slots;
-        })) {
-        throw std::invalid_argument(
-            "pycanha::radiative: emitter slot out of range");
+    const std::uint32_t face_count = _num_faces;
+    if (std::ranges::any_of(
+            list, [face_count](const std::uint32_t face) { return face >= face_count; })) {
+        throw std::invalid_argument("pycanha::radiative: emitter face out of range");
     }
     return list;
 }
 
 void SceneImpl::accumulate_vf(VfAccumImpl& acc, const TraceSettings& settings,
                               std::span<const std::uint32_t> emitters) {
-    const std::vector<std::uint32_t> list =
-        resolve_emitters(emitters, settings);
+    const std::vector<std::uint32_t> list = resolve_emitters(emitters, settings);
     if (list.empty()) {
         return;
     }
     // u32 counting cells: the CUMULATIVE per-face ray count must stay below
     // 2^31 or cells could overflow.
     if (acc.rays_per_face() + settings.rays_per_face > (1ULL << 31U)) {
-        throw std::invalid_argument(
-            "pycanha::radiative: cumulative rays_per_face exceeds the u32 "
-            "counting range; reset the accumulator or use fewer rays");
+        throw std::invalid_argument("pycanha::radiative: cumulative rays_per_face exceeds the u32 "
+                                    "counting range; reset the accumulator or use fewer rays");
     }
 
     KernelDispatch kernel;
@@ -792,16 +702,14 @@ void SceneImpl::accumulate_vf(VfAccumImpl& acc, const TraceSettings& settings,
     } else {
         // Row blocks of tile_rows emitters; the scratch buffer is zeroed and
         // absorbed into the host accumulation per block. Chunking/tiling
-        // never changes results: the RNG is keyed on (slot, ray, seed).
+        // never changes results: the RNG is keyed on (face, ray, seed).
         const std::uint32_t tile_rows = acc.tile_rows();
-        for (std::uint32_t row_offset = 0; row_offset < _num_slots;
-             row_offset += tile_rows) {
+        for (std::uint32_t row_offset = 0; row_offset < _num_faces; row_offset += tile_rows) {
             std::vector<std::uint32_t> block;
-            std::ranges::copy_if(
-                list, std::back_inserter(block),
-                [row_offset, tile_rows](const std::uint32_t slot) {
-                    return slot >= row_offset && slot < row_offset + tile_rows;
-                });
+            std::ranges::copy_if(list, std::back_inserter(block),
+                                 [row_offset, tile_rows](const std::uint32_t face) {
+                                     return face >= row_offset && face < row_offset + tile_rows;
+                                 });
             if (block.empty()) {
                 continue;
             }
@@ -815,11 +723,9 @@ void SceneImpl::accumulate_vf(VfAccumImpl& acc, const TraceSettings& settings,
     acc.record_batch(list, settings.rays_per_face);
 }
 
-void SceneImpl::accumulate_exchange(ExchangeAccumImpl& acc,
-                                    const TraceSettings& settings,
+void SceneImpl::accumulate_exchange(ExchangeAccumImpl& acc, const TraceSettings& settings,
                                     std::span<const std::uint32_t> emitters) {
-    const std::vector<std::uint32_t> list =
-        resolve_emitters(emitters, settings);
+    const std::vector<std::uint32_t> list = resolve_emitters(emitters, settings);
     if (list.empty()) {
         return;
     }
@@ -839,14 +745,12 @@ void SceneImpl::accumulate_exchange(ExchangeAccumImpl& acc,
         dispatch_rows(kernel, list, settings);
     } else {
         const std::uint32_t tile_rows = acc.tile_rows();
-        for (std::uint32_t row_offset = 0; row_offset < _num_slots;
-             row_offset += tile_rows) {
+        for (std::uint32_t row_offset = 0; row_offset < _num_faces; row_offset += tile_rows) {
             std::vector<std::uint32_t> block;
-            std::ranges::copy_if(
-                list, std::back_inserter(block),
-                [row_offset, tile_rows](const std::uint32_t slot) {
-                    return slot >= row_offset && slot < row_offset + tile_rows;
-                });
+            std::ranges::copy_if(list, std::back_inserter(block),
+                                 [row_offset, tile_rows](const std::uint32_t face) {
+                                     return face >= row_offset && face < row_offset + tile_rows;
+                                 });
             if (block.empty()) {
                 continue;
             }
@@ -868,8 +772,7 @@ void SceneImpl::accumulate_solar(const SolarState& sun, SolarAccumImpl& acc,
     if (list.empty()) {
         return;
     }
-    const SolarAccumImpl::BatchSetup setup =
-        acc.prepare_batch(sun, settings.rays_per_face);
+    const SolarAccumImpl::BatchSetup setup = acc.prepare_batch(sun, settings.rays_per_face);
 
     KernelDispatch kernel;
     kernel.pipeline = _solar_pipeline;
@@ -886,18 +789,14 @@ void SceneImpl::accumulate_solar(const SolarState& sun, SolarAccumImpl& acc,
 
 void SceneImpl::update_materials(const MaterialTable& materials) {
     if (materials.face_material.rows() != _materials.face_material.rows() ||
-        (materials.face_material.array() != _materials.face_material.array())
-            .any()) {
-        throw std::invalid_argument(
-            "pycanha::radiative: update_materials must keep the same "
-            "face_material mapping; changing it needs a scene rebuild");
+        (materials.face_material.array() != _materials.face_material.array()).any()) {
+        throw std::invalid_argument("pycanha::radiative: update_materials must keep the same "
+                                    "face_material mapping; changing it needs a scene rebuild");
     }
     if (materials.face_active.rows() != _materials.face_active.rows() ||
-        (materials.face_active.array() != _materials.face_active.array())
-            .any()) {
-        throw std::invalid_argument(
-            "pycanha::radiative: update_materials must keep the same "
-            "face activity; changing it needs a scene rebuild");
+        (materials.face_active.array() != _materials.face_active.array()).any()) {
+        throw std::invalid_argument("pycanha::radiative: update_materials must keep the same "
+                                    "face activity; changing it needs a scene rebuild");
     }
     if (materials.properties.rows() != _materials.properties.rows()) {
         throw std::invalid_argument(
@@ -916,8 +815,7 @@ void SceneImpl::update_materials(const MaterialTable& materials) {
     _materials.properties = materials.properties;
 }
 
-void SceneImpl::dispatch_rows(const KernelDispatch& kernel,
-                              std::span<const std::uint32_t> emitters,
+void SceneImpl::dispatch_rows(const KernelDispatch& kernel, std::span<const std::uint32_t> emitters,
                               const TraceSettings& settings) {
     // (Re)upload the emitter list, growing the buffer when needed.
     const std::size_t needed = emitters.size() * sizeof(std::uint32_t);
@@ -927,39 +825,36 @@ void SceneImpl::dispatch_rows(const KernelDispatch& kernel,
     }
     std::memcpy(checked_mapped(_emitters_buf), emitters.data(), needed);
 
-    PushConstants push{
-        .row_offset = kernel.row_offset,
-        .num_emitters = static_cast<std::uint32_t>(emitters.size()),
-        .rays_this_chunk = 0,   // set per chunk below
-        .ray_index_offset = 0,  // set per chunk below
-        .batch_seed = settings.seed,
-        .max_bounces = settings.max_bounces,
-        .flags = kernel.flags,
-        .num_face_slots = _num_slots,
-        .energy_threshold = settings.energy_threshold,
-        .fp_scale = kernel.fp_scale,
-        .inv_fp_scale = 1.0F / kernel.fp_scale,
-        .ray_tmin_scale = _ray_tmin_scale,
-        .sun_dir = kernel.sun_dir,
-        .pad = 0.0F};
+    PushConstants push{.row_offset = kernel.row_offset,
+                       .num_emitters = static_cast<std::uint32_t>(emitters.size()),
+                       .rays_this_chunk = 0,   // set per chunk below
+                       .ray_index_offset = 0,  // set per chunk below
+                       .batch_seed = settings.seed,
+                       .max_bounces = settings.max_bounces,
+                       .flags = kernel.flags,
+                       .num_faces = _num_faces,
+                       .energy_threshold = settings.energy_threshold,
+                       .fp_scale = kernel.fp_scale,
+                       .inv_fp_scale = 1.0F / kernel.fp_scale,
+                       .ray_tmin_scale = _ray_tmin_scale,
+                       .sun_dir = kernel.sun_dir,
+                       .pad = 0.0F};
 
     const std::uint64_t rays_per_chunk =
         std::max<std::uint64_t>(1, max_rays_per_chunk_total / emitters.size());
     std::uint64_t done = 0;
     while (done < settings.rays_per_face) {
-        const std::uint64_t chunk =
-            std::min(rays_per_chunk, settings.rays_per_face - done);
+        const std::uint64_t chunk = std::min(rays_per_chunk, settings.rays_per_face - done);
         push.rays_this_chunk = static_cast<std::uint32_t>(chunk);
         push.ray_index_offset = static_cast<std::uint32_t>(done);
-        const auto groups_x = static_cast<std::uint64_t>(
-            (chunk + workgroup_size_x - 1) / workgroup_size_x);
+        const auto groups_x =
+            static_cast<std::uint64_t>((chunk + workgroup_size_x - 1) / workgroup_size_x);
 
         submit_once([this, &kernel, &push, groups_x](id<MTLCommandBuffer> cmd) {
             id<MTLComputeCommandEncoder> encoder = [cmd computeCommandEncoder];
             [encoder setComputePipelineState:kernel.pipeline];
             bind_resources(encoder, kernel, push);
-            [encoder dispatchThreadgroups:MTLSizeMake(groups_x,
-                                                      push.num_emitters, 1)
+            [encoder dispatchThreadgroups:MTLSizeMake(groups_x, push.num_emitters, 1)
                     threadsPerThreadgroup:MTLSizeMake(workgroup_size_x, 1, 1)];
             [encoder endEncoding];
             // Shared storage on unified memory plus the wait in submit_once

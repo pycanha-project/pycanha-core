@@ -18,6 +18,9 @@ namespace pycanha::gmm {
 //   GeometryModel::mesh().
 //
 // face_ids index the per-side face identity: even = side 1, odd = side 2.
+// Only even ids are ever stored: a triangle always defines BOTH faces of its
+// pair (the odd face is the same triangle with the normal reversed), so the
+// triangle carries the even id and its winding normal is side 1.
 // node_numbers is DENSE, indexed directly by face_id (gaps allowed after
 // cuts): node_numbers[face_id] is the side-1 node, node_numbers[face_id + 1]
 // the side-2 node. primitives records which contiguous face_id range came from
@@ -42,20 +45,24 @@ class TriMesh {
     NodeNumberVector node_numbers;           // Nf (dense, indexed by face_id)
     std::vector<PrimitiveRange> primitives;  // sorted by first_face_id
 
+    // How many faces this mesh OWNS, which is not the same as how many still
+    // have triangles: a cut removes triangles but never removes the faces they
+    // belonged to. Set by whoever builds the mesh (the mesher from the
+    // ThermalMesh, the cut backend from its target, concatenation from the sum
+    // of its pieces) and left alone by anything that only drops triangles.
+    // Deriving it from max(face_ids) instead would shrink an item whose LAST
+    // pair was cut away, renumbering every later item in the model.
+    pycanha::MeshIndex num_faces = 0;
+
     [[nodiscard]] pycanha::MeshIndex np() const noexcept {
         return static_cast<pycanha::MeshIndex>(vertices.rows());
     }
     [[nodiscard]] pycanha::MeshIndex nt() const noexcept {
         return static_cast<pycanha::MeshIndex>(triangles.rows());
     }
-    // Number of face slots: dense-by-face_id, so max(face_ids) + 2 (the +2
-    // reserves the odd side-2 slot of the highest face). Empty mesh -> 0.
-    [[nodiscard]] pycanha::MeshIndex nf() const noexcept {
-        if (face_ids.rows() == 0) {
-            return 0;
-        }
-        return static_cast<pycanha::MeshIndex>(face_ids.maxCoeff()) + 2U;
-    }
+    // Number of faces this mesh owns (both sides counted), including faces a
+    // cut left with no triangles of their own.
+    [[nodiscard]] pycanha::MeshIndex nf() const noexcept { return num_faces; }
 
     // Converts this mesh to a different vertex scalar type. Integer data and
     // primitive provenance are copied verbatim; only the vertices are cast.
@@ -66,6 +73,7 @@ class TriMesh {
         out.triangles = triangles;
         out.face_ids = face_ids;
         out.node_numbers = node_numbers;
+        out.num_faces = num_faces;
         out.primitives.reserve(primitives.size());
         for (const auto& range : primitives) {
             out.primitives.push_back(typename TriMesh<Other>::PrimitiveRange{

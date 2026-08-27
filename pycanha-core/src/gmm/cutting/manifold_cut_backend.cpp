@@ -160,6 +160,9 @@ TriMeshD ManifoldCutBackend::cut(
 
     TriMeshD cut_mesh =
         extract_by_original_id(result.GetMeshGL64(), outer_original_id);
+    // The cut removes triangles, never faces: a pair whose triangles all went
+    // away keeps its ids and is reported dead by a zero face area.
+    cut_mesh.num_faces = target_mesh.num_faces;
     dedup_vertices(cut_mesh, proxy_thickness(target_mesh, options) * 0.5);
     remove_degenerate_triangles(cut_mesh,
                                 proxy_thickness(target_mesh, options) *

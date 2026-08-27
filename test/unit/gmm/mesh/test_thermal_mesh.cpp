@@ -46,7 +46,7 @@ TEST_CASE("ThermalMesh rejects invalid cut definitions", "[gmm][mesh]") {
 }
 
 TEST_CASE("ThermalMesh node_of follows start + k * step", "[gmm][mesh]") {
-    ThermalMesh mesh({0.0, 0.5, 1.0}, {0.0, 0.5, 1.0});  // 2x2 cells
+    ThermalMesh mesh({0.0, 0.5, 1.0}, {0.0, 0.5, 1.0});  // 2x2 face_pairs
 
     // Defaults: every face maps to NO_NODE (unassigned).
     REQUIRE(mesh.node_of(0U, 0U, 1U) == pycanha::gmm::NO_NODE);
@@ -67,8 +67,9 @@ TEST_CASE("ThermalMesh node_of follows start + k * step", "[gmm][mesh]") {
     REQUIRE(mesh.node_of(1U, 1U, 2U) == 200);
 }
 
-TEST_CASE("ThermalMesh node_of validates side and cell range", "[gmm][mesh]") {
-    const ThermalMesh mesh({0.0, 0.5, 1.0}, {0.0, 1.0});  // 2x1 cells
+TEST_CASE("ThermalMesh node_of validates side and face_pair range",
+          "[gmm][mesh]") {
+    const ThermalMesh mesh({0.0, 0.5, 1.0}, {0.0, 1.0});  // 2x1 face_pairs
     REQUIRE_THROWS_AS(mesh.node_of(0U, 0U, 0U), std::invalid_argument);
     REQUIRE_THROWS_AS(mesh.node_of(0U, 0U, 3U), std::invalid_argument);
     REQUIRE_THROWS_AS(mesh.node_of(2U, 0U, 1U), std::invalid_argument);

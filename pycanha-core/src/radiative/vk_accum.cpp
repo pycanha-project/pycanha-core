@@ -58,23 +58,23 @@ void invalidate_host_visible(const SceneImpl& scene, const GpuBuffer& buffer) {
 
 VfAccumImpl::VfAccumImpl(SceneImpl& scene, const AccumConfig& config)
     : _scene(scene), _config(config) {
-    const std::uint64_t slots = _scene.num_face_slots();
-    std::uint64_t buffer_rows = slots;
+    const std::uint64_t faces = _scene.num_faces();
+    std::uint64_t buffer_rows = faces;
     if (_config.layout == AccumLayout::Tiled) {
         if (_config.tile_rows == 0) {
             throw std::invalid_argument(
                 "pycanha::radiative: the Tiled layout needs tile_rows > 0");
         }
         _config.tile_rows = static_cast<std::uint32_t>(
-            std::min<std::uint64_t>(_config.tile_rows, slots));
+            std::min<std::uint64_t>(_config.tile_rows, faces));
         buffer_rows = _config.tile_rows;
-        _host_rows.resize(slots);
+        _host_rows.resize(faces);
     }
     _counts = _scene.create_buffer(
-        buffer_rows * matrix_columns(slots) * sizeof(std::uint32_t),
+        buffer_rows * matrix_columns(faces) * sizeof(std::uint32_t),
         VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
         /*host_visible=*/true);
-    _rays_per_row.assign(slots, 0);
+    _rays_per_row.assign(faces, 0);
     reset();
 }
 
@@ -95,13 +95,13 @@ void VfAccumImpl::clear_block_scratch() { clear_host_visible(_scene, _counts); }
 void VfAccumImpl::absorb_block(std::span<const std::uint32_t> block_emitters,
                                std::uint32_t row_offset) {
     invalidate_host_visible(_scene, _counts);
-    const std::size_t cols = matrix_columns(_scene.num_face_slots());
+    const std::size_t cols = matrix_columns(_scene.num_faces());
     const std::span<const std::uint32_t> scratch(
         static_cast<const std::uint32_t*>(checked_mapped(_counts)),
         static_cast<std::size_t>(_config.tile_rows) * cols);
-    for (const std::uint32_t slot : block_emitters) {
-        const std::size_t row = slot - row_offset;
-        auto& host_row = _host_rows[slot];
+    for (const std::uint32_t face : block_emitters) {
+        const std::size_t row = face - row_offset;
+        auto& host_row = _host_rows[face];
         for (std::size_t col = 0; col < cols; ++col) {
             const std::uint32_t cell = scratch[(row * cols) + col];
             if (cell != 0) {
@@ -113,21 +113,21 @@ void VfAccumImpl::absorb_block(std::span<const std::uint32_t> block_emitters,
 
 void VfAccumImpl::record_batch(std::span<const std::uint32_t> emitters,
                                std::uint64_t rays_per_face) {
-    for (const std::uint32_t slot : emitters) {
-        _rays_per_row[slot] += rays_per_face;
+    for (const std::uint32_t face : emitters) {
+        _rays_per_row[face] += rays_per_face;
     }
     _rays_per_face += rays_per_face;
     _total_rays += rays_per_face * emitters.size();
 }
 
 VfResult VfAccumImpl::build_result() const {
-    const std::size_t slots = _scene.num_face_slots();
+    const std::size_t faces = _scene.num_faces();
     VfResult result;
     if (_config.layout == AccumLayout::Dense) {
         invalidate_host_visible(_scene, _counts);
         const std::span<const std::uint32_t> cells(
             static_cast<const std::uint32_t*>(checked_mapped(_counts)),
-            slots * matrix_columns(slots));
+            faces * matrix_columns(faces));
         result =
             assemble_vf(cells, _scene.face_areas(), _rays_per_row, _config);
     } else {
@@ -144,23 +144,23 @@ VfResult VfAccumImpl::build_result() const {
 ExchangeAccumImpl::ExchangeAccumImpl(SceneImpl& scene, Band band,
                                      const AccumConfig& config)
     : _scene(scene), _band(band), _config(config) {
-    const std::uint64_t slots = _scene.num_face_slots();
-    std::uint64_t buffer_rows = slots;
+    const std::uint64_t faces = _scene.num_faces();
+    std::uint64_t buffer_rows = faces;
     if (_config.layout == AccumLayout::Tiled) {
         if (_config.tile_rows == 0) {
             throw std::invalid_argument(
                 "pycanha::radiative: the Tiled layout needs tile_rows > 0");
         }
         _config.tile_rows = static_cast<std::uint32_t>(
-            std::min<std::uint64_t>(_config.tile_rows, slots));
+            std::min<std::uint64_t>(_config.tile_rows, faces));
         buffer_rows = _config.tile_rows;
-        _host_rows.resize(slots);
+        _host_rows.resize(faces);
     }
     _cells = _scene.create_buffer(
-        buffer_rows * matrix_columns(slots) * sizeof(std::uint64_t),
+        buffer_rows * matrix_columns(faces) * sizeof(std::uint64_t),
         VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
         /*host_visible=*/true);
-    _rays_per_row.assign(slots, 0);
+    _rays_per_row.assign(faces, 0);
     reset();
 }
 
@@ -184,13 +184,13 @@ void ExchangeAccumImpl::clear_block_scratch() {
 void ExchangeAccumImpl::absorb_block(
     std::span<const std::uint32_t> block_emitters, std::uint32_t row_offset) {
     invalidate_host_visible(_scene, _cells);
-    const std::size_t cols = matrix_columns(_scene.num_face_slots());
+    const std::size_t cols = matrix_columns(_scene.num_faces());
     const std::span<const std::uint64_t> scratch(
         static_cast<const std::uint64_t*>(checked_mapped(_cells)),
         static_cast<std::size_t>(_config.tile_rows) * cols);
-    for (const std::uint32_t slot : block_emitters) {
-        const std::size_t row = slot - row_offset;
-        auto& host_row = _host_rows[slot];
+    for (const std::uint32_t face : block_emitters) {
+        const std::size_t row = face - row_offset;
+        auto& host_row = _host_rows[face];
         // Cells add with wrap: the lost column may carry negative (wrapped)
         // Russian-roulette adjustments.
         for (std::size_t col = 0; col < cols; ++col) {
@@ -217,8 +217,8 @@ float ExchangeAccumImpl::prepare_batch(std::uint64_t rays_per_face) {
 
 void ExchangeAccumImpl::record_batch(std::span<const std::uint32_t> emitters,
                                      std::uint64_t rays_per_face) {
-    for (const std::uint32_t slot : emitters) {
-        _rays_per_row[slot] += rays_per_face;
+    for (const std::uint32_t face : emitters) {
+        _rays_per_row[face] += rays_per_face;
     }
     _rays_per_face += rays_per_face;
     _total_rays += rays_per_face * emitters.size();
@@ -229,10 +229,10 @@ ExchangeCellSource ExchangeAccumImpl::cells() const {
         return std::span<const HostCountRow>(_host_rows);
     }
     invalidate_host_visible(_scene, _cells);
-    const std::size_t slots = _scene.num_face_slots();
+    const std::size_t faces = _scene.num_faces();
     return std::span<const std::uint64_t>(
         static_cast<const std::uint64_t*>(checked_mapped(_cells)),
-        slots * matrix_columns(slots));
+        faces * matrix_columns(faces));
 }
 
 ExchangeResult ExchangeAccumImpl::build_result() const {
@@ -256,11 +256,11 @@ std::uint64_t ExchangeAccumImpl::conservation_error() const {
 }
 
 SolarAccumImpl::SolarAccumImpl(SceneImpl& scene) : _scene(scene) {
-    const std::uint64_t slots = _scene.num_face_slots();
-    _direct = _scene.create_buffer(slots * sizeof(std::uint64_t),
+    const std::uint64_t faces = _scene.num_faces();
+    _direct = _scene.create_buffer(faces * sizeof(std::uint64_t),
                                    VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
                                    /*host_visible=*/true);
-    _total = _scene.create_buffer(slots * sizeof(std::uint64_t),
+    _total = _scene.create_buffer(faces * sizeof(std::uint64_t),
                                   VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
                                   /*host_visible=*/true);
     const std::span<const double> areas = _scene.face_areas();
@@ -329,10 +329,10 @@ void SolarAccumImpl::record_batch(std::uint64_t rays_per_face,
 }
 
 SolarResult SolarAccumImpl::build_result() const {
-    const auto slots = static_cast<Eigen::Index>(_scene.num_face_slots());
+    const auto faces = static_cast<Eigen::Index>(_scene.num_faces());
     SolarResult result;
-    result.direct = Eigen::VectorXd::Zero(slots);
-    result.total = Eigen::VectorXd::Zero(slots);
+    result.direct = Eigen::VectorXd::Zero(faces);
+    result.total = Eigen::VectorXd::Zero(faces);
     result.stats.total_rays = _total_rays;
     result.stats.rays_per_face = _rays_per_face;
     if (_rays_per_face == 0 || _fp_scale <= 0.0) {
@@ -343,10 +343,10 @@ SolarResult SolarAccumImpl::build_result() const {
     invalidate_host_visible(_scene, _total);
     const std::span<const std::uint64_t> direct(
         static_cast<const std::uint64_t*>(checked_mapped(_direct)),
-        static_cast<std::size_t>(slots));
+        static_cast<std::size_t>(faces));
     const std::span<const std::uint64_t> total(
         static_cast<const std::uint64_t*>(checked_mapped(_total)),
-        static_cast<std::size_t>(slots));
+        static_cast<std::size_t>(faces));
 
     const std::span<const double> areas = _scene.face_areas();
     const auto rays = static_cast<double>(_rays_per_face);
@@ -354,11 +354,11 @@ SolarResult SolarAccumImpl::build_result() const {
     double stderr_sum = 0.0;
     double stderr_max = 0.0;
     std::size_t stderr_entries = 0;
-    for (Eigen::Index slot = 0; slot < slots; ++slot) {
-        const auto index = static_cast<std::size_t>(slot);
+    for (Eigen::Index face = 0; face < faces; ++face) {
+        const auto index = static_cast<std::size_t>(face);
         const double area = areas[index];
         if (area <= 0.0) {
-            continue;  // no geometry on this slot, nothing was deposited
+            continue;  // no geometry on this face, nothing was deposited
         }
         // Deposits already carry the emitting face's area, so the
         // accumulated cells ARE the absorbed watts (per unit irradiance).
@@ -366,8 +366,8 @@ SolarResult SolarAccumImpl::build_result() const {
             _sun.irradiance * static_cast<double>(direct[index]) * norm;
         const double total_watts =
             _sun.irradiance * static_cast<double>(total[index]) * norm;
-        result.direct(slot) = direct_watts;
-        result.total(slot) = total_watts;
+        result.direct(face) = direct_watts;
+        result.total(face) = total_watts;
         if (total_watts > 0.0) {
             // Advisory precision estimate: the Bernoulli bound on the flux
             // fraction (exact only without concentration above 1 sun),

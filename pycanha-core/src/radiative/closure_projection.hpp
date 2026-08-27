@@ -25,7 +25,7 @@
 //
 // where C is the row-membership matrix and V = diag(v). The matrix C V C^T
 // is symmetric positive semi-definite, has EXACTLY the sparsity of the
-// coupling matrix plus a diagonal, and is only num_slots on a side — so one
+// coupling matrix plus a diagonal, and is only num_faces on a side — so one
 // sparse Cholesky replaces a factorization of the full unknown vector. Its
 // right-hand side is the per-row closure deficit, which is also what the
 // multipliers price.
@@ -69,6 +69,6 @@ struct BlueEstimate {
 //
 // Throws if the system cannot be factorized or the solution is not finite.
 void project_onto_closure(std::span<RowEntries> rows,
-                          std::span<const double> targets, std::size_t slots);
+                          std::span<const double> targets, std::size_t faces);
 
 }  // namespace pycanha::radiative::detail

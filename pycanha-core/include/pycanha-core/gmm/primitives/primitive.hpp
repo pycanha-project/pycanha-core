@@ -12,11 +12,13 @@
 #include "pycanha-core/gmm/primitives/rectangle.hpp"
 #include "pycanha-core/gmm/primitives/sphere.hpp"
 #include "pycanha-core/gmm/primitives/triangle.hpp"
+#include "pycanha-core/gmm/primitives/triangular_prism.hpp"
 
 namespace pycanha::gmm {
 
-using Primitive = std::variant<Triangle, Rectangle, Quadrilateral, Disc,
-                               Cylinder, Cone, Sphere, Paraboloid, Cube>;
+using Primitive =
+    std::variant<Triangle, Rectangle, Quadrilateral, Disc, Cylinder, Cone,
+                 Sphere, Paraboloid, Cube, TriangularPrism>;
 
 template <class Visitor>
 using primitive_visitor_t =
@@ -28,6 +30,7 @@ using primitive_visitor_t =
                        std::invoke_result_t<Visitor, const Cone&>,
                        std::invoke_result_t<Visitor, const Sphere&>,
                        std::invoke_result_t<Visitor, const Paraboloid&>,
-                       std::invoke_result_t<Visitor, const Cube&>>;
+                       std::invoke_result_t<Visitor, const Cube&>,
+                       std::invoke_result_t<Visitor, const TriangularPrism&>>;
 
 }  // namespace pycanha::gmm

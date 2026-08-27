@@ -1,8 +1,8 @@
 #pragma once
 
 // Shared scene/material helpers for the radiative GPU test files. All
-// geometry keeps the model-order slot convention: the first added item owns
-// slots 0/1, the second 2/3, and so on (even = side 1).
+// geometry keeps the model-order face convention: the first added item owns
+// faces 0/1, the second 2/3, and so on (even = side 1).
 
 #include <array>
 #include <cstdint>
@@ -18,8 +18,8 @@
 
 namespace radiative_fixtures {
 
-// Two coaxial unit plates `gap` apart, facing each other: plate A (slots
-// 0/1, side 1 up at z = 0) and plate B (slots 2/3, side 1 down at z = gap).
+// Two coaxial unit plates `gap` apart, facing each other: plate A (faces
+// 0/1, side 1 up at z = 0) and plate B (faces 2/3, side 1 down at z = gap).
 [[nodiscard]] inline std::unique_ptr<pycanha::gmm::GeometryModel>
 make_parallel_plates(double gap) {
     using pycanha::gmm::GeometryItem;
@@ -36,7 +36,7 @@ make_parallel_plates(double gap) {
     return model;
 }
 
-// Same two plates plus a 3x3 sheet between them (slots 4/5, side 1 up at
+// Same two plates plus a 3x3 sheet between them (faces 4/5, side 1 up at
 // z = gap/2) — the transmission test scene.
 [[nodiscard]] inline std::unique_ptr<pycanha::gmm::GeometryModel>
 make_plates_with_sheet(double gap) {
@@ -52,10 +52,10 @@ make_plates_with_sheet(double gap) {
     return model;
 }
 
-// Specular bench: a unit source plate (slots 0/1, side 1 up at z = 0), a
-// 45-degree tilted 4x4 mirror above it (slots 2/3, side-1 normal
+// Specular bench: a unit source plate (faces 0/1, side 1 up at z = 0), a
+// 45-degree tilted 4x4 mirror above it (faces 2/3, side-1 normal
 // (1, 0, -1)/sqrt(2): +z rays reflect to +x) and a large catcher plate at
-// x = 5 facing -x (slots 4/5). The source cannot see the catcher directly.
+// x = 5 facing -x (faces 4/5). The source cannot see the catcher directly.
 [[nodiscard]] inline std::unique_ptr<pycanha::gmm::GeometryModel>
 make_mirror_bench() {
     using pycanha::gmm::GeometryItem;
@@ -80,7 +80,7 @@ make_mirror_bench() {
 }
 
 // Closed unit-cube enclosure: six unit plates with side 1 facing inward
-// (slots 0/1 floor, 2/3 ceiling, 4/5 wall x=0, 6/7 wall x=1, 8/9 wall y=0,
+// (faces 0/1 floor, 2/3 ceiling, 4/5 wall x=0, 6/7 wall x=1, 8/9 wall y=0,
 // 10/11 wall y=1). Nothing escapes to space.
 [[nodiscard]] inline std::unique_ptr<pycanha::gmm::GeometryModel>
 make_box_enclosure() {
@@ -110,8 +110,8 @@ make_box_enclosure() {
 }
 
 // A material table with one row per entry of `rows` (kernel DOF order
-// [eps_ir, spec_ir, tau_ir, alpha_sol, spec_sol, tau_sol]); both slots of
-// face pair p map to row pair_rows[p]. Every slot starts active.
+// [eps_ir, spec_ir, tau_ir, alpha_sol, spec_sol, tau_sol]); both faces of
+// face pair p map to row pair_rows[p]. Every face starts active.
 [[nodiscard]] inline pycanha::radiative::MaterialTable make_materials(
     std::span<const std::array<float, 6>> rows,
     std::span<const int> pair_rows) {
@@ -123,13 +123,13 @@ make_box_enclosure() {
                              static_cast<Eigen::Index>(dof)) = rows[row][dof];
         }
     }
-    const auto num_slots = static_cast<Eigen::Index>(pair_rows.size()) * 2;
-    table.face_material.resize(num_slots);
-    table.face_active.resize(num_slots);
-    for (Eigen::Index slot = 0; slot < num_slots; ++slot) {
-        table.face_material(slot) =
-            pair_rows[static_cast<std::size_t>(slot / 2)];
-        table.face_active(slot) = true;
+    const auto num_faces = static_cast<Eigen::Index>(pair_rows.size()) * 2;
+    table.face_material.resize(num_faces);
+    table.face_active.resize(num_faces);
+    for (Eigen::Index face = 0; face < num_faces; ++face) {
+        table.face_material(face) =
+            pair_rows[static_cast<std::size_t>(face / 2)];
+        table.face_active(face) = true;
     }
     return table;
 }

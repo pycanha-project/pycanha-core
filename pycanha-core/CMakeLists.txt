@@ -148,9 +148,11 @@ add_library(${LIB_NAME} STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/primitives/rectangle.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/primitives/sphere.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/primitives/triangle.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/primitives/triangular_prism.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/scene/coordinate_transformation.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/scene/geometry.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/scene/geometry_item.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/scene/resolve.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/scene/geometry_group.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/scene/geometry_group_cutted.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/materials/bulk_material.cpp

@@ -56,7 +56,7 @@ enum class TriangulationMode : std::uint8_t {
     // then partly undoes the reciprocity. This mode solves for the matrix
     // closest to the raw estimate in the inverse-variance metric among those
     // that close every row exactly, which is a sparse symmetric system of
-    // one equation per face slot.
+    // one equation per face.
     //
     // It ignores `exponent`: the combination it starts from has to be the
     // unconstrained minimum-variance one (n = 1) or the result is not the

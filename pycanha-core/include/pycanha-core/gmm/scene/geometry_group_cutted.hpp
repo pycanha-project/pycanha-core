@@ -1,12 +1,10 @@
 #pragma once
 
 #include <memory>
-#include <optional>
 #include <span>
 #include <string>
 #include <vector>
 
-#include "pycanha-core/gmm/mesh/mesh_options.hpp"
 #include "pycanha-core/gmm/mesh/trimesh.hpp"
 #include "pycanha-core/gmm/scene/coordinate_transformation.hpp"
 #include "pycanha-core/gmm/scene/geometry.hpp"
@@ -14,9 +12,13 @@
 
 namespace pycanha::gmm {
 
-// Boolean-subtract group: every target is cut by the union of all cutters.
-// Caches the resolved TriMeshD. A cutter must be a GeometryItem whose primitive
-// is a closed solid (Sphere, Cylinder, Cone, Cube).
+// Boolean-subtract group: every item in the target subtree is cut by the union
+// of all cutters. This class declares WHICH cutters apply to which subtree; it
+// does no meshing of its own. Targets may be any Geometry, including another
+// cut group -- a chain of cuts resolves as one operation on the underlying
+// primitive rather than as a cut of a cut, which is impossible (see
+// gmm/scene/resolve.hpp). A cutter must be a GeometryItem whose primitive is a
+// closed solid (Sphere, Cylinder, Cone, Cube, TriangularPrism).
 class GeometryGroupCutted final : public Geometry {
   public:
     GeometryGroupCutted(std::string name,
@@ -38,18 +40,17 @@ class GeometryGroupCutted final : public Geometry {
     [[nodiscard]] const TriMeshD& mesh() const override;
     void create_mesh() override;
 
-  protected:
-    void invalidate_cache() override;
-
   private:
-    [[nodiscard]] MeshOptions effective_options() const;
-    [[nodiscard]] TriMeshD build_mesh() const;
-
     std::vector<std::shared_ptr<Geometry>> _targets;
     std::vector<std::shared_ptr<GeometryItem>> _cutters;
     std::vector<std::shared_ptr<Geometry>>
         _all_children;  // targets then cutters
-    mutable std::optional<TriMeshD> _cached_mesh;
+
+    // Storage behind the mesh() reference, not a cache: an intermediate node's
+    // resolved mesh is not reused by the model's own resolution, so keeping it
+    // would spend memory answering a question nobody asks. The two ends are
+    // cached instead -- the item's uncut mesh and the model root.
+    mutable TriMeshD _walk_result;
 };
 
 // True if `primitive` is a closed solid usable as a cutter.

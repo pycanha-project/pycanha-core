@@ -14,7 +14,6 @@
 #include "pycanha-core/gmm/primitives/disc.hpp"
 #include "pycanha-core/gmm/primitives/paraboloid.hpp"
 #include "pycanha-core/gmm/primitives/primitive.hpp"
-#include "pycanha-core/gmm/primitives/quadrilateral.hpp"
 #include "pycanha-core/gmm/primitives/rectangle.hpp"
 #include "pycanha-core/gmm/primitives/sphere.hpp"
 
@@ -240,13 +239,7 @@ std::optional<MeridianProfile> profile_of(const gmm::Primitive& primitive) {
             if constexpr (std::is_same_v<T, gmm::Rectangle>) {
                 return MeridianProfile::make_planar(
                     (concrete.p2() - concrete.p1()).norm(),
-                    concrete.to_uv(concrete.p3()).y());
-            } else if constexpr (std::is_same_v<T, gmm::Quadrilateral>) {
-                // Meshed as the equivalent rectangle spanned by p2 - p1 and
-                // the orthogonal part of p4 - p1; p3 never enters the mesh.
-                return MeridianProfile::make_planar(
-                    (concrete.p2() - concrete.p1()).norm(),
-                    concrete.to_uv(concrete.p4()).y());
+                    (concrete.p3() - concrete.p1()).norm());
             } else if constexpr (std::is_same_v<T, gmm::Disc>) {
                 return MeridianProfile::make_disc(
                     concrete.end_angle() - concrete.start_angle(),
@@ -281,8 +274,9 @@ std::optional<MeridianProfile> profile_of(const gmm::Primitive& primitive) {
                                           concrete.end_angle()),
                     concrete.radius(), (concrete.p2() - concrete.p1()).norm());
             } else {
-                // Triangle (fan parametrisation, discrete fallback) and Cube
-                // (cutter-only, never meshed).
+                // Triangle and Quadrilateral (handled by the discrete
+                // shared-edge path) and Cube and TriangularPrism (cutter-only,
+                // never meshed).
                 return std::nullopt;
             }
         },

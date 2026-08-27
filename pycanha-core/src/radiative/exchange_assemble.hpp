@@ -43,15 +43,15 @@ namespace pycanha::radiative::detail {
 using ExchangeCellSource =
     std::variant<std::span<const std::uint64_t>, std::span<const HostCountRow>>;
 
-// The traced band's absorptivity per face slot, which is what weights
-// emission and absorption alike. A slot with no material assigned is a
+// The traced band's absorptivity per face, which is what weights
+// emission and absorption alike. A face with no material assigned is a
 // blackbody (the scene warns about that at build time), so it reads 1.
 [[nodiscard]] std::vector<double> band_emissivity(
     const MaterialTable& materials, Band band);
 
 struct ExchangeInputs {
     ExchangeCellSource cells;
-    // Per face slot; `rays_per_row` defines the slot count.
+    // Per face; `rays_per_row` defines the face count.
     std::span<const double> areas;
     std::span<const double> emissivity;
     std::span<const std::uint64_t> rays_per_row;

@@ -84,10 +84,10 @@ TEST_CASE("radiative vf: parallel plates match the analytic value",
     const double tolerance =
         4.0 * std::sqrt(expected * (1.0 - expected) / 20'000.0);
     REQUIRE(vf == Catch::Approx(expected).margin(tolerance));
-    // Every first hit from plate A lands on plate B's facing side (slot 2)
+    // Every first hit from plate A lands on plate B's facing side (face 2)
     // or scores the virtual space column: the row closes to exactly one.
-    require_closed_row(
-        result, 0, static_cast<std::int32_t>(scene.num_face_slots()), 1.0 - vf);
+    require_closed_row(result, 0, static_cast<std::int32_t>(scene.num_faces()),
+                       1.0 - vf);
     REQUIRE(result.stats.rays_per_face == 20'000);
     REQUIRE(result.stats.total_rays == 20'000);
     REQUIRE(result.stats.max_stderr > 0.0);
@@ -132,7 +132,7 @@ TEST_CASE("radiative vf: identity instances match the monolithic scene",
 
     // Same geometry once as one part, once split into two rigid parts with
     // identity placements: the counting must be bit-identical because the
-    // RNG is keyed on (face slot, ray index, seed), not on scene structure.
+    // RNG is keyed on (face, ray index, seed), not on scene structure.
     rad::RadiativeScene monolithic(device, model->mesh_parts(),
                                    model->material_table());
     const std::vector<std::string> split{"plate_b"};
@@ -166,7 +166,7 @@ TEST_CASE("radiative vf: tiled layout is bit-identical to dense",
     scene.accumulate_vf(dense, settings);
     const rad::VfResult reference = dense.result();
 
-    // Several tile sizes, including 1 row and num_slots - 1 (a block split
+    // Several tile sizes, including 1 row and num_faces - 1 (a block split
     // that exercises the row_offset bookkeeping hardest).
     for (const std::uint32_t tile_rows : {1U, 2U, 3U}) {
         rad::VfAccumulator tiled(

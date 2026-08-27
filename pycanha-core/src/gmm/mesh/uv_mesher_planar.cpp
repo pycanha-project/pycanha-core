@@ -15,11 +15,13 @@ namespace {
 
 [[nodiscard]] SamplingPlan make_planar_sampling_plan(
     const ThermalMesh& thermal_mesh, SurfacePointFunction point_at) {
-    const std::size_t num_dir1_cells = thermal_mesh.get_dir1_mesh().size() - 1U;
-    const std::size_t num_dir2_cells = thermal_mesh.get_dir2_mesh().size() - 1U;
+    const std::size_t num_dir1_face_pairs =
+        thermal_mesh.get_dir1_mesh().size() - 1U;
+    const std::size_t num_dir2_face_pairs =
+        thermal_mesh.get_dir2_mesh().size() - 1U;
     return {
-        .dir1_segments = std::vector<int>(num_dir1_cells, 1),
-        .dir2_segments = std::vector<int>(num_dir2_cells, 1),
+        .dir1_segments = std::vector<int>(num_dir1_face_pairs, 1),
+        .dir2_segments = std::vector<int>(num_dir2_face_pairs, 1),
         .dir1_sample = make_linear_dir_sampler(thermal_mesh.get_dir1_mesh()),
         .dir2_sample = make_linear_dir_sampler(thermal_mesh.get_dir2_mesh()),
         .point_at = std::move(point_at)};
@@ -27,12 +29,14 @@ namespace {
 
 }  // namespace
 
+// The sampling plan already works in normalised [0, 1] cuts, and so does
+// every planar primitive's uv, so the point function is just to_cartesian.
 TriMeshD mesh_primitive(const Triangle& triangle,
                         const ThermalMesh& thermal_mesh,
                         const MeshOptions& /*options*/) {
     const auto plan = make_planar_sampling_plan(
         thermal_mesh, [&triangle](double dir1, double dir2) {
-            return triangle_strip_point(triangle, dir1, dir2);
+            return triangle.to_cartesian({dir1, dir2});
         });
     return build_mesh_from_plan(thermal_mesh, plan);
 }
@@ -40,12 +44,9 @@ TriMeshD mesh_primitive(const Triangle& triangle,
 TriMeshD mesh_primitive(const Rectangle& rectangle,
                         const ThermalMesh& thermal_mesh,
                         const MeshOptions& /*options*/) {
-    const double u_extent = (rectangle.p2() - rectangle.p1()).norm();
-    const double v_extent = rectangle.to_uv(rectangle.p3()).y();
     const auto plan = make_planar_sampling_plan(
-        thermal_mesh,
-        [&rectangle, u_extent, v_extent](double dir1, double dir2) {
-            return rectangle.to_cartesian({dir1 * u_extent, dir2 * v_extent});
+        thermal_mesh, [&rectangle](double dir1, double dir2) {
+            return rectangle.to_cartesian({dir1, dir2});
         });
     return build_mesh_from_plan(thermal_mesh, plan);
 }
@@ -53,13 +54,9 @@ TriMeshD mesh_primitive(const Rectangle& rectangle,
 TriMeshD mesh_primitive(const Quadrilateral& quadrilateral,
                         const ThermalMesh& thermal_mesh,
                         const MeshOptions& /*options*/) {
-    const double u_extent = (quadrilateral.p2() - quadrilateral.p1()).norm();
-    const double v_extent = quadrilateral.to_uv(quadrilateral.p4()).y();
     const auto plan = make_planar_sampling_plan(
-        thermal_mesh,
-        [&quadrilateral, u_extent, v_extent](double dir1, double dir2) {
-            return quadrilateral.to_cartesian(
-                {dir1 * u_extent, dir2 * v_extent});
+        thermal_mesh, [&quadrilateral](double dir1, double dir2) {
+            return quadrilateral.to_cartesian({dir1, dir2});
         });
     return build_mesh_from_plan(thermal_mesh, plan);
 }
