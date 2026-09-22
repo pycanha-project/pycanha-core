@@ -10,7 +10,7 @@
 <area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="389,205,571,204,567,207,390,210"/>
 <area shape="rect" id="Node000006" href="$structpycanha_1_1radiative_1_1detail_1_1GpuBuffer.html" title=" " alt="" coords="232,550,374,595"/>
 <area shape="poly" id="edge7_Node000001_Node000006" title=" " alt="" coords="389,573,401,574,814,590,810,594,401,579,390,579"/>
-<area shape="poly" id="edge5_Node000002_Node000006" title=" " alt="" coords="389,575,429,572,470,564,509,549,543,526,573,492,595,454,612,412,624,369,635,288,638,230,641,225,641,288,629,370,617,414,600,456,577,496,547,530,511,554,471,569,430,577,390,580"/>
+<area shape="poly" id="edge5_Node000002_Node000006" title=" " alt="" coords="389,575,429,572,470,564,509,549,543,526,559,504,574,472,601,386,621,296,634,229,637,225,626,297,606,387,579,474,564,507,547,530,511,554,471,569,430,577,390,580"/>
 <area shape="rect" id="Node000007" href="$structpycanha_1_1radiative_1_1detail_1_1SceneImpl_1_1KernelBindings.html" title=" " alt="" coords="232,31,374,92"/>
 <area shape="poly" id="edge6_Node000002_Node000007" title=" " alt="" coords="389,69,468,87,508,101,546,118,588,148,622,182,617,182,585,152,544,123,506,106,466,92,390,75"/>
 <area shape="rect" id="Node000008" href="$structpycanha_1_1radiative_1_1SolarState.html" title=" " alt="" coords="569,643,711,688"/>

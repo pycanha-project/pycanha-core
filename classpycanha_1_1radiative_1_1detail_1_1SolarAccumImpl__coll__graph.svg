@@ -116,14 +116,16 @@
 <polygon fill="#9a32cd" stroke="#9a32cd" points="288.24,-80.58 278.39,-84.49 288.53,-87.58 288.24,-80.58"/>
 </a>
 </g>
-<text xml:space="preserve" text-anchor="start" x="459.62" y="-101.91" font-family="Helvetica,sans-Serif" font-size="10.00" fill="grey">_direct</text>
-<text xml:space="preserve" text-anchor="start" x="459.62" y="-85.16" font-family="Helvetica,sans-Serif" font-size="10.00" fill="grey">_total</text>
+<text xml:space="preserve" text-anchor="start" x="434.5" y="-135.41" font-family="Helvetica,sans-Serif" font-size="10.00" fill="grey">_direct</text>
+<text xml:space="preserve" text-anchor="start" x="434.5" y="-118.66" font-family="Helvetica,sans-Serif" font-size="10.00" fill="grey">_direct_readback</text>
+<text xml:space="preserve" text-anchor="start" x="434.5" y="-101.91" font-family="Helvetica,sans-Serif" font-size="10.00" fill="grey">_total</text>
+<text xml:space="preserve" text-anchor="start" x="434.5" y="-85.16" font-family="Helvetica,sans-Serif" font-size="10.00" fill="grey">_total_readback</text>
 </g>
 <!-- Node6&#45;&gt;Node2 -->
 <g id="edge5_Node000002_Node000006" class="edge">
 <title>Node6&#45;&gt;Node2</title>
 <g id="a_edge5_Node000002_Node000006"><a xlink:title=" ">
-<path fill="none" stroke="#9a32cd" stroke-dasharray="5,2" d="M287.87,-82.81C326.19,-83.92 373.44,-91.9 404.75,-120.25 471.69,-180.87 476.47,-300.95 475.78,-345.55"/>
+<path fill="none" stroke="#9a32cd" stroke-dasharray="5,2" d="M287.87,-82.81C326.19,-83.92 373.44,-91.9 404.75,-120.25 439.03,-151.29 464.61,-295.9 472.54,-345.78"/>
 <polygon fill="#9a32cd" stroke="#9a32cd" points="288.36,-79.32 278.32,-82.7 288.27,-86.32 288.36,-79.32"/>
 </a>
 </g>

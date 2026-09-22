@@ -28,7 +28,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.20</span>
+   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.21</span>
    </div>
    <div id="projectbrief">The C++ core of pycanha</div>
   </td>
@@ -178,12 +178,18 @@ std::span&lt; const double &gt;&#160;</td><td class="memItemRight" valign="botto
 <a class="el" href="classpycanha_1_1radiative_1_1detail_1_1DeviceImpl.html">DeviceImpl</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>device</b> () const noexcept</td></tr>
 <tr class="memitem:a703cc60f4710dd84088c7b3528b61a72" id="r_a703cc60f4710dd84088c7b3528b61a72"><td class="memItemLeft" align="right" valign="top"><a id="a703cc60f4710dd84088c7b3528b61a72" name="a703cc60f4710dd84088c7b3528b61a72"></a>
 std::uint64_t&#160;</td><td class="memItemRight" valign="bottom"><b>scene_bytes</b> () const noexcept</td></tr>
-<tr class="memitem:a14ac71405264daff38551f50dcf72e6d" id="r_a14ac71405264daff38551f50dcf72e6d"><td class="memItemLeft" align="right" valign="top"><a id="a14ac71405264daff38551f50dcf72e6d" name="a14ac71405264daff38551f50dcf72e6d"></a>
-<a class="el" href="structpycanha_1_1radiative_1_1detail_1_1GpuBuffer.html">GpuBuffer</a>&#160;</td><td class="memItemRight" valign="bottom"><b>create_buffer</b> (VkDeviceSize size, VkBufferUsageFlags usage, bool host_visible)</td></tr>
+<tr class="memitem:afd1605d17e10495bcb73f21349316832" id="r_afd1605d17e10495bcb73f21349316832"><td class="memItemLeft" align="right" valign="top"><a id="afd1605d17e10495bcb73f21349316832" name="afd1605d17e10495bcb73f21349316832"></a>
+<a class="el" href="structpycanha_1_1radiative_1_1detail_1_1GpuBuffer.html">GpuBuffer</a>&#160;</td><td class="memItemRight" valign="bottom"><b>create_buffer</b> (VkDeviceSize size, VkBufferUsageFlags usage, BufferMemory memory)</td></tr>
 <tr class="memitem:a11f4141842bca36e9ebf0681e57d3859" id="r_a11f4141842bca36e9ebf0681e57d3859"><td class="memItemLeft" align="right" valign="top"><a id="a11f4141842bca36e9ebf0681e57d3859" name="a11f4141842bca36e9ebf0681e57d3859"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>destroy_buffer</b> (<a class="el" href="structpycanha_1_1radiative_1_1detail_1_1GpuBuffer.html">GpuBuffer</a> &amp;buffer) noexcept</td></tr>
+<tr class="memitem:a8b202c529e81e7219acbe19797c7f1c1" id="r_a8b202c529e81e7219acbe19797c7f1c1"><td class="memItemLeft" align="right" valign="top"><a id="a8b202c529e81e7219acbe19797c7f1c1" name="a8b202c529e81e7219acbe19797c7f1c1"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>clear_buffer</b> (const <a class="el" href="structpycanha_1_1radiative_1_1detail_1_1GpuBuffer.html">GpuBuffer</a> &amp;buffer)</td></tr>
+<tr class="memitem:ad2c7a8103fbb7c17f1ea0fd3fe4016c5" id="r_ad2c7a8103fbb7c17f1ea0fd3fe4016c5"><td class="memItemLeft" align="right" valign="top"><a id="ad2c7a8103fbb7c17f1ea0fd3fe4016c5" name="ad2c7a8103fbb7c17f1ea0fd3fe4016c5"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>read_back</b> (const <a class="el" href="structpycanha_1_1radiative_1_1detail_1_1GpuBuffer.html">GpuBuffer</a> &amp;src, const <a class="el" href="structpycanha_1_1radiative_1_1detail_1_1GpuBuffer.html">GpuBuffer</a> &amp;staging)</td></tr>
 <tr class="memitem:a2084b27eb950e67c826e2c0f3e5db407" id="r_a2084b27eb950e67c826e2c0f3e5db407"><td class="memItemLeft" align="right" valign="top"><a id="a2084b27eb950e67c826e2c0f3e5db407" name="a2084b27eb950e67c826e2c0f3e5db407"></a>
 <a class="el" href="structpycanha_1_1radiative_1_1detail_1_1GpuBuffer.html">GpuBuffer</a>&#160;</td><td class="memItemRight" valign="bottom"><b>upload_to_new_buffer</b> (const void *data, std::size_t bytes, VkBufferUsageFlags usage)</td></tr>
+<tr class="memitem:aebce55c6ba1c06ce25b7f2ae01645a2f" id="r_aebce55c6ba1c06ce25b7f2ae01645a2f"><td class="memItemLeft" align="right" valign="top"><a id="aebce55c6ba1c06ce25b7f2ae01645a2f" name="aebce55c6ba1c06ce25b7f2ae01645a2f"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>upload_to_device_buffer</b> (const <a class="el" href="structpycanha_1_1radiative_1_1detail_1_1GpuBuffer.html">GpuBuffer</a> &amp;target, const void *data, std::size_t bytes)</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pri-methods" class="groupheader"><a id="pri-methods" name="pri-methods"></a>
 Private Member Functions</h2></td></tr>
