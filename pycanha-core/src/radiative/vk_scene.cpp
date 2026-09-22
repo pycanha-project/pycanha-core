@@ -150,7 +150,7 @@ void validate_material_properties(const MaterialTable& materials) {
 }  // namespace
 
 GpuBuffer SceneImpl::create_buffer(VkDeviceSize size, VkBufferUsageFlags usage,
-                                   bool host_visible) {
+                                   BufferMemory memory) {
     GpuBuffer out;
     out.size = size;
     const VkBufferCreateInfo buffer_info{
@@ -164,7 +164,12 @@ GpuBuffer SceneImpl::create_buffer(VkDeviceSize size, VkBufferUsageFlags usage,
         .pQueueFamilyIndices = nullptr};
     VmaAllocationCreateInfo alloc_info{};
     alloc_info.usage = VMA_MEMORY_USAGE_AUTO;
-    if (host_visible) {
+    if (memory != BufferMemory::DeviceLocal) {
+        // Both host directions want the same allocation: mapped, and cached
+        // so the host side is not reading or writing uncached device memory.
+        // They stay separate enumerators because the direction is what a
+        // call site needs to state; asking for DeviceLocal instead is what
+        // keeps a kernel's atomics off the PCIe bus.
         alloc_info.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT |
                            VMA_ALLOCATION_CREATE_MAPPED_BIT;
     }
@@ -196,12 +201,12 @@ void SceneImpl::destroy_buffer(GpuBuffer& buffer) noexcept {
 
 GpuBuffer SceneImpl::upload_to_new_buffer(const void* data, std::size_t bytes,
                                           VkBufferUsageFlags usage) {
-    GpuBuffer buffer = create_buffer(std::max<std::size_t>(bytes, 4), usage,
-                                     /*host_visible=*/true);
-    if (bytes > 0) {
-        std::memcpy(checked_mapped(buffer), data, bytes);
-    }
-    vmaFlushAllocation(_device.allocator, buffer.allocation, 0, VK_WHOLE_SIZE);
+    constexpr auto transfer_dst =
+        static_cast<VkBufferUsageFlags>(VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    GpuBuffer buffer =
+        create_buffer(std::max<std::size_t>(bytes, 4), usage | transfer_dst,
+                      BufferMemory::DeviceLocal);
+    upload_to_device_buffer(buffer, data, bytes);
     return buffer;
 }
 
@@ -249,6 +254,96 @@ void SceneImpl::submit_once(Record&& record) {
                           std::numeric_limits<std::uint64_t>::max()),
           "fence wait");
     vkFreeCommandBuffers(_device.device, _command_pool, 1, &cmd);
+}
+
+void SceneImpl::clear_buffer(const GpuBuffer& buffer) {
+    submit_once([&buffer](VkCommandBuffer cmd) {
+        vkCmdFillBuffer(cmd, buffer.buffer, 0, VK_WHOLE_SIZE, 0);
+        // The zeroes must be visible to the atomics of the next dispatch.
+        // Separate submissions on one queue do not carry that dependency by
+        // themselves, so the barrier belongs here rather than at the call
+        // site.
+        const VkMemoryBarrier barrier{
+            .sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER,
+            .pNext = nullptr,
+            .srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
+            .dstAccessMask =
+                static_cast<VkAccessFlags>(VK_ACCESS_SHADER_READ_BIT) |
+                static_cast<VkAccessFlags>(VK_ACCESS_SHADER_WRITE_BIT)};
+        vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                             VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1,
+                             &barrier, 0, nullptr, 0, nullptr);
+    });
+}
+
+void SceneImpl::upload_to_device_buffer(const GpuBuffer& target,
+                                        const void* data, std::size_t bytes) {
+    if (bytes == 0) {
+        // An empty table still got a minimal buffer; zero it rather than let
+        // a kernel read whatever the allocation happened to contain.
+        clear_buffer(target);
+        return;
+    }
+    GpuBuffer staging = create_buffer(bytes, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                                      BufferMemory::HostUpload);
+    std::memcpy(checked_mapped(staging), data, bytes);
+    vmaFlushAllocation(_device.allocator, staging.allocation, 0, VK_WHOLE_SIZE);
+    submit_once([&staging, &target, bytes](VkCommandBuffer cmd) {
+        const VkBufferCopy region{
+            .srcOffset = 0, .dstOffset = 0, .size = bytes};
+        vkCmdCopyBuffer(cmd, staging.buffer, target.buffer, 1, &region);
+        // These tables are read both by the kernels and, for the geometry
+        // ones, by the acceleration-structure build. Separate submissions on
+        // one queue carry no memory dependency of their own, so both
+        // consumers have to be named here.
+        const VkMemoryBarrier barrier{
+            .sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER,
+            .pNext = nullptr,
+            .srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
+            .dstAccessMask =
+                static_cast<VkAccessFlags>(VK_ACCESS_SHADER_READ_BIT) |
+                static_cast<VkAccessFlags>(
+                    VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR)};
+        constexpr auto consumer_stages =
+            static_cast<VkPipelineStageFlags>(
+                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT) |
+            static_cast<VkPipelineStageFlags>(
+                VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR);
+        vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                             consumer_stages, 0, 1, &barrier, 0, nullptr, 0,
+                             nullptr);
+    });
+    destroy_buffer(staging);
+}
+
+void SceneImpl::read_back(const GpuBuffer& src, const GpuBuffer& staging) {
+    if (staging.size < src.size) {
+        throw std::logic_error(
+            "pycanha::radiative: readback staging buffer is too small");
+    }
+    submit_once([&src, &staging](VkCommandBuffer cmd) {
+        const VkMemoryBarrier before{
+            .sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER,
+            .pNext = nullptr,
+            .srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT,
+            .dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT};
+        vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                             VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 1, &before, 0,
+                             nullptr, 0, nullptr);
+        const VkBufferCopy region{
+            .srcOffset = 0, .dstOffset = 0, .size = src.size};
+        vkCmdCopyBuffer(cmd, src.buffer, staging.buffer, 1, &region);
+        const VkMemoryBarrier after{
+            .sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER,
+            .pNext = nullptr,
+            .srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
+            .dstAccessMask = VK_ACCESS_HOST_READ_BIT};
+        vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                             VK_PIPELINE_STAGE_HOST_BIT, 0, 1, &after, 0,
+                             nullptr, 0, nullptr);
+    });
+    vmaInvalidateAllocation(_device.allocator, staging.allocation, 0,
+                            VK_WHOLE_SIZE);
 }
 
 SceneImpl::SceneImpl(DeviceImpl& device, std::vector<ScenePart> parts,
@@ -584,9 +679,9 @@ void SceneImpl::build_blas(const std::vector<ScenePart>& parts) {
 
         gpu.blas_storage =
             create_buffer(sizes.accelerationStructureSize, accel_storage_usage,
-                          /*host_visible=*/false);
+                          BufferMemory::DeviceLocal);
         GpuBuffer scratch = create_buffer(sizes.buildScratchSize, scratch_usage,
-                                          /*host_visible=*/false);
+                                          BufferMemory::DeviceLocal);
 
         VkAccelerationStructureCreateInfoKHR create{};
         create.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR;
@@ -625,10 +720,10 @@ void SceneImpl::write_instance_buffers() {
     if (_instance_ssbo.buffer == VK_NULL_HANDLE) {
         _instance_ssbo = create_buffer(count * sizeof(InstanceDataGpu),
                                        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                                       /*host_visible=*/true);
+                                       BufferMemory::HostUpload);
         _tlas_instances =
             create_buffer(count * sizeof(VkAccelerationStructureInstanceKHR),
-                          instance_input_usage, /*host_visible=*/true);
+                          instance_input_usage, BufferMemory::HostUpload);
     }
     const std::span<VkAccelerationStructureInstanceKHR> tlas_span(
         static_cast<VkAccelerationStructureInstanceKHR*>(
@@ -688,12 +783,12 @@ void SceneImpl::build_tlas_first() {
         create_buffer(sizes.accelerationStructureSize,
                       VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR |
                           VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
-                      /*host_visible=*/false);
+                      BufferMemory::DeviceLocal);
     _tlas_scratch =
         create_buffer(std::max(sizes.buildScratchSize, sizes.updateScratchSize),
                       VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
                           VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
-                      /*host_visible=*/false);
+                      BufferMemory::DeviceLocal);
 
     VkAccelerationStructureCreateInfoKHR create{};
     create.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR;
@@ -882,7 +977,7 @@ void SceneImpl::create_pipelines() {
     // the accumulator bindings (9-11) are (re)written per accumulate call.
     // The dummy keeps every binding valid until then.
     _dummy_buf = create_buffer(4, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                               /*host_visible=*/false);
+                               BufferMemory::DeviceLocal);
     write_storage_descriptor(1, _instance_ssbo.buffer);
     write_storage_descriptor(2, _materials_buf.buffer);
     write_storage_descriptor(3, _face_record_buf.buffer);
@@ -1076,14 +1171,13 @@ void SceneImpl::update_materials(const MaterialTable& materials) {
     }
     validate_material_properties(materials);
 
-    // Overwrite the mapped property rows in place — geometry, acceleration
-    // structures and every other table stay untouched.
+    // Overwrite the property rows in place — geometry, acceleration
+    // structures and every other table stay untouched. The buffer is
+    // device-local, so this is a staging copy rather than a memcpy.
     const std::vector<float> material_rows = pack_material_rows(materials);
     if (!material_rows.empty()) {
-        std::memcpy(checked_mapped(_materials_buf), material_rows.data(),
-                    material_rows.size() * sizeof(float));
-        vmaFlushAllocation(_device.allocator, _materials_buf.allocation, 0,
-                           VK_WHOLE_SIZE);
+        upload_to_device_buffer(_materials_buf, material_rows.data(),
+                                material_rows.size() * sizeof(float));
     }
     _materials.properties = materials.properties;
 }
@@ -1095,8 +1189,9 @@ void SceneImpl::dispatch_rows(const KernelDispatch& kernel,
     const VkDeviceSize needed = emitters.size() * sizeof(std::uint32_t);
     if (_emitters_buf.buffer == VK_NULL_HANDLE || _emitters_buf.size < needed) {
         destroy_buffer(_emitters_buf);
-        _emitters_buf = create_buffer(
-            needed, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, /*host_visible=*/true);
+        _emitters_buf =
+            create_buffer(needed, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                          BufferMemory::HostUpload);
     }
     std::memcpy(checked_mapped(_emitters_buf), emitters.data(), needed);
     vmaFlushAllocation(_device.allocator, _emitters_buf.allocation, 0,
@@ -1141,15 +1236,20 @@ void SceneImpl::dispatch_rows(const KernelDispatch& kernel,
                                VK_SHADER_STAGE_COMPUTE_BIT, 0,
                                sizeof(PushConstants), &push);
             vkCmdDispatch(cmd, groups_x, push.num_emitters, 1);
-            // Make the atomic writes visible to the host mapping.
+            // The accumulator is device-local now, so the host never reads it
+            // here; what the next chunk needs is to see this chunk's atomics.
+            // Separate submissions on one queue do not carry that dependency
+            // by themselves. The readback adds its own transfer barrier.
             const VkMemoryBarrier barrier{
                 .sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER,
                 .pNext = nullptr,
                 .srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT,
-                .dstAccessMask = VK_ACCESS_HOST_READ_BIT};
+                .dstAccessMask =
+                    static_cast<VkAccessFlags>(VK_ACCESS_SHADER_READ_BIT) |
+                    static_cast<VkAccessFlags>(VK_ACCESS_SHADER_WRITE_BIT)};
             vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-                                 VK_PIPELINE_STAGE_HOST_BIT, 0, 1, &barrier, 0,
-                                 nullptr, 0, nullptr);
+                                 VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1,
+                                 &barrier, 0, nullptr, 0, nullptr);
         });
         done += chunk;
     }

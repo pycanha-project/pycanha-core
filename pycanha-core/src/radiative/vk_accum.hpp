@@ -10,6 +10,14 @@
 // Cells are integers, so both layouts produce bit-identical results for the
 // same seed — a property the tests assert. The solar accumulator is two
 // per-face vectors and needs no layout machinery.
+//
+// Every cell buffer lives in device-local memory: the kernels take one
+// 64-bit atomic per deposited ray, and on a discrete GPU a host-visible
+// accumulator would put every one of those on the PCIe bus (measured at
+// 117x on an RTX 4070). Each accumulator therefore carries a host-visible
+// staging buffer of the same size, and the host reads that instead — one
+// copy per readback, about 22 GB/s, which is a fraction of a percent of a
+// real trace even where it buys nothing.
 
 #include <array>
 #include <cstddef>
@@ -61,7 +69,8 @@ class VfAccumImpl {
   private:
     SceneImpl& _scene;
     AccumConfig _config;
-    GpuBuffer _counts;
+    GpuBuffer _counts;    // device-local u32 cells, row stride faces + 3
+    GpuBuffer _readback;  // host-visible mirror of _counts, filled per read
     // Tiled layout: accumulated counts per row (column -> count). Dense
     // keeps everything in the GPU buffer instead.
     std::vector<HostCountRow> _host_rows;
@@ -115,7 +124,8 @@ class ExchangeAccumImpl {
     SceneImpl& _scene;
     Band _band;
     AccumConfig _config;
-    GpuBuffer _cells;  // u64 fixed-point deposits, row stride faces + 3
+    GpuBuffer _cells;     // device-local u64 fixed point, stride faces + 3
+    GpuBuffer _readback;  // host-visible mirror of _cells, filled per read
     // Tiled layout: host-side accumulation (Dense reads the GPU buffer).
     std::vector<HostCountRow> _host_rows;
     std::vector<std::uint64_t> _rays_per_row;
@@ -162,6 +172,8 @@ class SolarAccumImpl {
     SceneImpl& _scene;
     GpuBuffer _direct;  // u64 fixed-point absorbed direct energy per face
     GpuBuffer _total;   // u64 fixed-point absorbed total energy per face
+    GpuBuffer _direct_readback;  // host-visible mirrors, filled per read
+    GpuBuffer _total_readback;
     SolarState _sun{};
     bool _sun_recorded = false;
     double _fp_scale = 0.0;

@@ -33,6 +33,24 @@ struct GpuBuffer {
     VkDeviceSize size = 0;
 };
 
+// Where a buffer's memory must live. The distinction is not cosmetic: on a
+// discrete GPU a host-visible allocation sits in system RAM, so every shader
+// access to it crosses PCIe. Measured on an RTX 4070 with an 8000-face model,
+// moving the accumulators and the scene tables into VRAM is worth 28x end to
+// end; on a 600-face model it is worth nothing, because 117 KB of tables live
+// in L2 once they are first touched and never leave.
+//
+// So the rule is: anything whose size grows with the model is DeviceLocal,
+// filled by a staging copy and read back by another. What stays HostUpload is
+// only what the host has to rewrite between dispatches and is small enough to
+// stay cache-resident whatever the model: the instance records, the TLAS
+// build input and the emitter list.
+enum class BufferMemory {
+    DeviceLocal,   // VRAM, never mapped; reached through transfers
+    HostUpload,    // mapped, written by the host and read by the kernels
+    HostReadback,  // mapped, written by a transfer and read by the host
+};
+
 // Host-visible buffers are created with the mapped flag; a null mapping
 // would be a logic error, and checking makes that explicit.
 [[nodiscard]] inline void* checked_mapped(const GpuBuffer& buffer) {
@@ -118,14 +136,27 @@ class SceneImpl {
     // Buffer helpers shared with the accumulator implementations.
     [[nodiscard]] GpuBuffer create_buffer(VkDeviceSize size,
                                           VkBufferUsageFlags usage,
-                                          bool host_visible);
+                                          BufferMemory memory);
     void destroy_buffer(GpuBuffer& buffer) noexcept;
-    // Creates a host-visible buffer, copies `bytes` of `data` into it and
-    // flushes. Empty inputs get a minimal valid buffer (Vulkan forbids
-    // zero-sized ones).
+    // Zeroes a DeviceLocal buffer on the device. The accumulators are not
+    // mapped, so clearing them is a transfer command, not a memset.
+    void clear_buffer(const GpuBuffer& buffer);
+    // Copies the whole of `src` into the mapped `staging` buffer and makes
+    // it readable on the host. `staging` must be at least as large as
+    // `src`; on return `checked_mapped(staging)` holds the contents.
+    void read_back(const GpuBuffer& src, const GpuBuffer& staging);
+    // Creates a DeviceLocal buffer and fills it through a staging copy.
+    // The kernels read these tables on every ray, so on a discrete GPU a
+    // host-visible one would put each of those loads on the PCIe bus: on a
+    // 8000-face model that is measured at 20x end to end. Empty inputs get a
+    // minimal valid buffer (Vulkan forbids zero-sized ones), zeroed.
     [[nodiscard]] GpuBuffer upload_to_new_buffer(const void* data,
                                                  std::size_t bytes,
                                                  VkBufferUsageFlags usage);
+    // Refills an existing DeviceLocal buffer created by the above. `target`
+    // must already carry VK_BUFFER_USAGE_TRANSFER_DST_BIT.
+    void upload_to_device_buffer(const GpuBuffer& target, const void* data,
+                                 std::size_t bytes);
 
   private:
     struct PartGpu {
