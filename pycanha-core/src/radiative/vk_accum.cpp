@@ -5,7 +5,6 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
-#include <cstring>
 #include <numeric>
 #include <span>
 #include <stdexcept>
@@ -43,16 +42,16 @@ namespace {
     return (std::uint64_t{1} << 63U) / static_cast<std::uint64_t>(fp_scale);
 }
 
-void clear_host_visible(const SceneImpl& scene, const GpuBuffer& buffer) {
-    std::memset(checked_mapped(buffer), 0, buffer.size);
-    vmaFlushAllocation(scene.device().allocator, buffer.allocation, 0,
-                       VK_WHOLE_SIZE);
-}
-
-void invalidate_host_visible(const SceneImpl& scene, const GpuBuffer& buffer) {
-    vmaInvalidateAllocation(scene.device().allocator, buffer.allocation, 0,
-                            VK_WHOLE_SIZE);
-}
+// Usage for a device-local cell buffer: the kernels atomically add into it
+// (storage), clear_buffer fills it (transfer dst) and read_back copies out
+// of it (transfer src). The casts keep the signed enum constants out of the
+// bitwise expression.
+constexpr auto accum_usage =
+    static_cast<VkBufferUsageFlags>(VK_BUFFER_USAGE_STORAGE_BUFFER_BIT) |
+    static_cast<VkBufferUsageFlags>(VK_BUFFER_USAGE_TRANSFER_SRC_BIT) |
+    static_cast<VkBufferUsageFlags>(VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+constexpr auto readback_usage =
+    static_cast<VkBufferUsageFlags>(VK_BUFFER_USAGE_TRANSFER_DST_BIT);
 
 }  // namespace
 
@@ -70,15 +69,20 @@ VfAccumImpl::VfAccumImpl(SceneImpl& scene, const AccumConfig& config)
         buffer_rows = _config.tile_rows;
         _host_rows.resize(faces);
     }
-    _counts = _scene.create_buffer(
-        buffer_rows * matrix_columns(faces) * sizeof(std::uint32_t),
-        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-        /*host_visible=*/true);
+    const VkDeviceSize cell_bytes =
+        buffer_rows * matrix_columns(faces) * sizeof(std::uint32_t);
+    _counts = _scene.create_buffer(cell_bytes, accum_usage,
+                                   BufferMemory::DeviceLocal);
+    _readback = _scene.create_buffer(cell_bytes, readback_usage,
+                                     BufferMemory::HostReadback);
     _rays_per_row.assign(faces, 0);
     reset();
 }
 
-VfAccumImpl::~VfAccumImpl() { _scene.destroy_buffer(_counts); }
+VfAccumImpl::~VfAccumImpl() {
+    _scene.destroy_buffer(_counts);
+    _scene.destroy_buffer(_readback);
+}
 
 void VfAccumImpl::reset() {
     clear_block_scratch();
@@ -90,14 +94,14 @@ void VfAccumImpl::reset() {
     _total_rays = 0;
 }
 
-void VfAccumImpl::clear_block_scratch() { clear_host_visible(_scene, _counts); }
+void VfAccumImpl::clear_block_scratch() { _scene.clear_buffer(_counts); }
 
 void VfAccumImpl::absorb_block(std::span<const std::uint32_t> block_emitters,
                                std::uint32_t row_offset) {
-    invalidate_host_visible(_scene, _counts);
+    _scene.read_back(_counts, _readback);
     const std::size_t cols = matrix_columns(_scene.num_faces());
     const std::span<const std::uint32_t> scratch(
-        static_cast<const std::uint32_t*>(checked_mapped(_counts)),
+        static_cast<const std::uint32_t*>(checked_mapped(_readback)),
         static_cast<std::size_t>(_config.tile_rows) * cols);
     for (const std::uint32_t face : block_emitters) {
         const std::size_t row = face - row_offset;
@@ -124,9 +128,9 @@ VfResult VfAccumImpl::build_result() const {
     const std::size_t faces = _scene.num_faces();
     VfResult result;
     if (_config.layout == AccumLayout::Dense) {
-        invalidate_host_visible(_scene, _counts);
+        _scene.read_back(_counts, _readback);
         const std::span<const std::uint32_t> cells(
-            static_cast<const std::uint32_t*>(checked_mapped(_counts)),
+            static_cast<const std::uint32_t*>(checked_mapped(_readback)),
             faces * matrix_columns(faces));
         result =
             assemble_vf(cells, _scene.face_areas(), _rays_per_row, _config);
@@ -156,15 +160,20 @@ ExchangeAccumImpl::ExchangeAccumImpl(SceneImpl& scene, Band band,
         buffer_rows = _config.tile_rows;
         _host_rows.resize(faces);
     }
-    _cells = _scene.create_buffer(
-        buffer_rows * matrix_columns(faces) * sizeof(std::uint64_t),
-        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-        /*host_visible=*/true);
+    const VkDeviceSize cell_bytes =
+        buffer_rows * matrix_columns(faces) * sizeof(std::uint64_t);
+    _cells = _scene.create_buffer(cell_bytes, accum_usage,
+                                  BufferMemory::DeviceLocal);
+    _readback = _scene.create_buffer(cell_bytes, readback_usage,
+                                     BufferMemory::HostReadback);
     _rays_per_row.assign(faces, 0);
     reset();
 }
 
-ExchangeAccumImpl::~ExchangeAccumImpl() { _scene.destroy_buffer(_cells); }
+ExchangeAccumImpl::~ExchangeAccumImpl() {
+    _scene.destroy_buffer(_cells);
+    _scene.destroy_buffer(_readback);
+}
 
 void ExchangeAccumImpl::reset() {
     clear_block_scratch();
@@ -177,16 +186,14 @@ void ExchangeAccumImpl::reset() {
     _total_rays = 0;
 }
 
-void ExchangeAccumImpl::clear_block_scratch() {
-    clear_host_visible(_scene, _cells);
-}
+void ExchangeAccumImpl::clear_block_scratch() { _scene.clear_buffer(_cells); }
 
 void ExchangeAccumImpl::absorb_block(
     std::span<const std::uint32_t> block_emitters, std::uint32_t row_offset) {
-    invalidate_host_visible(_scene, _cells);
+    _scene.read_back(_cells, _readback);
     const std::size_t cols = matrix_columns(_scene.num_faces());
     const std::span<const std::uint64_t> scratch(
-        static_cast<const std::uint64_t*>(checked_mapped(_cells)),
+        static_cast<const std::uint64_t*>(checked_mapped(_readback)),
         static_cast<std::size_t>(_config.tile_rows) * cols);
     for (const std::uint32_t face : block_emitters) {
         const std::size_t row = face - row_offset;
@@ -228,10 +235,10 @@ ExchangeCellSource ExchangeAccumImpl::cells() const {
     if (_config.layout != AccumLayout::Dense) {
         return std::span<const HostCountRow>(_host_rows);
     }
-    invalidate_host_visible(_scene, _cells);
+    _scene.read_back(_cells, _readback);
     const std::size_t faces = _scene.num_faces();
     return std::span<const std::uint64_t>(
-        static_cast<const std::uint64_t*>(checked_mapped(_cells)),
+        static_cast<const std::uint64_t*>(checked_mapped(_readback)),
         faces * matrix_columns(faces));
 }
 
@@ -257,12 +264,15 @@ std::uint64_t ExchangeAccumImpl::conservation_error() const {
 
 SolarAccumImpl::SolarAccumImpl(SceneImpl& scene) : _scene(scene) {
     const std::uint64_t faces = _scene.num_faces();
-    _direct = _scene.create_buffer(faces * sizeof(std::uint64_t),
-                                   VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                                   /*host_visible=*/true);
-    _total = _scene.create_buffer(faces * sizeof(std::uint64_t),
-                                  VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                                  /*host_visible=*/true);
+    const VkDeviceSize cell_bytes = faces * sizeof(std::uint64_t);
+    _direct = _scene.create_buffer(cell_bytes, accum_usage,
+                                   BufferMemory::DeviceLocal);
+    _total = _scene.create_buffer(cell_bytes, accum_usage,
+                                  BufferMemory::DeviceLocal);
+    _direct_readback = _scene.create_buffer(cell_bytes, readback_usage,
+                                            BufferMemory::HostReadback);
+    _total_readback = _scene.create_buffer(cell_bytes, readback_usage,
+                                           BufferMemory::HostReadback);
     const std::span<const double> areas = _scene.face_areas();
     const double total_area = std::accumulate(areas.begin(), areas.end(), 0.0);
     _area_units = std::max<std::uint64_t>(
@@ -273,11 +283,13 @@ SolarAccumImpl::SolarAccumImpl(SceneImpl& scene) : _scene(scene) {
 SolarAccumImpl::~SolarAccumImpl() {
     _scene.destroy_buffer(_direct);
     _scene.destroy_buffer(_total);
+    _scene.destroy_buffer(_direct_readback);
+    _scene.destroy_buffer(_total_readback);
 }
 
 void SolarAccumImpl::reset() {
-    clear_host_visible(_scene, _direct);
-    clear_host_visible(_scene, _total);
+    _scene.clear_buffer(_direct);
+    _scene.clear_buffer(_total);
     _sun_recorded = false;
     _fp_scale = 0.0;
     _rays_per_face = 0;
@@ -339,13 +351,13 @@ SolarResult SolarAccumImpl::build_result() const {
         return result;
     }
 
-    invalidate_host_visible(_scene, _direct);
-    invalidate_host_visible(_scene, _total);
+    _scene.read_back(_direct, _direct_readback);
+    _scene.read_back(_total, _total_readback);
     const std::span<const std::uint64_t> direct(
-        static_cast<const std::uint64_t*>(checked_mapped(_direct)),
+        static_cast<const std::uint64_t*>(checked_mapped(_direct_readback)),
         static_cast<std::size_t>(faces));
     const std::span<const std::uint64_t> total(
-        static_cast<const std::uint64_t*>(checked_mapped(_total)),
+        static_cast<const std::uint64_t*>(checked_mapped(_total_readback)),
         static_cast<std::size_t>(faces));
 
     const std::span<const double> areas = _scene.face_areas();
