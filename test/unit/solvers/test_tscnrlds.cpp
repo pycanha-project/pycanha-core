@@ -1,12 +1,16 @@
 #include <algorithm>
 #include <array>
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/generators/catch_generators.hpp>
 #include <cmath>
 #include <cstddef>
 #include <iostream>
 #include <iterator>
 #include <memory>
+#include <stdexcept>
 
+#include "pycanha-core/config.hpp"
+#include "pycanha-core/solvers/linear_solver.hpp"
 #include "pycanha-core/solvers/tscnrlds.hpp"
 #include "pycanha-core/thermaldata/data_model.hpp"
 #include "pycanha-core/thermaldata/dense_time_series.hpp"
@@ -258,4 +262,58 @@ TEST_CASE("TSCNRLDS solves a simple model", "[solver][tscnrlds]") {
     solver2.initialize();
     solver2.solve();
     REQUIRE(compare_temps(*model, false));
+}
+
+TEST_CASE("TSCNRLDS gives the same transient with every solver option",
+          "[solver][tscnrlds]") {
+    using pycanha::DirectSolverType;
+    using pycanha::SolverEngine;
+    struct Option {
+        SolverEngine engine;
+        DirectSolverType type;
+        int iparm_3;
+    };
+    const auto option =
+        GENERATE(Option{SolverEngine::EIGEN, DirectSolverType::COLAMD, 0},
+                 Option{SolverEngine::EIGEN, DirectSolverType::AMD, 0},
+                 Option{SolverEngine::MKL, DirectSolverType::TWO_LEVEL, 0},
+                 Option{SolverEngine::MKL, DirectSolverType::ONE_LEVEL, 0},
+                 Option{SolverEngine::MKL, DirectSolverType::MIN_DEGREE, 0},
+                 Option{SolverEngine::MKL, DirectSolverType::ONE_LEVEL, 61},
+                 Option{SolverEngine::MKL, DirectSolverType::MIN_DEGREE, 61});
+    if (option.engine == SolverEngine::MKL && !pycanha::MKL_ENABLED) {
+        SKIP("MKL not built");
+    }
+    auto model = make_model();
+    pycanha::TSCNRLDS solver(model);
+    solver.engine = option.engine;
+    solver.solver_type = option.type;
+    solver.pardiso_iparm_3 = option.iparm_3;
+    solver.max_iters = 100;
+    solver.abstol_temp = 1e-6;
+    solver.set_simulation_time(0.0, 100000.0, 1000.0, 10000.0);
+    solver.initialize();
+    REQUIRE(solver.solver_initialized);
+    solver.solve();
+    REQUIRE(compare_temps(*model, false));
+}
+
+TEST_CASE("TSCNRLDS rejects unavailable solver options", "[solver][tscnrlds]") {
+    using pycanha::DirectSolverType;
+    using pycanha::SolverEngine;
+    auto model = make_model();
+    pycanha::TSCNRLDS solver(model);
+    solver.set_simulation_time(0.0, 100000.0, 1000.0, 10000.0);
+
+    SECTION("LDLT") {
+        solver.engine = SolverEngine::EIGEN;
+        solver.solver_type = DirectSolverType::LDLT;
+        REQUIRE_THROWS_AS(solver.initialize(), std::invalid_argument);
+    }
+    SECTION("The iterative step with the two-level factorisation") {
+        solver.engine = pycanha::default_solver_engine();
+        solver.pardiso_iparm_3 = 61;
+        REQUIRE_THROWS_AS(solver.initialize(), std::invalid_argument);
+    }
+    REQUIRE_FALSE(solver.solver_initialized);
 }

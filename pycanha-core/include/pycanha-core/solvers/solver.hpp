@@ -2,12 +2,14 @@
 
 #include <Eigen/Sparse>
 #include <cstddef>
+#include <map>
 #include <memory>
 #include <string>
 #include <unordered_set>
 #include <utility>
 
 #include "pycanha-core/globals.hpp"
+#include "pycanha-core/solvers/linear_solver.hpp"
 #include "pycanha-core/tmm/couplingmatrices.hpp"
 #include "pycanha-core/tmm/thermalmathematicalmodel.hpp"
 #include "pycanha-core/utils/SparseUtils.hpp"
@@ -53,7 +55,20 @@ class Solver {
     double eps_capacity = 1.0e-7;
     double eps_time = 1.0e-6;
     double eps_coupling = 1.0e-12;
-    int pardiso_iparm_3 = 31;
+    /// MKL PARDISO iterative step: 10 * L + 1 iterates on the previous
+    /// factors down to a relative residual of 10^-L before refactorising
+    /// (see IterativeSolverType), 0 factorises every changed matrix. Read by
+    /// initialize().
+    int pardiso_iparm_3 = 0;
+    /// PARDISO iparm entries (zero-based index, value) applied after the
+    /// solver's own settings, read by initialize(). Index 3 replaces
+    /// pardiso_iparm_3. For diagnosis and workarounds; the solver types cover
+    /// the tested configurations.
+    std::map<int, int> pardiso_iparm_overrides;
+    /// Threads of the PARDISO calls, 0 for MKL's setting (MKL_NUM_THREADS).
+    int mkl_threads = 0;
+    /// PARDISO statistics printed to standard output.
+    bool pardiso_verbose = false;
 
     bool solver_converged = false;
     bool solver_initialized = false;
@@ -126,6 +141,10 @@ class Solver {
     virtual void restart_solve() = 0;
 
     void initialize_common();
+
+    /// Linear solver options from the PARDISO settings above.
+    [[nodiscard]] LinearSolverOptions linear_solver_options(
+        SolverEngine engine, DirectSolverType type) const;
 
     [[nodiscard]] bool temperature_convergence_check();
     [[nodiscard]] bool energy_convergence_check();

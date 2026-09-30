@@ -5,6 +5,7 @@
 #include <utility>
 
 #include "pycanha-core/solvers/sslu.hpp"
+#include "pycanha-core/solvers/sslu_cgs.hpp"
 #include "pycanha-core/solvers/tscnrlds.hpp"
 #include "pycanha-core/solvers/tscnrlds_jacobian.hpp"
 
@@ -26,6 +27,14 @@ SSLU& SolverRegistry::sslu() {
     }
 
     return *_sslu;
+}
+
+SSLU_CGS& SolverRegistry::sslu_cgs() {
+    if (_sslu_cgs == nullptr) {
+        _sslu_cgs = std::make_unique<SSLU_CGS>(_tmm);
+    }
+
+    return *_sslu_cgs;
 }
 
 TSCNRLDS& SolverRegistry::tscnrlds() {
