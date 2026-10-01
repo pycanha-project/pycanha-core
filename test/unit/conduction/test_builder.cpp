@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "pycanha-core/conduction/builder.hpp"
+#include "pycanha-core/conduction/network_part.hpp"
 #include "pycanha-core/conduction/options.hpp"
 #include "pycanha-core/globals.hpp"
 #include "pycanha-core/gmm/geometrymodel.hpp"
@@ -100,6 +101,14 @@ using pycanha::gmm::Triangle;
         .get_num_total_couplings();
 }
 
+// The node area is the triangulated one, which the builder does not set: it
+// comes from its own call.
+[[nodiscard]] double triangulated_area(ThermalModel& model,
+                                       pycanha::NodeNum node) {
+    static_cast<void>(pycanha::conduction::assign_node_areas(model));
+    return model.tmm().nodes().get_a(node);
+}
+
 }  // namespace
 
 TEST_CASE("builder: a split plate produces one node pair and one conductor",
@@ -168,7 +177,8 @@ TEST_CASE("builder: nodes shared across items merge their contributions",
     REQUIRE(report.items_processed == 2U);
     // One node fed by both plates: areas and capacitances add...
     REQUIRE(report.nodes_created == 1U);
-    REQUIRE(model.tmm().nodes().get_a(42) == Catch::Approx(2.0));
+    REQUIRE(model.tmm().nodes().get_a(42) == 0.0);  // not set by the build
+    REQUIRE(triangulated_area(model, 42) == Catch::Approx(2.0));
     REQUIRE(model.tmm().nodes().get_C(42) == Catch::Approx(2.0));
     // ...but nothing connects two different geometries.
     REQUIRE(report.conductors_created == 0U);
@@ -255,7 +265,7 @@ TEST_CASE("builder: an item that only radiates still builds its nodes",
     REQUIRE(report.items_processed == 1U);
     REQUIRE(report.nodes_created == 2U);
     // Both face pairs of a side feed that side's node.
-    REQUIRE(model.tmm().nodes().get_a(1) == Catch::Approx(1.0));
+    REQUIRE(triangulated_area(model, 1) == Catch::Approx(1.0));
     REQUIRE(model.tmm().nodes().get_C(2) == Catch::Approx(2.0));
     REQUIRE(report.face_pair_links_computed == 0U);
     REQUIRE(report.conductors_created == 0U);
@@ -271,7 +281,7 @@ TEST_CASE("builder: a non-empty tmm is refused", "[conduction][builder]") {
     REQUIRE_THROWS_AS(model.build_tmm_from_gmm(), std::invalid_argument);
 }
 
-TEST_CASE("builder: cut geometry is skipped with one diagnostic per group",
+TEST_CASE("builder: cut geometry keeps its nodes, scaled by what survives",
           "[conduction][builder]") {
     ThermalModel model("cut_group");
     auto target =
@@ -289,29 +299,35 @@ TEST_CASE("builder: cut geometry is skipped with one diagnostic per group",
         CoordinateTransformation::from_translation({0.0, 0.0, 3.0})));
 
     const TmmBuildReport report = model.build_tmm_from_gmm();
-    REQUIRE(has_code(report, DiagnosticCode::CutGeometrySkipped));
+    REQUIRE(report.items_processed == 2U);
+    REQUIRE(report.nodes_created == 2U);
+    REQUIRE(report.face_pairs_cut == 1U);
     REQUIRE(std::ranges::count_if(report.diagnostics, [](const auto& entry) {
-                return entry.code == DiagnosticCode::CutGeometrySkipped;
+                return entry.code == DiagnosticCode::CutFacePairs;
             }) == 1);
-    // Only the intact plate contributes.
-    REQUIRE(report.items_processed == 1U);
-    REQUIRE(report.nodes_created == 1U);
-    REQUIRE(model.tmm().nodes().is_node(2));
-    REQUIRE_FALSE(model.tmm().nodes().is_node(1));
+    // A unit plate with a 0.3 m hole: the capacity of what is left, the hole
+    // being the triangulated (inscribed) circle.
+    const double hole = std::numbers::pi * 0.3 * 0.3;
+    const double capacity = model.tmm().nodes().get_C(1);
+    REQUIRE(capacity > 1.0 - hole);
+    REQUIRE(capacity < 1.0 - (0.95 * hole));
+    REQUIRE(model.tmm().nodes().get_C(2) == Catch::Approx(1.0));
+    // The node area is the triangulated surviving area.
+    REQUIRE(triangulated_area(model, 1) == Catch::Approx(capacity));
 }
 
-TEST_CASE("builder: a cube never reaches the builder",
-          "[conduction][builder]") {
+TEST_CASE("builder: a cube is reported and skipped", "[conduction][builder]") {
     ThermalModel model("cube_only");
     ThermalMesh mesh;
     mesh.set_node1_start(1);
     model.gmm().add(std::make_shared<GeometryItem>(
         "block", Cube({0.0, 0.0, 0.0}, {1.0, 1.0, 1.0}), std::move(mesh)));
 
-    // A Cube is cutter-only, so it is the world mesh that refuses it: a Cube
-    // may only appear as a cutter inside a cut group, which the builder skips
-    // as cut geometry anyway.
-    REQUIRE_THROWS(model.build_tmm_from_gmm());
+    // A Cube is cutter-only: it has no face pairs to build nodes from.
+    const TmmBuildReport report = model.build_tmm_from_gmm();
+    REQUIRE(has_code(report, DiagnosticCode::UnmeshedPrimitive));
+    REQUIRE(report.items_skipped == 1U);
+    REQUIRE(report.nodes_created == 0U);
 }
 
 TEST_CASE("builder: a triangle reports its discrete fallback",

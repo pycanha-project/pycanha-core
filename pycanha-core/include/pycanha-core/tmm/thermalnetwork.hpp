@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "pycanha-core/globals.hpp"
+#include "pycanha-core/tmm/bulk.hpp"
 
 namespace pycanha {
 
@@ -32,7 +33,13 @@ class ThermalNetwork {
     ~ThermalNetwork() = default;
 
     void add_node(Node& node);
+    /// Bulk node insertion, see Nodes::add_nodes.
+    BulkReport add_nodes(const NodeBatch& batch);
     void remove_node(Index node_num);
+
+    /// Sizes both coupling containers to the current nodes (nodes appended
+    /// at the end of their block grow them lazily).
+    void synchronize_structure();
 
     [[nodiscard]] Nodes& nodes() noexcept;
     [[nodiscard]] const Nodes& nodes() const noexcept;

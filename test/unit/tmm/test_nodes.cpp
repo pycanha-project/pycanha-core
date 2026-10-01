@@ -3,6 +3,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <cmath>
 #include <memory>
+#include <optional>
 #include <random>
 #include <vector>
 
@@ -233,18 +234,27 @@ TEST_CASE("Nodes copy and move preserve stored values", "[nodes]") {
     require_state(move_assigned);
 }
 
-TEST_CASE("Nodes set_type currently reports success without reordering nodes",
-          "[nodes]") {
+TEST_CASE("Nodes set_type moves a node between the blocks", "[nodes]") {
     Nodes tns;
 
-    Node node(10);
-    tns.add_node(node);
+    for (const NodeNum number : {10, 20, 30}) {
+        Node node(number);
+        node.set_T(static_cast<double>(number));
+        tns.add_node(node);
+    }
 
-    // TODO: Replace this with real D<->B conversion assertions once
-    // diffusive_to_boundary/boundary_to_diffusive are implemented.
     REQUIRE(tns.set_type(10, 'B'));
+    REQUIRE(tns.get_type(10) == 'B');
+    REQUIRE(tns.get_num_diff_nodes() == 2);
+    REQUIRE(tns.get_idx_from_node_num(10) == std::optional<Index>{2});
+    REQUIRE(tns.get_idx_from_node_num(20) == std::optional<Index>{0});
+    REQUIRE(tns.get_T(10) == 10.0);
+
+    REQUIRE(tns.set_type(10, 'D'));
     REQUIRE(tns.get_type(10) == 'D');
     REQUIRE(tns.get_idx_from_node_num(10) == std::optional<Index>{0});
+    REQUIRE(tns.get_T(10) == 10.0);
+    REQUIRE(tns.get_T(30) == 30.0);
 }
 
 TEST_CASE("Nodes Testing", "[nodes]") {
@@ -364,32 +374,40 @@ TEST_CASE("Nodes Testing", "[nodes]") {
     // Assert that only non-zero elements are entries of the sparse vectors
     assert_blank_nodes_attributes_are_trivial_zeros(blank_nodes, tns);
 
-    // Check that the map is updated and flagged outdated properly
+    // Appending at the end of a block updates the map in place; inserting in
+    // the middle of a block flags it outdated until the next lookup.
     Node node_map_check_d1(1001);
-    Node node_map_check_d2(1002);
     Node node_map_check_b1(1003);
-    Node node_map_check_b2(1004);
+    Node node_map_check_d2(2);
+    Node node_map_check_b2(4);
     node_map_check_b1.set_type('B');
     node_map_check_b2.set_type('B');
-    tns.add_node(node_map_check_d1);  // Map flagged outdated
+    REQUIRE(tns.set_T(1, 1.0));  // Map updated
+    REQUIRE(tns.is_mapped());
+    tns.add_node(node_map_check_d1);  // Diffusive append: map kept
+    REQUIRE(tns.is_mapped());
+    tns.add_node(node_map_check_b1);  // Boundary append: map kept
+    REQUIRE(tns.is_mapped());
+    REQUIRE(tns.set_T(1001, 1001.0));
+    REQUIRE(tns.set_T(1003, 1003.0));
+
+    tns.add_node(node_map_check_d2);  // Middle of the block: map outdated
     REQUIRE(!tns.is_mapped());
-    tns.set_T(1001, 1001.0);  // Map updated
+    REQUIRE(tns.set_T(2, 2.0));  // Map updated
     REQUIRE(tns.is_mapped());
 
-    tns.add_node(node_map_check_b1);  // Map flagged outdated
+    tns.add_node(node_map_check_b2);  // Middle of the block: map outdated
     REQUIRE(!tns.is_mapped());
-    tns.set_T(1003, 1003.0);  // Map updated
+    REQUIRE(tns.set_T(4, 4.0));  // Map updated
     REQUIRE(tns.is_mapped());
 
-    tns.add_node(node_map_check_d2);  // Map flagged outdated
-    REQUIRE(!tns.is_mapped());
-    tns.set_T(1002, 1002.0);  // Map updated
-    REQUIRE(tns.is_mapped());
-
-    tns.add_node(node_map_check_b2);  // Map flagged outdated
-    REQUIRE(!tns.is_mapped());
-    tns.set_T(1004, 1004.0);  // Map updated
-    REQUIRE(tns.is_mapped());
+    // Every node still reads back through the map.
+    REQUIRE(tns.get_T(1001) == 1001.0);
+    REQUIRE(tns.get_T(1003) == 1003.0);
+    REQUIRE(tns.get_T(2) == 2.0);
+    REQUIRE(tns.get_T(4) == 4.0);
+    REQUIRE(tns.get_type(1003) == 'B');
+    REQUIRE(tns.get_type(4) == 'B');
 
     // Additional tests can be added here...
 }

@@ -3,13 +3,22 @@
 #include <spdlog/spdlog.h>
 
 #include <algorithm>
+#include <array>
+#include <cmath>
+#include <cstddef>
+#include <cstdint>
 #include <limits>
 #include <memory>
 #include <optional>
+#include <span>
+#include <string>
 #include <tuple>
+#include <type_traits>
 #include <utility>
+#include <vector>
 
 #include "pycanha-core/globals.hpp"
+#include "pycanha-core/tmm/bulk.hpp"
 #include "pycanha-core/tmm/coupling.hpp"
 #include "pycanha-core/tmm/couplingmatrices.hpp"
 #include "pycanha-core/tmm/nodes.hpp"
@@ -34,29 +43,82 @@ namespace {
 
 template <typename SparseMatrix>
 void ensure_sparse_dimensions(SparseMatrix& matrix, Index rows, Index cols) {
-    if (matrix.rows() >= rows && matrix.cols() >= cols) {
-        return;
+    // Nodes appended at the end of their block only add empty rows and
+    // columns, which a conservative resize adds in place; the stored entries
+    // do not move.
+    if (matrix.rows() != rows || matrix.cols() != cols) {
+        matrix.conservativeResize(rows, cols);
     }
-
-    SparseMatrix expanded(rows, cols);
-
-    for (Index outer = 0; outer < matrix.outerSize(); ++outer) {
-        for (typename SparseMatrix::InnerIterator it(matrix, outer); it; ++it) {
-            if (it.row() < rows && it.col() < cols) {
-                expanded.insert(it.row(), it.col()) = it.value();
-            }
-        }
-    }
-
-    expanded.makeCompressed();
-    matrix = std::move(expanded);
 }
 
 }  // namespace
 
 Couplings::Couplings(std::shared_ptr<Nodes> nodes) noexcept
     : _nodes(std::move(nodes)) {
+    if (_nodes != nullptr) {
+        _nodes->add_observer(this);
+    }
     synchronize_structure();
+}
+
+Couplings::~Couplings() {
+    if (_nodes != nullptr) {
+        _nodes->remove_observer(this);
+    }
+}
+
+Couplings::Couplings(const Couplings& other)
+    : _nodes(other._nodes),
+      _matrices(other._matrices),
+      _synced_version(other._synced_version) {
+    if (_nodes != nullptr) {
+        _nodes->add_observer(this);
+    }
+}
+
+Couplings& Couplings::operator=(const Couplings& other) {
+    if (this != &other) {
+        if (_nodes != nullptr) {
+            _nodes->remove_observer(this);
+        }
+        _nodes = other._nodes;
+        _matrices = other._matrices;
+        _synced_version = other._synced_version;
+        if (_nodes != nullptr) {
+            _nodes->add_observer(this);
+        }
+    }
+    return *this;
+}
+
+Couplings::Couplings(Couplings&& other) noexcept
+    : _matrices(std::move(other._matrices)),
+      _synced_version(other._synced_version) {
+    if (other._nodes != nullptr) {
+        other._nodes->remove_observer(&other);
+    }
+    _nodes = std::move(other._nodes);
+    if (_nodes != nullptr) {
+        _nodes->add_observer(this);
+    }
+}
+
+Couplings& Couplings::operator=(Couplings&& other) noexcept {
+    if (this != &other) {
+        if (_nodes != nullptr) {
+            _nodes->remove_observer(this);
+        }
+        if (other._nodes != nullptr) {
+            other._nodes->remove_observer(&other);
+        }
+        _nodes = std::move(other._nodes);
+        _matrices = std::move(other._matrices);
+        _synced_version = other._synced_version;
+        if (_nodes != nullptr) {
+            _nodes->add_observer(this);
+        }
+    }
+    return *this;
 }
 
 const CouplingMatrices& Couplings::get_coupling_matrices() const noexcept {
@@ -64,6 +126,7 @@ const CouplingMatrices& Couplings::get_coupling_matrices() const noexcept {
 }
 
 CouplingMatrices& Couplings::get_coupling_matrices() noexcept {
+    synchronize_structure();
     return _matrices;
 }
 
@@ -237,7 +300,7 @@ Coupling Couplings::get_coupling_from_coupling_idx(Index cidx) {
 }
 
 void Couplings::synchronize_structure() {
-    if (_nodes == nullptr) {
+    if (_nodes == nullptr || _synced_version == _nodes->structure_version()) {
         return;
     }
 
@@ -247,6 +310,275 @@ void Couplings::synchronize_structure() {
     ensure_sparse_dimensions(_matrices.sparse_dd, diff_count, diff_count);
     ensure_sparse_dimensions(_matrices.sparse_db, diff_count, bound_count);
     ensure_sparse_dimensions(_matrices.sparse_bb, bound_count, bound_count);
+    _synced_version = _nodes->structure_version();
+}
+
+void Couplings::remap_nodes(char type, std::span<const Index> old_to_new) {
+    // The remap sizes every block to the current nodes, so appends that were
+    // still pending are applied on the way.
+    const auto diff_count = to_idx(_nodes->_diff_node_num_vector.size());
+    const auto bound_count = to_idx(_nodes->_bound_node_num_vector.size());
+    const std::span<const Index> identity;
+    if (type == 'D') {
+        CouplingMatrices::remap(_matrices.sparse_dd, old_to_new, old_to_new,
+                                diff_count, diff_count);
+        CouplingMatrices::remap(_matrices.sparse_db, old_to_new, identity,
+                                diff_count, bound_count);
+        ensure_sparse_dimensions(_matrices.sparse_bb, bound_count, bound_count);
+    } else {
+        ensure_sparse_dimensions(_matrices.sparse_dd, diff_count, diff_count);
+        CouplingMatrices::remap(_matrices.sparse_db, identity, old_to_new,
+                                diff_count, bound_count);
+        CouplingMatrices::remap(_matrices.sparse_bb, old_to_new, old_to_new,
+                                bound_count, bound_count);
+    }
+    _synced_version = _nodes->structure_version();
+}
+
+void Couplings::reorder_nodes(std::span<const Index> old_to_new,
+                              Index old_diff_count) {
+    _matrices.reorder(old_to_new, old_diff_count,
+                      to_idx(_nodes->_diff_node_num_vector.size()),
+                      to_idx(_nodes->_bound_node_num_vector.size()));
+    _synced_version = _nodes->structure_version();
+}
+
+// ---------------------------------------------------------------------------
+// Bulk insertion
+// ---------------------------------------------------------------------------
+
+namespace {
+
+std::string describe_pair(std::int64_t node_num_1, std::int64_t node_num_2) {
+    return "(" + std::to_string(node_num_1) + ", " +
+           std::to_string(node_num_2) + ")";
+}
+
+}  // namespace
+
+template <typename NodeNumber>
+BulkReport Couplings::add_couplings_impl(
+    std::span<const NodeNumber> node_nums_1,
+    std::span<const NodeNumber> node_nums_2, std::span<const double> values,
+    CouplingMerge merge) {
+    BulkReport report;
+    const std::size_t count = values.size();
+    if (node_nums_1.size() != count || node_nums_2.size() != count ||
+        _nodes == nullptr) {
+        report.rejected =
+            std::max({node_nums_1.size(), node_nums_2.size(), count});
+        report.first_rejections.emplace_back(
+            _nodes == nullptr ? "no nodes to couple"
+                              : "node and value arrays differ in length");
+        SPDLOG_LOGGER_WARN(pycanha::get_logger(),
+                           "add_couplings: {} couplings rejected: {}",
+                           report.rejected, report.first_rejections.front());
+        return report;
+    }
+
+    synchronize_structure();
+    _nodes->ensure_node_map();
+    const auto index_of = [this](NodeNumber node_num) -> std::optional<Index> {
+        if constexpr (!std::is_same_v<NodeNumber, NodeNum>) {
+            if (std::cmp_less(node_num, std::numeric_limits<NodeNum>::min()) ||
+                std::cmp_greater(node_num,
+                                 std::numeric_limits<NodeNum>::max())) {
+                return std::nullopt;
+            }
+        }
+        return _nodes->lookup_node_index(static_cast<NodeNum>(node_num));
+    };
+    // Entry `entry` in its block, or block -1 when it cannot be stored; the
+    // reason is recorded only on the first pass.
+    const auto resolve = [&](std::size_t entry, bool first_pass) {
+        const auto first = index_of(node_nums_1[entry]);
+        const auto second = index_of(node_nums_2[entry]);
+        CouplingMatrices::Resolved resolved;
+        if (first.has_value() && second.has_value() &&
+            std::isfinite(values[entry]) && values[entry] >= 0.0) {
+            resolved = _matrices.resolve(*first, *second);
+        }
+        if (resolved.block_id < 0 && first_pass) {
+            report.reject(
+                describe_pair(node_nums_1[entry], node_nums_2[entry]) +
+                ": unknown node, same node twice, or negative or "
+                "non-finite value");
+        }
+        return resolved;
+    };
+
+    CouplingMatrices::BulkWriter writer(_matrices);
+    for (std::size_t entry = 0; entry < count; ++entry) {
+        const auto resolved = resolve(entry, /*first_pass=*/true);
+        if (resolved.block_id >= 0) {
+            writer.plan(resolved);
+        }
+    }
+    writer.open();
+    for (std::size_t entry = 0; entry < count; ++entry) {
+        const auto resolved = resolve(entry, /*first_pass=*/false);
+        if (resolved.block_id >= 0) {
+            writer.put(resolved, values[entry],
+                       static_cast<std::uint32_t>(entry));
+        }
+    }
+    report.accepted = writer.finish(values, merge, report);
+
+    SPDLOG_LOGGER_DEBUG(pycanha::get_logger(),
+                        "add_couplings: {} couplings added ({} merged), {} "
+                        "rejected",
+                        report.accepted, report.merged, report.rejected);
+    if (report.rejected > 0) {
+        SPDLOG_LOGGER_WARN(
+            pycanha::get_logger(),
+            "add_couplings: {} of {} couplings rejected, e.g. {}",
+            report.rejected, count, report.first_rejections.front());
+    }
+    if (merge == CouplingMerge::NEW && report.merged > 0) {
+        SPDLOG_LOGGER_WARN(pycanha::get_logger(),
+                           "add_couplings: {} duplicated couplings dropped, "
+                           "the first value of each kept",
+                           report.merged);
+    }
+    return report;
+}
+
+BulkReport Couplings::add_couplings(std::span<const NodeNum> node_nums_1,
+                                    std::span<const NodeNum> node_nums_2,
+                                    std::span<const double> values,
+                                    CouplingMerge merge) {
+    return add_couplings_impl(node_nums_1, node_nums_2, values, merge);
+}
+
+BulkReport Couplings::add_couplings(std::span<const std::int64_t> node_nums_1,
+                                    std::span<const std::int64_t> node_nums_2,
+                                    std::span<const double> values,
+                                    CouplingMerge merge) {
+    return add_couplings_impl(node_nums_1, node_nums_2, values, merge);
+}
+
+BulkReport Couplings::append_couplings(std::span<const CouplingChunk> chunks) {
+    synchronize_structure();
+    return _matrices.append_couplings(chunks);
+}
+
+BulkReport Couplings::get_values(std::span<const NodeNum> node_nums_1,
+                                 std::span<const NodeNum> node_nums_2,
+                                 std::span<double> values) {
+    BulkReport report;
+    if (node_nums_1.size() != values.size() ||
+        node_nums_2.size() != values.size() || _nodes == nullptr) {
+        report.rejected = values.size();
+        report.first_rejections.emplace_back(
+            "node and value arrays differ in length");
+        SPDLOG_LOGGER_WARN(pycanha::get_logger(), "get_values: {}",
+                           report.first_rejections.front());
+        return report;
+    }
+    synchronize_structure();
+    _nodes->ensure_node_map();
+    for (std::size_t entry = 0; entry < values.size(); ++entry) {
+        const auto first = _nodes->lookup_node_index(node_nums_1[entry]);
+        const auto second = _nodes->lookup_node_index(node_nums_2[entry]);
+        const double* value =
+            first.has_value() && second.has_value() && *first != *second
+                ? _matrices.get_conductor_value_ref_from_idx(*first, *second)
+                : nullptr;
+        if (value == nullptr) {
+            values[entry] = std::numeric_limits<double>::quiet_NaN();
+            report.reject(
+                describe_pair(node_nums_1[entry], node_nums_2[entry]) +
+                ": no such coupling");
+            continue;
+        }
+        values[entry] = *value;
+        ++report.accepted;
+    }
+    if (report.rejected > 0) {
+        SPDLOG_LOGGER_WARN(pycanha::get_logger(),
+                           "get_values: {} of {} couplings do not exist, e.g. "
+                           "{}",
+                           report.rejected, values.size(),
+                           report.first_rejections.front());
+    }
+    return report;
+}
+
+BulkReport Couplings::set_values(std::span<const NodeNum> node_nums_1,
+                                 std::span<const NodeNum> node_nums_2,
+                                 std::span<const double> values) {
+    BulkReport report;
+    if (node_nums_1.size() != values.size() ||
+        node_nums_2.size() != values.size() || _nodes == nullptr) {
+        report.rejected = values.size();
+        report.first_rejections.emplace_back(
+            "node and value arrays differ in length");
+        SPDLOG_LOGGER_WARN(pycanha::get_logger(), "set_values: {}",
+                           report.first_rejections.front());
+        return report;
+    }
+    synchronize_structure();
+    _nodes->ensure_node_map();
+    for (std::size_t entry = 0; entry < values.size(); ++entry) {
+        const auto first = _nodes->lookup_node_index(node_nums_1[entry]);
+        const auto second = _nodes->lookup_node_index(node_nums_2[entry]);
+        double* value =
+            first.has_value() && second.has_value() && *first != *second
+                ? _matrices.get_conductor_value_ref_from_idx(*first, *second)
+                : nullptr;
+        if (value == nullptr || !std::isfinite(values[entry]) ||
+            values[entry] < 0.0) {
+            report.reject(
+                describe_pair(node_nums_1[entry], node_nums_2[entry]) +
+                (value == nullptr ? ": no such coupling"
+                                  : ": negative or non-finite value"));
+            continue;
+        }
+        *value = values[entry];
+        ++report.accepted;
+    }
+    if (report.rejected > 0) {
+        SPDLOG_LOGGER_WARN(pycanha::get_logger(),
+                           "set_values: {} of {} couplings skipped, e.g. {}",
+                           report.rejected, values.size(),
+                           report.first_rejections.front());
+    }
+    return report;
+}
+
+Couplings::CouplingArrays Couplings::to_arrays() {
+    synchronize_structure();
+    CouplingArrays arrays;
+    if (_nodes == nullptr) {
+        return arrays;
+    }
+    const std::vector<NodeNum> numbers = _nodes->node_numbers();
+    const Index num_diff = _matrices.sparse_dd.rows();
+    const auto total = to_sizet(_matrices.get_num_total_couplings());
+    arrays.node_1.reserve(total);
+    arrays.node_2.reserve(total);
+    arrays.values.reserve(total);
+    const std::array<
+        std::pair<const Eigen::SparseMatrix<double, Eigen::RowMajor>*,
+                  std::pair<Index, Index>>,
+        3>
+        blocks{{{&_matrices.sparse_dd, {0, 0}},
+                {&_matrices.sparse_db, {0, num_diff}},
+                {&_matrices.sparse_bb, {num_diff, num_diff}}}};
+    for (const auto& [matrix, offsets] : blocks) {
+        for (Index row = 0; row < matrix->outerSize(); ++row) {
+            for (Eigen::SparseMatrix<double, Eigen::RowMajor>::InnerIterator it(
+                     *matrix, row);
+                 it; ++it) {
+                arrays.node_1.push_back(
+                    numbers[to_sizet(it.row() + offsets.first)]);
+                arrays.node_2.push_back(
+                    numbers[to_sizet(it.col() + offsets.second)]);
+                arrays.values.push_back(it.value());
+            }
+        }
+    }
+    return arrays;
 }
 
 std::optional<std::pair<Index, Index>> Couplings::get_indices_from_node_numbers(

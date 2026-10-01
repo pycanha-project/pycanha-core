@@ -4,6 +4,7 @@
 #include <functional>
 #include <memory>
 #include <optional>
+#include <span>
 #include <string>
 #include <string_view>
 #include <unordered_map>
@@ -12,6 +13,7 @@
 
 #include "pycanha-core/globals.hpp"
 #include "pycanha-core/parameters/variable.hpp"
+#include "pycanha-core/tmm/bulk.hpp"
 
 namespace pycanha {
 
@@ -106,6 +108,17 @@ class ThermalMathematicalModel {
 
     void add_node(Node node);
     void add_node(Index node_num);
+    /// Bulk node insertion, see Nodes::add_nodes.
+    BulkReport add_nodes(const NodeBatch& batch);
+    /// Bulk coupling insertion by node number, see Couplings::add_couplings.
+    BulkReport add_conductive_couplings(
+        std::span<const NodeNum> node_nums_1,
+        std::span<const NodeNum> node_nums_2, std::span<const double> values,
+        CouplingMerge merge = CouplingMerge::OVERWRITE);
+    BulkReport add_radiative_couplings(
+        std::span<const NodeNum> node_nums_1,
+        std::span<const NodeNum> node_nums_2, std::span<const double> values,
+        CouplingMerge merge = CouplingMerge::OVERWRITE);
     void add_conductive_coupling(Index node_num_1, Index node_num_2,
                                  double value);
     void add_radiative_coupling(Index node_num_1, Index node_num_2,

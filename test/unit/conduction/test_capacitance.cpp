@@ -6,6 +6,7 @@
 #include <utility>
 
 #include "pycanha-core/conduction/builder.hpp"
+#include "pycanha-core/conduction/network_part.hpp"
 #include "pycanha-core/conduction/options.hpp"
 #include "pycanha-core/globals.hpp"
 #include "pycanha-core/gmm/geometrymodel.hpp"
@@ -51,6 +52,14 @@ using pycanha::gmm::ThermalMesh;
     });
 }
 
+// The node area is the triangulated one, which the builder does not set: it
+// comes from its own call.
+[[nodiscard]] double triangulated_area(ThermalModel& model,
+                                       pycanha::NodeNum node) {
+    static_cast<void>(pycanha::conduction::assign_node_areas(model));
+    return model.tmm().nodes().get_a(node);
+}
+
 }  // namespace
 
 TEST_CASE("capacitance: a single-surfaced node sums one side only",
@@ -67,7 +76,7 @@ TEST_CASE("capacitance: a single-surfaced node sums one side only",
     REQUIRE(report.nodes_created == 1U);
     // rho * cp * t * A = 2 * 3 * 0.05 * 1.
     REQUIRE(model.tmm().nodes().get_C(10) == Catch::Approx(0.3));
-    REQUIRE(model.tmm().nodes().get_a(10) == Catch::Approx(1.0));
+    REQUIRE(triangulated_area(model, 10) == Catch::Approx(1.0));
     REQUIRE(model.tmm().nodes().get_type(10) == 'D');
 }
 
@@ -90,7 +99,7 @@ TEST_CASE("capacitance: a dual-surfaced node picks up both thicknesses",
     // The two sides add: rho * cp * (t1 + t2) * A.
     REQUIRE(model.tmm().nodes().get_C(7) == Catch::Approx(2.0 * 3.0 * 0.07));
     // Each active side counts its own face area.
-    REQUIRE(model.tmm().nodes().get_a(7) == Catch::Approx(2.0));
+    REQUIRE(triangulated_area(model, 7) == Catch::Approx(2.0));
     // The two sides are the same node, so no through-thickness conductor.
     REQUIRE(report.conductors_created == 0U);
 }
@@ -138,7 +147,7 @@ TEST_CASE("capacitance: a radiative-only side keeps its node and its mass",
     REQUIRE(model.tmm().nodes().is_node(1));
     REQUIRE(model.tmm().nodes().is_node(2));
     REQUIRE(model.tmm().nodes().get_C(2) == Catch::Approx(2.0 * 3.0 * 0.05));
-    REQUIRE(model.tmm().nodes().get_a(2) == Catch::Approx(1.0));
+    REQUIRE(triangulated_area(model, 2) == Catch::Approx(1.0));
     // Side 2 is out of the through-thickness series, so the two nodes are not
     // linked.
     REQUIRE(report.conductors_created == 0U);
@@ -186,7 +195,7 @@ TEST_CASE("capacitance: a dual-surfaced node drops its inactive side's mass",
     REQUIRE(report.nodes_created == 1U);
     // Side 1 alone: t2 is not there to add.
     REQUIRE(model.tmm().nodes().get_C(7) == Catch::Approx(2.0 * 3.0 * 0.05));
-    REQUIRE(model.tmm().nodes().get_a(7) == Catch::Approx(1.0));
+    REQUIRE(triangulated_area(model, 7) == Catch::Approx(1.0));
 }
 
 TEST_CASE("capacitance: a conductive-only side still builds its node",
@@ -217,7 +226,7 @@ TEST_CASE("capacitance: missing bulk keeps the node without capacitance",
     REQUIRE(report.conductors_created == 0U);
     REQUIRE(has_code(report, DiagnosticCode::MissingBulk));
     REQUIRE(model.tmm().nodes().get_C(3) == Catch::Approx(0.0));
-    REQUIRE(model.tmm().nodes().get_a(3) == Catch::Approx(1.0));
+    REQUIRE(triangulated_area(model, 3) == Catch::Approx(1.0));
 }
 
 TEST_CASE("capacitance: zero thickness keeps the node without capacitance",

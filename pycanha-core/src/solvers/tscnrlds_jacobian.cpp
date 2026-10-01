@@ -311,6 +311,9 @@ void TSCNRLDS_JACOBIAN::solve_jacobian_step() {
 }
 
 void TSCNRLDS_JACOBIAN::solve() {
+    if (!structure_unchanged_since_initialize()) {
+        return;
+    }
     SPDLOG_LOGGER_INFO(get_logger(), "TSCNRLDS_JACOBIAN solving...");
 
     const FormulaExecutionGuard formula_execution(*this);

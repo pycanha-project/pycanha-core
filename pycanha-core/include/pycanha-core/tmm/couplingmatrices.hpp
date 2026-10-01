@@ -11,8 +11,15 @@
 #pragma once
 
 #include <Eigen/Sparse>
+#include <array>
+#include <cstddef>
+#include <cstdint>
+#include <optional>
+#include <span>
 #include <tuple>
+#include <vector>
 
+#include "pycanha-core/tmm/bulk.hpp"
 #include "pycanha-core/tmm/nodes.hpp"
 
 namespace pycanha {
@@ -90,22 +97,171 @@ class CouplingMatrices {
 
     void print_sparse() const;
 
-    static void reserve(int nnz);
+    /// Specific bulk insertion by internal node index.
+    /**
+     * Writes the chunks straight into the compressed storage, in one pass and
+     * without any temporary: no node-number lookup, no sorting, no merging.
+     * The caller is in charge of the order. Within each block (dd, db, bb)
+     * the entries of all the chunks, taken in turn, must be strictly
+     * increasing in (lower index, higher index) and come after every
+     * coupling already stored in that block; the row pointers are finalised
+     * once, after the last chunk.
+     *
+     * That order is checked, O(k): a chunk that breaks it, or that holds an
+     * index out of range, the same node twice or a negative or non-finite
+     * value, is rejected whole and reported, never written. The matrices
+     * must already have the size of the nodes (Couplings::append_couplings
+     * sees to it).
+     */
+    BulkReport append_couplings(std::span<const CouplingChunk> chunks);
 
   private:
+    using SparseRowMatrix = Eigen::SparseMatrix<double, Eigen::RowMajor>;
+    using StorageIndex = SparseRowMatrix::StorageIndex;
+
+    // A coupling position in one block, compared in storage order.
+    struct BlockPosition {
+        StorageIndex row = -1;
+        StorageIndex col = -1;
+
+        [[nodiscard]] bool operator<(
+            const BlockPosition& other) const noexcept {
+            return row < other.row || (row == other.row && col < other.col);
+        }
+    };
+
+    // A pair of internal node indices placed in its block (0 dd, 1 db, 2 bb);
+    // block -1 when the pair cannot be stored.
+    struct Resolved {
+        int block_id = -1;
+        BlockPosition position;
+    };
+
+    // One entry of a block, as (row, col) in that block, with the position
+    // of its value in the caller's value array.
+    struct BlockEntry {
+        StorageIndex row;
+        StorageIndex col;
+        std::uint32_t source;
+    };
+
+    // How many entries a merge adds to one row.
+    struct RowGrowth {
+        StorageIndex row;
+        Index added;
+    };
+
+    // Writes entries given in (row, col) order after the last stored entry
+    // of a compressed block: grows the storage once, fills the row pointers
+    // as the rows go by and closes them in finish().
+    class Appender {
+      public:
+        Appender(SparseRowMatrix& matrix, Index count);
+        void push(StorageIndex row, StorageIndex col, double value) noexcept;
+        void finish() noexcept;
+
+      private:
+        Index _write;
+        std::span<StorageIndex> _outer;
+        std::span<StorageIndex> _inner;
+        std::span<double> _values;
+        Index _fill_row{-1};
+    };
+
+    // One appender per block that receives entries.
+    class BlockAppenders {
+      public:
+        BlockAppenders(CouplingMatrices& matrices,
+                       const std::array<Index, 3>& counts);
+        void push(const Resolved& resolved, double value);
+        void finish() noexcept;
+
+      private:
+        std::array<std::optional<Appender>, 3> _appenders;
+    };
+
+    // The general bulk path of Couplings::add_couplings, block by block:
+    // every valid entry is first planned (to learn whether a block's entries
+    // come in storage order after what it holds), then put: appended straight
+    // into the block when they do, collected and merged in place otherwise.
+    class BulkWriter {
+      public:
+        explicit BulkWriter(CouplingMatrices& matrices) noexcept
+            : _matrices(&matrices) {}
+        void plan(const Resolved& resolved);
+        void open();
+        void put(const Resolved& resolved, double value, std::uint32_t source);
+        // Closes the appends and runs the merges; returns the entries taken.
+        std::size_t finish(std::span<const double> values, CouplingMerge merge,
+                           BulkReport& report);
+
+      private:
+        struct Block {
+            Index count = 0;
+            bool in_order = true;
+            BlockPosition first;
+            BlockPosition last;
+            std::optional<Appender> appender;
+            std::vector<BlockEntry> pending;
+        };
+        CouplingMatrices* _matrices;
+        std::array<Block, 3> _blocks;
+    };
+
+    // Block 0 is dd, 1 db, 2 bb.
+    [[nodiscard]] SparseRowMatrix& block(int block_id) noexcept;
+
+    // Places a pair of internal node indices in its block.
+    [[nodiscard]] Resolved resolve(Index first, Index second) const;
+
+    // Last stored entry of a compressed block, or (-1, -1) when it is empty.
+    [[nodiscard]] static BlockPosition last_stored(
+        const SparseRowMatrix& matrix);
+
+    // Checks one chunk of append_couplings against the order left by the
+    // chunks accepted before it, and accounts for it when it passes.
+    [[nodiscard]] bool check_chunk(const CouplingChunk& chunk,
+                                   std::size_t chunk_id,
+                                   std::array<BlockPosition, 3>& last,
+                                   std::array<Index, 3>& counts,
+                                   BulkReport& report) const;
+
+    // General bulk path: sorts `entries` by (row, col), keeping call order
+    // among duplicates, and merges them into the block in place, from the
+    // back, after one growth of the storage.
+    static void merge_entries(SparseRowMatrix& matrix,
+                              std::vector<BlockEntry>& entries,
+                              std::span<const double> values,
+                              CouplingMerge merge, BulkReport& report);
+    static void sort_entries(std::vector<BlockEntry>& entries, Index rows);
+    [[nodiscard]] static std::vector<RowGrowth> count_growth(
+        SparseRowMatrix& matrix, std::span<const BlockEntry> entries,
+        BulkReport& report);
+    // Merges one row's sorted entries with its stored ones, writing from
+    // `write` down; returns where the row now starts.
+    static Index merge_row(SparseRowMatrix& matrix,
+                           std::span<const BlockEntry> row_entries,
+                           std::span<const double> values, CouplingMerge merge,
+                           Index old_begin, Index old_end, Index write);
+
+    // Moves every stored entry to its new (row, col) under two monotone maps
+    // (old index -> new index, -1 to drop it; an empty map is the identity)
+    // and resizes the block. The values are never copied, only compacted.
+    // Rebuilds the three blocks for a new node order that may move nodes
+    // across blocks (old_to_new over all internal indices, old_diff_count
+    // diffusive nodes before, diff_count and bound_count after).
+    void reorder(std::span<const Index> old_to_new, Index old_diff_count,
+                 Index diff_count, Index bound_count);
+
+    static void remap(SparseRowMatrix& matrix, std::span<const Index> row_map,
+                      std::span<const Index> col_map, Index rows, Index cols);
+
     static void _move_node(Index to_idx, Index from_idx);
 
     inline bool _is_thermal_nodes_valid();
 
     inline std::tuple<Index, Index, bool> _get_internal_node_numbers(Index i,
                                                                      Index j);
-
-    // NEW FOR REFACTORING
-    void _add_node_diff(Index insert_idx);
-    void _add_node_bound(Index insert_idx);
-
-    void _remove_node_diff(Index idx);
-    void _remove_node_bound(Index idx);
 
     using AddCouplingGeneric = void (*)(
         Eigen::SparseMatrix<double, Eigen::RowMajor>&, Index, Index, double);

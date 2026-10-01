@@ -92,14 +92,14 @@ namespace {
     return 1.0 / resistance;
 }
 
-void append_link(std::vector<FacePairLink>& links,
-                 pycanha::MeshIndex face_pair_a, pycanha::MeshIndex face_pair_b,
-                 unsigned side, double conductance) {
+void append_link(const LinkSink& links, pycanha::MeshIndex face_pair_a,
+                 pycanha::MeshIndex face_pair_b, unsigned side,
+                 double conductance) {
     if (conductance > 0.0 && std::isfinite(conductance)) {
-        links.push_back(FacePairLink{.face_pair_a = face_pair_a,
-                                     .face_pair_b = face_pair_b,
-                                     .side = side,
-                                     .conductance = conductance});
+        links(FacePairLink{.face_pair_a = face_pair_a,
+                           .face_pair_b = face_pair_b,
+                           .side = side,
+                           .conductance = conductance});
     }
 }
 
@@ -107,7 +107,7 @@ void profile_links(const MeridianProfile& profile,
                    std::span<const double> dir1_cuts,
                    std::span<const double> dir2_cuts, unsigned side,
                    double conductance_thickness, const TmmBuildOptions& options,
-                   std::vector<FacePairLink>& links) {
+                   const LinkSink& links) {
     const std::size_t dir1_face_pairs = dir1_cuts.size() - 1U;
     const std::size_t dir2_face_pairs = dir2_cuts.size() - 1U;
 
@@ -196,8 +196,7 @@ template <typename PointFunction>
 void planar_patch_links(const PointFunction& point_at,
                         std::span<const double> dir1_cuts,
                         std::span<const double> dir2_cuts, unsigned side,
-                        double conductance_thickness,
-                        std::vector<FacePairLink>& links) {
+                        double conductance_thickness, const LinkSink& links) {
     const std::size_t dir1_face_pairs = dir1_cuts.size() - 1U;
     const std::size_t dir2_face_pairs = dir2_cuts.size() - 1U;
 
@@ -257,8 +256,18 @@ std::vector<FacePairLink> intra_primitive_links(
     const gmm::Primitive& primitive, const gmm::ThermalMesh& thermal_mesh,
     const TmmBuildOptions& options) {
     std::vector<FacePairLink> links;
+    for_each_intra_primitive_link(
+        primitive, thermal_mesh, options,
+        [&links](const FacePairLink& link) { links.push_back(link); });
+    return links;
+}
+
+void for_each_intra_primitive_link(const gmm::Primitive& primitive,
+                                   const gmm::ThermalMesh& thermal_mesh,
+                                   const TmmBuildOptions& options,
+                                   const LinkSink& links) {
     if (!thermal_mesh.is_valid()) {
-        return links;
+        return;
     }
 
     const std::optional<MeridianProfile> profile = profile_of(primitive);
@@ -266,7 +275,7 @@ std::vector<FacePairLink> intra_primitive_links(
     const auto* quadrilateral = std::get_if<gmm::Quadrilateral>(&primitive);
     if (!profile.has_value() && triangle == nullptr &&
         quadrilateral == nullptr) {
-        return links;  // Cube: cutter-only, it never produces faces.
+        return;  // Cube: cutter-only, it never produces faces.
     }
 
     for (const unsigned side : {1U, 2U}) {
@@ -295,7 +304,6 @@ std::vector<FacePairLink> intra_primitive_links(
                 side, conductance_thickness, links);
         }
     }
-    return links;
 }
 
 double through_thickness_conductance(const gmm::ThermalMesh& thermal_mesh,

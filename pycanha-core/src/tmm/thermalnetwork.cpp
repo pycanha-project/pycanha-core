@@ -2,9 +2,7 @@
 
 #include <spdlog/spdlog.h>
 
-#include <algorithm>
 #include <cmath>
-#include <iterator>
 #include <limits>
 #include <memory>
 #include <stdexcept>
@@ -12,6 +10,7 @@
 #include <vector>
 
 #include "pycanha-core/globals.hpp"
+#include "pycanha-core/tmm/bulk.hpp"
 #include "pycanha-core/tmm/conductivecouplings.hpp"
 #include "pycanha-core/tmm/node.hpp"
 #include "pycanha-core/tmm/nodes.hpp"
@@ -85,48 +84,32 @@ void ThermalNetwork::add_node(Node& node) {
     const char type = node.get_type();
     const int user_node_num = node.get_node_num();
 
-    if (_nodes->is_node(user_node_num)) {
+    // Checked on the sorted number vectors, so adding a node never forces a
+    // rebuild of the node number map.
+    if (_nodes->has_node_number(user_node_num)) {
         SPDLOG_LOGGER_WARN(pycanha::get_logger(),
                            "ThermalNetwork: node {} already exists.",
                            user_node_num);
         return;
     }
-
-    Index insert_idx = 0;
-    Index total_insert_idx = 0;
-
-    auto& conductive_storage =
-        _conductive_couplings->_couplings.get_coupling_matrices();
-    auto& radiative_storage =
-        _radiative_couplings->_couplings.get_coupling_matrices();
-
-    if (type == 'D') {
-        auto& diff_nodes = _nodes->_diff_node_num_vector;
-        const auto it = std::ranges::upper_bound(diff_nodes, user_node_num);
-        insert_idx = to_idx(std::distance(diff_nodes.begin(), it));
-
-        conductive_storage._add_node_diff(insert_idx);
-        radiative_storage._add_node_diff(insert_idx);
-
-        total_insert_idx = insert_idx;
-    } else if (type == 'B') {
-        auto& bound_nodes = _nodes->_bound_node_num_vector;
-        const auto diff_count = to_idx(_nodes->_diff_node_num_vector.size());
-        const auto it = std::ranges::upper_bound(bound_nodes, user_node_num);
-        insert_idx = to_idx(std::distance(bound_nodes.begin(), it));
-
-        conductive_storage._add_node_bound(insert_idx);
-        radiative_storage._add_node_bound(insert_idx);
-
-        total_insert_idx = diff_count + insert_idx;
-    } else {
+    if (type != 'D' && type != 'B') {
         SPDLOG_LOGGER_WARN(pycanha::get_logger(),
                            "ThermalNetwork: wrong node type for {}",
                            user_node_num);
         return;
     }
 
-    _nodes->add_node_insert_idx(node, total_insert_idx);
+    // The coupling containers follow through Nodes' notifications.
+    _nodes->add_node(node);
+}
+
+BulkReport ThermalNetwork::add_nodes(const NodeBatch& batch) {
+    return _nodes->add_nodes(batch);
+}
+
+void ThermalNetwork::synchronize_structure() {
+    _conductive_couplings->_couplings.synchronize_structure();
+    _radiative_couplings->_couplings.synchronize_structure();
 }
 
 void ThermalNetwork::remove_node(Index node_num) {
@@ -135,30 +118,9 @@ void ThermalNetwork::remove_node(Index node_num) {
         return;
     }
 
-    const NodeNum inttype_node_num = to_node_num(node_num);
-    const auto idx = _nodes->get_idx_from_node_num(inttype_node_num);
-
-    if (!idx.has_value()) {
-        return;
-    }
-
-    const auto diff_count = to_idx(_nodes->_diff_node_num_vector.size());
-
-    auto& conductive_storage =
-        _conductive_couplings->_couplings.get_coupling_matrices();
-    auto& radiative_storage =
-        _radiative_couplings->_couplings.get_coupling_matrices();
-
-    if (*idx < diff_count) {
-        conductive_storage._remove_node_diff(*idx);
-        radiative_storage._remove_node_diff(*idx);
-    } else {
-        const Index boundary_idx = *idx - diff_count;
-        conductive_storage._remove_node_bound(boundary_idx);
-        radiative_storage._remove_node_bound(boundary_idx);
-    }
-
-    _nodes->remove_node(inttype_node_num);
+    // The coupling containers drop the node's couplings through Nodes'
+    // notifications.
+    _nodes->remove_node(to_node_num(node_num));
 }
 
 Nodes& ThermalNetwork::nodes() noexcept { return *_nodes; }

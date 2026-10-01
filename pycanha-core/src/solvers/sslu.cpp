@@ -53,6 +53,9 @@ void SSLU::solve() {
             "solve().");
         return;
     }
+    if (!structure_unchanged_since_initialize()) {
+        return;
+    }
     SPDLOG_LOGGER_INFO(get_logger(), "SSLU solving...");
 
     const FormulaExecutionGuard formula_execution(*this);

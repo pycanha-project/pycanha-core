@@ -143,6 +143,7 @@ add_library(${LIB_NAME} STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/primitives/cube.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/primitives/cylinder.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/primitives/disc.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/primitives/face_pair_geometry.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/primitives/paraboloid.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/primitives/quadrilateral.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gmm/primitives/rectangle.cpp
@@ -161,6 +162,7 @@ add_library(${LIB_NAME} STATIC
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/conduction/builder.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/conduction/links.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/conduction/network_part.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/conduction/profile.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/io/esatan.cpp

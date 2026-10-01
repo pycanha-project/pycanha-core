@@ -4,6 +4,7 @@
 
 #include <memory>
 #include <optional>
+#include <span>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -18,6 +19,7 @@
 #include "pycanha-core/solvers/solver_registry.hpp"
 #include "pycanha-core/thermaldata/lookup_table.hpp"
 #include "pycanha-core/thermaldata/thermaldata.hpp"
+#include "pycanha-core/tmm/bulk.hpp"
 #include "pycanha-core/tmm/conductivecouplings.hpp"
 #include "pycanha-core/tmm/coupling.hpp"
 #include "pycanha-core/tmm/node.hpp"
@@ -216,6 +218,24 @@ void ThermalMathematicalModel::add_node(Node node) { _network->add_node(node); }
 void ThermalMathematicalModel::add_node(Index node_num) {
     Node node(static_cast<int>(node_num));
     _network->add_node(node);
+}
+
+BulkReport ThermalMathematicalModel::add_nodes(const NodeBatch& batch) {
+    return _network->add_nodes(batch);
+}
+
+BulkReport ThermalMathematicalModel::add_conductive_couplings(
+    std::span<const NodeNum> node_nums_1, std::span<const NodeNum> node_nums_2,
+    std::span<const double> values, CouplingMerge merge) {
+    return conductive_couplings().add_couplings(node_nums_1, node_nums_2,
+                                                values, merge);
+}
+
+BulkReport ThermalMathematicalModel::add_radiative_couplings(
+    std::span<const NodeNum> node_nums_1, std::span<const NodeNum> node_nums_2,
+    std::span<const double> values, CouplingMerge merge) {
+    return radiative_couplings().add_couplings(node_nums_1, node_nums_2, values,
+                                               merge);
 }
 
 void ThermalMathematicalModel::add_conductive_coupling(Index node_num_1,

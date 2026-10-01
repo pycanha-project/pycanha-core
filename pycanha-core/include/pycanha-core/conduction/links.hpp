@@ -1,5 +1,6 @@
 #pragma once
 
+#include <functional>
 #include <vector>
 
 #include "pycanha-core/conduction/options.hpp"
@@ -49,6 +50,20 @@ struct FacePairLink {
 [[nodiscard]] std::vector<FacePairLink> intra_primitive_links(
     const gmm::Primitive& primitive, const gmm::ThermalMesh& thermal_mesh,
     const TmmBuildOptions& options);
+
+/// Receives the links one by one, in the order intra_primitive_links returns
+/// them.
+using LinkSink = std::function<void(const FacePairLink&)>;
+
+/**
+ * @brief The same links as intra_primitive_links, handed to @p links as they
+ * are computed instead of collected: a large face-pair grid produces a few
+ * links per face pair, too many to hold at once.
+ */
+void for_each_intra_primitive_link(const gmm::Primitive& primitive,
+                                   const gmm::ThermalMesh& thermal_mesh,
+                                   const TmmBuildOptions& options,
+                                   const LinkSink& links);
 
 /**
  * @brief Conductance through the thickness of one face pair of @p pair_area.

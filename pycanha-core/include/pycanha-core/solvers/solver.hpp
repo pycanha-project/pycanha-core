@@ -2,6 +2,7 @@
 
 #include <Eigen/Sparse>
 #include <cstddef>
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <unordered_set>
@@ -127,11 +128,19 @@ class Solver {
 
     void initialize_common();
 
+    // False, with an ERROR logged, when nodes were added, removed or moved
+    // since initialize(): the solver's sizes and references no longer match
+    // the model and it must be initialised again.
+    [[nodiscard]] bool structure_unchanged_since_initialize() const;
+
     [[nodiscard]] bool temperature_convergence_check();
     [[nodiscard]] bool energy_convergence_check();
 
     void expand_coupling_matrices_with_zeros();
     void restore_expanded_coupling_matrices();
+
+    // Nodes::structure_version() when initialize() last ran.
+    std::uint64_t _initialized_structure_version = 0;
 
     std::unordered_set<std::pair<int, int>, IntPairHash>
         _original_non_zeros_krdd;

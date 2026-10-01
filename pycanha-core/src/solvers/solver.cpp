@@ -75,8 +75,13 @@ Solver::FormulaExecutionGuard::~FormulaExecutionGuard() {
 }
 
 void Solver::initialize_common() {
-    const auto logger = pycanha::get_logger();
-    SPDLOG_LOGGER_DEBUG(logger, "{} initializing...", solver_name);
+    SPDLOG_LOGGER_DEBUG(pycanha::get_logger(), "{} initializing...",
+                        solver_name);
+
+    // Nodes appended since the last coupling access have not grown the
+    // matrices yet.
+    tnw.synchronize_structure();
+    _initialized_structure_version = tmm.nodes().structure_version();
 
     KLdd.makeCompressed();
     KLdb.makeCompressed();
@@ -106,6 +111,17 @@ void Solver::initialize_common() {
     new (&Qd) WrappVectorXd(Q.data(), nd);
     // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
     new (&Qb) WrappVectorXd(Q.data() + nd, nb);
+}
+
+bool Solver::structure_unchanged_since_initialize() const {
+    if (tmm.nodes().structure_version() == _initialized_structure_version) {
+        return true;
+    }
+    SPDLOG_LOGGER_ERROR(pycanha::get_logger(),
+                        "{}: the model's nodes changed after initialize(); "
+                        "call initialize() again before solve()",
+                        solver_name);
+    return false;
 }
 
 void Solver::callback_transient_time_change() {
