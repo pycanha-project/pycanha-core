@@ -83,6 +83,7 @@ TEST_CASE("SolverRegistry keeps a stable, model-owned solver surface",
     auto& registry = tm.solvers();
     REQUIRE(&registry == &tm.tmm().solvers());
     REQUIRE(&registry.sslu() == &tm.solvers().sslu());
+    REQUIRE(&registry.sslu_cgs() == &tm.solvers().sslu_cgs());
     REQUIRE(&registry.tscnrlds() == &tm.solvers().tscnrlds());
     REQUIRE(&registry.tscnrlds_jacobian() == &tm.solvers().tscnrlds_jacobian());
 
@@ -103,6 +104,29 @@ TEST_CASE("SolverRegistry keeps a stable, model-owned solver surface",
     steady.initialize();
     steady.solve();
     REQUIRE(tm.tmm().nodes().get_T(1) == Catch::Approx(260.0));
+    steady.deinitialize();
+}
+
+TEST_CASE("SSLU follows parameter changes between solves", "[api][solvers]") {
+    pycanha::ThermalModel tm("sslu_sweep");
+    populate_parameterized_steady_model(tm);
+
+    auto& steady = tm.solvers().sslu();
+    steady.initialize();
+    steady.solve();
+    REQUIRE(steady.solver_converged);
+    REQUIRE(tm.tmm().nodes().get_T(1) == Catch::Approx(260.0));
+
+    // Same values: the factors of the previous solve are reused.
+    steady.solve();
+    REQUIRE(steady.num_factorizations() == 0);
+    REQUIRE(tm.tmm().nodes().get_T(1) == Catch::Approx(260.0));
+
+    tm.parameters().set_parameter("conductance", 10.0);
+    tm.formulas().apply_formulas();
+    steady.solve();
+    REQUIRE(steady.solver_converged);
+    REQUIRE(tm.tmm().nodes().get_T(1) == Catch::Approx(255.0));
     steady.deinitialize();
 }
 

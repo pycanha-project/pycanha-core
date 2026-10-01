@@ -63,6 +63,7 @@ set(UNIT_TEST_SOURCES
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/parameters/test_variable.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/parameters/test_smart_formula.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/solvers/test_sslu.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/solvers/test_sslu_cgs.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/solvers/test_callback_registry.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/solvers/test_transient_solver.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/solvers/test_tscnrlds.cpp"
