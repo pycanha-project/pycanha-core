@@ -27,11 +27,6 @@
 #include "pycanha-core/utils/logger.hpp"
 #include "pycanha-core/utils/profiling.hpp"
 
-#if PYCANHA_USE_MKL
-#include <mkl_pardiso.h>
-#include <mkl_types.h>
-#endif
-
 namespace pycanha {
 
 namespace {
@@ -283,31 +278,12 @@ void TSCNRLDS_JACOBIAN::build_mc() {
 }
 
 void TSCNRLDS_JACOBIAN::solve_jacobian_step() {
-#if PYCANHA_USE_MKL
-    _pardiso_phase = 33;
-    _pardiso_nrhs = static_cast<MKL_INT>(_derivative_parameter_names.size());
-    // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast)
-    pardiso(reinterpret_cast<void*>(_pardiso_pt.data()), &_pardiso_maxfct,
-            &_pardiso_mnum, &_pardiso_mtype, &_pardiso_phase, &_pardiso_size,
-            _k_matrix.valuePtr(), _k_matrix_outer_index.data(),
-            _k_matrix_inner_index.data(), _pardiso_perm.data(), &_pardiso_nrhs,
-            _pardiso_iparm.data(), &_pardiso_msglvl, _mb.data(), _mt.data(),
-            &_pardiso_error);
-    // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast)
-    _pardiso_phase = 23;
-    _pardiso_nrhs = 1;
-
-    if (_pardiso_error != 0) {
-        throw std::runtime_error(
-            "MKL PARDISO jacobian solve failed with error " +
-            std::to_string(_pardiso_error));
+    // With the factors of the last solve_step(), several right-hand sides.
+    _linear_solver->solve(_k_matrix, _mb, _mt);
+    if (!_linear_solver->succeeded()) {
+        throw std::runtime_error(solver_name + ": jacobian solve failed (" +
+                                 _linear_solver->error_message() + ")");
     }
-#else
-    _mt = _eigen_solver.solve(_mb);
-    if (_eigen_solver.info() != Eigen::Success) {
-        throw std::runtime_error("Eigen SparseLU jacobian solve failed");
-    }
-#endif
 }
 
 void TSCNRLDS_JACOBIAN::solve() {
@@ -395,11 +371,8 @@ void TSCNRLDS_JACOBIAN::solve() {
         }
 
         _sp_nd_diag.diagonal() = _capacities.array() * (2.0 / dtime);
-#if PYCANHA_USE_MKL
+        // solve_step() left -K + 2C/dt in _k_matrix.
         _kt_q_n0 = (-_k_matrix + _sp_nd_diag) * Td + Qd;
-#else
-        _kt_q_n0 = (_k_matrix + _sp_nd_diag) * Td + Qd;
-#endif
 
         build_mc();
         build_mk();

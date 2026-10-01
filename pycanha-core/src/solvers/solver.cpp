@@ -8,6 +8,7 @@
 
 #include "pycanha-core/globals.hpp"
 #include "pycanha-core/parameters/formulas.hpp"
+#include "pycanha-core/solvers/linear_solver.hpp"
 #include "pycanha-core/tmm/nodes.hpp"
 #include "pycanha-core/tmm/thermalmathematicalmodel.hpp"
 #include "pycanha-core/tmm/thermalnetwork.hpp"
@@ -122,6 +123,18 @@ bool Solver::structure_unchanged_since_initialize() const {
                         "call initialize() again before solve()",
                         solver_name);
     return false;
+}
+
+LinearSolverOptions Solver::linear_solver_options(SolverEngine engine,
+                                                  DirectSolverType type) const {
+    LinearSolverOptions options;
+    options.engine = engine;
+    options.type = type;
+    options.iparm_3 = pardiso_iparm_3;
+    options.iparm_overrides = pardiso_iparm_overrides;
+    options.threads = mkl_threads;
+    options.verbose = pardiso_verbose;
+    return options;
 }
 
 void Solver::callback_transient_time_change() {

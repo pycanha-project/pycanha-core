@@ -1,18 +1,30 @@
 #pragma once
 
-#include <Eigen/SparseCholesky>
-#include <Eigen/SparseLU>
-#include <array>
 #include <memory>
 #include <vector>
 
+#include "pycanha-core/solvers/linear_solver.hpp"
 #include "pycanha-core/solvers/tscnrl.hpp"
-#if PYCANHA_USE_MKL
-#include <mkl.h>
-#endif
 
 namespace pycanha {
 
+/// Transient solver: Crank-Nicolson with the radiation linearised at every
+/// inner iteration, solved with a sparse direct factorisation.
+/**
+ * - engine and solver_type: as for SSLU (see SolverEngine and
+ *   DirectSolverType). DEFAULT is the MKL two-level factorisation, or Eigen's
+ *   COLAMD LU without MKL. LDLT is not available: the transient matrix is
+ *   factorised with LU.
+ * - pardiso_iparm_3 (MKL): 0 (default) factorises every changed matrix. 10 *
+ *   L + 1 first iterates on the previous factors down to a relative residual
+ *   of 10^-L, and that residual stays in every step. It seems much faster
+ *   per step, since the matrix changes little between steps, and it needs
+ *   ONE_LEVEL or MIN_DEGREE (see IterativeSolverType).
+ * - pardiso_iparm_overrides, mkl_threads, pardiso_verbose: PARDISO settings.
+ *
+ * initialize() throws std::invalid_argument for a combination that is not
+ * available.
+ */
 class TSCNRLDS : public TSCNRL {
     friend class TSCNRLDS_JACOBIAN;
 
@@ -28,25 +40,11 @@ class TSCNRLDS : public TSCNRL {
     void solve() override;
     void deinitialize() override;
 
+    SolverEngine engine = default_solver_engine();
+    DirectSolverType solver_type = DirectSolverType::DEFAULT;
+
   private:
-#if PYCANHA_USE_MKL
-    std::array<void*, 64> _pardiso_pt{};
-    std::array<MKL_INT, 64> _pardiso_iparm{};
-    MKL_INT _pardiso_mtype = 11;
-    MKL_INT _pardiso_maxfct = 1;
-    MKL_INT _pardiso_mnum = 1;
-    MKL_INT _pardiso_phase = 0;
-    MKL_INT _pardiso_size = 0;
-    std::vector<MKL_INT> _pardiso_perm;
-    MKL_INT _pardiso_nrhs = 1;
-    MKL_INT _pardiso_msglvl = 0;
-    MKL_INT _pardiso_error = 0;
-    // MKL_INT versions of sparse matrix indices (for Eigen compatibility)
-    std::vector<MKL_INT> _k_matrix_outer_index;
-    std::vector<MKL_INT> _k_matrix_inner_index;
-#else
-    Eigen::SparseLU<SpMatRow> _eigen_solver;
-#endif
+    std::unique_ptr<SparseLinearSolver> _linear_solver;
 
     VectorXd _t3_domain;
     VectorXd _t3_boundary;

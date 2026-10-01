@@ -196,7 +196,10 @@ add_library(${LIB_NAME} STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/solver.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/solver_registry.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/ss.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/linear_solver.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/pardiso.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/sslu.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/sslu_cgs.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/ts.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/tscn.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/tscnrl.cpp

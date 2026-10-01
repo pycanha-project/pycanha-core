@@ -1,149 +1,44 @@
 #include "pycanha-core/solvers/sslu.hpp"
 
-#include <spdlog/spdlog.h>
-
 #include <memory>
+#include <stdexcept>
 #include <utility>
 
-#include "pycanha-core/globals.hpp"
-#include "pycanha-core/solvers/solver.hpp"
+#include "pycanha-core/solvers/linear_solver.hpp"
 #include "pycanha-core/solvers/ss.hpp"
 #include "pycanha-core/tmm/thermalmathematicalmodel.hpp"
-#include "pycanha-core/utils/SparseUtils.hpp"
-#include "pycanha-core/utils/logger.hpp"
-#include "pycanha-core/utils/profiling.hpp"
 
 namespace pycanha {
 
 SSLU::SSLU(std::shared_ptr<ThermalMathematicalModel> tmm_shptr)
-    : SteadyStateSolver(std::move(tmm_shptr)),
-      _t_cubed_domain(nullptr, Index{0}),
-      _t_cubed_boundary(nullptr, Index{0}),
-      _t_fourth_domain(nullptr, Index{0}),
-      _t_fourth_boundary(nullptr, Index{0}) {}
+    : SteadyStateSolver(std::move(tmm_shptr)) {
+    solver_name = "SSLU";
+}
 
 void SSLU::initialize() {
+    release_linearised();
+    if (pardiso_iparm_3 != 0) {
+        throw std::invalid_argument(
+            "SSLU is a direct solver and needs pardiso_iparm_3 = 0. For the "
+            "iterative step use SSLU_CGS.");
+    }
     this->initialize_common();
 
-    _k_matrix.conservativeResize(nd, nd);
-    _k_matrix.setIdentity();
-    _k_matrix += KRdd.selfadjointView<Eigen::Upper>();
-    _k_matrix += KLdd.selfadjointView<Eigen::Upper>();
-    sparse_utils::set_to_zero(_k_matrix);
-
-    _t_cubed = VectorXd::Zero(nd + nb);
-    _t_fourth = VectorXd::Zero(nd + nb);
-
-    new (&_t_cubed_domain) WrappVectorXd(_t_cubed.data(), nd);
-    // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
-    new (&_t_cubed_boundary) WrappVectorXd(_t_cubed.data() + nd, nb);
-    new (&_t_fourth_domain) WrappVectorXd(_t_fourth.data(), nd);
-    // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
-    new (&_t_fourth_boundary) WrappVectorXd(_t_fourth.data() + nd, nb);
-
-    _linear_solver.analyzePattern(_k_matrix);
-    solver_initialized = true;
-}
-
-void SSLU::solve() {
-    if (!solver_initialized) {
-        SPDLOG_LOGGER_ERROR(
-            get_logger(),
-            "Solver has not been initialized. Please call initialize() before "
-            "solve().");
-        return;
+    auto options = linear_solver_options(engine, solver_type);
+    const auto type = resolve_solver_type(engine, solver_type);
+    if (type == DirectSolverType::LDLT && has_radiation()) {
+        throw std::invalid_argument(
+            "LDLT needs a model without radiative couplings: radiation makes "
+            "the linearised matrix unsymmetric. Use COLAMD or AMD.");
     }
-    if (!structure_unchanged_since_initialize()) {
-        return;
-    }
-    SPDLOG_LOGGER_INFO(get_logger(), "SSLU solving...");
-
-    const FormulaExecutionGuard formula_execution(*this);
-
-    solver_converged = false;
-
-    for (solver_iter = 0; solver_iter < max_iters; ++solver_iter) {
-        PYCANHA_PROFILE_SCOPE("SSLU iteration");
-
-        Q = -(QI_sp + QS_sp + QA_sp + QE_sp + QR_sp);
-        new (&Qd) WrappVectorXd(Q.data(), nd);
-
-        _t_cubed = T.array().cube();
-        _t_fourth = T.array().pow(4);
-        new (&_t_cubed_domain) WrappVectorXd(_t_cubed.data(), nd);
-        // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
-        new (&_t_cubed_boundary) WrappVectorXd(_t_cubed.data() + nd, nb);
-        new (&_t_fourth_domain) WrappVectorXd(_t_fourth.data(), nd);
-        // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
-        new (&_t_fourth_boundary) WrappVectorXd(_t_fourth.data() + nd, nb);
-
-        Qd -= (KLdb * Tb + STF_BOLTZ * (KRdb * _t_fourth_boundary));
-
-        sparse_utils::set_to_zero(_k_matrix);
-        _k_matrix += KRdd.selfadjointView<Eigen::Upper>();
-        add_radiative_diagonal_to_matrix();
-
-        _k_matrix =
-            STF_BOLTZ * 4.0 * (_k_matrix * _t_cubed_domain.asDiagonal());
-        Qd += (3.0 / 4.0) * (_k_matrix * Td);
-
-        add_conductive_diagonal_to_matrix();
-        _k_matrix += KLdd.selfadjointView<Eigen::Upper>();
-
-        _linear_solver.factorize(_k_matrix);
-        if (_linear_solver.info() != Eigen::ComputationInfo::Success) {
-            SPDLOG_LOGGER_ERROR(get_logger(),
-                                "SSLU: Factorization failed. Error code: {}",
-                                static_cast<int>(_linear_solver.info()));
-            return;
-        }
-
-        Td_solver = _linear_solver.solve(Qd);
-        if (_linear_solver.info() != Eigen::ComputationInfo::Success) {
-            SPDLOG_LOGGER_ERROR(get_logger(),
-                                "SSLU: Solver failed. Error code: {}",
-                                static_cast<int>(_linear_solver.info()));
-            return;
-        }
-
-        dTd = Td_solver - Td;
-        Td = Td_solver;
-        max_dT = dTd.cwiseAbs().maxCoeff();
-
-        this->callback_solver_loop();
-
-        if (max_dT < abstol_temp) {
-            SPDLOG_LOGGER_INFO(
-                get_logger(), "SSLU converged. Num. iters: {}. Max. dT = {} K.",
-                solver_iter + 1, max_dT);
-            solver_converged = true;
-            break;
-        }
-    }
-
-    if (!solver_converged) {
-        SPDLOG_LOGGER_ERROR(
-            get_logger(),
-            "SSLU did NOT converge after {} iterations. Max. dT = {} K.",
-            max_iters, max_dT);
-    }
+    options.symmetric_positive_definite =
+        type == DirectSolverType::LDLT ||
+        (engine == SolverEngine::MKL && allow_cholesky && !has_radiation());
+    initialize_linearised(options);
 }
 
-void SSLU::add_radiative_diagonal_to_matrix() {
-    _k_matrix.diagonal() =
-        KRdd.selfadjointView<Eigen::Upper>() * (-VectorXd::Ones(KRdd.cols())) -
-        KRdb * VectorXd::Ones(KRdb.cols());
-}
+void SSLU::solve() { solve_linearised(); }
 
-void SSLU::add_conductive_diagonal_to_matrix() {
-    _k_matrix.diagonal() -=
-        KLdd.selfadjointView<Eigen::Upper>() * VectorXd::Ones(KLdd.cols()) +
-        KLdb * VectorXd::Ones(KRdb.cols());
-}
-
-void SSLU::deinitialize() {
-    SPDLOG_LOGGER_DEBUG(get_logger(), "De-initializing SSLU...");
-    SPDLOG_LOGGER_ERROR(get_logger(), "Not implemented yet.");
-}
+void SSLU::deinitialize() { release_linearised(); }
 
 }  // namespace pycanha
