@@ -97,6 +97,10 @@ class Recipe_pycanha_core(ConanFile):
         "PYCANHA_OPTION_SANITIZE_UNDEF": False,
         "PYCANHA_OPTION_RAYTRACING": True,
         "spdlog/*:use_std_fmt": True,
+        # Boost.Multiprecision (BSL-1.0) instead of SymEngine's default GMP
+        # (LGPL), which would be statically linked into every binary.
+        "symengine/*:integer_class": "boostmp",
+        "boost/*:header_only": True,
     }
 
     # Sources are located in the same place as this recipe, copy them to the recipe
@@ -112,7 +116,10 @@ class Recipe_pycanha_core(ConanFile):
         # Library dependencies
         self.requires(f"eigen/{versions['eigen']}", transitive_headers=True)
         self.requires(f"hdf5/{versions['hdf5']}")
-        self.requires(f"symengine/{versions['symengine']}")
+        # Public headers include SymEngine's, which include Boost's.
+        self.requires(
+            f"symengine/{versions['symengine']}", transitive_headers=True
+        )
         self.requires(
             f"spdlog/{versions['spdlog']}",
             transitive_headers=True,
@@ -370,13 +377,14 @@ class Recipe_pycanha_core(ConanFile):
                 str(Path(symengine_dep.package_folder) / "include")
             )
 
-        # SymEngine public headers also include <gmp.h>, so downstream
-        # consumers of pycanha-core's public API need GMP headers transitively.
-        gmp_dep = self.dependencies.get("gmp")
-        if gmp_dep is not None and gmp_dep.package_folder:
-            self.cpp_info.includedirs.append(
-                str(Path(gmp_dep.package_folder) / "include")
-            )
+        # SymEngine public headers also include Boost.Multiprecision, so
+        # downstream consumers of pycanha-core's public API need it too.
+        if "boost" in self.dependencies:
+            boost_folder = self.dependencies["boost"].package_folder
+            if boost_folder:
+                self.cpp_info.includedirs.append(
+                    str(Path(boost_folder) / "include")
+                )
 
         if self.options.PYCANHA_OPTION_USE_MKL:
             self.cpp_info.defines.append("PYCANHA_USE_MKL=1")
