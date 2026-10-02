@@ -28,7 +28,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.21</span>
+   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.22</span>
    </div>
    <div id="projectbrief">The C++ core of pycanha</div>
   </td>
@@ -94,6 +94,11 @@ $(function(){initNavTree('classpycanha_1_1Nodes.html','','classpycanha_1_1Nodes-
   <div class="headertitle"><div class="title">pycanha::Nodes Class Reference</div></div>
 </div><!--header-->
 <div class="contents">
+<div class="dynheader">
+Collaboration diagram for pycanha::Nodes:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="classpycanha_1_1Nodes__coll__graph.svg" width="343" height="260"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-methods" class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
@@ -114,6 +119,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memdesc:a9653a8fbd5e2f07eb29cf1c94d05bbdd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Method to add a new node.  <br /></td></tr>
 <tr class="memitem:a2064ca42d6010ce5fed2722f21deac3a" id="r_a2064ca42d6010ce5fed2722f21deac3a"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a2064ca42d6010ce5fed2722f21deac3a">add_nodes</a> (std::vector&lt; Node &gt; &amp;node_vector)</td></tr>
 <tr class="memdesc:a2064ca42d6010ce5fed2722f21deac3a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Method to add a several nodes contained in a std::vector.  <br /></td></tr>
+<tr class="memitem:a97dea527f550b9d00a6acde7f4ac80c0" id="r_a97dea527f550b9d00a6acde7f4ac80c0"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structpycanha_1_1BulkReport.html">BulkReport</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a97dea527f550b9d00a6acde7f4ac80c0">add_nodes</a> (const <a class="el" href="structpycanha_1_1NodeBatch.html">NodeBatch</a> &amp;batch)</td></tr>
+<tr class="memdesc:a97dea527f550b9d00a6acde7f4ac80c0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Method to add a batch of nodes of one type from arrays.  <br /></td></tr>
+<tr class="memitem:ac77a1ba48aa7eba24e97281002949995" id="r_ac77a1ba48aa7eba24e97281002949995"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ac77a1ba48aa7eba24e97281002949995">reserve</a> (Index <a class="el" href="#a9cd78e014d17ef07b1246bb52fafb593">num_nodes</a>)</td></tr>
 <tr class="memitem:a2d55736636b1f4ac3f7aa49ed4ec247d" id="r_a2d55736636b1f4ac3f7aa49ed4ec247d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a2d55736636b1f4ac3f7aa49ed4ec247d">remove_node</a> (NodeNum node_num)</td></tr>
 <tr class="memdesc:a2d55736636b1f4ac3f7aa49ed4ec247d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Method to delete a node of the model.  <br /></td></tr>
 <tr class="memitem:a1209e3f11ac0c65a3c5544d23aad9109" id="r_a1209e3f11ac0c65a3c5544d23aad9109"><td class="memItemLeft" align="right" valign="top"><a id="a1209e3f11ac0c65a3c5544d23aad9109" name="a1209e3f11ac0c65a3c5544d23aad9109"></a>
@@ -161,9 +169,8 @@ double&#160;</td><td class="memItemRight" valign="bottom"><b>get_aph</b> (NodeNu
 <tr class="memitem:a34ff3cc6dc47481be151adf385f40f08" id="r_a34ff3cc6dc47481be151adf385f40f08"><td class="memItemLeft" align="right" valign="top"><a id="a34ff3cc6dc47481be151adf385f40f08" name="a34ff3cc6dc47481be151adf385f40f08"></a>
 std::string&#160;</td><td class="memItemRight" valign="bottom"><b>get_literal_C</b> (NodeNum node_num) const</td></tr>
 <tr class="memdesc:a34ff3cc6dc47481be151adf385f40f08"><td class="mdescLeft">&#160;</td><td class="mdescRight">Literal thermal capacity getter. <br /></td></tr>
-<tr class="memitem:a03c0a37e09d5c6085f4f55f5983eacce" id="r_a03c0a37e09d5c6085f4f55f5983eacce"><td class="memItemLeft" align="right" valign="top"><a id="a03c0a37e09d5c6085f4f55f5983eacce" name="a03c0a37e09d5c6085f4f55f5983eacce"></a>
-bool&#160;</td><td class="memItemRight" valign="bottom"><b>set_type</b> (NodeNum node_num, char type)</td></tr>
-<tr class="memdesc:a03c0a37e09d5c6085f4f55f5983eacce"><td class="mdescLeft">&#160;</td><td class="mdescRight">Type setter. <br /></td></tr>
+<tr class="memitem:a03c0a37e09d5c6085f4f55f5983eacce" id="r_a03c0a37e09d5c6085f4f55f5983eacce"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a03c0a37e09d5c6085f4f55f5983eacce">set_type</a> (NodeNum node_num, char type)</td></tr>
+<tr class="memitem:ae1e246edb010fced3cc1ad4167badd3c" id="r_ae1e246edb010fced3cc1ad4167badd3c"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structpycanha_1_1BulkReport.html">BulkReport</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ae1e246edb010fced3cc1ad4167badd3c">set_types</a> (std::span&lt; const NodeNum &gt; node_nums, char type)</td></tr>
 <tr class="memitem:a6aa6d55b0065197751040c0ce579fa53" id="r_a6aa6d55b0065197751040c0ce579fa53"><td class="memItemLeft" align="right" valign="top"><a id="a6aa6d55b0065197751040c0ce579fa53" name="a6aa6d55b0065197751040c0ce579fa53"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>set_T</b> (NodeNum node_num, double T)</td></tr>
 <tr class="memdesc:a6aa6d55b0065197751040c0ce579fa53"><td class="mdescLeft">&#160;</td><td class="mdescRight">Temperature [K] setter. <br /></td></tr>
@@ -251,6 +258,15 @@ Index&#160;</td><td class="memItemRight" valign="bottom"><b>get_num_diff_nodes</
 Index&#160;</td><td class="memItemRight" valign="bottom"><b>get_num_bound_nodes</b> () const</td></tr>
 <tr class="memdesc:aa49412e194e0f1168ecc8b922cbc818a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Number of boundary nodes of the model. <br /></td></tr>
 <tr class="memitem:a3ffd64ed6c712b4506d7877c87108578" id="r_a3ffd64ed6c712b4506d7877c87108578"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a3ffd64ed6c712b4506d7877c87108578">is_mapped</a> () const</td></tr>
+<tr class="memitem:aa4a6712e52408a60aa6e0d5ca7eaee92" id="r_aa4a6712e52408a60aa6e0d5ca7eaee92"><td class="memItemLeft" align="right" valign="top">std::uint64_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aa4a6712e52408a60aa6e0d5ca7eaee92">structure_version</a> () const noexcept</td></tr>
+<tr class="memitem:aa515420ed2654a9274804ddea62010a6" id="r_aa515420ed2654a9274804ddea62010a6"><td class="memItemLeft" align="right" valign="top"><a id="aa515420ed2654a9274804ddea62010a6" name="aa515420ed2654a9274804ddea62010a6"></a>
+std::vector&lt; NodeNum &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>node_numbers</b> () const</td></tr>
+<tr class="memdesc:aa515420ed2654a9274804ddea62010a6"><td class="mdescLeft">&#160;</td><td class="mdescRight">User numbers of every node, in internal order. <br /></td></tr>
+<tr class="memitem:a3a12b214f9ea60a084d6dfccfadb8657" id="r_a3a12b214f9ea60a084d6dfccfadb8657"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structpycanha_1_1BulkReport.html">BulkReport</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a3a12b214f9ea60a084d6dfccfadb8657">set_values</a> (<a class="el" href="namespacepycanha.html#ad42172d3e42aee979fca4c11f923913d">NodeAttribute</a> attribute, std::span&lt; const NodeNum &gt; node_nums, std::span&lt; const double &gt; values)</td></tr>
+<tr class="memitem:ade300e1596b243b9961fd95ea0422915" id="r_ade300e1596b243b9961fd95ea0422915"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structpycanha_1_1BulkReport.html">BulkReport</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ade300e1596b243b9961fd95ea0422915">get_values</a> (<a class="el" href="namespacepycanha.html#ad42172d3e42aee979fca4c11f923913d">NodeAttribute</a> attribute, std::span&lt; const NodeNum &gt; node_nums, std::span&lt; double &gt; values) const</td></tr>
+<tr class="memitem:ac375bb36b0dc074d48d8e4d41b98e5f9" id="r_ac375bb36b0dc074d48d8e4d41b98e5f9"><td class="memItemLeft" align="right" valign="top"><a id="ac375bb36b0dc074d48d8e4d41b98e5f9" name="ac375bb36b0dc074d48d8e4d41b98e5f9"></a>
+std::vector&lt; double &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>get_values</b> (<a class="el" href="namespacepycanha.html#ad42172d3e42aee979fca4c11f923913d">NodeAttribute</a> attribute) const</td></tr>
+<tr class="memdesc:ac375bb36b0dc074d48d8e4d41b98e5f9"><td class="mdescLeft">&#160;</td><td class="mdescRight">One attribute of every node, in internal order. <br /></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-attribs" class="groupheader"><a id="pub-attribs" name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
@@ -289,6 +305,36 @@ Private Member Functions</h2></td></tr>
 <tr class="memitem:abbfd843026d3645145507f0c59141c1b" id="r_abbfd843026d3645145507f0c59141c1b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#abbfd843026d3645145507f0c59141c1b">create_node_num_map</a> () const</td></tr>
 <tr class="memitem:a630c3920f2bf055c67f23907a2f4deb9" id="r_a630c3920f2bf055c67f23907a2f4deb9"><td class="memItemLeft" align="right" valign="top"><a id="a630c3920f2bf055c67f23907a2f4deb9" name="a630c3920f2bf055c67f23907a2f4deb9"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>ensure_node_map</b> () const</td></tr>
+<tr class="memitem:a9b3261ac59205dde74eb46cfe144189b" id="r_a9b3261ac59205dde74eb46cfe144189b"><td class="memItemLeft" align="right" valign="top"><a id="a9b3261ac59205dde74eb46cfe144189b" name="a9b3261ac59205dde74eb46cfe144189b"></a>
+std::optional&lt; Index &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>lookup_node_index</b> (NodeNum node_num) const</td></tr>
+<tr class="memitem:a035fdb06a78a15dbb8ae757d92de9c2a" id="r_a035fdb06a78a15dbb8ae757d92de9c2a"><td class="memItemLeft" align="right" valign="top"><a id="a035fdb06a78a15dbb8ae757d92de9c2a" name="a035fdb06a78a15dbb8ae757d92de9c2a"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>store_node_index</b> (NodeNum node_num, Index index) const</td></tr>
+<tr class="memitem:af1c702902f636709906226c4a211340c" id="r_af1c702902f636709906226c4a211340c"><td class="memItemLeft" align="right" valign="top"><a id="af1c702902f636709906226c4a211340c" name="af1c702902f636709906226c4a211340c"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>shift_boundary_node_indices</b> (Index shift) const</td></tr>
+<tr class="memitem:a6c61fc0897091c80ede3f1a8bc43f04d" id="r_a6c61fc0897091c80ede3f1a8bc43f04d"><td class="memItemLeft" align="right" valign="top"><a id="a6c61fc0897091c80ede3f1a8bc43f04d" name="a6c61fc0897091c80ede3f1a8bc43f04d"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>update_map_after_append</b> (char type, std::span&lt; const NodeNum &gt; numbers, bool map_was_valid)</td></tr>
+<tr class="memitem:a3cf8d444b3c7b171c797881271e6a3ed" id="r_a3cf8d444b3c7b171c797881271e6a3ed"><td class="memItemLeft" align="right" valign="top"><a id="a3cf8d444b3c7b171c797881271e6a3ed" name="a3cf8d444b3c7b171c797881271e6a3ed"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>has_node_number</b> (NodeNum node_num) const</td></tr>
+<tr class="memitem:a3c70ab36c0f3a412a8440d17ef0b3a76" id="r_a3c70ab36c0f3a412a8440d17ef0b3a76"><td class="memItemLeft" align="right" valign="top"><a id="a3c70ab36c0f3a412a8440d17ef0b3a76" name="a3c70ab36c0f3a412a8440d17ef0b3a76"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>add_observer</b> (Couplings *couplings) noexcept</td></tr>
+<tr class="memitem:a46e34d29858379d9c6afb28d31f886d4" id="r_a46e34d29858379d9c6afb28d31f886d4"><td class="memItemLeft" align="right" valign="top"><a id="a46e34d29858379d9c6afb28d31f886d4" name="a46e34d29858379d9c6afb28d31f886d4"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>remove_observer</b> (Couplings *couplings) noexcept</td></tr>
+<tr class="memitem:a22fcd18da8d4a195610bd9dcad27b28e" id="r_a22fcd18da8d4a195610bd9dcad27b28e"><td class="memItemLeft" align="right" valign="top"><a id="a22fcd18da8d4a195610bd9dcad27b28e" name="a22fcd18da8d4a195610bd9dcad27b28e"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>notify_block_remap</b> (char type, std::span&lt; const Index &gt; old_to_new)</td></tr>
+<tr class="memitem:a8c27f0485831c3f15c75dba1477b0c91" id="r_a8c27f0485831c3f15c75dba1477b0c91"><td class="memItemLeft" align="right" valign="top"><a id="a8c27f0485831c3f15c75dba1477b0c91" name="a8c27f0485831c3f15c75dba1477b0c91"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>notify_single_insertion</b> (char type, Index local_index, Index old_block_size)</td></tr>
+<tr class="memitem:a2de241e75317d4c78a317d1b2ebbcfb0" id="r_a2de241e75317d4c78a317d1b2ebbcfb0"><td class="memItemLeft" align="right" valign="top"><a id="a2de241e75317d4c78a317d1b2ebbcfb0" name="a2de241e75317d4c78a317d1b2ebbcfb0"></a>
+std::vector&lt; std::uint8_t &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>retype_marks</b> (std::span&lt; const NodeNum &gt; node_nums, char type, <a class="el" href="structpycanha_1_1BulkReport.html">BulkReport</a> &amp;report) const</td></tr>
+<tr class="memitem:a937c73db3e5a2db1646ee15f54f91657" id="r_a937c73db3e5a2db1646ee15f54f91657"><td class="memItemLeft" align="right" valign="top"><a id="a937c73db3e5a2db1646ee15f54f91657" name="a937c73db3e5a2db1646ee15f54f91657"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>reorder_storage</b> (std::span&lt; const NodeNum &gt; numbers, std::span&lt; const Index &gt; new_to_old, Index diff_count)</td></tr>
+<tr class="memitem:aff95497215ff08a868662b30cb0f245b" id="r_aff95497215ff08a868662b30cb0f245b"><td class="memItemLeft" align="right" valign="top"><a id="aff95497215ff08a868662b30cb0f245b" name="aff95497215ff08a868662b30cb0f245b"></a>
+std::vector&lt; double &gt; *&#160;</td><td class="memItemRight" valign="bottom"><b>dense_storage</b> (<a class="el" href="namespacepycanha.html#ad42172d3e42aee979fca4c11f923913d">NodeAttribute</a> attribute) noexcept</td></tr>
+<tr class="memitem:aa647e9bd5681c92a7b63ac9a25d02a4c" id="r_aa647e9bd5681c92a7b63ac9a25d02a4c"><td class="memItemLeft" align="right" valign="top"><a id="aa647e9bd5681c92a7b63ac9a25d02a4c" name="aa647e9bd5681c92a7b63ac9a25d02a4c"></a>
+const std::vector&lt; double &gt; *&#160;</td><td class="memItemRight" valign="bottom"><b>dense_storage</b> (<a class="el" href="namespacepycanha.html#ad42172d3e42aee979fca4c11f923913d">NodeAttribute</a> attribute) const noexcept</td></tr>
+<tr class="memitem:af78302f367055cdfb6434b0f6e7e2ac4" id="r_af78302f367055cdfb6434b0f6e7e2ac4"><td class="memItemLeft" align="right" valign="top"><a id="af78302f367055cdfb6434b0f6e7e2ac4" name="af78302f367055cdfb6434b0f6e7e2ac4"></a>
+Eigen::SparseVector&lt; double &gt; *&#160;</td><td class="memItemRight" valign="bottom"><b>sparse_storage</b> (<a class="el" href="namespacepycanha.html#ad42172d3e42aee979fca4c11f923913d">NodeAttribute</a> attribute) noexcept</td></tr>
+<tr class="memitem:a3f19fb06948e9a7f74f9fe36b354fb7a" id="r_a3f19fb06948e9a7f74f9fe36b354fb7a"><td class="memItemLeft" align="right" valign="top"><a id="a3f19fb06948e9a7f74f9fe36b354fb7a" name="a3f19fb06948e9a7f74f9fe36b354fb7a"></a>
+const Eigen::SparseVector&lt; double &gt; *&#160;</td><td class="memItemRight" valign="bottom"><b>sparse_storage</b> (<a class="el" href="namespacepycanha.html#ad42172d3e42aee979fca4c11f923913d">NodeAttribute</a> attribute) const noexcept</td></tr>
 <tr class="memitem:afe6b0e0ea90ee3c773bc03b574e50a1e" id="r_afe6b0e0ea90ee3c773bc03b574e50a1e"><td class="memItemLeft" align="right" valign="top"><a id="afe6b0e0ea90ee3c773bc03b574e50a1e" name="afe6b0e0ea90ee3c773bc03b574e50a1e"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>find_node_index</b> (NodeNum node_num, Index &amp;index, const char *error_prefix) const</td></tr>
 <tr class="memitem:af9277918d33037e82aafd0eff6d0dc1a" id="r_af9277918d33037e82aafd0eff6d0dc1a"><td class="memItemLeft" align="right" valign="top"><a id="af9277918d33037e82aafd0eff6d0dc1a" name="af9277918d33037e82aafd0eff6d0dc1a"></a>
@@ -307,8 +353,6 @@ double *&#160;</td><td class="memItemRight" valign="bottom"><b>resolve_get_spars
 std::string&#160;</td><td class="memItemRight" valign="bottom"><b>resolve_get_literal_attr</b> (NodeNum node_num, const Eigen::SparseVector&lt; <a class="el" href="classpycanha_1_1LiteralString.html">LiteralString</a> &gt; &amp;storage) const</td></tr>
 <tr class="memitem:a1b96452a4df01e86fde41478d4b50a9f" id="r_a1b96452a4df01e86fde41478d4b50a9f"><td class="memItemLeft" align="right" valign="top"><a id="a1b96452a4df01e86fde41478d4b50a9f" name="a1b96452a4df01e86fde41478d4b50a9f"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>resolve_set_literal_attr</b> (NodeNum node_num, Eigen::SparseVector&lt; <a class="el" href="classpycanha_1_1LiteralString.html">LiteralString</a> &gt; &amp;storage, const std::string &amp;value)</td></tr>
-<tr class="memitem:a7f189255473dd678cf1d5832a3838184" id="r_a7f189255473dd678cf1d5832a3838184"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a7f189255473dd678cf1d5832a3838184">diffusive_to_boundary</a> (NodeNum usr_node_num)</td></tr>
-<tr class="memitem:a8950054692801b40ae073d18f8d01ed7" id="r_a8950054692801b40ae073d18f8d01ed7"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a8950054692801b40ae073d18f8d01ed7">boundary_to_diffusive</a> (NodeNum usr_node_num)</td></tr>
 <tr class="memitem:a9e9b067ca2c37eb1df8cb9d17595c181" id="r_a9e9b067ca2c37eb1df8cb9d17595c181"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a9e9b067ca2c37eb1df8cb9d17595c181">add_node_insert_idx</a> (Node &amp;node, Index insert_idx)</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pri-static-methods" class="groupheader"><a id="pri-static-methods" name="pri-static-methods"></a>
@@ -326,7 +370,16 @@ Private Attributes</h2></td></tr>
 <tr class="memitem:a8e793877df3b72fff0dbcc341d9dd52b" id="r_a8e793877df3b72fff0dbcc341d9dd52b"><td class="memItemLeft" align="right" valign="top">std::vector&lt; NodeNum &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a8e793877df3b72fff0dbcc341d9dd52b">_bound_node_num_vector</a></td></tr>
 <tr class="memitem:ae515048ae23a5e084b1f9f1b849a956d" id="r_ae515048ae23a5e084b1f9f1b849a956d"><td class="memItemLeft" align="right" valign="top">std::unordered_map&lt; NodeNum, Index &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ae515048ae23a5e084b1f9f1b849a956d">_usr_to_int_node_num</a></td></tr>
 <tr class="memdesc:ae515048ae23a5e084b1f9f1b849a956d"><td class="mdescLeft">&#160;</td><td class="mdescRight">User node number and internal node number mapping.  <br /></td></tr>
-<tr class="memitem:a30f8a15afab519640c34198dffde1707" id="r_a30f8a15afab519640c34198dffde1707"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a30f8a15afab519640c34198dffde1707">_node_num_mapped</a> {false}</td></tr>
+<tr class="memitem:a7013c25eaa58ad19b26e5ee2c1f7099c" id="r_a7013c25eaa58ad19b26e5ee2c1f7099c"><td class="memItemLeft" align="right" valign="top">std::vector&lt; std::int32_t &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a7013c25eaa58ad19b26e5ee2c1f7099c">_dense_node_index</a></td></tr>
+<tr class="memitem:af1317fb239ee159a3607045dfe1926d2" id="r_af1317fb239ee159a3607045dfe1926d2"><td class="memItemLeft" align="right" valign="top"><a id="af1317fb239ee159a3607045dfe1926d2" name="af1317fb239ee159a3607045dfe1926d2"></a>
+NodeNum&#160;</td><td class="memItemRight" valign="bottom"><b>_dense_base</b> {0}</td></tr>
+<tr class="memitem:a720e086b8d85f04668174abce2abc428" id="r_a720e086b8d85f04668174abce2abc428"><td class="memItemLeft" align="right" valign="top"><a id="a720e086b8d85f04668174abce2abc428" name="a720e086b8d85f04668174abce2abc428"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>_dense_mapped</b> {true}</td></tr>
+<tr class="memitem:ab66cf175a5516190b852a9a492fe3a0f" id="r_ab66cf175a5516190b852a9a492fe3a0f"><td class="memItemLeft" align="right" valign="top">std::uint64_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ab66cf175a5516190b852a9a492fe3a0f">_structure_version</a> {0}</td></tr>
+<tr class="memitem:ab7fe945589ae46b000e93973aae2a9d3" id="r_ab7fe945589ae46b000e93973aae2a9d3"><td class="memItemLeft" align="right" valign="top"><a id="ab7fe945589ae46b000e93973aae2a9d3" name="ab7fe945589ae46b000e93973aae2a9d3"></a>
+std::uint64_t&#160;</td><td class="memItemRight" valign="bottom"><b>_mapped_version</b> {0}</td></tr>
+<tr class="memdesc:ab7fe945589ae46b000e93973aae2a9d3"><td class="mdescLeft">&#160;</td><td class="mdescRight">The structure version the node number map was built for. <br /></td></tr>
+<tr class="memitem:aedb025497eb402d7934da0eb6e53b73f" id="r_aedb025497eb402d7934da0eb6e53b73f"><td class="memItemLeft" align="right" valign="top">Couplings *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aedb025497eb402d7934da0eb6e53b73f">_first_observer</a> {nullptr}</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-friends" class="groupheader"><a id="friends" name="friends"></a>
 Friends</h2></td></tr>
@@ -385,7 +438,7 @@ Here is the call graph for this function:</div>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="classpycanha_1_1Nodes_a9653a8fbd5e2f07eb29cf1c94d05bbdd_cgraph.svg" width="878" height="994"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="classpycanha_1_1Nodes_a9653a8fbd5e2f07eb29cf1c94d05bbdd_cgraph.svg" width="878" height="1064"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 
 </div>
@@ -420,13 +473,39 @@ Here is the call graph for this function:</div>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="classpycanha_1_1Nodes_a9e9b067ca2c37eb1df8cb9d17595c181_cgraph.svg" width="634" height="971"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="classpycanha_1_1Nodes_a9e9b067ca2c37eb1df8cb9d17595c181_cgraph.svg" width="634" height="1040"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+
+</div>
+</div>
+<a id="a97dea527f550b9d00a6acde7f4ac80c0" name="a97dea527f550b9d00a6acde7f4ac80c0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a97dea527f550b9d00a6acde7f4ac80c0">&#9670;&#160;</a></span>add_nodes() <span class="overload">[1/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="structpycanha_1_1BulkReport.html">BulkReport</a> Nodes::add_nodes </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="structpycanha_1_1NodeBatch.html">NodeBatch</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>batch</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Method to add a batch of nodes of one type from arrays. </p>
+<p>Nothing is copied from the batch except into the node storage itself. A batch sorted by increasing number, all above the numbers already stored in its block, is appended: O(k), plus O(boundary nodes) for a diffusive batch. Any other batch is sorted and merged in, one linear pass over every stored attribute.</p>
+<p>Rejected, and reported: every copy of a number repeated in the batch, a number that is already a node, and the whole batch when its type is not 'D' or 'B' or an attribute span does not match the numbers in length. The node number map is updated in place on an append, and left for the next lookup to rebuild otherwise. Pointers into the attribute storage (the *_value_ref getters) are invalidated. </p>
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="classpycanha_1_1Nodes_a97dea527f550b9d00a6acde7f4ac80c0_cgraph.svg" width="370" height="107"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 
 </div>
 </div>
 <a id="a2064ca42d6010ce5fed2722f21deac3a" name="a2064ca42d6010ce5fed2722f21deac3a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a2064ca42d6010ce5fed2722f21deac3a">&#9670;&#160;</a></span>add_nodes()</h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a2064ca42d6010ce5fed2722f21deac3a">&#9670;&#160;</a></span>add_nodes() <span class="overload">[2/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -446,38 +525,7 @@ Here is the call graph for this function:</div>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="classpycanha_1_1Nodes_a2064ca42d6010ce5fed2722f21deac3a_cgraph.svg" width="1083" height="994"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
-</div>
-
-</div>
-</div>
-<a id="a8950054692801b40ae073d18f8d01ed7" name="a8950054692801b40ae073d18f8d01ed7"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a8950054692801b40ae073d18f8d01ed7">&#9670;&#160;</a></span>boundary_to_diffusive()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">void Nodes::boundary_to_diffusive </td>
-          <td>(</td>
-          <td class="paramtype">NodeNum</td>          <td class="paramname"><span class="paramname"><em>usr_node_num</em></span></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel private">private</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-<p>Change the type of the node from boundary to diffusive. Because of how the internal order is defined, the node structure needs to be rearranged. </p>
-<div class="dynheader">
-Here is the call graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="classpycanha_1_1Nodes_a8950054692801b40ae073d18f8d01ed7_cgraph.svg" width="407" height="56"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="classpycanha_1_1Nodes_a2064ca42d6010ce5fed2722f21deac3a_cgraph.svg" width="1083" height="1064"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 
 </div>
@@ -504,7 +552,7 @@ Here is the call graph for this function:</div>
   </tr>
 </table>
 </div><div class="memdoc">
-<p>Remake the map that tracks user node numbers -&gt; internal node numbers, after that set _node_num_mapped to true. The method is called automatically when trying to obtain an attribute but _node_num_mapped is false. It is marked as const because the node struture and the node attributes are not modified. However the (mutable) members _usr_to_int_node_num and _node_num_mapped are modified. </p>
+<p>Remake the map that tracks user node numbers -&gt; internal node numbers (the flat table when the numbers are dense, the unordered_map otherwise) and mark it valid for the current structure version. Called automatically before a lookup when the structure changed since the last rebuild. It is marked as const because the node structure and the node attributes are not modified; only the mutable map members are. </p>
 
 </div>
 </div>
@@ -565,37 +613,6 @@ Here is the call graph for this function:</div>
 </table>
 </div><div class="memdoc">
 <p>Helper method to delete an entry at position 'index' in a Sparse vector of <a class="el" href="classpycanha_1_1LiteralString.html">LiteralString</a>. The size of the vector is decreased by one, and the elements after the deleted one are displaced one position. </p>
-
-</div>
-</div>
-<a id="a7f189255473dd678cf1d5832a3838184" name="a7f189255473dd678cf1d5832a3838184"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a7f189255473dd678cf1d5832a3838184">&#9670;&#160;</a></span>diffusive_to_boundary()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">void Nodes::diffusive_to_boundary </td>
-          <td>(</td>
-          <td class="paramtype">NodeNum</td>          <td class="paramname"><span class="paramname"><em>usr_node_num</em></span></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel private">private</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-<p>Change the type of the node from diffusive to boundary. Because of how the internal order is defined, the node structure needs to be rearranged. </p>
-<div class="dynheader">
-Here is the call graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="classpycanha_1_1Nodes_a7f189255473dd678cf1d5832a3838184_cgraph.svg" width="402" height="56"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
-</div>
 
 </div>
 </div>
@@ -797,6 +814,38 @@ Here is the call graph for this function:</div>
 
 </div>
 </div>
+<a id="ade300e1596b243b9961fd95ea0422915" name="ade300e1596b243b9961fd95ea0422915"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ade300e1596b243b9961fd95ea0422915">&#9670;&#160;</a></span>get_values()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="structpycanha_1_1BulkReport.html">BulkReport</a> Nodes::get_values </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="namespacepycanha.html#ad42172d3e42aee979fca4c11f923913d">NodeAttribute</a></td>          <td class="paramname"><span class="paramname"><em>attribute</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::span&lt; const NodeNum &gt;</td>          <td class="paramname"><span class="paramname"><em>node_nums</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::span&lt; double &gt;</td>          <td class="paramname"><span class="paramname"><em>values</em></span>&#160;) const</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Reads one attribute of many nodes into <code class="param">values</code> (same length as <code class="param">node_nums</code>). Unknown nodes read as NaN and are reported. </p>
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="classpycanha_1_1Nodes_ade300e1596b243b9961fd95ea0422915_cgraph.svg" width="370" height="107"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+
+</div>
+</div>
 <a id="aa0e2f06fa9cb58a93fae6dd4ec2acbfd" name="aa0e2f06fa9cb58a93fae6dd4ec2acbfd"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#aa0e2f06fa9cb58a93fae6dd4ec2acbfd">&#9670;&#160;</a></span>insert_displace() <span class="overload">[1/3]</span></h2>
 
@@ -950,6 +999,141 @@ Here is the call graph for this function:</div>
 
 </div>
 </div>
+<a id="ac77a1ba48aa7eba24e97281002949995" name="ac77a1ba48aa7eba24e97281002949995"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac77a1ba48aa7eba24e97281002949995">&#9670;&#160;</a></span>reserve()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Nodes::reserve </td>
+          <td>(</td>
+          <td class="paramtype">Index</td>          <td class="paramname"><span class="paramname"><em>num_nodes</em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Reserves storage for <code class="param">num_nodes</code> nodes in total, so that adding them one by one or in several batches never reallocates the dense vectors. </p>
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="classpycanha_1_1Nodes_ac77a1ba48aa7eba24e97281002949995_cgraph.svg" width="404" height="56"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+
+</div>
+</div>
+<a id="a03c0a37e09d5c6085f4f55f5983eacce" name="a03c0a37e09d5c6085f4f55f5983eacce"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a03c0a37e09d5c6085f4f55f5983eacce">&#9670;&#160;</a></span>set_type()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool Nodes::set_type </td>
+          <td>(</td>
+          <td class="paramtype">NodeNum</td>          <td class="paramname"><span class="paramname"><em>node_num</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">char</td>          <td class="paramname"><span class="paramname"><em>type</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Type setter: 'D' diffusive, 'B' boundary. The node moves to the other block, which reorders every node and coupling once; for many nodes use set_types, which does it once for all of them. </p>
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="classpycanha_1_1Nodes_a03c0a37e09d5c6085f4f55f5983eacce_cgraph.svg" width="640" height="126"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+
+</div>
+</div>
+<a id="ae1e246edb010fced3cc1ad4167badd3c" name="ae1e246edb010fced3cc1ad4167badd3c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae1e246edb010fced3cc1ad4167badd3c">&#9670;&#160;</a></span>set_types()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="structpycanha_1_1BulkReport.html">BulkReport</a> Nodes::set_types </td>
+          <td>(</td>
+          <td class="paramtype">std::span&lt; const NodeNum &gt;</td>          <td class="paramname"><span class="paramname"><em>node_nums</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">char</td>          <td class="paramname"><span class="paramname"><em>type</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Changes the type of many nodes at once ('D' diffusive, 'B' boundary). Each node keeps its attributes and couplings; the nodes and the coupling matrices are reordered in a single pass, O(nodes + couplings). Unknown node numbers are rejected and reported; a node that already has the type is accepted unchanged. </p>
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="classpycanha_1_1Nodes_ae1e246edb010fced3cc1ad4167badd3c_cgraph.svg" width="366" height="56"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+
+</div>
+</div>
+<a id="a3a12b214f9ea60a084d6dfccfadb8657" name="a3a12b214f9ea60a084d6dfccfadb8657"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3a12b214f9ea60a084d6dfccfadb8657">&#9670;&#160;</a></span>set_values()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="structpycanha_1_1BulkReport.html">BulkReport</a> Nodes::set_values </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="namespacepycanha.html#ad42172d3e42aee979fca4c11f923913d">NodeAttribute</a></td>          <td class="paramname"><span class="paramname"><em>attribute</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::span&lt; const NodeNum &gt;</td>          <td class="paramname"><span class="paramname"><em>node_nums</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::span&lt; const double &gt;</td>          <td class="paramname"><span class="paramname"><em>values</em></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Sets one attribute of many nodes. Unknown nodes are skipped and reported; for a node given twice the last value wins. A sparse attribute is rebuilt once, dropping values at or below ZERO_THR_ATTR. </p>
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="classpycanha_1_1Nodes_a3a12b214f9ea60a084d6dfccfadb8657_cgraph.svg" width="368" height="107"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+
+</div>
+</div>
+<a id="aa4a6712e52408a60aa6e0d5ca7eaee92" name="aa4a6712e52408a60aa6e0d5ca7eaee92"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa4a6712e52408a60aa6e0d5ca7eaee92">&#9670;&#160;</a></span>structure_version()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::uint64_t Nodes::structure_version </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel nodiscard">nodiscard</span><span class="mlabel noexcept">noexcept</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>Changes whenever a node is added, removed or moved. See _structure_version. </p>
+
+</div>
+</div>
 <a name="doc-variable-members" id="doc-variable-members"></a><h2 id="header-doc-variable-members" class="groupheader">Member Data Documentation</h2>
 <a id="a8e793877df3b72fff0dbcc341d9dd52b" name="a8e793877df3b72fff0dbcc341d9dd52b"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a8e793877df3b72fff0dbcc341d9dd52b">&#9670;&#160;</a></span>_bound_node_num_vector</h2>
@@ -971,6 +1155,29 @@ Here is the call graph for this function:</div>
 </table>
 </div><div class="memdoc">
 <p>Vector with the user node number of the boundary nodes. The vector is ordered from lower user node number to higher. </p>
+
+</div>
+</div>
+<a id="a7013c25eaa58ad19b26e5ee2c1f7099c" name="a7013c25eaa58ad19b26e5ee2c1f7099c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7013c25eaa58ad19b26e5ee2c1f7099c">&#9670;&#160;</a></span>_dense_node_index</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::vector&lt;std::int32_t&gt; pycanha::Nodes::_dense_node_index</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel mutable">mutable</span><span class="mlabel private">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>The same map as a flat table, used instead of the unordered_map when the node numbers are dense enough: entry (number - _dense_base) holds the internal index, or -1 for a number that is not a node. One memory read per lookup, and a rebuild is a single pass over the nodes. </p>
 
 </div>
 </div>
@@ -997,8 +1204,8 @@ Here is the call graph for this function:</div>
 
 </div>
 </div>
-<a id="a30f8a15afab519640c34198dffde1707" name="a30f8a15afab519640c34198dffde1707"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a30f8a15afab519640c34198dffde1707">&#9670;&#160;</a></span>_node_num_mapped</h2>
+<a id="aedb025497eb402d7934da0eb6e53b73f" name="aedb025497eb402d7934da0eb6e53b73f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aedb025497eb402d7934da0eb6e53b73f">&#9670;&#160;</a></span>_first_observer</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -1007,16 +1214,16 @@ Here is the call graph for this function:</div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">bool pycanha::Nodes::_node_num_mapped {false}</td>
+          <td class="memname">Couplings* pycanha::Nodes::_first_observer {nullptr}</td>
         </tr>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel mutable">mutable</span><span class="mlabel private">private</span></span>  </td>
+<span class="mlabels"><span class="mlabel private">private</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
-<p>Variable to track changes in the structure of the nodes. Anytime the node order changes, or a node is added or removed, the variable is set to false. Always, before using the node number map (_usr_to_int_node_num) this variable is checked. If false the map is updated before accesing it. </p>
+<p><a class="el" href="classpycanha_1_1Coupling.html" title="Representation of a thermal coupling between two nodes.">Coupling</a> containers that index their matrices by this instance's internal node order, linked through <a class="el" href="classpycanha_1_1Couplings.html">Couplings</a> itself (an intrusive list, so registering never allocates). A node inserted in the middle of its block, or removed, moves the internal index of the nodes after it; each of them is told so right away and remaps its stored couplings. </p>
 
 </div>
 </div>
@@ -1040,6 +1247,29 @@ Here is the call graph for this function:</div>
 </table>
 </div><div class="memdoc">
 <p>Variable to store the shared_pointer to the instance. When the instance is destroyed, so is the shared pointer. All the references to the instance in <a class="el" href="classpycanha_1_1Node.html">Node</a> are through weak_ptr so the node automatically knows that it doesn't belong to any <a class="el" href="classpycanha_1_1Nodes.html">Nodes</a> </p>
+
+</div>
+</div>
+<a id="ab66cf175a5516190b852a9a492fe3a0f" name="ab66cf175a5516190b852a9a492fe3a0f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab66cf175a5516190b852a9a492fe3a0f">&#9670;&#160;</a></span>_structure_version</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::uint64_t pycanha::Nodes::_structure_version {0}</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel private">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>Bumped by every change of the node structure: a node added, removed or moved. Whatever depends on the structure (the node number map here, the coupling matrix sizes, an initialised solver) remembers the version it was built for and compares. </p>
 
 </div>
 </div>

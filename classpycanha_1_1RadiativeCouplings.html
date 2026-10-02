@@ -28,7 +28,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.21</span>
+   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.22</span>
    </div>
    <div id="projectbrief">The C++ core of pycanha</div>
   </td>
@@ -97,7 +97,7 @@ $(function(){initNavTree('classpycanha_1_1RadiativeCouplings.html','','classpyca
 <div class="dynheader">
 Collaboration diagram for pycanha::RadiativeCouplings:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="classpycanha_1_1RadiativeCouplings__coll__graph.svg" width="222" height="240"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="classpycanha_1_1RadiativeCouplings__coll__graph.svg" width="350" height="260"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 <center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-methods" class="groupheader"><a id="pub-methods" name="pub-methods"></a>
@@ -122,6 +122,19 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>set_coupling_value</b
 double&#160;</td><td class="memItemRight" valign="bottom"><b>get_coupling_value</b> (Index node_num_1, Index node_num_2)</td></tr>
 <tr class="memitem:a3b1a713912312a5fa959ca8c6e3e5751" id="r_a3b1a713912312a5fa959ca8c6e3e5751"><td class="memItemLeft" align="right" valign="top"><a id="a3b1a713912312a5fa959ca8c6e3e5751" name="a3b1a713912312a5fa959ca8c6e3e5751"></a>
 double *&#160;</td><td class="memItemRight" valign="bottom"><b>get_coupling_value_ref</b> (Index node_num_1, Index node_num_2)</td></tr>
+<tr class="memitem:a539823ec3e5bf3ea3d01eca0c5c4f4ed" id="r_a539823ec3e5bf3ea3d01eca0c5c4f4ed"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structpycanha_1_1BulkReport.html">BulkReport</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a539823ec3e5bf3ea3d01eca0c5c4f4ed">add_couplings</a> (std::span&lt; const NodeNum &gt; node_nums_1, std::span&lt; const NodeNum &gt; node_nums_2, std::span&lt; const double &gt; values, <a class="el" href="namespacepycanha.html#a22dc61f520c4990847af9ef4cc49d354">CouplingMerge</a> merge=<a class="el" href="namespacepycanha.html#a22dc61f520c4990847af9ef4cc49d354a1038b7c5b38b3977c52e47d18cc741ee">CouplingMerge::OVERWRITE</a>)</td></tr>
+<tr class="memitem:a24fc1c5a571b396baf6ee3b4dd02b243" id="r_a24fc1c5a571b396baf6ee3b4dd02b243"><td class="memItemLeft" align="right" valign="top"><a id="a24fc1c5a571b396baf6ee3b4dd02b243" name="a24fc1c5a571b396baf6ee3b4dd02b243"></a>
+<a class="el" href="structpycanha_1_1BulkReport.html">BulkReport</a>&#160;</td><td class="memItemRight" valign="bottom"><b>add_couplings</b> (std::span&lt; const std::int64_t &gt; node_nums_1, std::span&lt; const std::int64_t &gt; node_nums_2, std::span&lt; const double &gt; values, <a class="el" href="namespacepycanha.html#a22dc61f520c4990847af9ef4cc49d354">CouplingMerge</a> merge=<a class="el" href="namespacepycanha.html#a22dc61f520c4990847af9ef4cc49d354a1038b7c5b38b3977c52e47d18cc741ee">CouplingMerge::OVERWRITE</a>)</td></tr>
+<tr class="memitem:a6c76bb87f3dfb1e3499f8a26012f1944" id="r_a6c76bb87f3dfb1e3499f8a26012f1944"><td class="memItemLeft" align="right" valign="top"><a id="a6c76bb87f3dfb1e3499f8a26012f1944" name="a6c76bb87f3dfb1e3499f8a26012f1944"></a>
+<a class="el" href="structpycanha_1_1BulkReport.html">BulkReport</a>&#160;</td><td class="memItemRight" valign="bottom"><b>append_couplings</b> (std::span&lt; const <a class="el" href="structpycanha_1_1CouplingChunk.html">CouplingChunk</a> &gt; chunks)</td></tr>
+<tr class="memdesc:a6c76bb87f3dfb1e3499f8a26012f1944"><td class="mdescLeft">&#160;</td><td class="mdescRight">Bulk insertion by internal index, see <a class="el" href="classpycanha_1_1Couplings.html#a5891a2bb5e813828d13392cb662a7db2">Couplings::append_couplings</a>. <br /></td></tr>
+<tr class="memitem:a38fe8cad79874dea60a646c490fc7792" id="r_a38fe8cad79874dea60a646c490fc7792"><td class="memItemLeft" align="right" valign="top"><a id="a38fe8cad79874dea60a646c490fc7792" name="a38fe8cad79874dea60a646c490fc7792"></a>
+<a class="el" href="structpycanha_1_1BulkReport.html">BulkReport</a>&#160;</td><td class="memItemRight" valign="bottom"><b>get_values</b> (std::span&lt; const NodeNum &gt; node_nums_1, std::span&lt; const NodeNum &gt; node_nums_2, std::span&lt; double &gt; values)</td></tr>
+<tr class="memdesc:a38fe8cad79874dea60a646c490fc7792"><td class="mdescLeft">&#160;</td><td class="mdescRight">Bulk getters and setters, see <a class="el" href="classpycanha_1_1Couplings.html#a96cf619a41f0d2daa99c498920354980">Couplings::get_values</a> / set_values. <br /></td></tr>
+<tr class="memitem:a52874a3ef5a2794716ad624058a0c378" id="r_a52874a3ef5a2794716ad624058a0c378"><td class="memItemLeft" align="right" valign="top"><a id="a52874a3ef5a2794716ad624058a0c378" name="a52874a3ef5a2794716ad624058a0c378"></a>
+<a class="el" href="structpycanha_1_1BulkReport.html">BulkReport</a>&#160;</td><td class="memItemRight" valign="bottom"><b>set_values</b> (std::span&lt; const NodeNum &gt; node_nums_1, std::span&lt; const NodeNum &gt; node_nums_2, std::span&lt; const double &gt; values)</td></tr>
+<tr class="memitem:afe429523fb3ff9a0184fc1607811a251" id="r_afe429523fb3ff9a0184fc1607811a251"><td class="memItemLeft" align="right" valign="top"><a id="afe429523fb3ff9a0184fc1607811a251" name="afe429523fb3ff9a0184fc1607811a251"></a>
+<a class="el" href="structpycanha_1_1Couplings_1_1CouplingArrays.html">Couplings::CouplingArrays</a>&#160;</td><td class="memItemRight" valign="bottom"><b>to_arrays</b> ()</td></tr>
 <tr class="memitem:acce44586fc0e1e62ab4226390d342263" id="r_acce44586fc0e1e62ab4226390d342263"><td class="memItemLeft" align="right" valign="top"><a id="acce44586fc0e1e62ab4226390d342263" name="acce44586fc0e1e62ab4226390d342263"></a>
 <a class="el" href="classpycanha_1_1CouplingMatrices.html">CouplingMatrices</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>matrices</b> () noexcept</td></tr>
 <tr class="memitem:ade6e275df46e34aff50c79446b766e57" id="r_ade6e275df46e34aff50c79446b766e57"><td class="memItemLeft" align="right" valign="top"><a id="ade6e275df46e34aff50c79446b766e57" name="ade6e275df46e34aff50c79446b766e57"></a>
@@ -144,6 +157,39 @@ Friends</h2></td></tr>
 <tr class="memitem:ac067fa61e6d308a18d90713c2ee51431" id="r_ac067fa61e6d308a18d90713c2ee51431"><td class="memItemLeft" align="right" valign="top"><a id="ac067fa61e6d308a18d90713c2ee51431" name="ac067fa61e6d308a18d90713c2ee51431"></a>
 class&#160;</td><td class="memItemRight" valign="bottom"><b>ThermalNetwork</b></td></tr>
 </table>
+<a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Member Function Documentation</h2>
+<a id="a539823ec3e5bf3ea3d01eca0c5c4f4ed" name="a539823ec3e5bf3ea3d01eca0c5c4f4ed"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a539823ec3e5bf3ea3d01eca0c5c4f4ed">&#9670;&#160;</a></span>add_couplings()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="structpycanha_1_1BulkReport.html">BulkReport</a> pycanha::RadiativeCouplings::add_couplings </td>
+          <td>(</td>
+          <td class="paramtype">std::span&lt; const NodeNum &gt;</td>          <td class="paramname"><span class="paramname"><em>node_nums_1</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::span&lt; const NodeNum &gt;</td>          <td class="paramname"><span class="paramname"><em>node_nums_2</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::span&lt; const double &gt;</td>          <td class="paramname"><span class="paramname"><em>values</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="namespacepycanha.html#a22dc61f520c4990847af9ef4cc49d354">CouplingMerge</a></td>          <td class="paramname"><span class="paramname"><em>merge</em></span><span class="paramdefsep"> = </span><span class="paramdefval"><a class="el" href="namespacepycanha.html#a22dc61f520c4990847af9ef4cc49d354a1038b7c5b38b3977c52e47d18cc741ee">CouplingMerge::OVERWRITE</a></span>&#160;)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Bulk insertion by node number, see <a class="el" href="classpycanha_1_1Couplings.html#a16d9782810c15f42599e4244ba1ce1f4" title="General bulk insertion by node number.">Couplings::add_couplings</a>. The default merge overwrites, as add_coupling does. </p>
+
+</div>
+</div>
 <hr/>The documentation for this class was generated from the following files:<ul>
 <li>pycanha-core/include/pycanha-core/tmm/<a class="el" href="radiativecouplings_8hpp_source.html">radiativecouplings.hpp</a></li>
 <li>pycanha-core/src/tmm/<b>radiativecouplings.cpp</b></li>

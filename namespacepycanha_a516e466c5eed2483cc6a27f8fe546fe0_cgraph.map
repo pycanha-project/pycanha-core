@@ -1,0 +1,9 @@
+<map id="pycanha::suggest_min_degree_if_dense" name="pycanha::suggest_min_degree_if_dense">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,65,173,110"/>
+<area shape="rect" id="Node000002" href="$classpycanha_1_1SparseLinearSolver.html#af228ca8247636bc27ab164ad4b0823d2" title=" " alt="" coords="224,5,433,50"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="172,64,224,53,219,55,174,69"/>
+<area shape="rect" id="Node000003" href="$namespacepycanha.html#af116674b7649af0e33b3d7e78ecb1b1b" title=" " alt="" coords="252,74,405,102"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="173,85,239,87,234,88,173,90"/>
+<area shape="rect" id="Node000004" href="$namespacepycanha.html#a45189b49c7231dbb7fe475ab01c3d509" title="DEFAULT replaced by the engine&#39;s default type." alt="" coords="221,126,436,154"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="173,103,249,121,244,122,173,109"/>
+</map>

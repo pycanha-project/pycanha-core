@@ -1,8 +1,9 @@
 var searchData=
 [
-  ['qa_5fvector_0',['qa_vector',['../classpycanha_1_1Nodes.html#a466e776b262f4bb1e8f7bc6f34df27a0',1,'pycanha::Nodes']]],
-  ['qe_5fvector_1',['qe_vector',['../classpycanha_1_1Nodes.html#ab57d8aab00c45369f356d6c5807385a4',1,'pycanha::Nodes']]],
-  ['qi_5fvector_2',['qi_vector',['../classpycanha_1_1Nodes.html#a9bb7d595e8083804ea2f27f24c19d80e',1,'pycanha::Nodes']]],
-  ['qr_5fvector_3',['qr_vector',['../classpycanha_1_1Nodes.html#a8ac3e23668604c12945a21eb6b081b02',1,'pycanha::Nodes']]],
-  ['qs_5fvector_4',['qs_vector',['../classpycanha_1_1Nodes.html#af28cf045462f0f1c4e9c176701392bd9',1,'pycanha::Nodes']]]
+  ['pardiso_5fiparm_5f3_0',['pardiso_iparm_3',['../classpycanha_1_1Solver.html#ad6cf245e5d8d4559f1455c49147b2135',1,'pycanha::Solver']]],
+  ['pardiso_5fiparm_5foverrides_1',['pardiso_iparm_overrides',['../classpycanha_1_1Solver.html#a27120abbafb7fc8d810613ea9543b03d',1,'pycanha::Solver']]],
+  ['pardiso_5fverbose_2',['pardiso_verbose',['../classpycanha_1_1Solver.html#a1c6ad0a6851049be5eab318a7e1472f6',1,'pycanha::Solver']]],
+  ['pid_3',['pid',['../structpycanha_1_1LogRecord.html#ae8619918e9c8321dbcfc82d6fbd65e8a',1,'pycanha::LogRecord']]],
+  ['position_5fweight_4',['position_weight',['../structpycanha_1_1conduction_1_1NetworkPart.html#ae63e31d5573102ee11f6d9995f974141',1,'pycanha::conduction::NetworkPart']]],
+  ['position_5fx_5',['position_x',['../structpycanha_1_1conduction_1_1NetworkPart.html#a1723b574b0f9ac0b363b5bb10fba335f',1,'pycanha::conduction::NetworkPart']]]
 ];

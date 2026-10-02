@@ -28,7 +28,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.21</span>
+   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.22</span>
    </div>
    <div id="projectbrief">The C++ core of pycanha</div>
   </td>
@@ -169,6 +169,11 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>prepare_formulas_for_
 void&#160;</td><td class="memItemRight" valign="bottom"><b>release_formulas_after_execution</b> () noexcept</td></tr>
 <tr class="memitem:ade9cef12ff469684b8f2434fb271f47e inherit pro_methods_classpycanha_1_1Solver" id="r_ade9cef12ff469684b8f2434fb271f47e"><td class="memItemLeft" align="right" valign="top">
 void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize_common</b> ()</td></tr>
+<tr class="memitem:a202547cfe62fab98fa127fb69ed8fc6d inherit pro_methods_classpycanha_1_1Solver" id="r_a202547cfe62fab98fa127fb69ed8fc6d"><td class="memItemLeft" align="right" valign="top">
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>structure_unchanged_since_initialize</b> () const</td></tr>
+<tr class="memitem:a433476baae46d5ff262e8702b8082e4c inherit pro_methods_classpycanha_1_1Solver" id="r_a433476baae46d5ff262e8702b8082e4c"><td class="memItemLeft" align="right" valign="top">
+<a class="el" href="structpycanha_1_1LinearSolverOptions.html">LinearSolverOptions</a>&#160;</td><td class="memItemRight" valign="bottom"><b>linear_solver_options</b> (<a class="el" href="namespacepycanha.html#ae2fc612d52a2376bb734df09365b3de9">SolverEngine</a> engine, <a class="el" href="namespacepycanha.html#ac39dca56261a6b845e2976a7868a5c08">DirectSolverType</a> type) const</td></tr>
+<tr class="memdesc:a433476baae46d5ff262e8702b8082e4c inherit pro_methods_classpycanha_1_1Solver"><td class="mdescLeft">&#160;</td><td class="mdescRight">Linear solver options from the PARDISO settings above. <br /></td></tr>
 <tr class="memitem:a7de3b0a29499a22f64bed5b1a4369bcf inherit pro_methods_classpycanha_1_1Solver" id="r_a7de3b0a29499a22f64bed5b1a4369bcf"><td class="memItemLeft" align="right" valign="top">
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>temperature_convergence_check</b> ()</td></tr>
 <tr class="memitem:a0dfb500b79e404ee6d5f9a6ec05c9bde inherit pro_methods_classpycanha_1_1Solver" id="r_a0dfb500b79e404ee6d5f9a6ec05c9bde"><td class="memItemLeft" align="right" valign="top">
@@ -200,8 +205,14 @@ double&#160;</td><td class="memItemRight" valign="bottom"><b>eps_capacity</b> = 
 double&#160;</td><td class="memItemRight" valign="bottom"><b>eps_time</b> = 1.0e-6</td></tr>
 <tr class="memitem:a83a5d8902e99b15a18bd3a36022f5f3d inherit pub_attribs_classpycanha_1_1Solver" id="r_a83a5d8902e99b15a18bd3a36022f5f3d"><td class="memItemLeft" align="right" valign="top">
 double&#160;</td><td class="memItemRight" valign="bottom"><b>eps_coupling</b> = 1.0e-12</td></tr>
-<tr class="memitem:ad6cf245e5d8d4559f1455c49147b2135 inherit pub_attribs_classpycanha_1_1Solver" id="r_ad6cf245e5d8d4559f1455c49147b2135"><td class="memItemLeft" align="right" valign="top">
-int&#160;</td><td class="memItemRight" valign="bottom"><b>pardiso_iparm_3</b> = 31</td></tr>
+<tr class="memitem:ad6cf245e5d8d4559f1455c49147b2135 inherit pub_attribs_classpycanha_1_1Solver" id="r_ad6cf245e5d8d4559f1455c49147b2135"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classpycanha_1_1Solver.html#ad6cf245e5d8d4559f1455c49147b2135">pardiso_iparm_3</a> = 0</td></tr>
+<tr class="memitem:a27120abbafb7fc8d810613ea9543b03d inherit pub_attribs_classpycanha_1_1Solver" id="r_a27120abbafb7fc8d810613ea9543b03d"><td class="memItemLeft" align="right" valign="top">std::map&lt; int, int &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classpycanha_1_1Solver.html#a27120abbafb7fc8d810613ea9543b03d">pardiso_iparm_overrides</a></td></tr>
+<tr class="memitem:affe8894f3293518af5412a18f122a918 inherit pub_attribs_classpycanha_1_1Solver" id="r_affe8894f3293518af5412a18f122a918"><td class="memItemLeft" align="right" valign="top">
+int&#160;</td><td class="memItemRight" valign="bottom"><b>mkl_threads</b> = 0</td></tr>
+<tr class="memdesc:affe8894f3293518af5412a18f122a918 inherit pub_attribs_classpycanha_1_1Solver"><td class="mdescLeft">&#160;</td><td class="mdescRight">Threads of the PARDISO calls, 0 for MKL's setting (MKL_NUM_THREADS). <br /></td></tr>
+<tr class="memitem:a1c6ad0a6851049be5eab318a7e1472f6 inherit pub_attribs_classpycanha_1_1Solver" id="r_a1c6ad0a6851049be5eab318a7e1472f6"><td class="memItemLeft" align="right" valign="top">
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>pardiso_verbose</b> = false</td></tr>
+<tr class="memdesc:a1c6ad0a6851049be5eab318a7e1472f6 inherit pub_attribs_classpycanha_1_1Solver"><td class="mdescLeft">&#160;</td><td class="mdescRight">PARDISO statistics printed to standard output. <br /></td></tr>
 <tr class="memitem:a27f3c73e72b829a15146be42e755c5bb inherit pub_attribs_classpycanha_1_1Solver" id="r_a27f3c73e72b829a15146be42e755c5bb"><td class="memItemLeft" align="right" valign="top">
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>solver_converged</b> = false</td></tr>
 <tr class="memitem:a6b1fca28e8d4e9251bf9e809076f5989 inherit pub_attribs_classpycanha_1_1Solver" id="r_a6b1fca28e8d4e9251bf9e809076f5989"><td class="memItemLeft" align="right" valign="top">
@@ -309,6 +320,8 @@ VectorXd&#160;</td><td class="memItemRight" valign="bottom"><b>dTd</b></td></tr>
 double&#160;</td><td class="memItemRight" valign="bottom"><b>max_dT</b> = 0.0</td></tr>
 <tr class="memitem:a976dfca893030a227f50a10d0dd79df2 inherit pro_attribs_classpycanha_1_1Solver" id="r_a976dfca893030a227f50a10d0dd79df2"><td class="memItemLeft" align="right" valign="top">
 VectorXd&#160;</td><td class="memItemRight" valign="bottom"><b>Td_solver</b></td></tr>
+<tr class="memitem:a9c0311d21343ccf31ffc05fe8c420fab inherit pro_attribs_classpycanha_1_1Solver" id="r_a9c0311d21343ccf31ffc05fe8c420fab"><td class="memItemLeft" align="right" valign="top">
+std::uint64_t&#160;</td><td class="memItemRight" valign="bottom"><b>_initialized_structure_version</b> = 0</td></tr>
 <tr class="memitem:a624bb18d21e2b3d9db364563dca019ea inherit pro_attribs_classpycanha_1_1Solver" id="r_a624bb18d21e2b3d9db364563dca019ea"><td class="memItemLeft" align="right" valign="top">
 std::unordered_set&lt; std::pair&lt; int, int &gt;, <a class="el" href="structpycanha_1_1IntPairHash.html">IntPairHash</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>_original_non_zeros_krdd</b></td></tr>
 <tr class="memitem:a2820e6384789a967329b67bfffbf3f7b inherit pro_attribs_classpycanha_1_1Solver" id="r_a2820e6384789a967329b67bfffbf3f7b"><td class="memItemLeft" align="right" valign="top">

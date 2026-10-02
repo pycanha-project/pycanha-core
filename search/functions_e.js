@@ -21,6 +21,12 @@ var searchData=
   ['set_5frecord_5flevel_18',['set_record_level',['../namespacepycanha.html#a1a9da2050305eea55ad3c39bb7e1a765',1,'pycanha']]],
   ['set_5ft_19',['set_T',['../classpycanha_1_1Node.html#acc6a025c4618c26b37148a339a4d53ac',1,'pycanha::Node::set_T()'],['../classpycanha_1_1Nodes.html#a6aa6d55b0065197751040c0ce579fa53',1,'pycanha::Nodes::set_T()']]],
   ['set_5fthermal_5fnodes_5fparent_20',['set_thermal_nodes_parent',['../classpycanha_1_1Node.html#aa6ed2994d3acaf711d8f0c12145a7983',1,'pycanha::Node']]],
-  ['set_5ftype_21',['set_type',['../classpycanha_1_1Node.html#ae63b3c12229048934496f9d19a058aab',1,'pycanha::Node::set_type()'],['../classpycanha_1_1Nodes.html#a03c0a37e09d5c6085f4f55f5983eacce',1,'pycanha::Nodes::set_type()']]],
-  ['surface_5farea_22',['surface_area',['../classpycanha_1_1gmm_1_1TriangularPrism.html#a797fa848136ae195c53fa23a5e662630',1,'pycanha::gmm::TriangularPrism']]]
+  ['set_5ftype_21',['set_type',['../classpycanha_1_1Node.html#ae63b3c12229048934496f9d19a058aab',1,'pycanha::Node::set_type()'],['../classpycanha_1_1Nodes.html#a03c0a37e09d5c6085f4f55f5983eacce',1,'pycanha::Nodes::set_type(NodeNum node_num, char type)']]],
+  ['set_5ftypes_22',['set_types',['../classpycanha_1_1Nodes.html#ae1e246edb010fced3cc1ad4167badd3c',1,'pycanha::Nodes']]],
+  ['set_5fvalues_23',['set_values',['../classpycanha_1_1Couplings.html#ac62f9af153ef3bbd4240a004e923d9e5',1,'pycanha::Couplings::set_values()'],['../classpycanha_1_1Nodes.html#a3a12b214f9ea60a084d6dfccfadb8657',1,'pycanha::Nodes::set_values()']]],
+  ['solve_24',['solve',['../classpycanha_1_1SparseLinearSolver.html#a2f8a31e515d8914df4a3b3f035b6898d',1,'pycanha::SparseLinearSolver::solve(const SparseMatrix &amp;matrix, Eigen::VectorXd &amp;b, Eigen::VectorXd &amp;x)=0'],['../classpycanha_1_1SparseLinearSolver.html#a209bfacd9088876027848bb9139a3e00',1,'pycanha::SparseLinearSolver::solve(const SparseMatrix &amp;matrix, Eigen::MatrixXd &amp;b, Eigen::MatrixXd &amp;x)=0']]],
+  ['structure_5fversion_25',['structure_version',['../classpycanha_1_1Nodes.html#aa4a6712e52408a60aa6e0d5ca7eaee92',1,'pycanha::Nodes']]],
+  ['suggest_5fmin_5fdegree_5fif_5fdense_26',['suggest_min_degree_if_dense',['../namespacepycanha.html#a516e466c5eed2483cc6a27f8fe546fe0',1,'pycanha']]],
+  ['surface_5farea_27',['surface_area',['../classpycanha_1_1gmm_1_1TriangularPrism.html#a797fa848136ae195c53fa23a5e662630',1,'pycanha::gmm::TriangularPrism']]],
+  ['synchronize_5fstructure_28',['synchronize_structure',['../classpycanha_1_1Couplings.html#a40a81e3195857ff8ccd94994aaa843f2',1,'pycanha::Couplings::synchronize_structure()'],['../classpycanha_1_1ThermalNetwork.html#a6137eeab869e684f5462c9bcdad3b851',1,'pycanha::ThermalNetwork::synchronize_structure()']]]
 ];

@@ -28,7 +28,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.21</span>
+   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.22</span>
    </div>
    <div id="projectbrief">The C++ core of pycanha</div>
   </td>
@@ -166,6 +166,14 @@ const <a class="el" href="classpycanha_1_1RadiativeCouplings.html">RadiativeCoup
 void&#160;</td><td class="memItemRight" valign="bottom"><b>add_node</b> (<a class="el" href="classpycanha_1_1Node.html">Node</a> node)</td></tr>
 <tr class="memitem:a6d664311cb3ad044b2e8e6f0e45be01a" id="r_a6d664311cb3ad044b2e8e6f0e45be01a"><td class="memItemLeft" align="right" valign="top"><a id="a6d664311cb3ad044b2e8e6f0e45be01a" name="a6d664311cb3ad044b2e8e6f0e45be01a"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>add_node</b> (Index node_num)</td></tr>
+<tr class="memitem:ac6973de3ad3112ac6d81c799be5b3e90" id="r_ac6973de3ad3112ac6d81c799be5b3e90"><td class="memItemLeft" align="right" valign="top"><a id="ac6973de3ad3112ac6d81c799be5b3e90" name="ac6973de3ad3112ac6d81c799be5b3e90"></a>
+<a class="el" href="structpycanha_1_1BulkReport.html">BulkReport</a>&#160;</td><td class="memItemRight" valign="bottom"><b>add_nodes</b> (const <a class="el" href="structpycanha_1_1NodeBatch.html">NodeBatch</a> &amp;batch)</td></tr>
+<tr class="memdesc:ac6973de3ad3112ac6d81c799be5b3e90"><td class="mdescLeft">&#160;</td><td class="mdescRight">Bulk node insertion, see <a class="el" href="classpycanha_1_1Nodes.html#a2064ca42d6010ce5fed2722f21deac3a" title="Method to add a several nodes contained in a std::vector.">Nodes::add_nodes</a>. <br /></td></tr>
+<tr class="memitem:a8ae6e5c5fc94d882c2fd36ebf91b39a8" id="r_a8ae6e5c5fc94d882c2fd36ebf91b39a8"><td class="memItemLeft" align="right" valign="top"><a id="a8ae6e5c5fc94d882c2fd36ebf91b39a8" name="a8ae6e5c5fc94d882c2fd36ebf91b39a8"></a>
+<a class="el" href="structpycanha_1_1BulkReport.html">BulkReport</a>&#160;</td><td class="memItemRight" valign="bottom"><b>add_conductive_couplings</b> (std::span&lt; const NodeNum &gt; node_nums_1, std::span&lt; const NodeNum &gt; node_nums_2, std::span&lt; const double &gt; values, <a class="el" href="namespacepycanha.html#a22dc61f520c4990847af9ef4cc49d354">CouplingMerge</a> merge=<a class="el" href="namespacepycanha.html#a22dc61f520c4990847af9ef4cc49d354a1038b7c5b38b3977c52e47d18cc741ee">CouplingMerge::OVERWRITE</a>)</td></tr>
+<tr class="memdesc:a8ae6e5c5fc94d882c2fd36ebf91b39a8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Bulk coupling insertion by node number, see <a class="el" href="classpycanha_1_1Couplings.html#a16d9782810c15f42599e4244ba1ce1f4" title="General bulk insertion by node number.">Couplings::add_couplings</a>. <br /></td></tr>
+<tr class="memitem:a4bc127947594ec745317794990128814" id="r_a4bc127947594ec745317794990128814"><td class="memItemLeft" align="right" valign="top"><a id="a4bc127947594ec745317794990128814" name="a4bc127947594ec745317794990128814"></a>
+<a class="el" href="structpycanha_1_1BulkReport.html">BulkReport</a>&#160;</td><td class="memItemRight" valign="bottom"><b>add_radiative_couplings</b> (std::span&lt; const NodeNum &gt; node_nums_1, std::span&lt; const NodeNum &gt; node_nums_2, std::span&lt; const double &gt; values, <a class="el" href="namespacepycanha.html#a22dc61f520c4990847af9ef4cc49d354">CouplingMerge</a> merge=<a class="el" href="namespacepycanha.html#a22dc61f520c4990847af9ef4cc49d354a1038b7c5b38b3977c52e47d18cc741ee">CouplingMerge::OVERWRITE</a>)</td></tr>
 <tr class="memitem:ae4fb65fe1964dbcda1ba4a823379173e" id="r_ae4fb65fe1964dbcda1ba4a823379173e"><td class="memItemLeft" align="right" valign="top"><a id="ae4fb65fe1964dbcda1ba4a823379173e" name="ae4fb65fe1964dbcda1ba4a823379173e"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>add_conductive_coupling</b> (Index node_num_1, Index node_num_2, double value)</td></tr>
 <tr class="memitem:af870e9a2159b79f2d3e25dbb45230f1e" id="r_af870e9a2159b79f2d3e25dbb45230f1e"><td class="memItemLeft" align="right" valign="top"><a id="af870e9a2159b79f2d3e25dbb45230f1e" name="af870e9a2159b79f2d3e25dbb45230f1e"></a>

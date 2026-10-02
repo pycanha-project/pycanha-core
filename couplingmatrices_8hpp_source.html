@@ -28,7 +28,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.21</span>
+   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.22</span>
    </div>
    <div id="projectbrief">The C++ core of pycanha</div>
   </td>
@@ -100,152 +100,318 @@ $(function(){initNavTree('couplingmatrices_8hpp_source.html','',''); });
 <div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span><span class="preprocessor">#pragma once</span></div>
 <div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span> </div>
 <div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span><span class="preprocessor">#include &lt;Eigen/Sparse&gt;</span></div>
-<div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span><span class="preprocessor">#include &lt;tuple&gt;</span></div>
-<div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span> </div>
-<div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span><span class="preprocessor">#include &quot;pycanha-core/tmm/nodes.hpp&quot;</span></div>
-<div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span> </div>
-<div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespacepycanha.html">pycanha</a> {</div>
-<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span> </div>
-<div class="foldopen" id="foldopen00020" data-start="{" data-end="};">
-<div class="line"><a id="l00020" name="l00020"></a><span class="lineno"><a class="line" href="classpycanha_1_1CouplingMatrices.html">   20</a></span><span class="keyword">class </span>CouplingMatrices {</div>
-<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span>    <span class="keyword">friend</span> <span class="keyword">class </span>Nodes;</div>
-<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span>    <span class="keyword">friend</span> <span class="keyword">class </span>Couplings;</div>
-<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span>    <span class="keyword">friend</span> <span class="keyword">class </span>ThermalNetwork;</div>
+<div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span><span class="preprocessor">#include &lt;array&gt;</span></div>
+<div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span><span class="preprocessor">#include &lt;cstddef&gt;</span></div>
+<div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span><span class="preprocessor">#include &lt;cstdint&gt;</span></div>
+<div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span><span class="preprocessor">#include &lt;optional&gt;</span></div>
+<div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span><span class="preprocessor">#include &lt;span&gt;</span></div>
+<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span><span class="preprocessor">#include &lt;tuple&gt;</span></div>
+<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span><span class="preprocessor">#include &lt;vector&gt;</span></div>
+<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span> </div>
+<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span><span class="preprocessor">#include &quot;pycanha-core/tmm/bulk.hpp&quot;</span></div>
+<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span><span class="preprocessor">#include &quot;pycanha-core/tmm/nodes.hpp&quot;</span></div>
 <div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span> </div>
-<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span>  <span class="keyword">public</span>:</div>
-<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span>    <span class="comment">// Interface</span></div>
-<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span>    [[nodiscard]] <span class="keyword">inline</span> Index get_num_diff_nodes() <span class="keyword">const</span>;</div>
-<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span>    [[nodiscard]] <span class="keyword">inline</span> Index get_num_bound_nodes() <span class="keyword">const</span>;</div>
-<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span>    [[nodiscard]] <span class="keyword">inline</span> Index get_num_nodes() <span class="keyword">const</span>;</div>
-<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span> </div>
-<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span>    <span class="comment">// Numerical values. TODO: Make private</span></div>
-<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>    Eigen::SparseMatrix&lt;double, Eigen::RowMajor&gt; sparse_dd;</div>
-<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>    Eigen::SparseMatrix&lt;double, Eigen::RowMajor&gt; sparse_db;</div>
-<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>    Eigen::SparseMatrix&lt;double, Eigen::RowMajor&gt; sparse_bb;</div>
-<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span> </div>
-<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>    <span class="comment">// Constructors</span></div>
-<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>    CouplingMatrices();</div>
-<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span> </div>
-<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>    <span class="comment">// Add couplings</span></div>
-<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>    <span class="keywordtype">void</span> <a class="code hl_function" href="classpycanha_1_1CouplingMatrices.html#a7b5423e4eace6582373db707c482d529">add_ovw_coupling_from_node_idxs</a>(</div>
-<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>        Index idx1, Index idx2,</div>
-<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>        <span class="keywordtype">double</span> val);  </div>
-<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>    <span class="keywordtype">void</span> <a class="code hl_function" href="classpycanha_1_1CouplingMatrices.html#ae969e5c4a6ec2b4c1ee1cc55e973a46d">add_ovw_coupling_from_node_idxs_verbose</a>(</div>
-<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>        Index idx1, Index idx2,</div>
-<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>        <span class="keywordtype">double</span> val);  </div>
-<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>    <span class="keywordtype">void</span> <a class="code hl_function" href="classpycanha_1_1CouplingMatrices.html#a3e82c3b07c76240c4df9fa7a43ca44e1">add_sum_coupling_from_node_idxs</a>(</div>
+<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespacepycanha.html">pycanha</a> {</div>
+<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span> </div>
+<div class="foldopen" id="foldopen00027" data-start="{" data-end="};">
+<div class="line"><a id="l00027" name="l00027"></a><span class="lineno"><a class="line" href="classpycanha_1_1CouplingMatrices.html">   27</a></span><span class="keyword">class </span>CouplingMatrices {</div>
+<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span>    <span class="keyword">friend</span> <span class="keyword">class </span>Nodes;</div>
+<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span>    <span class="keyword">friend</span> <span class="keyword">class </span>Couplings;</div>
+<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span>    <span class="keyword">friend</span> <span class="keyword">class </span>ThermalNetwork;</div>
+<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span> </div>
+<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>  <span class="keyword">public</span>:</div>
+<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>    <span class="comment">// Interface</span></div>
+<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span>    [[nodiscard]] <span class="keyword">inline</span> Index get_num_diff_nodes() <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>    [[nodiscard]] <span class="keyword">inline</span> Index get_num_bound_nodes() <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>    [[nodiscard]] <span class="keyword">inline</span> Index get_num_nodes() <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span> </div>
+<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>    <span class="comment">// Numerical values. TODO: Make private</span></div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>    Eigen::SparseMatrix&lt;double, Eigen::RowMajor&gt; sparse_dd;</div>
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>    Eigen::SparseMatrix&lt;double, Eigen::RowMajor&gt; sparse_db;</div>
+<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>    Eigen::SparseMatrix&lt;double, Eigen::RowMajor&gt; sparse_bb;</div>
+<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span> </div>
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>    <span class="comment">// Constructors</span></div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>    CouplingMatrices();</div>
+<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span> </div>
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>    <span class="comment">// Add couplings</span></div>
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>    <span class="keywordtype">void</span> <a class="code hl_function" href="classpycanha_1_1CouplingMatrices.html#a7b5423e4eace6582373db707c482d529">add_ovw_coupling_from_node_idxs</a>(</div>
 <div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>        Index idx1, Index idx2,</div>
 <div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>        <span class="keywordtype">double</span> val);  </div>
-<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>    <span class="keywordtype">void</span> <a class="code hl_function" href="classpycanha_1_1CouplingMatrices.html#af34b080ded161758f3233564ddd1e04a">add_sum_coupling_from_node_idxs_verbose</a>(</div>
+<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>    <span class="keywordtype">void</span> <a class="code hl_function" href="classpycanha_1_1CouplingMatrices.html#ae969e5c4a6ec2b4c1ee1cc55e973a46d">add_ovw_coupling_from_node_idxs_verbose</a>(</div>
 <div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>        Index idx1, Index idx2,</div>
 <div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>        <span class="keywordtype">double</span> val);  </div>
-<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>    <span class="keywordtype">void</span> <a class="code hl_function" href="classpycanha_1_1CouplingMatrices.html#abc36eec3fc74fc93c009d5e2a3993b00">add_new_coupling_from_node_idxs</a>(</div>
+<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>    <span class="keywordtype">void</span> <a class="code hl_function" href="classpycanha_1_1CouplingMatrices.html#a3e82c3b07c76240c4df9fa7a43ca44e1">add_sum_coupling_from_node_idxs</a>(</div>
 <div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>        Index idx1, Index idx2,</div>
 <div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>        <span class="keywordtype">double</span> val);  </div>
-<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span> </div>
-<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>    <span class="comment">// Get value</span></div>
-<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>    <span class="keywordtype">double</span> get_conductor_value_from_idx(Index idx1, Index idx2);</div>
-<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span> </div>
-<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>    <span class="comment">// Set value</span></div>
-<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>    <span class="keywordtype">void</span> set_conductor_value_from_idx(Index idx1, Index idx2, <span class="keywordtype">double</span> val);</div>
-<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span> </div>
-<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>    <span class="comment">// Get value ref</span></div>
-<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>    <span class="keywordtype">double</span>* get_conductor_value_ref_from_idx(Index idx1, Index idx2);</div>
-<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span> </div>
-<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>    <span class="comment">// Get address of value</span></div>
-<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>    IntAddress get_conductor_value_address_from_idx(Index idx1, Index idx2);</div>
-<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span> </div>
-<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>    <span class="comment">// Return the sparse matrix representation</span></div>
-<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>    <span class="keyword">const</span> Eigen::SparseMatrix&lt;double, Eigen::RowMajor&gt;* return_sparse_dd();</div>
-<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>    [[nodiscard]] Eigen::SparseMatrix&lt;double, Eigen::RowMajor&gt; get_sparse_dd()</div>
-<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>        <span class="keyword">const</span>;</div>
-<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span> </div>
-<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>    <span class="comment">// Return a copy of the sparse matrix</span></div>
-<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>    Eigen::SparseMatrix&lt;double, Eigen::RowMajor&gt; sparse_dd_copy();</div>
-<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>    Eigen::SparseMatrix&lt;double, Eigen::RowMajor&gt; sparse_db_copy();</div>
-<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span>    Eigen::SparseMatrix&lt;double, Eigen::RowMajor&gt; sparse_bb_copy();</div>
-<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span> </div>
-<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span>    <span class="comment">// Num couplings</span></div>
-<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>    [[nodiscard]] Index get_num_diff_diff_couplings() <span class="keyword">const</span>;</div>
-<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>    [[nodiscard]] Index get_num_diff_bound_couplings() <span class="keyword">const</span>;</div>
-<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>    [[nodiscard]] Index get_num_bound_bound_couplings() <span class="keyword">const</span>;</div>
-<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>    [[nodiscard]] Index get_num_total_couplings() <span class="keyword">const</span>;</div>
-<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span> </div>
-<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>    <span class="comment">// For coupling iteration</span></div>
-<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span>    [[nodiscard]] std::tuple&lt;Index, Index, double&gt;</div>
-<div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span>    get_idxs_and_coupling_value_from_coupling_idx(Index cidx) <span class="keyword">const</span>;</div>
-<div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>    <span class="keywordtype">bool</span> coupling_exists_from_idxs(Index idx1, Index idx2);</div>
-<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span> </div>
-<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span>    <span class="keywordtype">void</span> print_sparse() <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>    <span class="keywordtype">void</span> <a class="code hl_function" href="classpycanha_1_1CouplingMatrices.html#af34b080ded161758f3233564ddd1e04a">add_sum_coupling_from_node_idxs_verbose</a>(</div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>        Index idx1, Index idx2,</div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>        <span class="keywordtype">double</span> val);  </div>
+<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>    <span class="keywordtype">void</span> <a class="code hl_function" href="classpycanha_1_1CouplingMatrices.html#abc36eec3fc74fc93c009d5e2a3993b00">add_new_coupling_from_node_idxs</a>(</div>
+<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>        Index idx1, Index idx2,</div>
+<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>        <span class="keywordtype">double</span> val);  </div>
+<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span> </div>
+<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>    <span class="comment">// Get value</span></div>
+<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>    <span class="keywordtype">double</span> get_conductor_value_from_idx(Index idx1, Index idx2);</div>
+<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span> </div>
+<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>    <span class="comment">// Set value</span></div>
+<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>    <span class="keywordtype">void</span> set_conductor_value_from_idx(Index idx1, Index idx2, <span class="keywordtype">double</span> val);</div>
+<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span> </div>
+<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>    <span class="comment">// Get value ref</span></div>
+<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>    <span class="keywordtype">double</span>* get_conductor_value_ref_from_idx(Index idx1, Index idx2);</div>
+<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span> </div>
+<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>    <span class="comment">// Get address of value</span></div>
+<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>    IntAddress get_conductor_value_address_from_idx(Index idx1, Index idx2);</div>
+<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span> </div>
+<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>    <span class="comment">// Return the sparse matrix representation</span></div>
+<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span>    <span class="keyword">const</span> Eigen::SparseMatrix&lt;double, Eigen::RowMajor&gt;* return_sparse_dd();</div>
+<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span>    [[nodiscard]] Eigen::SparseMatrix&lt;double, Eigen::RowMajor&gt; get_sparse_dd()</div>
+<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span>        <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span> </div>
+<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>    <span class="comment">// Return a copy of the sparse matrix</span></div>
+<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>    Eigen::SparseMatrix&lt;double, Eigen::RowMajor&gt; sparse_dd_copy();</div>
+<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>    Eigen::SparseMatrix&lt;double, Eigen::RowMajor&gt; sparse_db_copy();</div>
+<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>    Eigen::SparseMatrix&lt;double, Eigen::RowMajor&gt; sparse_bb_copy();</div>
+<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span> </div>
+<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span>    <span class="comment">// Num couplings</span></div>
+<div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span>    [[nodiscard]] Index get_num_diff_diff_couplings() <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>    [[nodiscard]] Index get_num_diff_bound_couplings() <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span>    [[nodiscard]] Index get_num_bound_bound_couplings() <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span>    [[nodiscard]] Index get_num_total_couplings() <span class="keyword">const</span>;</div>
 <div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span> </div>
-<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>    <span class="keyword">static</span> <span class="keywordtype">void</span> reserve(<span class="keywordtype">int</span> nnz);</div>
-<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span> </div>
-<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>  <span class="keyword">private</span>:</div>
-<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>    <span class="keyword">static</span> <span class="keywordtype">void</span> _move_node(Index to_idx, Index from_idx);</div>
+<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>    <span class="comment">// For coupling iteration</span></div>
+<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>    [[nodiscard]] std::tuple&lt;Index, Index, double&gt;</div>
+<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>    get_idxs_and_coupling_value_from_coupling_idx(Index cidx) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>    <span class="keywordtype">bool</span> coupling_exists_from_idxs(Index idx1, Index idx2);</div>
 <div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span> </div>
-<div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>    <span class="keyword">inline</span> <span class="keywordtype">bool</span> _is_thermal_nodes_valid();</div>
-<div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span> </div>
-<div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span>    <span class="keyword">inline</span> std::tuple&lt;Index, Index, bool&gt; _get_internal_node_numbers(Index i,</div>
-<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>                                                                     Index j);</div>
-<div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span> </div>
-<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>    <span class="comment">// NEW FOR REFACTORING</span></div>
-<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>    <span class="keywordtype">void</span> _add_node_diff(Index insert_idx);</div>
-<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>    <span class="keywordtype">void</span> _add_node_bound(Index insert_idx);</div>
-<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span> </div>
-<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>    <span class="keywordtype">void</span> _remove_node_diff(Index idx);</div>
-<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span>    <span class="keywordtype">void</span> _remove_node_bound(Index idx);</div>
-<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span> </div>
-<div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span>    <span class="keyword">using </span>AddCouplingGeneric = void (*)(</div>
-<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>        Eigen::SparseMatrix&lt;double, Eigen::RowMajor&gt;&amp;, Index, Index, double);</div>
-<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span> </div>
-<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>    <span class="comment">// Static helpers</span></div>
-<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>    <span class="keyword">static</span> <span class="keywordtype">void</span> _add_ovw_coupling_sparse(</div>
-<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span>        Eigen::SparseMatrix&lt;double, Eigen::RowMajor&gt;&amp; sparse, Index sp_idx1,</div>
-<div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>        Index sp_idx2, <span class="keywordtype">double</span> val);</div>
+<div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>    <span class="keywordtype">void</span> print_sparse() <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span></div>
+<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span></div>
+<div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>    <a class="code hl_struct" href="structpycanha_1_1BulkReport.html">BulkReport</a> <a class="code hl_function" href="classpycanha_1_1CouplingMatrices.html#a5e0843d5845763f4bfaab45b5bee3a6e">append_couplings</a>(std::span&lt;const CouplingChunk&gt; chunks);</div>
 <div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span> </div>
-<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>    <span class="keyword">static</span> <span class="keywordtype">void</span> _add_sum_coupling_sparse(</div>
-<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span>        Eigen::SparseMatrix&lt;double, Eigen::RowMajor&gt;&amp; sparse, Index sp_idx1,</div>
-<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span>        Index sp_idx2, <span class="keywordtype">double</span> val);</div>
+<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>  <span class="keyword">private</span>:</div>
+<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span>    <span class="keyword">using </span>SparseRowMatrix = Eigen::SparseMatrix&lt;double, Eigen::RowMajor&gt;;</div>
+<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span>    <span class="keyword">using </span>StorageIndex = SparseRowMatrix::StorageIndex;</div>
 <div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span> </div>
-<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span>    <span class="comment">// These can also be static (they don&#39;t use `this`)</span></div>
-<div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span>    <span class="keyword">static</span> <span class="keywordtype">void</span> _add_ovw_coupling_sparse_verbose(</div>
-<div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span>        Eigen::SparseMatrix&lt;double, Eigen::RowMajor&gt;&amp; sparse, Index sp_idx1,</div>
-<div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span>        Index sp_idx2, <span class="keywordtype">double</span> val);</div>
+<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span>    <span class="comment">// A coupling position in one block, compared in storage order.</span></div>
+<div class="foldopen" id="foldopen00123" data-start="{" data-end="};">
+<div class="line"><a id="l00123" name="l00123"></a><span class="lineno"><a class="line" href="structpycanha_1_1CouplingMatrices_1_1BlockPosition.html">  123</a></span>    <span class="keyword">struct </span><a class="code hl_struct" href="structpycanha_1_1CouplingMatrices_1_1BlockPosition.html">BlockPosition</a> {</div>
+<div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span>        StorageIndex row = -1;</div>
+<div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span>        StorageIndex col = -1;</div>
 <div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span> </div>
-<div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span>    <span class="keyword">static</span> <span class="keywordtype">void</span> _add_sum_coupling_sparse_verbose(</div>
-<div class="line"><a id="l00128" name="l00128"></a><span class="lineno">  128</span>        Eigen::SparseMatrix&lt;double, Eigen::RowMajor&gt;&amp; sparse, Index sp_idx1,</div>
-<div class="line"><a id="l00129" name="l00129"></a><span class="lineno">  129</span>        Index sp_idx2, <span class="keywordtype">double</span> val);</div>
-<div class="line"><a id="l00130" name="l00130"></a><span class="lineno">  130</span> </div>
-<div class="line"><a id="l00131" name="l00131"></a><span class="lineno">  131</span>    <span class="keyword">static</span> <span class="keywordtype">void</span> _add_new_coupling_sparse(</div>
-<div class="line"><a id="l00132" name="l00132"></a><span class="lineno">  132</span>        Eigen::SparseMatrix&lt;double, Eigen::RowMajor&gt;&amp;, Index, Index, <span class="keywordtype">double</span>);</div>
-<div class="line"><a id="l00133" name="l00133"></a><span class="lineno">  133</span> </div>
-<div class="line"><a id="l00134" name="l00134"></a><span class="lineno">  134</span>    <span class="keyword">inline</span> std::tuple&lt;Eigen::SparseMatrix&lt;double, Eigen::RowMajor&gt;*, Index,</div>
-<div class="line"><a id="l00135" name="l00135"></a><span class="lineno">  135</span>                      Index&gt;</div>
-<div class="line"><a id="l00136" name="l00136"></a><span class="lineno">  136</span>    _get_sp_ptr_and_sp_idx(Index idx1, Index idx2);</div>
-<div class="line"><a id="l00137" name="l00137"></a><span class="lineno">  137</span> </div>
-<div class="line"><a id="l00138" name="l00138"></a><span class="lineno">  138</span>    <span class="comment">// These don’t mutate object state -&gt; const</span></div>
-<div class="line"><a id="l00139" name="l00139"></a><span class="lineno">  139</span>    <span class="keyword">inline</span> <span class="keywordtype">bool</span> _validate_idxs(Index&amp; idx1, Index&amp; idx2) <span class="keyword">const</span>;</div>
-<div class="line"><a id="l00140" name="l00140"></a><span class="lineno">  140</span>    <span class="keyword">inline</span> <span class="keywordtype">bool</span> _validate_idx(Index idx) <span class="keyword">const</span>;</div>
-<div class="line"><a id="l00141" name="l00141"></a><span class="lineno">  141</span> </div>
-<div class="line"><a id="l00142" name="l00142"></a><span class="lineno">  142</span>    <span class="comment">// Doesn’t depend on object state -&gt; static</span></div>
-<div class="line"><a id="l00143" name="l00143"></a><span class="lineno">  143</span>    <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">bool</span> _validate_conductor_value(<span class="keywordtype">double</span> value);</div>
-<div class="line"><a id="l00144" name="l00144"></a><span class="lineno">  144</span> </div>
-<div class="line"><a id="l00145" name="l00145"></a><span class="lineno">  145</span>    <span class="keywordtype">void</span> _validate_coupling_call_add_generic(</div>
-<div class="line"><a id="l00146" name="l00146"></a><span class="lineno">  146</span>        Index idx1, Index idx2, <span class="keywordtype">double</span> val,</div>
-<div class="line"><a id="l00147" name="l00147"></a><span class="lineno">  147</span>        AddCouplingGeneric add_coupling_fun);</div>
-<div class="line"><a id="l00148" name="l00148"></a><span class="lineno">  148</span> </div>
-<div class="line"><a id="l00149" name="l00149"></a><span class="lineno">  149</span>    <span class="comment">// TODO</span></div>
-<div class="line"><a id="l00150" name="l00150"></a><span class="lineno">  150</span>    <span class="keywordtype">void</span> _diff_to_bound(Index insert_position, Index int_bound_num);</div>
-<div class="line"><a id="l00151" name="l00151"></a><span class="lineno">  151</span>};</div>
+<div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span>        [[nodiscard]] <span class="keywordtype">bool</span> operator&lt;(</div>
+<div class="line"><a id="l00128" name="l00128"></a><span class="lineno">  128</span>            <span class="keyword">const</span> <a class="code hl_struct" href="structpycanha_1_1CouplingMatrices_1_1BlockPosition.html">BlockPosition</a>&amp; other) <span class="keyword">const</span> <span class="keyword">noexcept</span> {</div>
+<div class="line"><a id="l00129" name="l00129"></a><span class="lineno">  129</span>            <span class="keywordflow">return</span> row &lt; other.row || (row == other.row &amp;&amp; col &lt; other.col);</div>
+<div class="line"><a id="l00130" name="l00130"></a><span class="lineno">  130</span>        }</div>
+<div class="line"><a id="l00131" name="l00131"></a><span class="lineno">  131</span>    };</div>
 </div>
-<div class="line"><a id="l00152" name="l00152"></a><span class="lineno">  152</span> </div>
-<div class="line"><a id="l00153" name="l00153"></a><span class="lineno">  153</span>}  <span class="comment">// namespace pycanha</span></div>
-<div class="ttc" id="aclasspycanha_1_1CouplingMatrices_html_a3e82c3b07c76240c4df9fa7a43ca44e1"><div class="ttname"><a href="classpycanha_1_1CouplingMatrices.html#a3e82c3b07c76240c4df9fa7a43ca44e1">pycanha::CouplingMatrices::add_sum_coupling_from_node_idxs</a></div><div class="ttdeci">void add_sum_coupling_from_node_idxs(Index idx1, Index idx2, double val)</div><div class="ttdoc">Add coupling, sum the values if already exists.</div><div class="ttdef"><b>Definition</b> couplingmatrices.cpp:62</div></div>
-<div class="ttc" id="aclasspycanha_1_1CouplingMatrices_html_a7b5423e4eace6582373db707c482d529"><div class="ttname"><a href="classpycanha_1_1CouplingMatrices.html#a7b5423e4eace6582373db707c482d529">pycanha::CouplingMatrices::add_ovw_coupling_from_node_idxs</a></div><div class="ttdeci">void add_ovw_coupling_from_node_idxs(Index idx1, Index idx2, double val)</div><div class="ttdoc">Add coupling, overwriting if already exists.</div><div class="ttdef"><b>Definition</b> couplingmatrices.cpp:51</div></div>
-<div class="ttc" id="aclasspycanha_1_1CouplingMatrices_html_abc36eec3fc74fc93c009d5e2a3993b00"><div class="ttname"><a href="classpycanha_1_1CouplingMatrices.html#abc36eec3fc74fc93c009d5e2a3993b00">pycanha::CouplingMatrices::add_new_coupling_from_node_idxs</a></div><div class="ttdeci">void add_new_coupling_from_node_idxs(Index idx1, Index idx2, double val)</div><div class="ttdoc">Add coupling, only if wasn&#39;t there already.</div><div class="ttdef"><b>Definition</b> couplingmatrices.cpp:73</div></div>
-<div class="ttc" id="aclasspycanha_1_1CouplingMatrices_html_ae969e5c4a6ec2b4c1ee1cc55e973a46d"><div class="ttname"><a href="classpycanha_1_1CouplingMatrices.html#ae969e5c4a6ec2b4c1ee1cc55e973a46d">pycanha::CouplingMatrices::add_ovw_coupling_from_node_idxs_verbose</a></div><div class="ttdeci">void add_ovw_coupling_from_node_idxs_verbose(Index idx1, Index idx2, double val)</div><div class="ttdef"><b>Definition</b> couplingmatrices.cpp:56</div></div>
-<div class="ttc" id="aclasspycanha_1_1CouplingMatrices_html_af34b080ded161758f3233564ddd1e04a"><div class="ttname"><a href="classpycanha_1_1CouplingMatrices.html#af34b080ded161758f3233564ddd1e04a">pycanha::CouplingMatrices::add_sum_coupling_from_node_idxs_verbose</a></div><div class="ttdeci">void add_sum_coupling_from_node_idxs_verbose(Index idx1, Index idx2, double val)</div><div class="ttdef"><b>Definition</b> couplingmatrices.cpp:67</div></div>
+<div class="line"><a id="l00132" name="l00132"></a><span class="lineno">  132</span> </div>
+<div class="line"><a id="l00133" name="l00133"></a><span class="lineno">  133</span>    <span class="comment">// A pair of internal node indices placed in its block (0 dd, 1 db, 2 bb);</span></div>
+<div class="line"><a id="l00134" name="l00134"></a><span class="lineno">  134</span>    <span class="comment">// block -1 when the pair cannot be stored.</span></div>
+<div class="foldopen" id="foldopen00135" data-start="{" data-end="};">
+<div class="line"><a id="l00135" name="l00135"></a><span class="lineno"><a class="line" href="structpycanha_1_1CouplingMatrices_1_1Resolved.html">  135</a></span>    <span class="keyword">struct </span><a class="code hl_struct" href="structpycanha_1_1CouplingMatrices_1_1Resolved.html">Resolved</a> {</div>
+<div class="line"><a id="l00136" name="l00136"></a><span class="lineno">  136</span>        <span class="keywordtype">int</span> block_id = -1;</div>
+<div class="line"><a id="l00137" name="l00137"></a><span class="lineno">  137</span>        <a class="code hl_struct" href="structpycanha_1_1CouplingMatrices_1_1BlockPosition.html">BlockPosition</a> position;</div>
+<div class="line"><a id="l00138" name="l00138"></a><span class="lineno">  138</span>    };</div>
+</div>
+<div class="line"><a id="l00139" name="l00139"></a><span class="lineno">  139</span> </div>
+<div class="line"><a id="l00140" name="l00140"></a><span class="lineno">  140</span>    <span class="comment">// One entry of a block, as (row, col) in that block, with the position</span></div>
+<div class="line"><a id="l00141" name="l00141"></a><span class="lineno">  141</span>    <span class="comment">// of its value in the caller&#39;s value array.</span></div>
+<div class="foldopen" id="foldopen00142" data-start="{" data-end="};">
+<div class="line"><a id="l00142" name="l00142"></a><span class="lineno"><a class="line" href="structpycanha_1_1CouplingMatrices_1_1BlockEntry.html">  142</a></span>    <span class="keyword">struct </span><a class="code hl_struct" href="structpycanha_1_1CouplingMatrices_1_1BlockEntry.html">BlockEntry</a> {</div>
+<div class="line"><a id="l00143" name="l00143"></a><span class="lineno">  143</span>        StorageIndex row;</div>
+<div class="line"><a id="l00144" name="l00144"></a><span class="lineno">  144</span>        StorageIndex col;</div>
+<div class="line"><a id="l00145" name="l00145"></a><span class="lineno">  145</span>        std::uint32_t source;</div>
+<div class="line"><a id="l00146" name="l00146"></a><span class="lineno">  146</span>    };</div>
+</div>
+<div class="line"><a id="l00147" name="l00147"></a><span class="lineno">  147</span> </div>
+<div class="line"><a id="l00148" name="l00148"></a><span class="lineno">  148</span>    <span class="comment">// How many entries a merge adds to one row.</span></div>
+<div class="foldopen" id="foldopen00149" data-start="{" data-end="};">
+<div class="line"><a id="l00149" name="l00149"></a><span class="lineno"><a class="line" href="structpycanha_1_1CouplingMatrices_1_1RowGrowth.html">  149</a></span>    <span class="keyword">struct </span><a class="code hl_struct" href="structpycanha_1_1CouplingMatrices_1_1RowGrowth.html">RowGrowth</a> {</div>
+<div class="line"><a id="l00150" name="l00150"></a><span class="lineno">  150</span>        StorageIndex row;</div>
+<div class="line"><a id="l00151" name="l00151"></a><span class="lineno">  151</span>        Index added;</div>
+<div class="line"><a id="l00152" name="l00152"></a><span class="lineno">  152</span>    };</div>
+</div>
+<div class="line"><a id="l00153" name="l00153"></a><span class="lineno">  153</span> </div>
+<div class="line"><a id="l00154" name="l00154"></a><span class="lineno">  154</span>    <span class="comment">// Writes entries given in (row, col) order after the last stored entry</span></div>
+<div class="line"><a id="l00155" name="l00155"></a><span class="lineno">  155</span>    <span class="comment">// of a compressed block: grows the storage once, fills the row pointers</span></div>
+<div class="line"><a id="l00156" name="l00156"></a><span class="lineno">  156</span>    <span class="comment">// as the rows go by and closes them in finish().</span></div>
+<div class="foldopen" id="foldopen00157" data-start="{" data-end="};">
+<div class="line"><a id="l00157" name="l00157"></a><span class="lineno"><a class="line" href="classpycanha_1_1CouplingMatrices_1_1Appender.html">  157</a></span>    <span class="keyword">class </span>Appender {</div>
+<div class="line"><a id="l00158" name="l00158"></a><span class="lineno">  158</span>      <span class="keyword">public</span>:</div>
+<div class="line"><a id="l00159" name="l00159"></a><span class="lineno">  159</span>        Appender(SparseRowMatrix&amp; matrix, Index count);</div>
+<div class="line"><a id="l00160" name="l00160"></a><span class="lineno">  160</span>        <span class="keywordtype">void</span> push(StorageIndex row, StorageIndex col, <span class="keywordtype">double</span> value) <span class="keyword">noexcept</span>;</div>
+<div class="line"><a id="l00161" name="l00161"></a><span class="lineno">  161</span>        <span class="keywordtype">void</span> finish() <span class="keyword">noexcept</span>;</div>
+<div class="line"><a id="l00162" name="l00162"></a><span class="lineno">  162</span> </div>
+<div class="line"><a id="l00163" name="l00163"></a><span class="lineno">  163</span>      <span class="keyword">private</span>:</div>
+<div class="line"><a id="l00164" name="l00164"></a><span class="lineno">  164</span>        Index _write;</div>
+<div class="line"><a id="l00165" name="l00165"></a><span class="lineno">  165</span>        std::span&lt;StorageIndex&gt; _outer;</div>
+<div class="line"><a id="l00166" name="l00166"></a><span class="lineno">  166</span>        std::span&lt;StorageIndex&gt; _inner;</div>
+<div class="line"><a id="l00167" name="l00167"></a><span class="lineno">  167</span>        std::span&lt;double&gt; _values;</div>
+<div class="line"><a id="l00168" name="l00168"></a><span class="lineno">  168</span>        Index _fill_row{-1};</div>
+<div class="line"><a id="l00169" name="l00169"></a><span class="lineno">  169</span>    };</div>
+</div>
+<div class="line"><a id="l00170" name="l00170"></a><span class="lineno">  170</span> </div>
+<div class="line"><a id="l00171" name="l00171"></a><span class="lineno">  171</span>    <span class="comment">// One appender per block that receives entries.</span></div>
+<div class="foldopen" id="foldopen00172" data-start="{" data-end="};">
+<div class="line"><a id="l00172" name="l00172"></a><span class="lineno"><a class="line" href="classpycanha_1_1CouplingMatrices_1_1BlockAppenders.html">  172</a></span>    <span class="keyword">class </span>BlockAppenders {</div>
+<div class="line"><a id="l00173" name="l00173"></a><span class="lineno">  173</span>      <span class="keyword">public</span>:</div>
+<div class="line"><a id="l00174" name="l00174"></a><span class="lineno">  174</span>        BlockAppenders(CouplingMatrices&amp; matrices,</div>
+<div class="line"><a id="l00175" name="l00175"></a><span class="lineno">  175</span>                       <span class="keyword">const</span> std::array&lt;Index, 3&gt;&amp; counts);</div>
+<div class="line"><a id="l00176" name="l00176"></a><span class="lineno">  176</span>        <span class="keywordtype">void</span> push(<span class="keyword">const</span> <a class="code hl_struct" href="structpycanha_1_1CouplingMatrices_1_1Resolved.html">Resolved</a>&amp; resolved, <span class="keywordtype">double</span> value);</div>
+<div class="line"><a id="l00177" name="l00177"></a><span class="lineno">  177</span>        <span class="keywordtype">void</span> finish() <span class="keyword">noexcept</span>;</div>
+<div class="line"><a id="l00178" name="l00178"></a><span class="lineno">  178</span> </div>
+<div class="line"><a id="l00179" name="l00179"></a><span class="lineno">  179</span>      <span class="keyword">private</span>:</div>
+<div class="line"><a id="l00180" name="l00180"></a><span class="lineno">  180</span>        std::array&lt;std::optional&lt;Appender&gt;, 3&gt; _appenders;</div>
+<div class="line"><a id="l00181" name="l00181"></a><span class="lineno">  181</span>    };</div>
+</div>
+<div class="line"><a id="l00182" name="l00182"></a><span class="lineno">  182</span> </div>
+<div class="line"><a id="l00183" name="l00183"></a><span class="lineno">  183</span>    <span class="comment">// The general bulk path of Couplings::add_couplings, block by block:</span></div>
+<div class="line"><a id="l00184" name="l00184"></a><span class="lineno">  184</span>    <span class="comment">// every valid entry is first planned (to learn whether a block&#39;s entries</span></div>
+<div class="line"><a id="l00185" name="l00185"></a><span class="lineno">  185</span>    <span class="comment">// come in storage order after what it holds), then put: appended straight</span></div>
+<div class="line"><a id="l00186" name="l00186"></a><span class="lineno">  186</span>    <span class="comment">// into the block when they do, collected and merged in place otherwise.</span></div>
+<div class="foldopen" id="foldopen00187" data-start="{" data-end="};">
+<div class="line"><a id="l00187" name="l00187"></a><span class="lineno"><a class="line" href="classpycanha_1_1CouplingMatrices_1_1BulkWriter.html">  187</a></span>    <span class="keyword">class </span>BulkWriter {</div>
+<div class="line"><a id="l00188" name="l00188"></a><span class="lineno">  188</span>      <span class="keyword">public</span>:</div>
+<div class="line"><a id="l00189" name="l00189"></a><span class="lineno">  189</span>        <span class="keyword">explicit</span> BulkWriter(CouplingMatrices&amp; matrices) noexcept</div>
+<div class="line"><a id="l00190" name="l00190"></a><span class="lineno">  190</span>            : _matrices(&amp;matrices) {}</div>
+<div class="line"><a id="l00191" name="l00191"></a><span class="lineno">  191</span>        <span class="keywordtype">void</span> plan(<span class="keyword">const</span> <a class="code hl_struct" href="structpycanha_1_1CouplingMatrices_1_1Resolved.html">Resolved</a>&amp; resolved);</div>
+<div class="line"><a id="l00192" name="l00192"></a><span class="lineno">  192</span>        <span class="keywordtype">void</span> open();</div>
+<div class="line"><a id="l00193" name="l00193"></a><span class="lineno">  193</span>        <span class="keywordtype">void</span> put(<span class="keyword">const</span> <a class="code hl_struct" href="structpycanha_1_1CouplingMatrices_1_1Resolved.html">Resolved</a>&amp; resolved, <span class="keywordtype">double</span> value, std::uint32_t source);</div>
+<div class="line"><a id="l00194" name="l00194"></a><span class="lineno">  194</span>        <span class="comment">// Closes the appends and runs the merges; returns the entries taken.</span></div>
+<div class="line"><a id="l00195" name="l00195"></a><span class="lineno">  195</span>        std::size_t finish(std::span&lt;const double&gt; values, <a class="code hl_enumeration" href="namespacepycanha.html#a22dc61f520c4990847af9ef4cc49d354">CouplingMerge</a> merge,</div>
+<div class="line"><a id="l00196" name="l00196"></a><span class="lineno">  196</span>                           <a class="code hl_struct" href="structpycanha_1_1BulkReport.html">BulkReport</a>&amp; report);</div>
+<div class="line"><a id="l00197" name="l00197"></a><span class="lineno">  197</span> </div>
+<div class="line"><a id="l00198" name="l00198"></a><span class="lineno">  198</span>      <span class="keyword">private</span>:</div>
+<div class="foldopen" id="foldopen00199" data-start="{" data-end="};">
+<div class="line"><a id="l00199" name="l00199"></a><span class="lineno"><a class="line" href="structpycanha_1_1CouplingMatrices_1_1BulkWriter_1_1Block.html">  199</a></span>        <span class="keyword">struct </span><a class="code hl_struct" href="structpycanha_1_1CouplingMatrices_1_1BulkWriter_1_1Block.html">Block</a> {</div>
+<div class="line"><a id="l00200" name="l00200"></a><span class="lineno">  200</span>            Index count = 0;</div>
+<div class="line"><a id="l00201" name="l00201"></a><span class="lineno">  201</span>            <span class="keywordtype">bool</span> in_order = <span class="keyword">true</span>;</div>
+<div class="line"><a id="l00202" name="l00202"></a><span class="lineno">  202</span>            <a class="code hl_struct" href="structpycanha_1_1CouplingMatrices_1_1BlockPosition.html">BlockPosition</a> first;</div>
+<div class="line"><a id="l00203" name="l00203"></a><span class="lineno">  203</span>            <a class="code hl_struct" href="structpycanha_1_1CouplingMatrices_1_1BlockPosition.html">BlockPosition</a> last;</div>
+<div class="line"><a id="l00204" name="l00204"></a><span class="lineno">  204</span>            std::optional&lt;Appender&gt; appender;</div>
+<div class="line"><a id="l00205" name="l00205"></a><span class="lineno">  205</span>            std::vector&lt;BlockEntry&gt; pending;</div>
+<div class="line"><a id="l00206" name="l00206"></a><span class="lineno">  206</span>        };</div>
+</div>
+<div class="line"><a id="l00207" name="l00207"></a><span class="lineno">  207</span>        CouplingMatrices* _matrices;</div>
+<div class="line"><a id="l00208" name="l00208"></a><span class="lineno">  208</span>        std::array&lt;Block, 3&gt; _blocks;</div>
+<div class="line"><a id="l00209" name="l00209"></a><span class="lineno">  209</span>    };</div>
+</div>
+<div class="line"><a id="l00210" name="l00210"></a><span class="lineno">  210</span> </div>
+<div class="line"><a id="l00211" name="l00211"></a><span class="lineno">  211</span>    <span class="comment">// Block 0 is dd, 1 db, 2 bb.</span></div>
+<div class="line"><a id="l00212" name="l00212"></a><span class="lineno">  212</span>    [[nodiscard]] SparseRowMatrix&amp; block(<span class="keywordtype">int</span> block_id) <span class="keyword">noexcept</span>;</div>
+<div class="line"><a id="l00213" name="l00213"></a><span class="lineno">  213</span> </div>
+<div class="line"><a id="l00214" name="l00214"></a><span class="lineno">  214</span>    <span class="comment">// Places a pair of internal node indices in its block.</span></div>
+<div class="line"><a id="l00215" name="l00215"></a><span class="lineno">  215</span>    [[nodiscard]] <a class="code hl_struct" href="structpycanha_1_1CouplingMatrices_1_1Resolved.html">Resolved</a> resolve(Index first, Index second) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00216" name="l00216"></a><span class="lineno">  216</span> </div>
+<div class="line"><a id="l00217" name="l00217"></a><span class="lineno">  217</span>    <span class="comment">// Last stored entry of a compressed block, or (-1, -1) when it is empty.</span></div>
+<div class="line"><a id="l00218" name="l00218"></a><span class="lineno">  218</span>    [[nodiscard]] <span class="keyword">static</span> <a class="code hl_struct" href="structpycanha_1_1CouplingMatrices_1_1BlockPosition.html">BlockPosition</a> last_stored(</div>
+<div class="line"><a id="l00219" name="l00219"></a><span class="lineno">  219</span>        <span class="keyword">const</span> SparseRowMatrix&amp; matrix);</div>
+<div class="line"><a id="l00220" name="l00220"></a><span class="lineno">  220</span> </div>
+<div class="line"><a id="l00221" name="l00221"></a><span class="lineno">  221</span>    <span class="comment">// Checks one chunk of append_couplings against the order left by the</span></div>
+<div class="line"><a id="l00222" name="l00222"></a><span class="lineno">  222</span>    <span class="comment">// chunks accepted before it, and accounts for it when it passes.</span></div>
+<div class="line"><a id="l00223" name="l00223"></a><span class="lineno">  223</span>    [[nodiscard]] <span class="keywordtype">bool</span> check_chunk(<span class="keyword">const</span> <a class="code hl_struct" href="structpycanha_1_1CouplingChunk.html">CouplingChunk</a>&amp; chunk,</div>
+<div class="line"><a id="l00224" name="l00224"></a><span class="lineno">  224</span>                                   std::size_t chunk_id,</div>
+<div class="line"><a id="l00225" name="l00225"></a><span class="lineno">  225</span>                                   std::array&lt;BlockPosition, 3&gt;&amp; last,</div>
+<div class="line"><a id="l00226" name="l00226"></a><span class="lineno">  226</span>                                   std::array&lt;Index, 3&gt;&amp; counts,</div>
+<div class="line"><a id="l00227" name="l00227"></a><span class="lineno">  227</span>                                   <a class="code hl_struct" href="structpycanha_1_1BulkReport.html">BulkReport</a>&amp; report) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00228" name="l00228"></a><span class="lineno">  228</span> </div>
+<div class="line"><a id="l00229" name="l00229"></a><span class="lineno">  229</span>    <span class="comment">// General bulk path: sorts `entries` by (row, col), keeping call order</span></div>
+<div class="line"><a id="l00230" name="l00230"></a><span class="lineno">  230</span>    <span class="comment">// among duplicates, and merges them into the block in place, from the</span></div>
+<div class="line"><a id="l00231" name="l00231"></a><span class="lineno">  231</span>    <span class="comment">// back, after one growth of the storage.</span></div>
+<div class="line"><a id="l00232" name="l00232"></a><span class="lineno">  232</span>    <span class="keyword">static</span> <span class="keywordtype">void</span> merge_entries(SparseRowMatrix&amp; matrix,</div>
+<div class="line"><a id="l00233" name="l00233"></a><span class="lineno">  233</span>                              std::vector&lt;BlockEntry&gt;&amp; entries,</div>
+<div class="line"><a id="l00234" name="l00234"></a><span class="lineno">  234</span>                              std::span&lt;const double&gt; values,</div>
+<div class="line"><a id="l00235" name="l00235"></a><span class="lineno">  235</span>                              <a class="code hl_enumeration" href="namespacepycanha.html#a22dc61f520c4990847af9ef4cc49d354">CouplingMerge</a> merge, <a class="code hl_struct" href="structpycanha_1_1BulkReport.html">BulkReport</a>&amp; report);</div>
+<div class="line"><a id="l00236" name="l00236"></a><span class="lineno">  236</span>    <span class="keyword">static</span> <span class="keywordtype">void</span> sort_entries(std::vector&lt;BlockEntry&gt;&amp; entries, Index rows);</div>
+<div class="line"><a id="l00237" name="l00237"></a><span class="lineno">  237</span>    [[nodiscard]] <span class="keyword">static</span> std::vector&lt;RowGrowth&gt; count_growth(</div>
+<div class="line"><a id="l00238" name="l00238"></a><span class="lineno">  238</span>        SparseRowMatrix&amp; matrix, std::span&lt;const BlockEntry&gt; entries,</div>
+<div class="line"><a id="l00239" name="l00239"></a><span class="lineno">  239</span>        <a class="code hl_struct" href="structpycanha_1_1BulkReport.html">BulkReport</a>&amp; report);</div>
+<div class="line"><a id="l00240" name="l00240"></a><span class="lineno">  240</span>    <span class="comment">// Merges one row&#39;s sorted entries with its stored ones, writing from</span></div>
+<div class="line"><a id="l00241" name="l00241"></a><span class="lineno">  241</span>    <span class="comment">// `write` down; returns where the row now starts.</span></div>
+<div class="line"><a id="l00242" name="l00242"></a><span class="lineno">  242</span>    <span class="keyword">static</span> Index merge_row(SparseRowMatrix&amp; matrix,</div>
+<div class="line"><a id="l00243" name="l00243"></a><span class="lineno">  243</span>                           std::span&lt;const BlockEntry&gt; row_entries,</div>
+<div class="line"><a id="l00244" name="l00244"></a><span class="lineno">  244</span>                           std::span&lt;const double&gt; values, <a class="code hl_enumeration" href="namespacepycanha.html#a22dc61f520c4990847af9ef4cc49d354">CouplingMerge</a> merge,</div>
+<div class="line"><a id="l00245" name="l00245"></a><span class="lineno">  245</span>                           Index old_begin, Index old_end, Index write);</div>
+<div class="line"><a id="l00246" name="l00246"></a><span class="lineno">  246</span> </div>
+<div class="line"><a id="l00247" name="l00247"></a><span class="lineno">  247</span>    <span class="comment">// Moves every stored entry to its new (row, col) under two monotone maps</span></div>
+<div class="line"><a id="l00248" name="l00248"></a><span class="lineno">  248</span>    <span class="comment">// (old index -&gt; new index, -1 to drop it; an empty map is the identity)</span></div>
+<div class="line"><a id="l00249" name="l00249"></a><span class="lineno">  249</span>    <span class="comment">// and resizes the block. The values are never copied, only compacted.</span></div>
+<div class="line"><a id="l00250" name="l00250"></a><span class="lineno">  250</span>    <span class="comment">// Rebuilds the three blocks for a new node order that may move nodes</span></div>
+<div class="line"><a id="l00251" name="l00251"></a><span class="lineno">  251</span>    <span class="comment">// across blocks (old_to_new over all internal indices, old_diff_count</span></div>
+<div class="line"><a id="l00252" name="l00252"></a><span class="lineno">  252</span>    <span class="comment">// diffusive nodes before, diff_count and bound_count after).</span></div>
+<div class="line"><a id="l00253" name="l00253"></a><span class="lineno">  253</span>    <span class="keywordtype">void</span> reorder(std::span&lt;const Index&gt; old_to_new, Index old_diff_count,</div>
+<div class="line"><a id="l00254" name="l00254"></a><span class="lineno">  254</span>                 Index diff_count, Index bound_count);</div>
+<div class="line"><a id="l00255" name="l00255"></a><span class="lineno">  255</span> </div>
+<div class="line"><a id="l00256" name="l00256"></a><span class="lineno">  256</span>    <span class="keyword">static</span> <span class="keywordtype">void</span> remap(SparseRowMatrix&amp; matrix, std::span&lt;const Index&gt; row_map,</div>
+<div class="line"><a id="l00257" name="l00257"></a><span class="lineno">  257</span>                      std::span&lt;const Index&gt; col_map, Index rows, Index cols);</div>
+<div class="line"><a id="l00258" name="l00258"></a><span class="lineno">  258</span> </div>
+<div class="line"><a id="l00259" name="l00259"></a><span class="lineno">  259</span>    <span class="keyword">static</span> <span class="keywordtype">void</span> _move_node(Index to_idx, Index from_idx);</div>
+<div class="line"><a id="l00260" name="l00260"></a><span class="lineno">  260</span> </div>
+<div class="line"><a id="l00261" name="l00261"></a><span class="lineno">  261</span>    <span class="keyword">inline</span> <span class="keywordtype">bool</span> _is_thermal_nodes_valid();</div>
+<div class="line"><a id="l00262" name="l00262"></a><span class="lineno">  262</span> </div>
+<div class="line"><a id="l00263" name="l00263"></a><span class="lineno">  263</span>    <span class="keyword">inline</span> std::tuple&lt;Index, Index, bool&gt; _get_internal_node_numbers(Index i,</div>
+<div class="line"><a id="l00264" name="l00264"></a><span class="lineno">  264</span>                                                                     Index j);</div>
+<div class="line"><a id="l00265" name="l00265"></a><span class="lineno">  265</span> </div>
+<div class="line"><a id="l00266" name="l00266"></a><span class="lineno">  266</span>    <span class="keyword">using </span>AddCouplingGeneric = void (*)(</div>
+<div class="line"><a id="l00267" name="l00267"></a><span class="lineno">  267</span>        Eigen::SparseMatrix&lt;double, Eigen::RowMajor&gt;&amp;, Index, Index, double);</div>
+<div class="line"><a id="l00268" name="l00268"></a><span class="lineno">  268</span> </div>
+<div class="line"><a id="l00269" name="l00269"></a><span class="lineno">  269</span>    <span class="comment">// Static helpers</span></div>
+<div class="line"><a id="l00270" name="l00270"></a><span class="lineno">  270</span>    <span class="keyword">static</span> <span class="keywordtype">void</span> _add_ovw_coupling_sparse(</div>
+<div class="line"><a id="l00271" name="l00271"></a><span class="lineno">  271</span>        Eigen::SparseMatrix&lt;double, Eigen::RowMajor&gt;&amp; sparse, Index sp_idx1,</div>
+<div class="line"><a id="l00272" name="l00272"></a><span class="lineno">  272</span>        Index sp_idx2, <span class="keywordtype">double</span> val);</div>
+<div class="line"><a id="l00273" name="l00273"></a><span class="lineno">  273</span> </div>
+<div class="line"><a id="l00274" name="l00274"></a><span class="lineno">  274</span>    <span class="keyword">static</span> <span class="keywordtype">void</span> _add_sum_coupling_sparse(</div>
+<div class="line"><a id="l00275" name="l00275"></a><span class="lineno">  275</span>        Eigen::SparseMatrix&lt;double, Eigen::RowMajor&gt;&amp; sparse, Index sp_idx1,</div>
+<div class="line"><a id="l00276" name="l00276"></a><span class="lineno">  276</span>        Index sp_idx2, <span class="keywordtype">double</span> val);</div>
+<div class="line"><a id="l00277" name="l00277"></a><span class="lineno">  277</span> </div>
+<div class="line"><a id="l00278" name="l00278"></a><span class="lineno">  278</span>    <span class="comment">// These can also be static (they don&#39;t use `this`)</span></div>
+<div class="line"><a id="l00279" name="l00279"></a><span class="lineno">  279</span>    <span class="keyword">static</span> <span class="keywordtype">void</span> _add_ovw_coupling_sparse_verbose(</div>
+<div class="line"><a id="l00280" name="l00280"></a><span class="lineno">  280</span>        Eigen::SparseMatrix&lt;double, Eigen::RowMajor&gt;&amp; sparse, Index sp_idx1,</div>
+<div class="line"><a id="l00281" name="l00281"></a><span class="lineno">  281</span>        Index sp_idx2, <span class="keywordtype">double</span> val);</div>
+<div class="line"><a id="l00282" name="l00282"></a><span class="lineno">  282</span> </div>
+<div class="line"><a id="l00283" name="l00283"></a><span class="lineno">  283</span>    <span class="keyword">static</span> <span class="keywordtype">void</span> _add_sum_coupling_sparse_verbose(</div>
+<div class="line"><a id="l00284" name="l00284"></a><span class="lineno">  284</span>        Eigen::SparseMatrix&lt;double, Eigen::RowMajor&gt;&amp; sparse, Index sp_idx1,</div>
+<div class="line"><a id="l00285" name="l00285"></a><span class="lineno">  285</span>        Index sp_idx2, <span class="keywordtype">double</span> val);</div>
+<div class="line"><a id="l00286" name="l00286"></a><span class="lineno">  286</span> </div>
+<div class="line"><a id="l00287" name="l00287"></a><span class="lineno">  287</span>    <span class="keyword">static</span> <span class="keywordtype">void</span> _add_new_coupling_sparse(</div>
+<div class="line"><a id="l00288" name="l00288"></a><span class="lineno">  288</span>        Eigen::SparseMatrix&lt;double, Eigen::RowMajor&gt;&amp;, Index, Index, <span class="keywordtype">double</span>);</div>
+<div class="line"><a id="l00289" name="l00289"></a><span class="lineno">  289</span> </div>
+<div class="line"><a id="l00290" name="l00290"></a><span class="lineno">  290</span>    <span class="keyword">inline</span> std::tuple&lt;Eigen::SparseMatrix&lt;double, Eigen::RowMajor&gt;*, Index,</div>
+<div class="line"><a id="l00291" name="l00291"></a><span class="lineno">  291</span>                      Index&gt;</div>
+<div class="line"><a id="l00292" name="l00292"></a><span class="lineno">  292</span>    _get_sp_ptr_and_sp_idx(Index idx1, Index idx2);</div>
+<div class="line"><a id="l00293" name="l00293"></a><span class="lineno">  293</span> </div>
+<div class="line"><a id="l00294" name="l00294"></a><span class="lineno">  294</span>    <span class="comment">// These don’t mutate object state -&gt; const</span></div>
+<div class="line"><a id="l00295" name="l00295"></a><span class="lineno">  295</span>    <span class="keyword">inline</span> <span class="keywordtype">bool</span> _validate_idxs(Index&amp; idx1, Index&amp; idx2) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00296" name="l00296"></a><span class="lineno">  296</span>    <span class="keyword">inline</span> <span class="keywordtype">bool</span> _validate_idx(Index idx) <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00297" name="l00297"></a><span class="lineno">  297</span> </div>
+<div class="line"><a id="l00298" name="l00298"></a><span class="lineno">  298</span>    <span class="comment">// Doesn’t depend on object state -&gt; static</span></div>
+<div class="line"><a id="l00299" name="l00299"></a><span class="lineno">  299</span>    <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">bool</span> _validate_conductor_value(<span class="keywordtype">double</span> value);</div>
+<div class="line"><a id="l00300" name="l00300"></a><span class="lineno">  300</span> </div>
+<div class="line"><a id="l00301" name="l00301"></a><span class="lineno">  301</span>    <span class="keywordtype">void</span> _validate_coupling_call_add_generic(</div>
+<div class="line"><a id="l00302" name="l00302"></a><span class="lineno">  302</span>        Index idx1, Index idx2, <span class="keywordtype">double</span> val,</div>
+<div class="line"><a id="l00303" name="l00303"></a><span class="lineno">  303</span>        AddCouplingGeneric add_coupling_fun);</div>
+<div class="line"><a id="l00304" name="l00304"></a><span class="lineno">  304</span> </div>
+<div class="line"><a id="l00305" name="l00305"></a><span class="lineno">  305</span>    <span class="comment">// TODO</span></div>
+<div class="line"><a id="l00306" name="l00306"></a><span class="lineno">  306</span>    <span class="keywordtype">void</span> _diff_to_bound(Index insert_position, Index int_bound_num);</div>
+<div class="line"><a id="l00307" name="l00307"></a><span class="lineno">  307</span>};</div>
+</div>
+<div class="line"><a id="l00308" name="l00308"></a><span class="lineno">  308</span> </div>
+<div class="line"><a id="l00309" name="l00309"></a><span class="lineno">  309</span>}  <span class="comment">// namespace pycanha</span></div>
+<div class="ttc" id="aclasspycanha_1_1CouplingMatrices_html_a3e82c3b07c76240c4df9fa7a43ca44e1"><div class="ttname"><a href="classpycanha_1_1CouplingMatrices.html#a3e82c3b07c76240c4df9fa7a43ca44e1">pycanha::CouplingMatrices::add_sum_coupling_from_node_idxs</a></div><div class="ttdeci">void add_sum_coupling_from_node_idxs(Index idx1, Index idx2, double val)</div><div class="ttdoc">Add coupling, sum the values if already exists.</div><div class="ttdef"><b>Definition</b> couplingmatrices.cpp:72</div></div>
+<div class="ttc" id="aclasspycanha_1_1CouplingMatrices_html_a5e0843d5845763f4bfaab45b5bee3a6e"><div class="ttname"><a href="classpycanha_1_1CouplingMatrices.html#a5e0843d5845763f4bfaab45b5bee3a6e">pycanha::CouplingMatrices::append_couplings</a></div><div class="ttdeci">BulkReport append_couplings(std::span&lt; const CouplingChunk &gt; chunks)</div><div class="ttdoc">Specific bulk insertion by internal node index.</div><div class="ttdef"><b>Definition</b> couplingmatrices.cpp:576</div></div>
+<div class="ttc" id="aclasspycanha_1_1CouplingMatrices_html_a7b5423e4eace6582373db707c482d529"><div class="ttname"><a href="classpycanha_1_1CouplingMatrices.html#a7b5423e4eace6582373db707c482d529">pycanha::CouplingMatrices::add_ovw_coupling_from_node_idxs</a></div><div class="ttdeci">void add_ovw_coupling_from_node_idxs(Index idx1, Index idx2, double val)</div><div class="ttdoc">Add coupling, overwriting if already exists.</div><div class="ttdef"><b>Definition</b> couplingmatrices.cpp:61</div></div>
+<div class="ttc" id="aclasspycanha_1_1CouplingMatrices_html_abc36eec3fc74fc93c009d5e2a3993b00"><div class="ttname"><a href="classpycanha_1_1CouplingMatrices.html#abc36eec3fc74fc93c009d5e2a3993b00">pycanha::CouplingMatrices::add_new_coupling_from_node_idxs</a></div><div class="ttdeci">void add_new_coupling_from_node_idxs(Index idx1, Index idx2, double val)</div><div class="ttdoc">Add coupling, only if wasn&#39;t there already.</div><div class="ttdef"><b>Definition</b> couplingmatrices.cpp:83</div></div>
+<div class="ttc" id="aclasspycanha_1_1CouplingMatrices_html_ae969e5c4a6ec2b4c1ee1cc55e973a46d"><div class="ttname"><a href="classpycanha_1_1CouplingMatrices.html#ae969e5c4a6ec2b4c1ee1cc55e973a46d">pycanha::CouplingMatrices::add_ovw_coupling_from_node_idxs_verbose</a></div><div class="ttdeci">void add_ovw_coupling_from_node_idxs_verbose(Index idx1, Index idx2, double val)</div><div class="ttdef"><b>Definition</b> couplingmatrices.cpp:66</div></div>
+<div class="ttc" id="aclasspycanha_1_1CouplingMatrices_html_af34b080ded161758f3233564ddd1e04a"><div class="ttname"><a href="classpycanha_1_1CouplingMatrices.html#af34b080ded161758f3233564ddd1e04a">pycanha::CouplingMatrices::add_sum_coupling_from_node_idxs_verbose</a></div><div class="ttdeci">void add_sum_coupling_from_node_idxs_verbose(Index idx1, Index idx2, double val)</div><div class="ttdef"><b>Definition</b> couplingmatrices.cpp:77</div></div>
 <div class="ttc" id="anamespacepycanha_html"><div class="ttname"><a href="namespacepycanha.html">pycanha</a></div><div class="ttdoc">C++ Implementation of ThermalConductos (TCs).</div><div class="ttdef"><b>Definition</b> builder.hpp:5</div></div>
+<div class="ttc" id="anamespacepycanha_html_a22dc61f520c4990847af9ef4cc49d354"><div class="ttname"><a href="namespacepycanha.html#a22dc61f520c4990847af9ef4cc49d354">pycanha::CouplingMerge</a></div><div class="ttdeci">CouplingMerge</div><div class="ttdef"><b>Definition</b> bulk.hpp:96</div></div>
+<div class="ttc" id="astructpycanha_1_1BulkReport_html"><div class="ttname"><a href="structpycanha_1_1BulkReport.html">pycanha::BulkReport</a></div><div class="ttdoc">Outcome of one bulk call on the nodes or the couplings.</div><div class="ttdef"><b>Definition</b> bulk.hpp:21</div></div>
+<div class="ttc" id="astructpycanha_1_1CouplingChunk_html"><div class="ttname"><a href="structpycanha_1_1CouplingChunk.html">pycanha::CouplingChunk</a></div><div class="ttdoc">One run of couplings given by internal node index, for CouplingMatrices::append_couplings.</div><div class="ttdef"><b>Definition</b> bulk.hpp:113</div></div>
+<div class="ttc" id="astructpycanha_1_1CouplingMatrices_1_1BlockEntry_html"><div class="ttname"><a href="structpycanha_1_1CouplingMatrices_1_1BlockEntry.html">pycanha::CouplingMatrices::BlockEntry</a></div><div class="ttdef"><b>Definition</b> couplingmatrices.hpp:142</div></div>
+<div class="ttc" id="astructpycanha_1_1CouplingMatrices_1_1BlockPosition_html"><div class="ttname"><a href="structpycanha_1_1CouplingMatrices_1_1BlockPosition.html">pycanha::CouplingMatrices::BlockPosition</a></div><div class="ttdef"><b>Definition</b> couplingmatrices.hpp:123</div></div>
+<div class="ttc" id="astructpycanha_1_1CouplingMatrices_1_1BulkWriter_1_1Block_html"><div class="ttname"><a href="structpycanha_1_1CouplingMatrices_1_1BulkWriter_1_1Block.html">pycanha::CouplingMatrices::BulkWriter::Block</a></div><div class="ttdef"><b>Definition</b> couplingmatrices.hpp:199</div></div>
+<div class="ttc" id="astructpycanha_1_1CouplingMatrices_1_1Resolved_html"><div class="ttname"><a href="structpycanha_1_1CouplingMatrices_1_1Resolved.html">pycanha::CouplingMatrices::Resolved</a></div><div class="ttdef"><b>Definition</b> couplingmatrices.hpp:135</div></div>
+<div class="ttc" id="astructpycanha_1_1CouplingMatrices_1_1RowGrowth_html"><div class="ttname"><a href="structpycanha_1_1CouplingMatrices_1_1RowGrowth.html">pycanha::CouplingMatrices::RowGrowth</a></div><div class="ttdef"><b>Definition</b> couplingmatrices.hpp:149</div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->

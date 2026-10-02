@@ -28,7 +28,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.21</span>
+   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.22</span>
    </div>
    <div id="projectbrief">The C++ core of pycanha</div>
   </td>
@@ -109,8 +109,12 @@ ThermalNetwork &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>opera
 ThermalNetwork &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>operator=</b> (ThermalNetwork &amp;&amp;) noexcept=default</td></tr>
 <tr class="memitem:a68aa90339bb9530fefeba148f59ff956" id="r_a68aa90339bb9530fefeba148f59ff956"><td class="memItemLeft" align="right" valign="top"><a id="a68aa90339bb9530fefeba148f59ff956" name="a68aa90339bb9530fefeba148f59ff956"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>add_node</b> (<a class="el" href="classpycanha_1_1Node.html">Node</a> &amp;node)</td></tr>
+<tr class="memitem:a583fb5fdb7fb2968580a895b22fb4309" id="r_a583fb5fdb7fb2968580a895b22fb4309"><td class="memItemLeft" align="right" valign="top"><a id="a583fb5fdb7fb2968580a895b22fb4309" name="a583fb5fdb7fb2968580a895b22fb4309"></a>
+<a class="el" href="structpycanha_1_1BulkReport.html">BulkReport</a>&#160;</td><td class="memItemRight" valign="bottom"><b>add_nodes</b> (const <a class="el" href="structpycanha_1_1NodeBatch.html">NodeBatch</a> &amp;batch)</td></tr>
+<tr class="memdesc:a583fb5fdb7fb2968580a895b22fb4309"><td class="mdescLeft">&#160;</td><td class="mdescRight">Bulk node insertion, see <a class="el" href="classpycanha_1_1Nodes.html#a2064ca42d6010ce5fed2722f21deac3a" title="Method to add a several nodes contained in a std::vector.">Nodes::add_nodes</a>. <br /></td></tr>
 <tr class="memitem:a471058fca32c2a56fbd42bb9af77fd84" id="r_a471058fca32c2a56fbd42bb9af77fd84"><td class="memItemLeft" align="right" valign="top"><a id="a471058fca32c2a56fbd42bb9af77fd84" name="a471058fca32c2a56fbd42bb9af77fd84"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>remove_node</b> (Index node_num)</td></tr>
+<tr class="memitem:a6137eeab869e684f5462c9bcdad3b851" id="r_a6137eeab869e684f5462c9bcdad3b851"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a6137eeab869e684f5462c9bcdad3b851">synchronize_structure</a> ()</td></tr>
 <tr class="memitem:a1dca4846dd66d86a6f03cc265c8b6732" id="r_a1dca4846dd66d86a6f03cc265c8b6732"><td class="memItemLeft" align="right" valign="top"><a id="a1dca4846dd66d86a6f03cc265c8b6732" name="a1dca4846dd66d86a6f03cc265c8b6732"></a>
 Nodes &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>nodes</b> () noexcept</td></tr>
 <tr class="memitem:ae6215c335a958630b5d776d10ce0a7a2" id="r_ae6215c335a958630b5d776d10ce0a7a2"><td class="memItemLeft" align="right" valign="top"><a id="ae6215c335a958630b5d776d10ce0a7a2" name="ae6215c335a958630b5d776d10ce0a7a2"></a>
@@ -162,6 +166,30 @@ class&#160;</td><td class="memItemRight" valign="bottom"><b>CouplingMatrices</b>
 <tr class="memitem:a5244bf5604278ded8dffdab97b513e0f" id="r_a5244bf5604278ded8dffdab97b513e0f"><td class="memItemLeft" align="right" valign="top"><a id="a5244bf5604278ded8dffdab97b513e0f" name="a5244bf5604278ded8dffdab97b513e0f"></a>
 class&#160;</td><td class="memItemRight" valign="bottom"><b>SteadyStateNonSymmetricSolver</b></td></tr>
 </table>
+<a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Member Function Documentation</h2>
+<a id="a6137eeab869e684f5462c9bcdad3b851" name="a6137eeab869e684f5462c9bcdad3b851"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6137eeab869e684f5462c9bcdad3b851">&#9670;&#160;</a></span>synchronize_structure()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void pycanha::ThermalNetwork::synchronize_structure </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Sizes both coupling containers to the current nodes (nodes appended at the end of their block grow them lazily). </p>
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="classpycanha_1_1ThermalNetwork_a6137eeab869e684f5462c9bcdad3b851_cgraph.svg" width="204" height="80"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
+
+</div>
+</div>
 <hr/>The documentation for this class was generated from the following files:<ul>
 <li>pycanha-core/include/pycanha-core/tmm/<a class="el" href="thermalnetwork_8hpp_source.html">thermalnetwork.hpp</a></li>
 <li>pycanha-core/src/tmm/<b>thermalnetwork.cpp</b></li>

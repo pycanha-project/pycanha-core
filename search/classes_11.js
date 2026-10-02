@@ -11,10 +11,12 @@ var searchData=
   ['solveroutputconfig_8',['SolverOutputConfig',['../structpycanha_1_1SolverOutputConfig.html',1,'pycanha']]],
   ['solverregistry_9',['SolverRegistry',['../classpycanha_1_1SolverRegistry.html',1,'pycanha']]],
   ['sparsecells_10',['SparseCells',['../structpycanha_1_1radiative_1_1detail_1_1SparseCells.html',1,'pycanha::radiative::detail']]],
-  ['sparsetimeseries_11',['SparseTimeSeries',['../classpycanha_1_1SparseTimeSeries.html',1,'pycanha']]],
-  ['sphere_12',['Sphere',['../classpycanha_1_1gmm_1_1Sphere.html',1,'pycanha::gmm']]],
-  ['sphereframe_13',['SphereFrame',['../structpycanha_1_1gmm_1_1detail_1_1SphereFrame.html',1,'pycanha::gmm::detail']]],
-  ['sslu_14',['SSLU',['../classpycanha_1_1SSLU.html',1,'pycanha']]],
-  ['steadystatesolver_15',['SteadyStateSolver',['../classpycanha_1_1SteadyStateSolver.html',1,'pycanha']]],
-  ['symbolbinding_16',['SymbolBinding',['../structpycanha_1_1ExpressionFormula_1_1SymbolBinding.html',1,'pycanha::ExpressionFormula']]]
+  ['sparselinearsolver_11',['SparseLinearSolver',['../classpycanha_1_1SparseLinearSolver.html',1,'pycanha']]],
+  ['sparsetimeseries_12',['SparseTimeSeries',['../classpycanha_1_1SparseTimeSeries.html',1,'pycanha']]],
+  ['sphere_13',['Sphere',['../classpycanha_1_1gmm_1_1Sphere.html',1,'pycanha::gmm']]],
+  ['sphereframe_14',['SphereFrame',['../structpycanha_1_1gmm_1_1detail_1_1SphereFrame.html',1,'pycanha::gmm::detail']]],
+  ['sslu_15',['SSLU',['../classpycanha_1_1SSLU.html',1,'pycanha']]],
+  ['sslu_5fcgs_16',['SSLU_CGS',['../classpycanha_1_1SSLU__CGS.html',1,'pycanha']]],
+  ['steadystatesolver_17',['SteadyStateSolver',['../classpycanha_1_1SteadyStateSolver.html',1,'pycanha']]],
+  ['symbolbinding_18',['SymbolBinding',['../structpycanha_1_1ExpressionFormula_1_1SymbolBinding.html',1,'pycanha::ExpressionFormula']]]
 ];

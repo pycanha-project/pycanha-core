@@ -1,0 +1,19 @@
+<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
+<area shape="rect" id="Node000000" href="$classpycanha_1_1Solver.html" title=" " alt="" coords="5,84,131,112"/>
+<area shape="rect" id="Node000001" href="$classpycanha_1_1SteadyStateSolver.html" title="Base of the steady&#45;state solvers." alt="" coords="179,57,383,85"/>
+<area shape="poly" id="edge8_Node000000_Node000001" title=" " alt="" coords="146,85,181,83,176,85,147,91"/>
+<area shape="rect" id="Node000004" href="$classpycanha_1_1TransientSolver.html" title=" " alt="" coords="189,109,373,137"/>
+<area shape="poly" id="edge11_Node000000_Node000004" title=" " alt="" coords="146,104,191,112,185,112,146,110"/>
+<area shape="rect" id="Node000002" href="$classpycanha_1_1SSLU.html" title="Steady&#45;state solver with a direct factorisation at every Newton pass." alt="" coords="448,5,565,33"/>
+<area shape="poly" id="edge9_Node000001_Node000002" title=" " alt="" coords="359,51,450,32,445,33,360,56"/>
+<area shape="rect" id="Node000003" href="$classpycanha_1_1SSLU__CGS.html" title=" " alt="" coords="431,57,582,85"/>
+<area shape="poly" id="edge10_Node000001_Node000003" title=" " alt="" coords="398,69,433,71,428,71,399,74"/>
+<area shape="rect" id="Node000005" href="$classpycanha_1_1TSCN.html" title=" " alt="" coords="447,109,566,137"/>
+<area shape="poly" id="edge12_Node000004_Node000005" title=" " alt="" coords="389,121,450,123,444,123,389,126"/>
+<area shape="rect" id="Node000006" href="$classpycanha_1_1TSCNRL.html" title=" " alt="" coords="630,109,766,137"/>
+<area shape="poly" id="edge13_Node000005_Node000006" title=" " alt="" coords="582,121,632,123,627,123,582,126"/>
+<area shape="rect" id="Node000007" href="$classpycanha_1_1TSCNRLDS.html" title=" " alt="" coords="814,109,967,137"/>
+<area shape="poly" id="edge14_Node000006_Node000007" title=" " alt="" coords="781,121,816,123,810,123,781,126"/>
+<area shape="rect" id="Node000008" href="$classpycanha_1_1TSCNRLDS__JACOBIAN.html" title=" " alt="" coords="1015,109,1239,137"/>
+<area shape="poly" id="edge15_Node000007_Node000008" title=" " alt="" coords="982,121,1017,123,1012,123,982,126"/>
+</map>

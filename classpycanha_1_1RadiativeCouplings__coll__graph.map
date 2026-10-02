@@ -1,7 +1,8 @@
 <map id="pycanha::RadiativeCouplings" name="pycanha::RadiativeCouplings">
-<area shape="rect" id="Node000001" title=" " alt="" coords="5,207,216,234"/>
-<area shape="rect" id="Node000002" href="$classpycanha_1_1Couplings.html" title=" " alt="" coords="36,106,185,134"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="113,148,113,207,108,205,108,151"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,226,216,254"/>
+<area shape="rect" id="Node000002" href="$classpycanha_1_1Couplings.html" title=" " alt="" coords="36,116,185,144"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="113,157,113,227,108,225,108,160"/>
+<area shape="poly" id="edge3_Node000002_Node000002" title=" " alt="" coords="200,119,211,130,203,139,186,143,184,138,201,134,206,130,200,124"/>
 <area shape="rect" id="Node000003" href="$classpycanha_1_1CouplingMatrices.html" title=" " alt="" coords="12,5,209,33"/>
-<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="112,46,113,106,108,105,109,51"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="112,46,113,116,108,115,109,50"/>
 </map>

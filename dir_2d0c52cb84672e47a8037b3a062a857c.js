@@ -4,6 +4,7 @@ var dir_2d0c52cb84672e47a8037b3a062a857c =
     [ "cube.hpp", "cube_8hpp_source.html", null ],
     [ "cylinder.hpp", "cylinder_8hpp_source.html", null ],
     [ "disc.hpp", "disc_8hpp_source.html", null ],
+    [ "face_pair_geometry.hpp", "face__pair__geometry_8hpp_source.html", null ],
     [ "paraboloid.hpp", "paraboloid_8hpp_source.html", null ],
     [ "primitive.hpp", "primitive_8hpp_source.html", null ],
     [ "quadrilateral.hpp", "quadrilateral_8hpp_source.html", null ],

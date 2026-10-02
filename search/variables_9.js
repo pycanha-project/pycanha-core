@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['pid_0',['pid',['../structpycanha_1_1LogRecord.html#ae8619918e9c8321dbcfc82d6fbd65e8a',1,'pycanha::LogRecord']]]
+  ['origin_0',['origin',['../structpycanha_1_1LogRecord.html#aad90886f24f5e459d85a71d66885cfeb',1,'pycanha::LogRecord']]]
 ];

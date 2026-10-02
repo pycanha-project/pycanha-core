@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['_7enodes_0',['~Nodes',['../classpycanha_1_1Nodes.html#a367ddc89abf198442e1311564fae5e66',1,'pycanha::Nodes']]]
+  ['uses_5fcholesky_0',['uses_cholesky',['../classpycanha_1_1SteadyStateSolver.html#a9028274d6c34d114233ad862cceeebdb',1,'pycanha::SteadyStateSolver']]]
 ];

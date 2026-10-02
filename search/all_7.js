@@ -3,7 +3,7 @@ var searchData=
   ['geometry_0',['Geometry',['../classpycanha_1_1gmm_1_1Geometry.html',1,'pycanha::gmm']]],
   ['geometrygroup_1',['GeometryGroup',['../classpycanha_1_1gmm_1_1GeometryGroup.html',1,'pycanha::gmm']]],
   ['geometrygroupcutted_2',['GeometryGroupCutted',['../classpycanha_1_1gmm_1_1GeometryGroupCutted.html',1,'pycanha::gmm']]],
-  ['geometryitem_3',['GeometryItem',['../classpycanha_1_1conduction_1_1GeometryItem.html',1,'pycanha::conduction::GeometryItem'],['../classpycanha_1_1gmm_1_1GeometryItem.html',1,'pycanha::gmm::GeometryItem']]],
+  ['geometryitem_3',['GeometryItem',['../classpycanha_1_1gmm_1_1GeometryItem.html',1,'pycanha::gmm']]],
   ['geometrymodel_4',['GeometryModel',['../classpycanha_1_1gmm_1_1GeometryModel.html',1,'pycanha::gmm']]],
   ['get_5fa_5',['get_a',['../classpycanha_1_1Node.html#a876558b19fd24813e3ad240d7bcc6b47',1,'pycanha::Node::get_a()'],['../classpycanha_1_1Nodes.html#ab82156d7252c29b5498f99db2766d02e',1,'pycanha::Nodes::get_a(NodeNum node_num)']]],
   ['get_5fa_5fvalue_5fref_6',['get_a_value_ref',['../classpycanha_1_1Nodes.html#a329641b68bc7e76ba87dd94b57523c31',1,'pycanha::Nodes']]],
@@ -49,6 +49,7 @@ var searchData=
   ['get_5ft_46',['get_T',['../classpycanha_1_1Node.html#a341fecda21eb1508e112ecd8c693385f',1,'pycanha::Node::get_T()'],['../classpycanha_1_1Nodes.html#a10ec85737e6be55ce7a96b448bbe29f3',1,'pycanha::Nodes::get_T(NodeNum node_num)']]],
   ['get_5ft_5fvalue_5fref_47',['get_T_value_ref',['../classpycanha_1_1Nodes.html#a8d8912db5a0af3c70592927d12d6fcf0',1,'pycanha::Nodes']]],
   ['get_5ftype_48',['get_type',['../classpycanha_1_1Node.html#a55a4679e85533618ff220014344cc15b',1,'pycanha::Node::get_type()'],['../classpycanha_1_1Nodes.html#a1209e3f11ac0c65a3c5544d23aad9109',1,'pycanha::Nodes::get_type()']]],
-  ['gpubuffer_49',['GpuBuffer',['../structpycanha_1_1radiative_1_1detail_1_1GpuBuffer.html',1,'pycanha::radiative::detail']]],
-  ['graphviz_20doxygen_20awesome_20css_50',['Doxygen + graphviz + Doxygen Awesome CSS',['../md_docs_2tools.html#autotoc_md19',1,'']]]
+  ['get_5fvalues_49',['get_values',['../classpycanha_1_1ConductiveCouplings.html#a3913f923864cf354734df8acd3a9e40a',1,'pycanha::ConductiveCouplings::get_values()'],['../classpycanha_1_1Couplings.html#a96cf619a41f0d2daa99c498920354980',1,'pycanha::Couplings::get_values()'],['../classpycanha_1_1Nodes.html#ade300e1596b243b9961fd95ea0422915',1,'pycanha::Nodes::get_values(NodeAttribute attribute, std::span&lt; const NodeNum &gt; node_nums, std::span&lt; double &gt; values) const'],['../classpycanha_1_1Nodes.html#ac375bb36b0dc074d48d8e4d41b98e5f9',1,'pycanha::Nodes::get_values(NodeAttribute attribute) const'],['../classpycanha_1_1RadiativeCouplings.html#a38fe8cad79874dea60a646c490fc7792',1,'pycanha::RadiativeCouplings::get_values()']]],
+  ['gpubuffer_50',['GpuBuffer',['../structpycanha_1_1radiative_1_1detail_1_1GpuBuffer.html',1,'pycanha::radiative::detail']]],
+  ['graphviz_20doxygen_20awesome_20css_51',['Doxygen + graphviz + Doxygen Awesome CSS',['../md_docs_2tools.html#autotoc_md19',1,'']]]
 ];

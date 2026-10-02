@@ -1,6 +1,6 @@
 <map id="pycanha::SSLU" name="pycanha::SSLU">
-<area shape="rect" id="Node000001" title=" " alt="" coords="1049,163,1166,191"/>
-<area shape="rect" id="Node000002" href="$classpycanha_1_1SteadyStateSolver.html" title=" " alt="" coords="691,163,895,191"/>
+<area shape="rect" id="Node000001" title="Steady&#45;state solver with a direct factorisation at every Newton pass." alt="" coords="1049,163,1166,191"/>
+<area shape="rect" id="Node000002" href="$classpycanha_1_1SteadyStateSolver.html" title="Base of the steady&#45;state solvers." alt="" coords="691,163,895,191"/>
 <area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="911,174,1051,177,1046,177,911,179"/>
 <area shape="rect" id="Node000003" href="$classpycanha_1_1Solver.html" title=" " alt="" coords="310,119,435,147"/>
 <area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="444,148,486,155,591,166,693,175,688,175,591,172,486,161,444,153"/>

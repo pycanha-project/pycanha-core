@@ -28,7 +28,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.21</span>
+   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.22</span>
    </div>
    <div id="projectbrief">The C++ core of pycanha</div>
   </td>
@@ -97,7 +97,7 @@ $(function(){initNavTree('classpycanha_1_1Solver.html','','classpycanha_1_1Solve
 <div class="dynheader">
 Inheritance diagram for pycanha::Solver:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="classpycanha_1_1Solver__inherit__graph.svg" width="444" height="418"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="classpycanha_1_1Solver__inherit__graph.svg" width="530" height="418"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 <center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
 <div class="dynheader">
 Collaboration diagram for pycanha::Solver:</div>
@@ -144,8 +144,14 @@ double&#160;</td><td class="memItemRight" valign="bottom"><b>eps_capacity</b> = 
 double&#160;</td><td class="memItemRight" valign="bottom"><b>eps_time</b> = 1.0e-6</td></tr>
 <tr class="memitem:a83a5d8902e99b15a18bd3a36022f5f3d" id="r_a83a5d8902e99b15a18bd3a36022f5f3d"><td class="memItemLeft" align="right" valign="top"><a id="a83a5d8902e99b15a18bd3a36022f5f3d" name="a83a5d8902e99b15a18bd3a36022f5f3d"></a>
 double&#160;</td><td class="memItemRight" valign="bottom"><b>eps_coupling</b> = 1.0e-12</td></tr>
-<tr class="memitem:ad6cf245e5d8d4559f1455c49147b2135" id="r_ad6cf245e5d8d4559f1455c49147b2135"><td class="memItemLeft" align="right" valign="top"><a id="ad6cf245e5d8d4559f1455c49147b2135" name="ad6cf245e5d8d4559f1455c49147b2135"></a>
-int&#160;</td><td class="memItemRight" valign="bottom"><b>pardiso_iparm_3</b> = 31</td></tr>
+<tr class="memitem:ad6cf245e5d8d4559f1455c49147b2135" id="r_ad6cf245e5d8d4559f1455c49147b2135"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ad6cf245e5d8d4559f1455c49147b2135">pardiso_iparm_3</a> = 0</td></tr>
+<tr class="memitem:a27120abbafb7fc8d810613ea9543b03d" id="r_a27120abbafb7fc8d810613ea9543b03d"><td class="memItemLeft" align="right" valign="top">std::map&lt; int, int &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a27120abbafb7fc8d810613ea9543b03d">pardiso_iparm_overrides</a></td></tr>
+<tr class="memitem:affe8894f3293518af5412a18f122a918" id="r_affe8894f3293518af5412a18f122a918"><td class="memItemLeft" align="right" valign="top"><a id="affe8894f3293518af5412a18f122a918" name="affe8894f3293518af5412a18f122a918"></a>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>mkl_threads</b> = 0</td></tr>
+<tr class="memdesc:affe8894f3293518af5412a18f122a918"><td class="mdescLeft">&#160;</td><td class="mdescRight">Threads of the PARDISO calls, 0 for MKL's setting (MKL_NUM_THREADS). <br /></td></tr>
+<tr class="memitem:a1c6ad0a6851049be5eab318a7e1472f6" id="r_a1c6ad0a6851049be5eab318a7e1472f6"><td class="memItemLeft" align="right" valign="top"><a id="a1c6ad0a6851049be5eab318a7e1472f6" name="a1c6ad0a6851049be5eab318a7e1472f6"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>pardiso_verbose</b> = false</td></tr>
+<tr class="memdesc:a1c6ad0a6851049be5eab318a7e1472f6"><td class="mdescLeft">&#160;</td><td class="mdescRight">PARDISO statistics printed to standard output. <br /></td></tr>
 <tr class="memitem:a27f3c73e72b829a15146be42e755c5bb" id="r_a27f3c73e72b829a15146be42e755c5bb"><td class="memItemLeft" align="right" valign="top"><a id="a27f3c73e72b829a15146be42e755c5bb" name="a27f3c73e72b829a15146be42e755c5bb"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>solver_converged</b> = false</td></tr>
 <tr class="memitem:a6b1fca28e8d4e9251bf9e809076f5989" id="r_a6b1fca28e8d4e9251bf9e809076f5989"><td class="memItemLeft" align="right" valign="top"><a id="a6b1fca28e8d4e9251bf9e809076f5989" name="a6b1fca28e8d4e9251bf9e809076f5989"></a>
@@ -171,6 +177,11 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>release_formulas_afte
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>restart_solve</b> ()=0</td></tr>
 <tr class="memitem:ade9cef12ff469684b8f2434fb271f47e" id="r_ade9cef12ff469684b8f2434fb271f47e"><td class="memItemLeft" align="right" valign="top"><a id="ade9cef12ff469684b8f2434fb271f47e" name="ade9cef12ff469684b8f2434fb271f47e"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>initialize_common</b> ()</td></tr>
+<tr class="memitem:a202547cfe62fab98fa127fb69ed8fc6d" id="r_a202547cfe62fab98fa127fb69ed8fc6d"><td class="memItemLeft" align="right" valign="top"><a id="a202547cfe62fab98fa127fb69ed8fc6d" name="a202547cfe62fab98fa127fb69ed8fc6d"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>structure_unchanged_since_initialize</b> () const</td></tr>
+<tr class="memitem:a433476baae46d5ff262e8702b8082e4c" id="r_a433476baae46d5ff262e8702b8082e4c"><td class="memItemLeft" align="right" valign="top"><a id="a433476baae46d5ff262e8702b8082e4c" name="a433476baae46d5ff262e8702b8082e4c"></a>
+<a class="el" href="structpycanha_1_1LinearSolverOptions.html">LinearSolverOptions</a>&#160;</td><td class="memItemRight" valign="bottom"><b>linear_solver_options</b> (<a class="el" href="namespacepycanha.html#ae2fc612d52a2376bb734df09365b3de9">SolverEngine</a> engine, <a class="el" href="namespacepycanha.html#ac39dca56261a6b845e2976a7868a5c08">DirectSolverType</a> type) const</td></tr>
+<tr class="memdesc:a433476baae46d5ff262e8702b8082e4c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Linear solver options from the PARDISO settings above. <br /></td></tr>
 <tr class="memitem:a7de3b0a29499a22f64bed5b1a4369bcf" id="r_a7de3b0a29499a22f64bed5b1a4369bcf"><td class="memItemLeft" align="right" valign="top"><a id="a7de3b0a29499a22f64bed5b1a4369bcf" name="a7de3b0a29499a22f64bed5b1a4369bcf"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>temperature_convergence_check</b> ()</td></tr>
 <tr class="memitem:a0dfb500b79e404ee6d5f9a6ec05c9bde" id="r_a0dfb500b79e404ee6d5f9a6ec05c9bde"><td class="memItemLeft" align="right" valign="top"><a id="a0dfb500b79e404ee6d5f9a6ec05c9bde" name="a0dfb500b79e404ee6d5f9a6ec05c9bde"></a>
@@ -242,6 +253,8 @@ VectorXd&#160;</td><td class="memItemRight" valign="bottom"><b>dTd</b></td></tr>
 double&#160;</td><td class="memItemRight" valign="bottom"><b>max_dT</b> = 0.0</td></tr>
 <tr class="memitem:a976dfca893030a227f50a10d0dd79df2" id="r_a976dfca893030a227f50a10d0dd79df2"><td class="memItemLeft" align="right" valign="top"><a id="a976dfca893030a227f50a10d0dd79df2" name="a976dfca893030a227f50a10d0dd79df2"></a>
 VectorXd&#160;</td><td class="memItemRight" valign="bottom"><b>Td_solver</b></td></tr>
+<tr class="memitem:a9c0311d21343ccf31ffc05fe8c420fab" id="r_a9c0311d21343ccf31ffc05fe8c420fab"><td class="memItemLeft" align="right" valign="top"><a id="a9c0311d21343ccf31ffc05fe8c420fab" name="a9c0311d21343ccf31ffc05fe8c420fab"></a>
+std::uint64_t&#160;</td><td class="memItemRight" valign="bottom"><b>_initialized_structure_version</b> = 0</td></tr>
 <tr class="memitem:a624bb18d21e2b3d9db364563dca019ea" id="r_a624bb18d21e2b3d9db364563dca019ea"><td class="memItemLeft" align="right" valign="top"><a id="a624bb18d21e2b3d9db364563dca019ea" name="a624bb18d21e2b3d9db364563dca019ea"></a>
 std::unordered_set&lt; std::pair&lt; int, int &gt;, <a class="el" href="structpycanha_1_1IntPairHash.html">IntPairHash</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>_original_non_zeros_krdd</b></td></tr>
 <tr class="memitem:a2820e6384789a967329b67bfffbf3f7b" id="r_a2820e6384789a967329b67bfffbf3f7b"><td class="memItemLeft" align="right" valign="top"><a id="a2820e6384789a967329b67bfffbf3f7b" name="a2820e6384789a967329b67bfffbf3f7b"></a>
@@ -263,6 +276,37 @@ class&#160;</td><td class="memItemRight" valign="bottom"><b>SteadyStateSolver</b
 <tr class="memitem:a986f5955415436cc258386d038f4ca1b" id="r_a986f5955415436cc258386d038f4ca1b"><td class="memItemLeft" align="right" valign="top"><a id="a986f5955415436cc258386d038f4ca1b" name="a986f5955415436cc258386d038f4ca1b"></a>
 class&#160;</td><td class="memItemRight" valign="bottom"><b>TransientSolver</b></td></tr>
 </table>
+<a name="doc-variable-members" id="doc-variable-members"></a><h2 id="header-doc-variable-members" class="groupheader">Member Data Documentation</h2>
+<a id="ad6cf245e5d8d4559f1455c49147b2135" name="ad6cf245e5d8d4559f1455c49147b2135"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad6cf245e5d8d4559f1455c49147b2135">&#9670;&#160;</a></span>pardiso_iparm_3</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int pycanha::Solver::pardiso_iparm_3 = 0</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>MKL PARDISO iterative step: 10 * L + 1 iterates on the previous factors down to a relative residual of 10^-L before refactorising (see <a class="el" href="namespacepycanha.html#a58b763e52727bbafb811beaf30e88a8f">IterativeSolverType</a>), 0 factorises every changed matrix. Read by initialize(). </p>
+
+</div>
+</div>
+<a id="a27120abbafb7fc8d810613ea9543b03d" name="a27120abbafb7fc8d810613ea9543b03d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a27120abbafb7fc8d810613ea9543b03d">&#9670;&#160;</a></span>pardiso_iparm_overrides</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::map&lt;int, int&gt; pycanha::Solver::pardiso_iparm_overrides</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>PARDISO iparm entries (zero-based index, value) applied after the solver's own settings, read by initialize(). Index 3 replaces pardiso_iparm_3. For diagnosis and workarounds; the solver types cover the tested configurations. </p>
+
+</div>
+</div>
 <hr/>The documentation for this class was generated from the following files:<ul>
 <li>pycanha-core/include/pycanha-core/solvers/<a class="el" href="solver_8hpp_source.html">solver.hpp</a></li>
 <li>pycanha-core/src/solvers/<b>solver.cpp</b></li>

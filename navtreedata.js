@@ -77,7 +77,8 @@ var NAVTREE =
       [ "Namespace List", "namespaces.html", "namespaces_dup" ],
       [ "Namespace Members", "namespacemembers.html", [
         [ "All", "namespacemembers.html", null ],
-        [ "Functions", "namespacemembers_func.html", null ]
+        [ "Functions", "namespacemembers_func.html", null ],
+        [ "Enumerations", "namespacemembers_enum.html", null ]
       ] ]
     ] ],
     [ "Classes", "annotated.html", [
@@ -85,7 +86,7 @@ var NAVTREE =
       [ "Class Index", "classes.html", null ],
       [ "Class Hierarchy", "hierarchy.html", "hierarchy" ],
       [ "Class Members", "functions.html", [
-        [ "All", "functions.html", null ],
+        [ "All", "functions.html", "functions_dup" ],
         [ "Functions", "functions_func.html", null ],
         [ "Variables", "functions_vars.html", null ]
       ] ]
@@ -99,8 +100,9 @@ var NAVTREE =
 var NAVTREEINDEX =
 [
 "Instrumentor_8hpp_source.html",
-"classpycanha_1_1Nodes.html#a8950054692801b40ae073d18f8d01ed7",
-"eigenutils_8hpp_source.html"
+"classpycanha_1_1Nodes.html#a531d05e7782bb7f07e8df951346cb07d",
+"classpycanha_1_1gmm_1_1FacePairGeometryEvaluator.html",
+"pardiso_8hpp_source.html"
 ];
 
 var SYNCONMSG = 'click to disable panel synchronization';

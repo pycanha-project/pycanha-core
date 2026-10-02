@@ -1,0 +1,5 @@
+<map id="pycanha::conduction::NetworkPart" name="pycanha::conduction::NetworkPart">
+<area shape="rect" id="Node000001" title="One geometry item&#39;s contribution to the conduction network." alt="" coords="5,123,161,168"/>
+<area shape="rect" id="Node000002" href="$structpycanha_1_1conduction_1_1TmmBuildReport.html" title=" " alt="" coords="5,5,161,50"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="85,64,86,123,80,122,81,68"/>
+</map>
