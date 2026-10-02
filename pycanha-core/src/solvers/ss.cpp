@@ -295,6 +295,9 @@ void SteadyStateSolver::solve_linearised() {
             "solve().");
         return;
     }
+    if (!structure_unchanged_since_initialize()) {
+        return;
+    }
     if (!model_structure_unchanged()) {
         SPDLOG_LOGGER_ERROR(get_logger(),
                             "{}: nodes or couplings were added or removed "

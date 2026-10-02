@@ -105,6 +105,11 @@ TEST_CASE("gmm -> tmm: a strip becomes a chain of nodes and conductors",
     REQUIRE(report.conductors_created == 3U);
     REQUIRE(report.diagnostics.empty());
 
+    // The node area is the triangulated one, set by its own call; the build
+    // never triangulates.
+    REQUIRE(model.tmm().nodes().get_a(1) == 0.0);
+    REQUIRE(pycanha::conduction::assign_node_areas(model).accepted == 4U);
+
     require_strip_nodes(model);
     require_strip_conductors(model);
 }

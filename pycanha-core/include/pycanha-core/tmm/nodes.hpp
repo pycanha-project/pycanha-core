@@ -43,17 +43,21 @@
 
 #pragma once
 #include <Eigen/Sparse>
+#include <cstdint>
 #include <memory>
 #include <optional>
+#include <span>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
 #include "pycanha-core/globals.hpp"
+#include "pycanha-core/tmm/bulk.hpp"
 #include "pycanha-core/tmm/literalstring.hpp"
 
 namespace pycanha {
 
+class Couplings;
 class Node;
 class Nodes {
     friend class Node;
@@ -190,13 +194,34 @@ class Nodes {
     mutable std::unordered_map<NodeNum, Index> _usr_to_int_node_num;
 
     /**
-     * Variable to track changes in the structure of the nodes.
-     * Anytime the node order changes, or a node is added or removed, the
-     * variable is set to false. Always, before using the node number map
-     * (_usr_to_int_node_num) this variable is checked. If false the map is
-     * updated before accesing it.
+     * The same map as a flat table, used instead of the unordered_map when the
+     * node numbers are dense enough: entry (number - _dense_base) holds the
+     * internal index, or -1 for a number that is not a node. One memory read
+     * per lookup, and a rebuild is a single pass over the nodes.
      */
-    mutable bool _node_num_mapped{false};
+    mutable std::vector<std::int32_t> _dense_node_index;
+    mutable NodeNum _dense_base{0};
+    mutable bool _dense_mapped{true};
+
+    /**
+     * Bumped by every change of the node structure: a node added, removed or
+     * moved. Whatever depends on the structure (the node number map here, the
+     * coupling matrix sizes, an initialised solver) remembers the version it
+     * was built for and compares.
+     */
+    std::uint64_t _structure_version{0};
+
+    /// The structure version the node number map was built for.
+    mutable std::uint64_t _mapped_version{0};
+
+    /**
+     * Coupling containers that index their matrices by this instance's
+     * internal node order, linked through Couplings itself (an intrusive list,
+     * so registering never allocates). A node inserted in the middle of its
+     * block, or removed, moves the internal index of the nodes after it; each
+     * of them is told so right away and remaps its stored couplings.
+     */
+    Couplings* _first_observer{nullptr};
 
   public:
     // Constructors
@@ -251,6 +276,27 @@ class Nodes {
      */
     void add_nodes(std::vector<Node>& node_vector);
 
+    /// Method to add a batch of nodes of one type from arrays.
+    /**
+     * Nothing is copied from the batch except into the node storage itself.
+     * A batch sorted by increasing number, all above the numbers already
+     * stored in its block, is appended: O(k), plus O(boundary nodes) for a
+     * diffusive batch. Any other batch is sorted and merged in, one linear
+     * pass over every stored attribute.
+     *
+     * Rejected, and reported: every copy of a number repeated in the batch, a
+     * number that is already a node, and the whole batch when its type is not
+     * 'D' or 'B' or an attribute span does not match the numbers in length.
+     * The node number map is updated in place on an append, and left for the
+     * next lookup to rebuild otherwise. Pointers into the attribute storage
+     * (the *_value_ref getters) are invalidated.
+     */
+    BulkReport add_nodes(const NodeBatch& batch);
+
+    /// Reserves storage for @p num_nodes nodes in total, so that adding them
+    /// one by one or in several batches never reallocates the dense vectors.
+    void reserve(Index num_nodes);
+
     /// Method to delete a node of the model.
     /**
      * The node is deleted and the structure of Nodes is rearranged. The
@@ -283,7 +329,19 @@ class Nodes {
         NodeNum node_num) const;  ///< Literal thermal capacity getter.
     // NOLINTEND(readability-identifier-naming)
 
-    bool set_type(NodeNum node_num, char type);  ///< Type setter.
+    /// Type setter: 'D' diffusive, 'B' boundary. The node moves to the other
+    /// block, which reorders every node and coupling once; for many nodes
+    /// use set_types, which does it once for all of them.
+    bool set_type(NodeNum node_num, char type);
+
+    /**
+     * Changes the type of many nodes at once ('D' diffusive, 'B' boundary).
+     * Each node keeps its attributes and couplings; the nodes and the
+     * coupling matrices are reordered in a single pass, O(nodes + couplings).
+     * Unknown node numbers are rejected and reported; a node that already
+     * has the type is accepted unchanged.
+     */
+    BulkReport set_types(std::span<const NodeNum> node_nums, char type);
     // NOLINTBEGIN(readability-identifier-naming)
     bool set_T(NodeNum node_num, double T);  ///< Temperature [K] setter.
     bool set_C(NodeNum node_num, double C);  ///< Thermal capacity [J/K] setter.
@@ -392,18 +450,73 @@ class Nodes {
     bool is_mapped() const;  ///< Check if the internal node structure has
                              ///< already been mapped.
 
+    /// Changes whenever a node is added, removed or moved. See
+    /// _structure_version.
+    [[nodiscard]] std::uint64_t structure_version() const noexcept;
+
+    /// User numbers of every node, in internal order.
+    [[nodiscard]] std::vector<NodeNum> node_numbers() const;
+
+    /// Sets one attribute of many nodes. Unknown nodes are skipped and
+    /// reported; for a node given twice the last value wins. A sparse
+    /// attribute is rebuilt once, dropping values at or below ZERO_THR_ATTR.
+    BulkReport set_values(NodeAttribute attribute,
+                          std::span<const NodeNum> node_nums,
+                          std::span<const double> values);
+
+    /// Reads one attribute of many nodes into @p values (same length as
+    /// @p node_nums). Unknown nodes read as NaN and are reported.
+    BulkReport get_values(NodeAttribute attribute,
+                          std::span<const NodeNum> node_nums,
+                          std::span<double> values) const;
+
+    /// One attribute of every node, in internal order.
+    [[nodiscard]] std::vector<double> get_values(NodeAttribute attribute) const;
+
   private:
     /**
-     * Remake the map that tracks user node numbers -> internal node numbers,
-     * after that set _node_num_mapped to true. The method is called
-     * automatically when trying to obtain an attribute but _node_num_mapped is
-     * false. It is marked as const because the node struture and the node
-     * attributes are not modified. However the (mutable) members
-     * _usr_to_int_node_num and _node_num_mapped are modified.
+     * Remake the map that tracks user node numbers -> internal node numbers
+     * (the flat table when the numbers are dense, the unordered_map
+     * otherwise) and mark it valid for the current structure version. Called
+     * automatically before a lookup when the structure changed since the last
+     * rebuild. It is marked as const because the node structure and the node
+     * attributes are not modified; only the mutable map members are.
      */
     void create_node_num_map() const;
 
     void ensure_node_map() const;
+    [[nodiscard]] std::optional<Index> lookup_node_index(
+        NodeNum node_num) const;
+    [[nodiscard]] bool store_node_index(NodeNum node_num, Index index) const;
+    [[nodiscard]] bool shift_boundary_node_indices(Index shift) const;
+    void update_map_after_append(char type, std::span<const NodeNum> numbers,
+                                 bool map_was_valid);
+    [[nodiscard]] bool has_node_number(NodeNum node_num) const;
+
+    void add_observer(Couplings* couplings) noexcept;
+    void remove_observer(Couplings* couplings) noexcept;
+    void notify_block_remap(char type, std::span<const Index> old_to_new);
+    void notify_single_insertion(char type, Index local_index,
+                                 Index old_block_size);
+
+    // Marks the nodes set_types has to move to the other block.
+    [[nodiscard]] std::vector<std::uint8_t> retype_marks(
+        std::span<const NodeNum> node_nums, char type,
+        BulkReport& report) const;
+    // Puts every node and attribute in the order new_to_old gives (the old
+    // internal index of each new one), the first diff_count diffusive;
+    // `numbers` is the old internal order of the node numbers.
+    void reorder_storage(std::span<const NodeNum> numbers,
+                         std::span<const Index> new_to_old, Index diff_count);
+
+    [[nodiscard]] std::vector<double>* dense_storage(
+        NodeAttribute attribute) noexcept;
+    [[nodiscard]] const std::vector<double>* dense_storage(
+        NodeAttribute attribute) const noexcept;
+    [[nodiscard]] Eigen::SparseVector<double>* sparse_storage(
+        NodeAttribute attribute) noexcept;
+    [[nodiscard]] const Eigen::SparseVector<double>* sparse_storage(
+        NodeAttribute attribute) const noexcept;
     bool find_node_index(NodeNum node_num, Index& index,
                          const char* error_prefix) const;
     double resolve_get_dense_attr(NodeNum node_num,
@@ -425,18 +538,6 @@ class Nodes {
     bool resolve_set_literal_attr(NodeNum node_num,
                                   Eigen::SparseVector<LiteralString>& storage,
                                   const std::string& value);
-
-    /**
-     * Change the type of the node from diffusive to boundary. Because of how
-     * the internal order is defined, the node structure needs to be rearranged.
-     */
-    void diffusive_to_boundary(NodeNum usr_node_num);
-
-    /**
-     * Change the type of the node from boundary to diffusive. Because of how
-     * the internal order is defined, the node structure needs to be rearranged.
-     */
-    void boundary_to_diffusive(NodeNum usr_node_num);
 
     // Insert methods for SparseVectors
 

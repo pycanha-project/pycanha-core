@@ -25,10 +25,16 @@ struct TmmBuildOptions {
 };
 
 enum class DiagnosticCode : std::uint8_t {
-    /// Geometry inside a boolean-cut group: its face-pair grid no longer
-    /// exists, so
-    /// the parametric integrals do not apply.
-    CutGeometrySkipped,
+    /// Face pairs of an item that other geometry cuts: their capacity and
+    /// through-thickness conductance are scaled by the area that survives,
+    /// and the in-plane conductors touching them are removed, since a cut
+    /// face pair has no parametric neighbour to integrate to. Face pairs cut
+    /// away completely contribute nothing.
+    CutFacePairs,
+    /// Diffusive nodes left with no conductive coupling once the in-plane
+    /// conductors of cut face pairs were removed: a steady-state solve is
+    /// singular unless something else attaches them.
+    UncoupledNodes,
     /// The primitive produces no faces at all (Cube is cutter-only).
     UnmeshedPrimitive,
     /// A side carrying node numbers that one of the active-side selectors
@@ -68,7 +74,7 @@ enum class DiagnosticCode : std::uint8_t {
 [[nodiscard]] std::string_view to_string(DiagnosticCode code) noexcept;
 
 struct BuildDiagnostic {
-    DiagnosticCode code = DiagnosticCode::CutGeometrySkipped;
+    DiagnosticCode code = DiagnosticCode::UnmeshedPrimitive;
     std::string geometry_name;
     std::string message;
 };
@@ -81,6 +87,12 @@ struct TmmBuildReport {
     std::size_t conductors_created = 0;
     /// Face level, before aggregation.
     std::size_t face_pair_links_computed = 0;
+    /// Face pairs partly cut away (0 < surviving fraction < 1).
+    std::size_t face_pairs_cut = 0;
+    /// Face pairs cut away completely.
+    std::size_t face_pairs_removed = 0;
+    /// In-plane links dropped because they touch a cut face pair.
+    std::size_t links_removed = 0;
     std::vector<BuildDiagnostic> diagnostics;
 };
 

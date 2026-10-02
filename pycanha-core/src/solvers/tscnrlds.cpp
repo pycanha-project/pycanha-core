@@ -112,6 +112,9 @@ void TSCNRLDS::initialize() {
 }
 
 void TSCNRLDS::solve() {
+    if (!structure_unchanged_since_initialize()) {
+        return;
+    }
     SPDLOG_LOGGER_INFO(get_logger(), "TSCNRLDS solving...");
 
     const FormulaExecutionGuard formula_execution(*this);
