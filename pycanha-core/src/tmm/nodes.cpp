@@ -251,8 +251,8 @@ void Nodes::ensure_node_map() const {
 
 std::optional<Index> Nodes::lookup_node_index(NodeNum node_num) const {
     if (_dense_mapped) {
-        const std::int64_t offset = static_cast<std::int64_t>(node_num) -
-                                    static_cast<std::int64_t>(_dense_base);
+        const Index offset =
+            static_cast<Index>(node_num) - static_cast<Index>(_dense_base);
         if (offset < 0 || offset >= std::ssize(_dense_node_index)) {
             return std::nullopt;
         }
@@ -604,8 +604,8 @@ namespace {
 // Largest node-number span the flat table is used for, as a function of the
 // node count: beyond it the table would be mostly holes and the unordered_map
 // is the smaller of the two.
-[[nodiscard]] std::int64_t dense_map_limit(Index num_nodes) noexcept {
-    return (4 * static_cast<std::int64_t>(num_nodes)) + 1024;
+[[nodiscard]] Index dense_map_limit(Index num_nodes) noexcept {
+    return (4 * num_nodes) + 1024;
 }
 
 }  // namespace
@@ -629,8 +629,8 @@ void Nodes::create_node_num_map() const {
                 highest = std::max(highest, numbers->back());
             }
         }
-        const std::int64_t span = static_cast<std::int64_t>(highest) -
-                                  static_cast<std::int64_t>(lowest) + 1;
+        const Index span =
+            static_cast<Index>(highest) - static_cast<Index>(lowest) + 1;
         _dense_mapped = span <= dense_map_limit(node_count);
         if (_dense_mapped) {
             _dense_base = lowest;
@@ -657,8 +657,8 @@ bool Nodes::store_node_index(NodeNum node_num, Index index) const {
         _usr_to_int_node_num[node_num] = index;
         return true;
     }
-    const std::int64_t offset = static_cast<std::int64_t>(node_num) -
-                                static_cast<std::int64_t>(_dense_base);
+    const Index offset =
+        static_cast<Index>(node_num) - static_cast<Index>(_dense_base);
     if (offset < 0) {
         return false;
     }
