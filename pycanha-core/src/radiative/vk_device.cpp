@@ -14,7 +14,9 @@
 #include <string>
 #include <vector>
 
+#include "pycanha-core/radiative/device.hpp"
 #include "pycanha-core/utils/logger.hpp"
+#include "vk_test_hooks.hpp"
 
 namespace pycanha::radiative::detail {
 
@@ -128,6 +130,7 @@ struct ExtensionSupport {
     check.info.max_dispatch_rays =
         static_cast<std::uint64_t>(props.limits.maxComputeWorkGroupCount[0]) *
         workgroup_size;
+    check.max_dispatch_emitters = props.limits.maxComputeWorkGroupCount[1];
     if (check.info.software) {
         check.score = 0;
     } else if (props.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
@@ -257,7 +260,8 @@ std::vector<PhysicalDeviceCheck> enumerate_physical_devices() {
 DeviceImpl::DeviceImpl(const PhysicalDeviceCheck& picked)
     : info(picked.info),
       physical_device(picked.physical_device),
-      has_memory_budget(picked.has_memory_budget) {
+      has_memory_budget(picked.has_memory_budget),
+      max_dispatch_emitters(picked.max_dispatch_emitters) {
     const QueueFamilies families = pick_queue_families(physical_device);
     compute_family = families.compute;
     transfer_family = families.dedicated_transfer;
@@ -387,6 +391,20 @@ std::uint64_t DeviceImpl::memory_budget() const {
     // Without the budget extension: assume 80% of the largest DEVICE_LOCAL
     // heap is usable (leaves headroom for the driver and other processes).
     return static_cast<std::uint64_t>(largest_size) * 8 / 10;
+}
+
+std::uint32_t max_dispatch_emitters(const Device& device) {
+    return device.impl().max_dispatch_emitters;
+}
+
+void lower_max_dispatch_emitters(Device& device, std::uint32_t limit) {
+    DeviceImpl& impl = device.impl();
+    if (limit == 0 || limit > impl.max_dispatch_emitters) {
+        throw std::invalid_argument(
+            "pycanha::radiative: the emitter limit can only be lowered, and "
+            "not to zero");
+    }
+    impl.max_dispatch_emitters = limit;
 }
 
 }  // namespace pycanha::radiative::detail

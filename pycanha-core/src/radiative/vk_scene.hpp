@@ -201,11 +201,15 @@ class SceneImpl {
         std::array<float, 3> sun_dir = {0.0F, 0.0F, 0.0F};
     };
     // Traces settings.rays_per_face rays for `emitters` (all within
-    // [row_offset, row_offset + accumulator rows)), split into watchdog-safe
-    // chunks.
+    // [row_offset, row_offset + accumulator rows)), in batches of at most
+    // the device's max_dispatch_emitters.
     void dispatch_rows(const KernelDispatch& kernel,
                        std::span<const std::uint32_t> emitters,
                        const TraceSettings& settings);
+    // One batch of the above, split into watchdog-safe ray chunks.
+    void dispatch_batch(const KernelDispatch& kernel,
+                        std::span<const std::uint32_t> emitters,
+                        const TraceSettings& settings);
     // Shared argument validation of the accumulate_* entry points; returns
     // the effective emitter list (the default list when `emitters` is
     // empty). An empty return means there is nothing to trace.
