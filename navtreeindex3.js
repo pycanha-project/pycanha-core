@@ -194,5 +194,6 @@ var NAVTREEINDEX3 =
 "vf__assemble_8hpp_source.html":[12,0,0,1,2,8],
 "vk__accum_8hpp_source.html":[12,0,0,1,2,9],
 "vk__device_8hpp_source.html":[12,0,0,1,2,10],
-"vk__scene_8hpp_source.html":[12,0,0,1,2,11]
+"vk__scene_8hpp_source.html":[12,0,0,1,2,11],
+"vk__test__hooks_8hpp_source.html":[12,0,0,1,2,12]
 };
