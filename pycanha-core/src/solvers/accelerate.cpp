@@ -2,14 +2,15 @@
 
 #if PYCANHA_USE_ACCELERATE
 
-#include <Accelerate/Accelerate.h>
 #include <spdlog/spdlog.h>
+#include <vecLib/Sparse/Solve.h>
 
 #include <cmath>
 #include <cstddef>
 #include <cstdlib>
 #include <format>
 #include <memory>
+#include <span>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -17,6 +18,7 @@
 #include <vector>
 
 #include "pycanha-core/globals.hpp"
+#include "pycanha-core/solvers/linear_solver.hpp"
 #include "pycanha-core/utils/logger.hpp"
 
 #endif
@@ -25,8 +27,9 @@ namespace pycanha {
 
 bool accelerate_available() noexcept {
 #if PYCANHA_USE_ACCELERATE
+    // __builtin_available is only allowed as an if condition.
     if (__builtin_available(macOS 15.5, *)) {
-        return true;
+        return true;  // NOLINT(readability-simplify-boolean-expr)
     }
 #endif
     return false;
@@ -85,12 +88,12 @@ class AccelerateSolver final : public SparseLinearSolver {
         }
         release();
         _size = static_cast<int>(matrix.rows());
-        const auto starts = to_sizet(matrix.rows()) + 1;
-        const auto non_zeros = to_sizet(matrix.nonZeros());
-        _column_starts.assign(matrix.outerIndexPtr(),
-                              matrix.outerIndexPtr() + starts);
-        _row_indices.assign(matrix.innerIndexPtr(),
-                            matrix.innerIndexPtr() + non_zeros);
+        const std::span<const int> starts(matrix.outerIndexPtr(),
+                                          to_sizet(matrix.rows()) + 1);
+        const std::span<const int> indices(matrix.innerIndexPtr(),
+                                           to_sizet(matrix.nonZeros()));
+        _column_starts.assign(starts.begin(), starts.end());
+        _row_indices.assign(indices.begin(), indices.end());
 
         SparseSymbolicFactorOptions options{};
         options.control = SparseDefaultControl;
@@ -118,7 +121,8 @@ class AccelerateSolver final : public SparseLinearSolver {
         // Accelerate only reads the values.
         const SparseMatrix_Double values = {
             .structure = structure(),
-            .data = const_cast<double*>(matrix.valuePtr())};  // NOLINT
+            // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
+            .data = const_cast<double*>(matrix.valuePtr())};
         if (_factored) {
             SparseRefactor(values, &_numeric);
         } else {
@@ -134,9 +138,9 @@ class AccelerateSolver final : public SparseLinearSolver {
         }
         if (!_symmetric && _size > 0) {
             // Infinity norm, for the backward error of the solves.
-            _matrix_norm = (matrix.cwiseAbs() *
-                            Eigen::VectorXd::Ones(matrix.cols()))
-                               .maxCoeff();
+            _matrix_norm =
+                (matrix.cwiseAbs() * Eigen::VectorXd::Ones(matrix.cols()))
+                    .maxCoeff();
         }
     }
 
@@ -186,7 +190,9 @@ class AccelerateSolver final : public SparseLinearSolver {
     bool _symmetric;
     std::string _name;
     int _size = 0;
-    std::vector<long> _column_starts;
+    // Accelerate's SparseMatrixStructure takes long column starts (not
+    // int64_t, which is long long on macOS).
+    std::vector<long> _column_starts;  // NOLINT(runtime/int)
     std::vector<int> _row_indices;
     SparseOpaqueSymbolicFactorization _symbolic{};
     SparseOpaqueFactorization_Double _numeric{};
@@ -206,10 +212,10 @@ class AccelerateSolver final : public SparseLinearSolver {
         if (_symmetric || x.size() == 0) {
             return;
         }
-        const Dense residual = matrix * x - b;
+        const Dense residual = (matrix * x) - b;
         const double error = residual.cwiseAbs().maxCoeff();
-        const double scale = _matrix_norm * x.cwiseAbs().maxCoeff() +
-                             b.cwiseAbs().maxCoeff();
+        const double scale =
+            (_matrix_norm * x.cwiseAbs().maxCoeff()) + b.cwiseAbs().maxCoeff();
         if (!std::isfinite(error) || error > tolerance * scale) {
             _status = SparseMatrixIsSingular;
         }
@@ -271,10 +277,11 @@ std::unique_ptr<SparseLinearSolver> make_accelerate_solver(
                                                   order, true, std::move(name));
     }
     if (__builtin_available(macOS 15.5, *)) {
-        return std::make_unique<AccelerateSolver>(
-            SparseFactorizationLU, order, false, std::move(name));
+        return std::make_unique<AccelerateSolver>(SparseFactorizationLU, order,
+                                                  false, std::move(name));
     }
-    throw std::invalid_argument("Accelerate sparse LU needs macOS 15.5 or newer");
+    throw std::invalid_argument(
+        "Accelerate sparse LU needs macOS 15.5 or newer");
 }
 
 #endif  // PYCANHA_USE_ACCELERATE

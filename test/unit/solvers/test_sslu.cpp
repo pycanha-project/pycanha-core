@@ -96,6 +96,17 @@ bool has_small_model_solution(const Model& model) {
            nodes.get_T(99) == 3.15;
 }
 
+// The default engine: MKL, then Accelerate, then Eigen.
+SolverEngine expected_default_engine() {
+    if (pycanha::MKL_ENABLED) {
+        return SolverEngine::MKL;
+    }
+    if (pycanha::accelerate_available()) {
+        return SolverEngine::ACCELERATE;
+    }
+    return SolverEngine::EIGEN;
+}
+
 // The engines of this build (and of the running macOS for Accelerate).
 std::vector<SolverEngine> available_engines() {
     std::vector<SolverEngine> engines = {SolverEngine::EIGEN};
@@ -138,11 +149,7 @@ TEST_CASE("SSLU defaults", "[solver][sslu]") {
     const auto model = models::make_small_radiative_model();
     const pycanha::SSLU solver(model);
     REQUIRE(solver.engine == pycanha::default_solver_engine());
-    const auto expected = pycanha::MKL_ENABLED ? SolverEngine::MKL
-                          : pycanha::accelerate_available()
-                              ? SolverEngine::ACCELERATE
-                              : SolverEngine::EIGEN;
-    REQUIRE(solver.engine == expected);
+    REQUIRE(solver.engine == expected_default_engine());
     REQUIRE(solver.solver_type == DirectSolverType::DEFAULT);
     REQUIRE(solver.pardiso_iparm_3 == 0);
     REQUIRE(solver.allow_cholesky);
@@ -224,6 +231,43 @@ TEST_CASE("SSLU rejects a type of the other engine", "[solver][sslu]") {
     REQUIRE_FALSE(solver.solver_initialized);
 }
 
+TEST_CASE("Solver engine and type names and defaults", "[solver][sslu]") {
+    REQUIRE(pycanha::to_string(SolverEngine::MKL) == "MKL");
+    REQUIRE(pycanha::to_string(SolverEngine::EIGEN) == "EIGEN");
+    REQUIRE(pycanha::to_string(SolverEngine::ACCELERATE) == "ACCELERATE");
+    REQUIRE(pycanha::to_string(DirectSolverType::METIS) == "METIS");
+    REQUIRE(pycanha::resolve_solver_type(SolverEngine::MKL,
+                                         DirectSolverType::DEFAULT) ==
+            DirectSolverType::TWO_LEVEL);
+    REQUIRE(pycanha::resolve_solver_type(SolverEngine::EIGEN,
+                                         DirectSolverType::DEFAULT) ==
+            DirectSolverType::COLAMD);
+    REQUIRE(pycanha::resolve_solver_type(SolverEngine::ACCELERATE,
+                                         DirectSolverType::DEFAULT) ==
+            DirectSolverType::METIS);
+    REQUIRE(pycanha::resolve_solver_type(SolverEngine::ACCELERATE,
+                                         DirectSolverType::AMD) ==
+            DirectSolverType::AMD);
+    REQUIRE(pycanha::default_solver_engine() == expected_default_engine());
+}
+
+TEST_CASE("The ACCELERATE engine rejects a wrong configuration everywhere",
+          "[solver][sslu]") {
+    // Checked before the availability, so on every platform.
+    const auto model = models::make_small_radiative_model();
+    pycanha::SSLU solver(model);
+    solver.engine = SolverEngine::ACCELERATE;
+    SECTION("A type of another engine") {
+        solver.solver_type = DirectSolverType::TWO_LEVEL;
+        REQUIRE_THROWS_AS(solver.initialize(), std::invalid_argument);
+    }
+    SECTION("The iterative step") {
+        solver.pardiso_iparm_overrides = {{3, 61}};
+        REQUIRE_THROWS_AS(solver.initialize(), std::invalid_argument);
+    }
+    REQUIRE_FALSE(solver.solver_initialized);
+}
+
 TEST_CASE("SSLU rejects the ACCELERATE engine when it is not available",
           "[solver][sslu]") {
     if (pycanha::accelerate_available()) {
@@ -253,8 +297,8 @@ TEST_CASE("SSLU with Accelerate refactorises and reinitialises correctly",
         solver.solve();
         REQUIRE(solver.solver_converged);
         REQUIRE(solver.num_factorizations() > 2);
-        REQUIRE(models::max_difference(models::temperatures(model),
-                                       reference) < 1e-6);
+        REQUIRE(models::max_difference(models::temperatures(model), reference) <
+                1e-6);
     }
 }
 

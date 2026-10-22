@@ -254,12 +254,7 @@ std::unique_ptr<SparseLinearSolver> make_linear_solver(
     }
 
     if (options.engine == SolverEngine::ACCELERATE) {
-        if (!accelerate_available()) {
-            throw std::invalid_argument(
-                "The ACCELERATE engine is not available: pycanha-core was "
-                "built without Accelerate, or macOS is older than 15.5. Use "
-                "the EIGEN engine.");
-        }
+        // Configuration errors first, so they are reported on every platform.
         if (!is_accelerate_type(type)) {
             throw std::invalid_argument(std::format(
                 "Solver type {} belongs to another engine. With the "
@@ -271,6 +266,12 @@ std::unique_ptr<SparseLinearSolver> make_linear_solver(
             throw std::invalid_argument(
                 "The iterative step (pardiso_iparm_3) is only available with "
                 "the MKL engine.");
+        }
+        if (!accelerate_available()) {
+            throw std::invalid_argument(
+                "The ACCELERATE engine is not available: pycanha-core was "
+                "built without Accelerate, or macOS is older than 15.5. Use "
+                "the EIGEN engine.");
         }
 #if PYCANHA_USE_ACCELERATE
         return make_accelerate_solver(type,
