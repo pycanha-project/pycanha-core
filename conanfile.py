@@ -63,6 +63,7 @@ class Recipe_pycanha_core(ConanFile):
         "PYCANHA_OPTION_LIBRARY": [True, False],
         "PYCANHA_OPTION_USE_MKL": [True, False],
         "PYCANHA_OPTION_MKL_VERSION": ["ANY"],
+        "PYCANHA_OPTION_USE_ACCELERATE": [True, False],
         "PYCANHA_OPTION_LTO": [True, False],
         "PYCANHA_OPTION_DOCS": [True, False],
         "PYCANHA_OPTION_WARNINGS": [True, False],
@@ -83,6 +84,7 @@ class Recipe_pycanha_core(ConanFile):
         "PYCANHA_OPTION_LIBRARY": True,
         "PYCANHA_OPTION_USE_MKL": True,
         "PYCANHA_OPTION_MKL_VERSION": "default",
+        "PYCANHA_OPTION_USE_ACCELERATE": True,
         "PYCANHA_OPTION_LTO": True,
         "PYCANHA_OPTION_DOCS": False,
         "PYCANHA_OPTION_WARNINGS": False,
@@ -410,6 +412,14 @@ class Recipe_pycanha_core(ConanFile):
                     self.buildenv_info.prepend_path("LD_LIBRARY_PATH", str(lib_dir))
         else:
             self.cpp_info.defines.append("PYCANHA_USE_MKL=0")
+
+        if self.options.PYCANHA_OPTION_USE_ACCELERATE and self.settings.os == "Macos":
+            # System framework, linked like Metal: consumers of this static
+            # library need it on their link line too.
+            self.cpp_info.defines.append("PYCANHA_USE_ACCELERATE=1")
+            self.cpp_info.frameworks.append("Accelerate")
+        else:
+            self.cpp_info.defines.append("PYCANHA_USE_ACCELERATE=0")
 
         if self.options.PYCANHA_OPTION_PROFILING:
             self.cpp_info.defines.append("PYCANHA_PROFILING")
