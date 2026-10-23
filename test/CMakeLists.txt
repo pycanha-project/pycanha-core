@@ -68,6 +68,7 @@ set(UNIT_TEST_SOURCES
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/solvers/test_sslu_cgs.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/solvers/test_callback_registry.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/solvers/test_model_changed.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/solvers/test_settings.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/solvers/test_transient_solver.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/solvers/test_tscnrlds.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/solvers/test_tscnrlds_jacobian.cpp"
