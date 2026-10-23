@@ -112,14 +112,13 @@ void TSCNRLDS::initialize() {
 }
 
 void TSCNRLDS::solve() {
-    if (!structure_unchanged_since_initialize()) {
-        return;
-    }
+    // Throws first when the solver is not initialised.
+    restart_solve();
+    check_model_unchanged();
     SPDLOG_LOGGER_INFO(get_logger(), "TSCNRLDS solving...");
 
     const FormulaExecutionGuard formula_execution(*this);
 
-    restart_solve();
     callback_transient_time_change();
     callback_solver_loop();
     outputs_first_last();

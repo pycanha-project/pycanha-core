@@ -3,7 +3,6 @@
 #include <spdlog/spdlog.h>
 
 #include <algorithm>
-#include <array>
 #include <cstddef>
 #include <memory>
 #include <span>
@@ -86,13 +85,6 @@ bool SteadyStateSolver::has_radiation() const noexcept {
     return KRdd.nonZeros() != 0 || KRdb.nonZeros() != 0;
 }
 
-bool SteadyStateSolver::model_structure_unchanged() const noexcept {
-    return KLdd.rows() == nd && KLdb.cols() == nb &&
-           _initialized_non_zeros ==
-               std::array<Index, 4>{KLdd.nonZeros(), KLdb.nonZeros(),
-                                    KRdd.nonZeros(), KRdb.nonZeros()};
-}
-
 void SteadyStateSolver::initialize_linearised(
     const LinearSolverOptions& options) {
     // Throws before anything is built when the options are not available.
@@ -115,8 +107,6 @@ void SteadyStateSolver::initialize_linearised(
     _row_sums = VectorXd::Zero(nd);
     _ones_domain = VectorXd::Ones(nd);
     _ones_boundary = VectorXd::Ones(nb);
-    _initialized_non_zeros = {KLdd.nonZeros(), KLdb.nonZeros(), KRdd.nonZeros(),
-                              KRdb.nonZeros()};
     _has_factors = false;
 
     _linear_solver->analyze_pattern(_a_matrix);
@@ -295,16 +285,7 @@ void SteadyStateSolver::solve_linearised() {
             "solve().");
         return;
     }
-    if (!structure_unchanged_since_initialize()) {
-        return;
-    }
-    if (!model_structure_unchanged()) {
-        SPDLOG_LOGGER_ERROR(get_logger(),
-                            "{}: nodes or couplings were added or removed "
-                            "after initialize(). Call initialize() again.",
-                            solver_name);
-        return;
-    }
+    check_model_unchanged();
     SPDLOG_LOGGER_INFO(get_logger(), "{} solving...", solver_name);
 
     const FormulaExecutionGuard formula_execution(*this);

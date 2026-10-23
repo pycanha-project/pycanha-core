@@ -14,6 +14,7 @@
 #include "pycanha-core/globals.hpp"
 #include "pycanha-core/parameters/variable.hpp"
 #include "pycanha-core/tmm/bulk.hpp"
+#include "pycanha-core/tmm/thermalnetwork.hpp"
 
 namespace pycanha {
 
@@ -105,6 +106,11 @@ class ThermalMathematicalModel {
     [[nodiscard]] RadiativeCouplings& radiative_couplings() noexcept;
     [[nodiscard]] const RadiativeCouplings& radiative_couplings()
         const noexcept;
+
+    /// Structure versions of the nodes and of the conductive and radiative
+    /// couplings, see ThermalNetwork::structure_versions. Solvers compare
+    /// them with the snapshot taken by initialize().
+    [[nodiscard]] StructureVersions structure_versions() const noexcept;
 
     void add_node(Node node);
     void add_node(Index node_num);

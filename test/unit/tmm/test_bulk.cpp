@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "pycanha-core/globals.hpp"
+#include "pycanha-core/solvers/model_changed_error.hpp"
 #include "pycanha-core/solvers/sslu.hpp"
 #include "pycanha-core/tmm/bulk.hpp"
 #include "pycanha-core/tmm/conductivecouplings.hpp"
@@ -386,7 +387,7 @@ TEST_CASE("a conduction-only model built through Nodes solves",
     // Adding a node after initialize() invalidates the solver.
     tmm->add_node(Index{5});
     tmm->nodes().set_T(1, 0.0);
-    solver.solve();
+    REQUIRE_THROWS_AS(solver.solve(), ModelChangedError);
     REQUIRE(tmm->nodes().get_T(1) == 0.0);
 }
 

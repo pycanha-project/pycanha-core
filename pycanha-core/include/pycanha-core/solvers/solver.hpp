@@ -2,10 +2,10 @@
 
 #include <Eigen/Sparse>
 #include <cstddef>
-#include <cstdint>
 #include <map>
 #include <memory>
 #include <string>
+#include <string_view>
 #include <unordered_set>
 #include <utility>
 
@@ -13,6 +13,7 @@
 #include "pycanha-core/solvers/linear_solver.hpp"
 #include "pycanha-core/tmm/couplingmatrices.hpp"
 #include "pycanha-core/tmm/thermalmathematicalmodel.hpp"
+#include "pycanha-core/tmm/thermalnetwork.hpp"
 #include "pycanha-core/utils/SparseUtils.hpp"
 #include "pycanha-core/utils/profiling.hpp"
 
@@ -143,10 +144,12 @@ class Solver {
 
     void initialize_common();
 
-    // False, with an ERROR logged, when nodes were added, removed or moved
-    // since initialize(): the solver's sizes and references no longer match
-    // the model and it must be initialised again.
-    [[nodiscard]] bool structure_unchanged_since_initialize() const;
+    // Throws ModelChangedError when nodes were added, removed, retyped or
+    // reordered, or couplings inserted or removed, since initialize(): the
+    // solver's sizes, patterns and index tables no longer match the model and
+    // it must be initialised again. `callback` names the callback that has
+    // just run, empty at the start of solve().
+    void check_model_unchanged(std::string_view callback = {}) const;
 
     /// Linear solver options from the PARDISO settings above.
     [[nodiscard]] LinearSolverOptions linear_solver_options(
@@ -158,8 +161,8 @@ class Solver {
     void expand_coupling_matrices_with_zeros();
     void restore_expanded_coupling_matrices();
 
-    // Nodes::structure_version() when initialize() last ran.
-    std::uint64_t _initialized_structure_version = 0;
+    // The model's structure versions when initialize() last ran.
+    StructureVersions _initialized_structure;
 
     std::unordered_set<std::pair<int, int>, IntPairHash>
         _original_non_zeros_krdd;

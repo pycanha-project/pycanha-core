@@ -11,6 +11,7 @@
 
 #include "pycanha-core/config.hpp"
 #include "pycanha-core/solvers/linear_solver.hpp"
+#include "pycanha-core/solvers/model_changed_error.hpp"
 #include "pycanha-core/solvers/sslu.hpp"
 #include "pycanha-core/tmm/node.hpp"
 #include "pycanha-core/tmm/nodes.hpp"
@@ -262,7 +263,7 @@ TEST_CASE("SSLU refuses to solve a model changed after initialize()",
     solver.initialize();
     model->add_conductive_coupling(1, 7, 0.5);
 
-    solver.solve();
+    REQUIRE_THROWS_AS(solver.solve(), pycanha::ModelChangedError);
     REQUIRE_FALSE(solver.solver_converged);
     REQUIRE(model->nodes().get_T(1) == 293.15);
 

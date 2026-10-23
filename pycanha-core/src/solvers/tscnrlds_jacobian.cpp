@@ -287,9 +287,9 @@ void TSCNRLDS_JACOBIAN::solve_jacobian_step() {
 }
 
 void TSCNRLDS_JACOBIAN::solve() {
-    if (!structure_unchanged_since_initialize()) {
-        return;
-    }
+    // Throws first when the solver is not initialised.
+    restart_solve();
+    check_model_unchanged();
     SPDLOG_LOGGER_INFO(get_logger(), "TSCNRLDS_JACOBIAN solving...");
 
     const FormulaExecutionGuard formula_execution(*this);
@@ -299,7 +299,6 @@ void TSCNRLDS_JACOBIAN::solve() {
         return;
     }
 
-    restart_solve();
     auto& output_model =
         tmm.thermal_data().models().get_model(output_model_name);
     output_model.get_matrix_attribute(DataModelAttribute::JAC) =

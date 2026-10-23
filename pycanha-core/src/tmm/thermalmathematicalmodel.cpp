@@ -195,6 +195,11 @@ const ThermalData& ThermalMathematicalModel::thermal_data() const noexcept {
     return *_thermal_data_shptr;
 }
 
+StructureVersions ThermalMathematicalModel::structure_versions()
+    const noexcept {
+    return _network->structure_versions();
+}
+
 ConductiveCouplings& ThermalMathematicalModel::conductive_couplings() noexcept {
     return _network->conductive_couplings();
 }

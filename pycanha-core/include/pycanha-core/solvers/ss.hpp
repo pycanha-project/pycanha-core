@@ -1,6 +1,5 @@
 #pragma once
 
-#include <array>
 #include <memory>
 #include <vector>
 
@@ -77,15 +76,12 @@ class SteadyStateSolver : public Solver {
     std::vector<int> _lower_kr_indices;
     std::vector<int> _diagonal_indices;
 
-    // Non-zeros of KLdd, KLdb, KRdd and KRdb seen by initialize().
-    std::array<Index, 4> _initialized_non_zeros{};
     int _num_factorizations = 0;
     bool _symmetric = false;
     bool _radiation = false;
 
     std::unique_ptr<SparseLinearSolver> _linear_solver;
 
-    [[nodiscard]] bool model_structure_unchanged() const noexcept;
     void build_pattern();
     void assemble_matrix();
     void assemble_rhs();

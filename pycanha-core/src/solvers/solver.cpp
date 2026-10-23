@@ -2,13 +2,18 @@
 
 #include <spdlog/spdlog.h>
 
+#include <cstddef>
 #include <memory>
+#include <string>
+#include <string_view>
 #include <unordered_set>
 #include <utility>
+#include <vector>
 
 #include "pycanha-core/globals.hpp"
 #include "pycanha-core/parameters/formulas.hpp"
 #include "pycanha-core/solvers/linear_solver.hpp"
+#include "pycanha-core/solvers/model_changed_error.hpp"
 #include "pycanha-core/tmm/nodes.hpp"
 #include "pycanha-core/tmm/thermalmathematicalmodel.hpp"
 #include "pycanha-core/tmm/thermalnetwork.hpp"
@@ -37,6 +42,30 @@ class ActiveSolverCallbackScope {
   private:
     ThermalMathematicalModel& _tmm;
 };
+
+// The parts that differ, as "nodes", "nodes and conductive couplings" or
+// "nodes, conductive couplings and radiative couplings".
+std::string describe_changes(const StructureVersions& before,
+                             const StructureVersions& now) {
+    std::vector<std::string_view> parts;
+    if (before.nodes != now.nodes) {
+        parts.emplace_back("nodes");
+    }
+    if (before.conductive != now.conductive) {
+        parts.emplace_back("conductive couplings");
+    }
+    if (before.radiative != now.radiative) {
+        parts.emplace_back("radiative couplings");
+    }
+    std::string text;
+    for (std::size_t part = 0; part < parts.size(); ++part) {
+        if (part > 0) {
+            text += part + 1 == parts.size() ? " and " : ", ";
+        }
+        text += parts[part];
+    }
+    return text;
+}
 
 }  // namespace
 
@@ -82,7 +111,7 @@ void Solver::initialize_common() {
     // Nodes appended since the last coupling access have not grown the
     // matrices yet.
     tnw.synchronize_structure();
-    _initialized_structure_version = tmm.nodes().structure_version();
+    _initialized_structure = tmm.structure_versions();
 
     KLdd.makeCompressed();
     KLdb.makeCompressed();
@@ -114,15 +143,23 @@ void Solver::initialize_common() {
     new (&Qb) WrappVectorXd(Q.data() + nd, nb);
 }
 
-bool Solver::structure_unchanged_since_initialize() const {
-    if (tmm.nodes().structure_version() == _initialized_structure_version) {
-        return true;
+void Solver::check_model_unchanged(std::string_view callback) const {
+    const StructureVersions now = tmm.structure_versions();
+    if (now == _initialized_structure) {
+        return;
     }
-    SPDLOG_LOGGER_ERROR(pycanha::get_logger(),
-                        "{}: the model's nodes changed after initialize(); "
-                        "call initialize() again before solve()",
-                        solver_name);
-    return false;
+    std::string message = solver_name + ": the model's " +
+                          describe_changes(_initialized_structure, now) +
+                          " changed ";
+    if (callback.empty()) {
+        message += "after initialize()";
+    } else {
+        message += "in the ";
+        message += callback;
+        message += " callback";
+    }
+    message += "; call initialize() again";
+    throw ModelChangedError(message);
 }
 
 LinearSolverOptions Solver::linear_solver_options(SolverEngine engine,
@@ -139,20 +176,29 @@ LinearSolverOptions Solver::linear_solver_options(SolverEngine engine,
 
 void Solver::callback_transient_time_change() {
     PYCANHA_PROFILE_SCOPE("Callback Time Change");
-    const ActiveSolverCallbackScope active_solver_scope(tmm, *this);
-    _tmm_shptr->callback_transient_time_change();
+    {
+        const ActiveSolverCallbackScope active_solver_scope(tmm, *this);
+        _tmm_shptr->callback_transient_time_change();
+    }
+    check_model_unchanged("time change");
 }
 
 void Solver::callback_solver_loop() {
     PYCANHA_PROFILE_SCOPE("Callback Solver Loop");
-    const ActiveSolverCallbackScope active_solver_scope(tmm, *this);
-    _tmm_shptr->callback_solver_loop();
+    {
+        const ActiveSolverCallbackScope active_solver_scope(tmm, *this);
+        _tmm_shptr->callback_solver_loop();
+    }
+    check_model_unchanged("solver loop");
 }
 
 void Solver::callback_transient_after_timestep() {
     PYCANHA_PROFILE_SCOPE("Callback Timestep");
-    const ActiveSolverCallbackScope active_solver_scope(tmm, *this);
-    _tmm_shptr->callback_transient_after_timestep();
+    {
+        const ActiveSolverCallbackScope active_solver_scope(tmm, *this);
+        _tmm_shptr->callback_transient_after_timestep();
+    }
+    check_model_unchanged("after time step");
 }
 
 void Solver::prepare_formulas_for_execution() {
