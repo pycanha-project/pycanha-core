@@ -12,9 +12,10 @@ namespace pycanha {
 /// inner iteration, solved with a sparse direct factorisation.
 /**
  * - engine and solver_type: as for SSLU (see SolverEngine and
- *   DirectSolverType). DEFAULT is the MKL two-level factorisation, or Eigen's
- *   COLAMD LU without MKL. LDLT is not available: the transient matrix is
- *   factorised with LU.
+ *   DirectSolverType). DEFAULT is the MKL two-level factorisation, or without
+ *   MKL Accelerate's METIS LU when available and Eigen's COLAMD LU
+ *   otherwise. LDLT is not available: the transient matrix is factorised
+ *   with LU.
  * - pardiso_iparm_3 (MKL): 0 (default) factorises every changed matrix. 10 *
  *   L + 1 first iterates on the previous factors down to a relative residual
  *   of 10^-L, and that residual stays in every step. It seems much faster

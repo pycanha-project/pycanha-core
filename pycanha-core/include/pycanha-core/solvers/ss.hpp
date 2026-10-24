@@ -32,8 +32,9 @@ class SteadyStateSolver : public Solver {
     SteadyStateSolver(SteadyStateSolver&&) = delete;
     SteadyStateSolver& operator=(SteadyStateSolver&&) = delete;
 
-    /// With the MKL engine, factorise models without radiative couplings
-    /// with Cholesky instead of LU (faster, less memory). With Eigen,
+    /// With the MKL and ACCELERATE engines, factorise models without
+    /// radiative couplings with Cholesky instead of LU (faster, less memory).
+    /// SSLU_CGS only uses MKL. With Eigen,
     /// Cholesky is chosen with DirectSolverType::LDLT instead.
     bool allow_cholesky = true;
 
