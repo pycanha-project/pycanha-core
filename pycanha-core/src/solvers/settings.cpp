@@ -21,7 +21,6 @@
 #include <vector>
 
 #include "pycanha-core/config.hpp"
-#include "pycanha-core/solvers/solver_output_config.hpp"
 #include "pycanha-core/thermaldata/data_model.hpp"
 #include "pycanha-core/tmm/couplingmatrices.hpp"
 #include "pycanha-core/tmm/thermalmathematicalmodel.hpp"
@@ -257,7 +256,6 @@ std::string_view iparm_indices(const std::map<int, int>& value) {
 
 constexpr double default_tolerance = 1e-3;
 constexpr int default_max_iterations = 5;
-constexpr double default_energy_tolerance = 1e-3;
 constexpr bool default_reuse_factors = false;
 constexpr int default_threads = 0;
 constexpr double default_time = 0.0;
@@ -265,9 +263,6 @@ constexpr double default_capacity_delta = 1e-7;
 constexpr bool default_verbose = false;
 constexpr Factorization default_factorization = Factorization::AUTO;
 constexpr EigenOrdering default_eigen_ordering = EigenOrdering::COLAMD;
-// The reused factors keep the temperatures within this fraction of the
-// convergence tolerance.
-constexpr double reuse_tolerance_fraction = 0.01;
 
 template <const auto& Value>
 std::remove_cvref_t<decltype(Value)> constant(
@@ -280,12 +275,6 @@ Backend default_backend(const Settings& /*settings*/,
                         const ResolvedSettings& /*resolved*/,
                         const ResolveContext& context) {
     return context.pardiso_available ? Backend::PARDISO : Backend::EIGEN;
-}
-
-double default_reuse_tolerance(const Settings& /*settings*/,
-                               const ResolvedSettings& resolved,
-                               const ResolveContext& /*context*/) {
-    return resolved.tolerance * reuse_tolerance_fraction;
 }
 
 std::set<DataModelAttribute> default_output_attributes(
@@ -312,25 +301,45 @@ std::map<int, int> default_iparm(const Settings& /*settings*/,
     return {};
 }
 
+// Whether pardiso.iparm sets iparm[3] to an iteration on the previous
+// factors (10 * L + K with K != 0), which works with the one-level
+// factorization only.
+bool iparm_iterates(const Settings& settings) {
+    if (!settings.pardiso.iparm.has_value()) {
+        return false;
+    }
+    constexpr int iterative_step = 3;
+    constexpr int decimal = 10;
+    const auto found = settings.pardiso.iparm->find(iterative_step);
+    return found != settings.pardiso.iparm->end() &&
+           found->second % decimal != 0;
+}
+
+// The reuse route, an iterating iparm[3] and the minimum degree ordering need
+// the one-level factorization.
+bool needs_one_level(const Settings& settings,
+                     const ResolvedSettings& resolved) {
+    return resolved.reuse_factors || iparm_iterates(settings);
+}
+
 // Minimum degree whenever the factorization is one-level: nested dissection
 // one-level can livelock, so it is never a default.
 PardisoOrdering default_pardiso_ordering(const Settings& settings,
                                          const ResolvedSettings& resolved,
                                          const ResolveContext& /*context*/) {
     const bool one_level = settings.pardiso.level == PardisoLevel::ONE_LEVEL ||
-                           resolved.reuse_factors;
+                           needs_one_level(settings, resolved);
     return one_level ? PardisoOrdering::MIN_DEGREE
                      : PardisoOrdering::NESTED_DISSECTION;
 }
 
-// One-level only when something needs it: the reuse route and the minimum
-// degree ordering work with the one-level factorization only.
+// One-level only when something needs it.
 PardisoLevel default_pardiso_level(const Settings& settings,
                                    const ResolvedSettings& resolved,
                                    const ResolveContext& /*context*/) {
     const bool one_level =
         settings.pardiso.ordering == PardisoOrdering::MIN_DEGREE ||
-        resolved.reuse_factors;
+        needs_one_level(settings, resolved);
     return one_level ? PardisoLevel::ONE_LEVEL : PardisoLevel::TWO_LEVEL;
 }
 
@@ -344,9 +353,6 @@ bool uses_pardiso(const ResolvedSettings& resolved) {
 bool uses_eigen_lu(const ResolvedSettings& resolved) {
     return resolved.backend == Backend::EIGEN &&
            resolved.factorization != Factorization::CHOLESKY;
-}
-bool reuses_factors(const ResolvedSettings& resolved) {
-    return resolved.reuse_factors;
 }
 
 // ---------------------------------------------------------------------------
@@ -473,7 +479,7 @@ using R = ResolvedSettings;
 
 // Resolution walks the table in order: a default or an applicability rule
 // may only read fields above it.
-constexpr std::size_t field_count = 20;
+constexpr std::size_t field_count = 18;
 constexpr std::array<FieldEntry, field_count> field_table{
     field<Path<&S::tolerance>, Path<&R::tolerance>,
           &constant<default_tolerance>, &positive>(
@@ -490,14 +496,6 @@ constexpr std::array<FieldEntry, field_count> field_table{
          .group = "",
          .doc = "Maximum iterations of the steady state, or of each time "
                 "step.",
-         .mutability = Mutability::LIVE,
-         .solver_types = all_types}),
-    field<Path<&S::energy_tolerance>, Path<&R::energy_tolerance>,
-          &constant<default_energy_tolerance>, &positive>(
-        {.name = "energy_tolerance",
-         .group = "",
-         .doc = "Tolerance on the norm of the heat load imbalance [W]. Not "
-                "checked by any solver yet.",
          .mutability = Mutability::LIVE,
          .solver_types = all_types}),
     field<Path<&S::backend>, Path<&R::backend>, &default_backend,
@@ -523,18 +521,12 @@ constexpr std::array<FieldEntry, field_count> field_table{
          .doc = "Solve a changed matrix by iterating on the factors of an "
                 "earlier one, and refactorize only when that fails. Faster "
                 "when the matrix changes little between iterations or time "
-                "steps. Needs the PARDISO one-level factorization.",
+                "steps. The iteration stops at a relative residual of 1e-6 "
+                "(PARDISO iparm[3] = 61, overridden by pardiso.iparm), and "
+                "that residual stays in the temperatures. Needs the PARDISO "
+                "one-level factorization.",
          .mutability = Mutability::INIT,
          .solver_types = reuse_types}),
-    field<Path<&S::reuse_tolerance>, Path<&R::reuse_tolerance>,
-          &default_reuse_tolerance, &positive>(
-        {.name = "reuse_tolerance",
-         .group = "",
-         .doc = "Temperature error allowed by the reused factors [K]. "
-                "Default: tolerance / 100.",
-         .mutability = Mutability::INIT,
-         .solver_types = reuse_types},
-        &reuses_factors, "only with reuse_factors = true"),
     field<Path<&S::threads>, Path<&R::threads>, &constant<default_threads>,
           &non_negative_count>({.name = "threads",
                                 .group = "",
@@ -547,13 +539,13 @@ constexpr std::array<FieldEntry, field_count> field_table{
           &finite>({.name = "start_time",
                     .group = "",
                     .doc = "Start of the transient [s].",
-                    .mutability = Mutability::LIVE,
+                    .mutability = Mutability::INIT,
                     .solver_types = transient_types}),
     field<Path<&S::end_time>, Path<&R::end_time>, &constant<default_time>,
           &finite>({.name = "end_time",
                     .group = "",
                     .doc = "End of the transient [s].",
-                    .mutability = Mutability::LIVE,
+                    .mutability = Mutability::INIT,
                     .solver_types = transient_types}),
     field<Path<&S::time_step>, Path<&R::time_step>, &constant<default_time>,
           &positive>({.name = "time_step",
@@ -567,7 +559,7 @@ constexpr std::array<FieldEntry, field_count> field_table{
          .group = "",
          .doc = "Time between stored outputs [s]; 0 stores only the start "
                 "and the end.",
-         .mutability = Mutability::LIVE,
+         .mutability = Mutability::INIT,
          .solver_types = transient_types}),
     field<Path<&S::output_attributes>, Path<&R::output_attributes>,
           &default_output_attributes, &any_value<std::set<DataModelAttribute>>>(
@@ -575,14 +567,14 @@ constexpr std::array<FieldEntry, field_count> field_table{
          .group = "",
          .doc = "Node attributes stored at each output. Default: the "
                 "temperatures only.",
-         .mutability = Mutability::LIVE,
+         .mutability = Mutability::INIT,
          .solver_types = transient_types}),
     field<Path<&S::output_name>, Path<&R::output_name>, &default_output_name,
           &not_empty>({.name = "output_name",
                        .group = "",
                        .doc = "Name of the output model in the thermal data. "
                               "Default: the solver type in lower case.",
-                       .mutability = Mutability::LIVE,
+                       .mutability = Mutability::INIT,
                        .solver_types = transient_types}),
     field<Path<&S::capacity_delta>, Path<&R::capacity_delta>,
           &constant<default_capacity_delta>, &non_negative>(
@@ -699,7 +691,7 @@ void resolve_auto_factorization(ResolvedSettings& resolved,
     }
 }
 
-void check_pardiso(const ResolvedSettings& resolved,
+void check_pardiso(const Settings& settings, const ResolvedSettings& resolved,
                    const ResolveContext& context,
                    std::vector<std::string>& contradictions) {
     if (!context.pardiso_available) {
@@ -709,6 +701,12 @@ void check_pardiso(const ResolvedSettings& resolved,
         resolved.pardiso.level == PardisoLevel::TWO_LEVEL) {
         contradictions.emplace_back(
             "reuse_factors = true needs pardiso.level = ONE_LEVEL");
+    }
+    if (iparm_iterates(settings) &&
+        resolved.pardiso.level == PardisoLevel::TWO_LEVEL) {
+        contradictions.emplace_back(
+            "pardiso.iparm[3] iterates on the previous factors and needs "
+            "pardiso.level = ONE_LEVEL");
     }
     if (resolved.pardiso.ordering == PardisoOrdering::MIN_DEGREE &&
         resolved.pardiso.level == PardisoLevel::TWO_LEVEL) {
@@ -739,7 +737,7 @@ void check_combinations(const Settings& settings, const ResolveContext& context,
     const ResolvedSettings& resolved = out.resolved;
     auto& contradictions = out.contradictions;
     if (resolved.backend == Backend::PARDISO) {
-        check_pardiso(resolved, context, contradictions);
+        check_pardiso(settings, resolved, context, contradictions);
     } else if (resolved.reuse_factors) {
         contradictions.emplace_back(
             "reuse_factors = true needs backend = PARDISO: Eigen cannot "
@@ -925,8 +923,13 @@ std::string_view to_string(Mutability mutability) noexcept {
 std::string_view to_string(Origin origin) noexcept { return enum_name(origin); }
 
 std::set<DataModelAttribute> all_dense_output_attributes() {
-    return {detail::k_dense_output_attributes.begin(),
-            detail::k_dense_output_attributes.end()};
+    return {DataModelAttribute::T,   DataModelAttribute::C,
+            DataModelAttribute::QS,  DataModelAttribute::QA,
+            DataModelAttribute::QE,  DataModelAttribute::QI,
+            DataModelAttribute::QR,  DataModelAttribute::A,
+            DataModelAttribute::APH, DataModelAttribute::EPS,
+            DataModelAttribute::FX,  DataModelAttribute::FY,
+            DataModelAttribute::FZ};
 }
 
 std::set<DataModelAttribute> all_output_attributes() {
@@ -1047,8 +1050,7 @@ std::vector<std::string_view> changed_init_fields(
     for (std::size_t index = 0; index < field_table.size(); ++index) {
         const FieldEntry& entry = field_table.at(index);
         // A field left at its default in both never counts: a default that
-        // follows a live field (reuse_tolerance follows tolerance) keeps the
-        // value initialize() saw.
+        // follows another field keeps the value initialize() saw.
         const bool user_set = entry.is_set(before) || entry.is_set(after);
         if (entry.info.mutability == Mutability::INIT && user_set &&
             old_values.fields.at(index).applies &&

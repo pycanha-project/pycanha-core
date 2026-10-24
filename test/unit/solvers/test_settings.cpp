@@ -101,11 +101,9 @@ Settings fully_set() {
     settings.solver_type = SolverType::CRANK_NICOLSON;
     settings.tolerance = 1e-4;
     settings.max_iterations = 20;
-    settings.energy_tolerance = 1e-2;
     settings.backend = Backend::EIGEN;
     settings.factorization = Factorization::LU;
     settings.reuse_factors = true;
-    settings.reuse_tolerance = 1e-6;
     settings.threads = 4;
     settings.start_time = 10.0;
     settings.end_time = 100.0;
@@ -176,9 +174,27 @@ TEST_CASE("Factor reuse selects a stall-safe one-level factorization",
     const ResolvedSettings resolved = solvers::resolve(settings, steady());
     REQUIRE(resolved.pardiso.level == PardisoLevel::ONE_LEVEL);
     REQUIRE(resolved.pardiso.ordering == PardisoOrdering::MIN_DEGREE);
-    REQUIRE(resolved.reuse_tolerance == Catch::Approx(1e-6));
-    REQUIRE(resolved.origin("reuse_tolerance") == Origin::DEFAULT);
+    REQUIRE(resolved.origin("pardiso.level") == Origin::DEFAULT);
     REQUIRE(resolved.warnings.empty());
+}
+
+TEST_CASE("An iterating iparm[3] selects the one-level factorization",
+          "[solver][settings]") {
+    Settings settings;
+    settings.pardiso.iparm = std::map<int, int>{{3, 61}};
+    const ResolvedSettings resolved = solvers::resolve(settings, steady());
+    REQUIRE(resolved.pardiso.level == PardisoLevel::ONE_LEVEL);
+    REQUIRE(resolved.pardiso.ordering == PardisoOrdering::MIN_DEGREE);
+
+    // iparm[3] = 0 does not iterate.
+    settings.pardiso.iparm = std::map<int, int>{{3, 0}};
+    REQUIRE(solvers::resolve(settings, steady()).pardiso.level ==
+            PardisoLevel::TWO_LEVEL);
+
+    settings.pardiso.iparm = std::map<int, int>{{3, 61}};
+    settings.pardiso.level = PardisoLevel::TWO_LEVEL;
+    REQUIRE(contains(contradiction_of(settings, steady()),
+                     "pardiso.iparm[3] iterates"));
 }
 
 TEST_CASE("PARDISO level and ordering default from each other",
@@ -316,10 +332,7 @@ TEST_CASE("Set fields that do not apply are ignored with the reason",
                  settings.factorization = Factorization::CHOLESKY;
                  settings.eigen.ordering = EigenOrdering::AMD;
              },
-             steady(), "an LU factorization"},
-        Case{"reuse_tolerance",
-             [](Settings& settings) { settings.reuse_tolerance = 1.0; },
-             steady(), "only with reuse_factors = true"});
+             steady(), "an LU factorization"});
     INFO(test_case.field);
     Settings settings = with_time_step();
     test_case.change(settings);
@@ -420,11 +433,20 @@ TEST_CASE("Live settings may change while a solver is initialized",
     after.tolerance = 1e-5;
     after.threads = 3;
     after.pardiso.verbose = true;
-    // reuse_tolerance follows tolerance by default, but keeps the value
-    // initialize() saw.
     REQUIRE(solvers::changed_init_fields(before, after, steady()).empty());
     REQUIRE_NOTHROW(solvers::check_settings_change(before, after, steady(),
                                                    /*initialized=*/true));
+}
+
+TEST_CASE("Time and output settings are read by initialize()",
+          "[solver][settings]") {
+    for (const char* name :
+         {"start_time", "end_time", "time_step", "output_interval",
+          "output_attributes", "output_name", "capacity_delta"}) {
+        INFO(name);
+        REQUIRE(solvers::setting_field(name).mutability == Mutability::INIT);
+    }
+    REQUIRE(solvers::setting_field("tolerance").mutability == Mutability::LIVE);
 }
 
 TEST_CASE("Init settings are frozen while a solver is initialized",

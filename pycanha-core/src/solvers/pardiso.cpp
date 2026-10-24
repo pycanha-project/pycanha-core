@@ -1,4 +1,4 @@
-#include "pycanha-core/solvers/pardiso.hpp"
+#include "pardiso.hpp"
 
 #if PYCANHA_USE_MKL
 
@@ -13,7 +13,7 @@
 #include "pycanha-core/config.hpp"
 #include "pycanha-core/globals.hpp"
 
-namespace pycanha {
+namespace pycanha::solvers::detail {
 
 // Eigen's index arrays are handed to PARDISO without a copy. The build links
 // the LP64 interface, where MKL_INT is a 32-bit int like Eigen's default
@@ -216,10 +216,10 @@ bool PardisoSolver::factors_recomputed() const noexcept {
            _iparm[iparm_cgs_diagnostic] <= 0;
 }
 
-bool PardisoSolver::iterative() const noexcept {
+bool PardisoSolver::reuses_factors() const noexcept {
     return _iparm[iparm_iterative] != 0;
 }
 
-}  // namespace pycanha
+}  // namespace pycanha::solvers::detail
 
 #endif  // PYCANHA_USE_MKL

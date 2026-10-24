@@ -2,7 +2,7 @@
 
 #include <stdexcept>
 
-namespace pycanha {
+namespace pycanha::solvers {
 
 /// Thrown by a solver when the model's nodes or coupling patterns changed
 /// after initialize(): nodes added, removed, retyped or reordered, or
@@ -15,4 +15,4 @@ class ModelChangedError : public std::runtime_error {
     using std::runtime_error::runtime_error;
 };
 
-}  // namespace pycanha
+}  // namespace pycanha::solvers

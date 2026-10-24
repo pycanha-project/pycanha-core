@@ -1,4 +1,4 @@
-#include "pycanha-core/solvers/ss.hpp"
+#include "pycanha-core/solvers/steady_state.hpp"
 
 #include <spdlog/spdlog.h>
 
@@ -9,16 +9,17 @@
 #include <utility>
 #include <vector>
 
+#include "factorizer.hpp"
 #include "pycanha-core/config.hpp"
 #include "pycanha-core/globals.hpp"
-#include "pycanha-core/solvers/linear_solver.hpp"
+#include "pycanha-core/solvers/settings.hpp"
 #include "pycanha-core/solvers/solver.hpp"
 #include "pycanha-core/tmm/thermalmathematicalmodel.hpp"
 #include "pycanha-core/utils/SparseUtils.hpp"
 #include "pycanha-core/utils/logger.hpp"
 #include "pycanha-core/utils/profiling.hpp"
 
-namespace pycanha {
+namespace pycanha::solvers::steady {
 
 namespace {
 
@@ -70,32 +71,24 @@ std::span<const double> values_of(const SpMatRow& matrix) {
 
 }  // namespace
 
-SteadyStateSolver::SteadyStateSolver(
-    std::shared_ptr<ThermalMathematicalModel> tmm_shptr)
-    : Solver(std::move(tmm_shptr)) {}
+SteadyState::SteadyState(std::shared_ptr<ThermalMathematicalModel> tmm_shptr)
+    : Solver(std::move(tmm_shptr), SolverType::STEADY_STATE) {}
 
-SteadyStateSolver::~SteadyStateSolver() = default;
+SteadyState::~SteadyState() = default;
 
-void SteadyStateSolver::restart_solve() {
-    SPDLOG_LOGGER_DEBUG(pycanha::get_logger(), "Re-starting solve...");
-    SPDLOG_LOGGER_ERROR(pycanha::get_logger(), "Not implemented yet.");
-}
-
-bool SteadyStateSolver::has_radiation() const noexcept {
+bool SteadyState::has_radiation() const noexcept {
     return KRdd.nonZeros() != 0 || KRdb.nonZeros() != 0;
 }
 
-void SteadyStateSolver::initialize_linearised(
-    const LinearSolverOptions& options) {
-    // Throws before anything is built when the options are not available.
-    _linear_solver = make_linear_solver(options);
-    _symmetric = options.symmetric_positive_definite;
+void SteadyState::initialize() {
+    release();
+    // Throws before anything is built when the settings contradict.
+    initialize_common();
+    _symmetric = _resolved.factorization == Factorization::CHOLESKY;
     _radiation = has_radiation();
-    SPDLOG_LOGGER_INFO(
-        get_logger(), "{} initializing ({} {}, {})", solver_name,
-        to_string(options.engine),
-        to_string(resolve_solver_type(options.engine, options.type)),
-        _symmetric ? "Cholesky" : "LU");
+    _factorizer = detail::make_factorizer(_resolved, _symmetric);
+    SPDLOG_LOGGER_INFO(get_logger(), "{} initializing ({})", name(),
+                       detail::describe(_resolved, _symmetric));
 
     build_pattern();
 
@@ -109,18 +102,19 @@ void SteadyStateSolver::initialize_linearised(
     _ones_boundary = VectorXd::Ones(nb);
     _has_factors = false;
 
-    _linear_solver->analyze_pattern(_a_matrix);
-    if (!_linear_solver->succeeded()) {
-        SPDLOG_LOGGER_ERROR(get_logger(), "{}: analysis failed ({}).",
-                            solver_name, _linear_solver->error_message());
-        release_linearised();
+    _factorizer->analyze_pattern(_a_matrix);
+    if (!_factorizer->succeeded()) {
+        SPDLOG_LOGGER_ERROR(get_logger(), "{}: analysis failed ({}).", name(),
+                            _factorizer->error_message());
+        release();
         return;
     }
-    suggest_min_degree_if_dense(*_linear_solver, options, nd, solver_name);
-    solver_initialized = true;
+    detail::suggest_min_degree_if_dense(*_factorizer, _resolved, _symmetric, nd,
+                                        name());
+    _initialized = true;
 }
 
-void SteadyStateSolver::build_pattern() {
+void SteadyState::build_pattern() {
     if (_symmetric) {
         // Upper triangle with the diagonal: KLdd is already stored that way.
         _a_matrix = KLdd;
@@ -154,7 +148,7 @@ void SteadyStateSolver::build_pattern() {
     sparse_utils::set_to_zero(_a_matrix);
 }
 
-void SteadyStateSolver::assemble_matrix() {
+void SteadyState::assemble_matrix() {
     PYCANHA_PROFILE_SCOPE("Steady state assemble matrix");
     sparse_utils::set_to_zero(_a_matrix);
     const auto values = mutable_values_of(_a_matrix);
@@ -188,7 +182,7 @@ void SteadyStateSolver::assemble_matrix() {
     }
 }
 
-void SteadyStateSolver::assemble_rhs() {
+void SteadyState::assemble_rhs() {
     PYCANHA_PROFILE_SCOPE("Steady state assemble rhs");
     Q.setZero();
     Q += QI_sp;
@@ -206,49 +200,49 @@ void SteadyStateSolver::assemble_rhs() {
     }
 }
 
-bool SteadyStateSolver::factorize_and_solve_step() {
+bool SteadyState::factorize_and_solve_step() {
     PYCANHA_PROFILE_SCOPE("Steady state factorize and solve");
-    auto& linear_solver = *_linear_solver;
+    auto& factorizer = *_factorizer;
     const auto values = values_of(std::as_const(_a_matrix));
     const std::span<const double> factorized(_factorized_values.data(),
                                              values.size());
     bool factors_recomputed = true;
 
     if (_has_factors && std::ranges::equal(values, factorized)) {
-        linear_solver.solve(_a_matrix, _b, Td_solver);
+        factorizer.solve(_a_matrix, _b, Td_solver);
         factors_recomputed = false;
         SPDLOG_LOGGER_DEBUG(get_logger(),
                             "{} iteration {}: matrix unchanged, solved with "
                             "the existing factors.",
-                            solver_name, solver_iter + 1);
-    } else if (_has_factors && linear_solver.iterative()) {
-        linear_solver.factorize_and_solve(_a_matrix, _b, Td_solver);
-        factors_recomputed = linear_solver.factors_recomputed();
+                            name(), solver_iter + 1);
+    } else if (_has_factors && factorizer.reuses_factors()) {
+        factorizer.factorize_and_solve(_a_matrix, _b, Td_solver);
+        factors_recomputed = factorizer.factors_recomputed();
         SPDLOG_LOGGER_DEBUG(get_logger(),
                             "{} iteration {}: iterative step, factors {}.",
-                            solver_name, solver_iter + 1,
+                            name(), solver_iter + 1,
                             factors_recomputed ? "recomputed" : "reused");
     } else {
-        linear_solver.factorize(_a_matrix);
-        if (linear_solver.succeeded()) {
-            linear_solver.solve(_a_matrix, _b, Td_solver);
+        factorizer.factorize(_a_matrix);
+        if (factorizer.succeeded()) {
+            factorizer.solve(_a_matrix, _b, Td_solver);
         }
         SPDLOG_LOGGER_DEBUG(get_logger(), "{} iteration {}: factorized.",
-                            solver_name, solver_iter + 1);
+                            name(), solver_iter + 1);
     }
 
-    if (!linear_solver.succeeded()) {
-        if (linear_solver.zero_pivot()) {
+    if (!factorizer.succeeded()) {
+        if (factorizer.zero_pivot()) {
             SPDLOG_LOGGER_ERROR(
                 get_logger(),
                 "{}: zero pivot in the {} factorization ({}). The matrix is "
                 "singular: a group of diffusive nodes has no conductive or "
                 "radiative path to a boundary node.",
-                solver_name, _symmetric ? "Cholesky" : "LU",
-                linear_solver.error_message());
+                name(), _symmetric ? "Cholesky" : "LU",
+                factorizer.error_message());
         } else {
-            SPDLOG_LOGGER_ERROR(get_logger(), "{}: {}.", solver_name,
-                                linear_solver.error_message());
+            SPDLOG_LOGGER_ERROR(get_logger(), "{}: {}.", name(),
+                                factorizer.error_message());
         }
         _has_factors = false;
         return false;
@@ -257,13 +251,13 @@ bool SteadyStateSolver::factorize_and_solve_step() {
     // PARDISO replaces a pivot below 1e-13 relative to the matrix by that
     // value. A matrix diagonally dominant by columns never needs it unless
     // it is singular, and the solution is then meaningless.
-    if (factors_recomputed && linear_solver.perturbed_pivots() > 0) {
+    if (factors_recomputed && factorizer.perturbed_pivots() > 0) {
         SPDLOG_LOGGER_ERROR(
             get_logger(),
             "{}: {} pivots perturbed in the LU factorization. The matrix is "
             "singular: a group of diffusive nodes has no conductive or "
             "radiative path to a boundary node.",
-            solver_name, linear_solver.perturbed_pivots());
+            name(), factorizer.perturbed_pivots());
         _has_factors = false;
         return false;
     }
@@ -277,24 +271,28 @@ bool SteadyStateSolver::factorize_and_solve_step() {
     return true;
 }
 
-void SteadyStateSolver::solve_linearised() {
-    if (!solver_initialized) {
+void SteadyState::solve() {
+    if (!_initialized) {
         SPDLOG_LOGGER_ERROR(
             get_logger(),
-            "Solver has not been initialized. Please call initialize() before "
-            "solve().");
+            "{} has not been initialized. Call initialize() before solve().",
+            name());
         return;
     }
-    check_model_unchanged();
-    SPDLOG_LOGGER_INFO(get_logger(), "{} solving...", solver_name);
+    refresh_live_settings();
+    _factorizer->apply_live_settings(_resolved);
+    SPDLOG_LOGGER_INFO(get_logger(), "{} solving...", name());
 
     const FormulaExecutionGuard formula_execution(*this);
 
-    solver_converged = false;
+    _converged = false;
     _num_factorizations = 0;
+    _iterations = 0;
 
-    for (solver_iter = 0; solver_iter < max_iters; ++solver_iter) {
+    for (solver_iter = 0; solver_iter < _resolved.max_iterations;
+         ++solver_iter) {
         PYCANHA_PROFILE_SCOPE("Steady state iteration");
+        _iterations = solver_iter + 1;
 
         if (_radiation) {
             _t_cubed_domain = (4.0 * STF_BOLTZ) * Td.array().cube();
@@ -312,32 +310,34 @@ void SteadyStateSolver::solve_linearised() {
 
         this->callback_solver_loop();
 
-        if (max_dT < abstol_temp) {
+        if (max_dT < _resolved.tolerance) {
             SPDLOG_LOGGER_INFO(get_logger(),
                                "{} converged. Num. iters: {}. Max. dT = {} K. "
                                "Factorizations: {}.",
-                               solver_name, solver_iter + 1, max_dT,
+                               name(), solver_iter + 1, max_dT,
                                _num_factorizations);
-            solver_converged = true;
+            _converged = true;
             break;
         }
     }
 
-    if (!solver_converged) {
+    if (!_converged) {
         SPDLOG_LOGGER_ERROR(
             get_logger(),
-            "{} did NOT converge after {} iterations. Max. dT = {} K.",
-            solver_name, max_iters, max_dT);
+            "{} did NOT converge after {} iterations. Max. dT = {} K.", name(),
+            _resolved.max_iterations, max_dT);
     }
 }
 
-void SteadyStateSolver::release_linearised() noexcept {
-    _linear_solver.reset();
+void SteadyState::deinitialize() { release(); }
+
+void SteadyState::release() noexcept {
+    _factorizer.reset();
     _has_factors = false;
     _symmetric = false;
     _a_matrix = SpMatRow();
     _factorized_values.resize(0);
-    solver_initialized = false;
+    _initialized = false;
 }
 
-}  // namespace pycanha
+}  // namespace pycanha::solvers::steady

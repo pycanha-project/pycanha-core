@@ -7,8 +7,8 @@
 #include <stdexcept>
 
 #include "pycanha-core/parameters/formulas.hpp"
-#include "pycanha-core/solvers/tscnrlds.hpp"
-#include "pycanha-core/solvers/tscnrlds_jacobian.hpp"
+#include "pycanha-core/solvers/jacobian_propagation.hpp"
+#include "pycanha-core/solvers/settings.hpp"
 #include "pycanha-core/thermaldata/dense_matrix_time_series.hpp"
 #include "pycanha-core/thermaldata/dense_time_series.hpp"
 #include "pycanha-core/thermaldata/thermaldata.hpp"
@@ -161,21 +161,23 @@ void require_python_example_samples(
 
 }  // namespace
 
-TEST_CASE("TSCNRLDS_JACOBIAN reproduces the Python example",
-          "[solver][tscnrlds][jacobian]") {
+TEST_CASE("JacobianPropagation reproduces the Python example",
+          "[solver][transient][jacobian]") {
     auto model = make_python_example_model();
 
-    pycanha::TSCNRLDS_JACOBIAN solver(model);
-    solver.max_iters = 50;
-    solver.abstol_temp = 1.0e-9;
+    pycanha::solvers::sensitivity::JacobianPropagation solver(model);
+    pycanha::solvers::Settings settings;
+    settings.max_iterations = 50;
+    settings.tolerance = 1.0e-9;
+    solver.set_settings(settings);
     solver.set_simulation_time(0.0, end_time, time_step, output_stride);
     solver.initialize();
     solver.solve();
 
-    REQUIRE(model->thermal_data().models().has_model("TSCNRLDS"));
+    REQUIRE(model->thermal_data().models().has_model("jacobian_propagation"));
 
     const auto& output_model =
-        model->thermal_data().models().get_model("TSCNRLDS");
+        model->thermal_data().models().get_model("jacobian_propagation");
     const auto& temperature_output = output_model.T();
     const auto& jacobian_output = output_model.jacobian();
     REQUIRE(jacobian_output.rows() == 1);
@@ -189,4 +191,17 @@ TEST_CASE("TSCNRLDS_JACOBIAN reproduces the Python example",
     REQUIRE(solver.derivative_parameter_names().at(1) == "C");
 
     require_python_example_samples(temperature_output, jacobian_output);
+}
+
+TEST_CASE("JacobianPropagation needs a derivative parameter",
+          "[solver][transient][jacobian]") {
+    auto model = make_python_example_model();
+    static_cast<void>(
+        model->formulas().parameters_with_derivatives().remove_parameter("k"));
+    static_cast<void>(
+        model->formulas().parameters_with_derivatives().remove_parameter("C"));
+    pycanha::solvers::sensitivity::JacobianPropagation solver(model);
+    solver.set_simulation_time(0.0, end_time, time_step, output_stride);
+    REQUIRE_THROWS_AS(solver.initialize(), std::invalid_argument);
+    REQUIRE_FALSE(solver.initialized());
 }

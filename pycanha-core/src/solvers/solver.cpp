@@ -6,21 +6,20 @@
 #include <memory>
 #include <string>
 #include <string_view>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 
 #include "pycanha-core/globals.hpp"
 #include "pycanha-core/parameters/formulas.hpp"
-#include "pycanha-core/solvers/linear_solver.hpp"
 #include "pycanha-core/solvers/model_changed_error.hpp"
+#include "pycanha-core/solvers/settings.hpp"
 #include "pycanha-core/tmm/nodes.hpp"
 #include "pycanha-core/tmm/thermalmathematicalmodel.hpp"
 #include "pycanha-core/tmm/thermalnetwork.hpp"
 #include "pycanha-core/utils/logger.hpp"
 #include "pycanha-core/utils/profiling.hpp"
 
-namespace pycanha {
+namespace pycanha::solvers {
 
 namespace {
 
@@ -67,9 +66,21 @@ std::string describe_changes(const StructureVersions& before,
     return text;
 }
 
+std::string describe_not_applied(const std::vector<NotApplied>& ignored) {
+    std::string text;
+    for (const NotApplied& field : ignored) {
+        if (!text.empty()) {
+            text += "; ";
+        }
+        text += field.name + " (" + field.reason + ")";
+    }
+    return text;
+}
+
 }  // namespace
 
-Solver::Solver(std::shared_ptr<ThermalMathematicalModel> tmm_shptr)
+Solver::Solver(std::shared_ptr<ThermalMathematicalModel> tmm_shptr,
+               SolverType type)
     : _tmm_shptr(std::move(tmm_shptr)),
       tmm(*_tmm_shptr),
       tnw(tmm.network()),
@@ -93,7 +104,34 @@ Solver::Solver(std::shared_ptr<ThermalMathematicalModel> tmm_shptr)
       QS_sp(tmm.nodes().qs_vector),
       QA_sp(tmm.nodes().qa_vector),
       QE_sp(tmm.nodes().qe_vector),
-      QR_sp(tmm.nodes().qr_vector) {}
+      QR_sp(tmm.nodes().qr_vector),
+      _solver_type(type) {
+    _settings.solver_type = type;
+}
+
+void Solver::set_settings(const Settings& settings) {
+    Settings replacement = settings;
+    replacement.solver_type = _solver_type;
+    check_settings_change(_settings, replacement,
+                          resolve_context(_solver_type, tmm), _initialized);
+    _settings = std::move(replacement);
+}
+
+void Solver::set(std::string_view name, const SettingValue& value) {
+    Settings replacement = _settings;
+    replacement.set(name, value);
+    set_settings(replacement);
+}
+
+void Solver::unset(std::string_view name) {
+    Settings replacement = _settings;
+    replacement.unset(name);
+    set_settings(replacement);
+}
+
+ResolvedSettings Solver::resolved_settings() const {
+    return resolve(_settings, resolve_context(_solver_type, tmm));
+}
 
 Solver::FormulaExecutionGuard::FormulaExecutionGuard(Solver& solver)
     : _solver(solver) {
@@ -105,12 +143,20 @@ Solver::FormulaExecutionGuard::~FormulaExecutionGuard() {
 }
 
 void Solver::initialize_common() {
-    SPDLOG_LOGGER_DEBUG(pycanha::get_logger(), "{} initializing...",
-                        solver_name);
+    SPDLOG_LOGGER_DEBUG(pycanha::get_logger(), "{} initializing...", name());
 
     // Nodes appended since the last coupling access have not grown the
     // matrices yet.
     tnw.synchronize_structure();
+    _resolved = resolve(_settings, resolve_context(_solver_type, tmm));
+    if (!_resolved.not_applied.empty()) {
+        SPDLOG_LOGGER_WARN(pycanha::get_logger(),
+                           "{}: settings not applied: {}", name(),
+                           describe_not_applied(_resolved.not_applied));
+    }
+    for (const auto& warning : _resolved.warnings) {
+        SPDLOG_LOGGER_WARN(pycanha::get_logger(), "{}: {}", name(), warning);
+    }
     _initialized_structure = tmm.structure_versions();
 
     KLdd.makeCompressed();
@@ -143,12 +189,19 @@ void Solver::initialize_common() {
     new (&Qb) WrappVectorXd(Q.data() + nd, nb);
 }
 
+void Solver::refresh_live_settings() {
+    check_model_unchanged();
+    // The INIT fields cannot have changed while the solver is initialised,
+    // so resolving again only picks up the LIVE ones.
+    _resolved = resolve(_settings, resolve_context(_solver_type, tmm));
+}
+
 void Solver::check_model_unchanged(std::string_view callback) const {
     const StructureVersions now = tmm.structure_versions();
     if (now == _initialized_structure) {
         return;
     }
-    std::string message = solver_name + ": the model's " +
+    std::string message = std::string(name()) + ": the model's " +
                           describe_changes(_initialized_structure, now) +
                           " changed ";
     if (callback.empty()) {
@@ -160,18 +213,6 @@ void Solver::check_model_unchanged(std::string_view callback) const {
     }
     message += "; call initialize() again";
     throw ModelChangedError(message);
-}
-
-LinearSolverOptions Solver::linear_solver_options(SolverEngine engine,
-                                                  DirectSolverType type) const {
-    LinearSolverOptions options;
-    options.engine = engine;
-    options.type = type;
-    options.iparm_3 = pardiso_iparm_3;
-    options.iparm_overrides = pardiso_iparm_overrides;
-    options.threads = mkl_threads;
-    options.verbose = pardiso_verbose;
-    return options;
 }
 
 void Solver::callback_transient_time_change() {
@@ -215,85 +256,7 @@ bool Solver::temperature_convergence_check() {
     PYCANHA_PROFILE_SCOPE("Convergence Check");
     dTd = Td_solver - Td;
     max_dT = dTd.cwiseAbs().maxCoeff();
-    return max_dT < abstol_temp;
+    return max_dT < _resolved.tolerance;
 }
 
-bool Solver::energy_convergence_check() {
-    const double energy_norm = Q.norm();
-    return energy_norm < abstol_enrgy;
-}
-
-void Solver::expand_coupling_matrices_with_zeros() {
-    /*
-     * Align the sparsity patterns of KL and KR by inserting explicit zeros.
-     * This allows the solver to reuse the same structure for both matrices,
-     * which in turn enables faster coefficient assembly (memcpy-friendly).
-     *
-     * The zero entries inserted here are tracked so that `restore_...` can
-     * revert the matrices to their original shape after the solve finishes.
-     */
-    store_sparse_nonzero_indices_in_set(KRdd, _original_non_zeros_krdd);
-    store_sparse_nonzero_indices_in_set(KLdd, _original_non_zeros_kldd);
-    store_sparse_nonzero_indices_in_set(KRdb, _original_non_zeros_krdb);
-    store_sparse_nonzero_indices_in_set(KLdb, _original_non_zeros_kldb);
-
-    SpMatRow zero_diag;
-    zero_diag.conservativeResize(nd, nd);
-    zero_diag.setIdentity();
-    zero_diag *= 0.0;
-
-    KRdd += KLdd * 0.0 + zero_diag;
-    KLdd += KRdd * 0.0 + zero_diag;
-    KRdb += KLdb * 0.0;
-    KLdb += KRdb * 0.0;
-
-    KRdd.makeCompressed();
-    KLdd.makeCompressed();
-    KRdb.makeCompressed();
-    KLdb.makeCompressed();
-}
-
-void Solver::restore_expanded_coupling_matrices() {
-    class IsRealCoupling {
-      public:
-        explicit IsRealCoupling(
-            std::unordered_set<std::pair<int, int>, IntPairHash>* original)
-            : _original(original) {}
-
-        bool operator()(Index row, Index col, double /*value*/) const {
-            return _original->contains(
-                std::make_pair(static_cast<int>(row), static_cast<int>(col)));
-        }
-
-      private:
-        std::unordered_set<std::pair<int, int>, IntPairHash>* _original;
-    };
-
-    KRdd.prune(IsRealCoupling(&_original_non_zeros_krdd));
-    KLdd.prune(IsRealCoupling(&_original_non_zeros_kldd));
-    KRdb.prune(IsRealCoupling(&_original_non_zeros_krdb));
-    KLdb.prune(IsRealCoupling(&_original_non_zeros_kldb));
-
-    _original_non_zeros_krdd.clear();
-    _original_non_zeros_kldd.clear();
-    _original_non_zeros_krdb.clear();
-    _original_non_zeros_kldb.clear();
-
-    KRdd.makeCompressed();
-    KLdd.makeCompressed();
-    KRdb.makeCompressed();
-    KLdb.makeCompressed();
-}
-
-void Solver::store_sparse_nonzero_indices_in_set(
-    SpMatRow& sparse,
-    std::unordered_set<std::pair<int, int>, IntPairHash>& indices_set) {
-    for (Index outer = 0; outer < sparse.outerSize(); ++outer) {
-        for (SpMatRow::InnerIterator it(sparse, outer); it; ++it) {
-            indices_set.emplace(static_cast<int>(it.row()),
-                                static_cast<int>(it.col()));
-        }
-    }
-}
-
-}  // namespace pycanha
+}  // namespace pycanha::solvers

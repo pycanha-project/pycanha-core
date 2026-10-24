@@ -148,11 +148,9 @@ struct Settings {
 
     std::optional<double> tolerance;
     std::optional<int> max_iterations;
-    std::optional<double> energy_tolerance;
     std::optional<Backend> backend;
     std::optional<Factorization> factorization;
     std::optional<bool> reuse_factors;
-    std::optional<double> reuse_tolerance;
     std::optional<int> threads;
     std::optional<double> start_time;
     std::optional<double> end_time;
@@ -243,11 +241,9 @@ struct ResolvedSettings {
 
     double tolerance = 0.0;
     int max_iterations = 0;
-    double energy_tolerance = 0.0;
     Backend backend = Backend::EIGEN;
     Factorization factorization = Factorization::AUTO;
     bool reuse_factors = false;
-    double reuse_tolerance = 0.0;
     int threads = 0;
     double start_time = 0.0;
     double end_time = 0.0;

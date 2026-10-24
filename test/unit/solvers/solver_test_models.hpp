@@ -19,7 +19,7 @@ inline constexpr int boundary_node = 100000;
 inline constexpr int space_node = 100001;
 
 // Two conductive and five radiative couplings; the expected steady state is
-// known (the SSLU reference test).
+// known (the steady-state reference test).
 inline Model make_small_radiative_model() {
     auto model = std::make_shared<ThermalMathematicalModel>("small");
     for (const int num : {10, 15, 20, 25}) {

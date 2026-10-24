@@ -3,7 +3,8 @@
 #include <Eigen/Core>
 #include <Eigen/Sparse>
 
-#include "pycanha-core/solvers/linear_solver.hpp"
+#include "factorizer.hpp"
+#include "pycanha-core/solvers/settings.hpp"
 
 #if PYCANHA_USE_MKL
 #include <mkl_types.h>
@@ -13,7 +14,7 @@
 #include <string>
 #include <vector>
 
-namespace pycanha {
+namespace pycanha::solvers::detail {
 
 /// RAII wrapper of one MKL PARDISO handle for a real sparse matrix.
 /**
@@ -23,7 +24,7 @@ namespace pycanha {
  * entry stored. The pattern passed to analyze_pattern() must not change until
  * the next analyze_pattern() or release(); only the values may.
  */
-class PardisoSolver : public SparseLinearSolver {
+class PardisoSolver : public Factorizer {
   public:
     enum class MatrixType : MKL_INT {
         STRUCTURALLY_SYMMETRIC = 1,
@@ -76,7 +77,11 @@ class PardisoSolver : public SparseLinearSolver {
     [[nodiscard]] Eigen::Index perturbed_pivots() const noexcept override;
     [[nodiscard]] Eigen::Index factor_nonzeros() const noexcept override;
     [[nodiscard]] bool factors_recomputed() const noexcept override;
-    [[nodiscard]] bool iterative() const noexcept override;
+    [[nodiscard]] bool reuses_factors() const noexcept override;
+    void apply_live_settings(const ResolvedSettings& settings) override {
+        set_threads(settings.threads);
+        set_verbose(settings.pardiso.verbose);
+    }
 
     [[nodiscard]] Eigen::ComputationInfo info() const noexcept;
     [[nodiscard]] MKL_INT error() const noexcept { return _error; }
@@ -104,6 +109,6 @@ class PardisoSolver : public SparseLinearSolver {
                    double* b, double* x);
 };
 
-}  // namespace pycanha
+}  // namespace pycanha::solvers::detail
 
 #endif  // PYCANHA_USE_MKL

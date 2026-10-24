@@ -7,18 +7,17 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
-#include <utility>
 #include <vector>
 
 #include "pycanha-core/config.hpp"
 #include "pycanha-core/parameters/formulas.hpp"
 #include "pycanha-core/parameters/parameters.hpp"
+#include "pycanha-core/solvers/crank_nicolson.hpp"
+#include "pycanha-core/solvers/jacobian_propagation.hpp"
 #include "pycanha-core/solvers/model_changed_error.hpp"
+#include "pycanha-core/solvers/settings.hpp"
 #include "pycanha-core/solvers/solver.hpp"
-#include "pycanha-core/solvers/sslu.hpp"
-#include "pycanha-core/solvers/sslu_cgs.hpp"
-#include "pycanha-core/solvers/tscnrlds.hpp"
-#include "pycanha-core/solvers/tscnrlds_jacobian.hpp"
+#include "pycanha-core/solvers/steady_state.hpp"
 #include "pycanha-core/tmm/conductivecouplings.hpp"
 #include "pycanha-core/tmm/couplingmatrices.hpp"
 #include "pycanha-core/tmm/node.hpp"
@@ -30,38 +29,44 @@
 
 namespace {
 
-using pycanha::ModelChangedError;
-using pycanha::Solver;
 using pycanha::ThermalMathematicalModel;
+using pycanha::solvers::ModelChangedError;
+using pycanha::solvers::Solver;
 using pycanha::test_models::Model;
 namespace models = pycanha::test_models;
 
-enum class Kind : std::uint8_t { SSLU, SSLU_CGS, TSCNRLDS, TSCNRLDS_JACOBIAN };
+// Every solver type, and the steady state with factor reuse.
+enum class Kind : std::uint8_t {
+    STEADY_STATE,
+    STEADY_STATE_REUSE,
+    CRANK_NICOLSON,
+    JACOBIAN_PROPAGATION
+};
 
 std::string_view name_of(Kind kind) {
     switch (kind) {
-        case Kind::SSLU:
-            return "SSLU";
-        case Kind::SSLU_CGS:
-            return "SSLU_CGS";
-        case Kind::TSCNRLDS:
-            return "TSCNRLDS";
-        case Kind::TSCNRLDS_JACOBIAN:
+        case Kind::STEADY_STATE:
+            return "SteadyState";
+        case Kind::STEADY_STATE_REUSE:
+            return "SteadyState reusing factors";
+        case Kind::CRANK_NICOLSON:
+            return "CrankNicolson";
+        case Kind::JACOBIAN_PROPAGATION:
             break;
     }
-    return "TSCNRLDS_JACOBIAN";
+    return "JacobianPropagation";
 }
 
 bool is_transient(Kind kind) {
-    return kind == Kind::TSCNRLDS || kind == Kind::TSCNRLDS_JACOBIAN;
+    return kind == Kind::CRANK_NICOLSON || kind == Kind::JACOBIAN_PROPAGATION;
 }
 
-// Every solver type of this build.
+// Every kind available in this build.
 std::vector<Kind> solver_kinds() {
-    std::vector<Kind> kinds{Kind::SSLU, Kind::TSCNRLDS,
-                            Kind::TSCNRLDS_JACOBIAN};
+    std::vector<Kind> kinds{Kind::STEADY_STATE, Kind::CRANK_NICOLSON,
+                            Kind::JACOBIAN_PROPAGATION};
     if (pycanha::MKL_ENABLED) {
-        kinds.push_back(Kind::SSLU_CGS);
+        kinds.push_back(Kind::STEADY_STATE_REUSE);
     }
     return kinds;
 }
@@ -77,27 +82,28 @@ Model make_model() {
     return model;
 }
 
-void set_transient_time(pycanha::TSCNRLDS& solver) {
-    solver.set_simulation_time(0.0, 100.0, 10.0, 20.0);
-}
-
 std::unique_ptr<Solver> make_solver(Kind kind, const Model& model) {
     std::unique_ptr<Solver> solver;
-    if (kind == Kind::SSLU) {
-        solver = std::make_unique<pycanha::SSLU>(model);
-    } else if (kind == Kind::SSLU_CGS) {
-        solver = std::make_unique<pycanha::SSLU_CGS>(model);
-    } else if (kind == Kind::TSCNRLDS) {
-        auto transient = std::make_unique<pycanha::TSCNRLDS>(model);
-        set_transient_time(*transient);
-        solver = std::move(transient);
+    if (kind == Kind::CRANK_NICOLSON) {
+        solver =
+            std::make_unique<pycanha::solvers::transient::CrankNicolson>(model);
+    } else if (kind == Kind::JACOBIAN_PROPAGATION) {
+        solver = std::make_unique<
+            pycanha::solvers::sensitivity::JacobianPropagation>(model);
     } else {
-        auto jacobian = std::make_unique<pycanha::TSCNRLDS_JACOBIAN>(model);
-        set_transient_time(*jacobian);
-        solver = std::move(jacobian);
+        solver = std::make_unique<pycanha::solvers::steady::SteadyState>(model);
     }
-    solver->max_iters = 100;
-    solver->abstol_temp = 1e-6;
+    pycanha::solvers::Settings settings;
+    settings.max_iterations = 100;
+    settings.tolerance = 1e-6;
+    settings.reuse_factors = kind == Kind::STEADY_STATE_REUSE;
+    if (is_transient(kind)) {
+        settings.start_time = 0.0;
+        settings.end_time = 100.0;
+        settings.time_step = 10.0;
+        settings.output_interval = 20.0;
+    }
+    solver->set_settings(settings);
     return solver;
 }
 
@@ -120,7 +126,7 @@ bool contains(const std::string& text, std::string_view part) {
 bool solves_after_initialize(Solver& solver) {
     solver.initialize();
     solver.solve();
-    return solver.solver_initialized;
+    return solver.initialized();
 }
 
 // State of the C callbacks below, which cannot capture.
@@ -261,7 +267,8 @@ TEST_CASE("Steady-state solvers refuse a coupling added in a callback",
 
 TEST_CASE("Transient solvers refuse a coupling added in any callback",
           "[solver][model_changed]") {
-    const auto kind = GENERATE(Kind::TSCNRLDS, Kind::TSCNRLDS_JACOBIAN);
+    const auto kind =
+        GENERATE(Kind::CRANK_NICOLSON, Kind::JACOBIAN_PROPAGATION);
     const auto slot =
         GENERATE(Slot::SOLVER_LOOP, Slot::TIME_CHANGE, Slot::AFTER_TIMESTEP);
     // The third call of each callback falls inside the run, never at its
@@ -295,13 +302,13 @@ TEST_CASE("Value changes after initialize() never refuse the solve",
     model->nodes().set_qi(3, 4.0);
     model->parameters().set_parameter("k", 0.6);
     REQUIRE_NOTHROW(solver->solve());
-    REQUIRE(solver->solver_converged);
+    REQUIRE(solver->converged());
 }
 
 TEST_CASE("A transient solve reports a missing initialize() first",
           "[solver][model_changed]") {
     const auto model = make_model();
-    const auto solver = make_solver(Kind::TSCNRLDS, model);
+    const auto solver = make_solver(Kind::CRANK_NICOLSON, model);
     model->add_conductive_coupling(1, 9, 0.5);
     REQUIRE_THROWS_AS(solver->solve(), std::invalid_argument);
 }

@@ -1,13 +1,14 @@
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
 #include <memory>
+#include <set>
 #include <stdexcept>
-#include <string>
 #include <utility>
 #include <vector>
 
 #include "pycanha-core/globals.hpp"
-#include "pycanha-core/solvers/ts.hpp"
+#include "pycanha-core/solvers/crank_nicolson.hpp"
+#include "pycanha-core/solvers/settings.hpp"
 #include "pycanha-core/thermaldata/data_model.hpp"
 #include "pycanha-core/tmm/node.hpp"
 #include "pycanha-core/tmm/thermalmathematicalmodel.hpp"
@@ -41,37 +42,12 @@ std::shared_ptr<pycanha::ThermalMathematicalModel> make_probe_model() {
     return model;
 }
 
-struct NonZeroCounts {
-    pycanha::Index kldd;
-    pycanha::Index krdd;
-    pycanha::Index kldb;
-    pycanha::Index krdb;
-};
-
-class ProbeTransientSolver final : public pycanha::TransientSolver {
+// Exposes the output bookkeeping of the Crank-Nicolson solver.
+class ProbeSolver final : public pycanha::solvers::transient::CrankNicolson {
   public:
-    explicit ProbeTransientSolver(
+    explicit ProbeSolver(
         std::shared_ptr<pycanha::ThermalMathematicalModel> model)
-        : TransientSolver(std::move(model)) {
-        solver_name = "probe_transient";
-    }
-
-    void initialize() override {
-        initialize_common();
-        solver_initialized = true;
-    }
-
-    void solve() override {}
-
-    void deinitialize() override { solver_initialized = false; }
-
-    void set_output_name(std::string name) {
-        output_model_name = std::move(name);
-    }
-
-    void add_output(pycanha::DataModelAttribute attribute) {
-        output_config.add(attribute);
-    }
+        : CrankNicolson(std::move(model)) {}
 
     void set_state(double current_time, int current_iter,
                    int current_output_index) {
@@ -87,11 +63,7 @@ class ProbeTransientSolver final : public pycanha::TransientSolver {
 
     void restart_for_test() { restart_solve(); }
 
-    void expand_couplings_for_test() { expand_coupling_matrices_with_zeros(); }
-
-    void restore_couplings_for_test() { restore_expanded_coupling_matrices(); }
-
-    void set_converged(bool value) noexcept { solver_converged = value; }
+    void set_converged(bool value) noexcept { _converged = value; }
 
     [[nodiscard]] int wait_n_dtimes_value() const noexcept {
         return wait_n_dtimes;
@@ -106,51 +78,29 @@ class ProbeTransientSolver final : public pycanha::TransientSolver {
     [[nodiscard]] int current_output_index() const noexcept {
         return idata_out;
     }
-
-    [[nodiscard]] NonZeroCounts coupling_nonzero_counts() const noexcept {
-        return {.kldd = KLdd.nonZeros(),
-                .krdd = KRdd.nonZeros(),
-                .kldb = KLdb.nonZeros(),
-                .krdb = KRdb.nonZeros()};
-    }
 };
+
+void configure(ProbeSolver& solver, const char* output_name,
+               std::set<pycanha::DataModelAttribute> attributes) {
+    pycanha::solvers::Settings settings;
+    settings.output_name = output_name;
+    settings.output_attributes = std::move(attributes);
+    solver.set_settings(settings);
+    solver.set_simulation_time(0.0, 3.0, 1.0, 2.0);
+}
 
 }  // namespace
 
-TEST_CASE("TransientSolver validates simulation time arguments",
-          "[solver][transient]") {
-    ProbeTransientSolver solver(make_probe_model());
-
-    REQUIRE_THROWS_AS(solver.set_simulation_time(2.0, 1.0, 1.0, 0.0),
-                      std::invalid_argument);
-    REQUIRE_THROWS_AS(solver.set_simulation_time(0.0, 1.0, 0.0, 0.0),
-                      std::invalid_argument);
-    REQUIRE_THROWS_AS(solver.set_simulation_time(0.0, 1.0, 1.0, -0.5),
-                      std::invalid_argument);
-}
-
-TEST_CASE("TransientSolver initialization requires timing and output name",
-          "[solver][transient]") {
-    ProbeTransientSolver solver(make_probe_model());
-
-    REQUIRE_THROWS_AS(solver.initialize(), std::invalid_argument);
-
-    solver.set_simulation_time(0.0, 3.0, 1.0, 2.0);
-    REQUIRE_THROWS_AS(solver.initialize(), std::invalid_argument);
-}
-
-TEST_CASE("TransientSolver allocates and writes configured outputs",
+TEST_CASE("CrankNicolson allocates and writes configured outputs",
           "[solver][transient]") {
     auto model = make_probe_model();
-    ProbeTransientSolver solver(model);
-
-    solver.set_output_name("probe_output");
-    solver.add_output(pycanha::DataModelAttribute::KL);
-    solver.add_output(pycanha::DataModelAttribute::KR);
-    solver.set_simulation_time(0.0, 3.0, 1.0, 2.0);
+    ProbeSolver solver(model);
+    configure(solver, "probe_output",
+              {pycanha::DataModelAttribute::T, pycanha::DataModelAttribute::KL,
+               pycanha::DataModelAttribute::KR});
     solver.initialize();
 
-    REQUIRE(solver.solver_initialized);
+    REQUIRE(solver.initialized());
     REQUIRE(solver.wait_n_dtimes_value() == 2);
     REQUIRE(solver.num_outputs_value() == 3);
 
@@ -211,52 +161,22 @@ TEST_CASE("TransientSolver allocates and writes configured outputs",
     REQUIRE(output.radiative_couplings().time_at(2) == Catch::Approx(3.0));
 }
 
-TEST_CASE("TransientSolver restart resets runtime state",
-          "[solver][transient]") {
+TEST_CASE("CrankNicolson restart resets runtime state", "[solver][transient]") {
     auto model = make_probe_model();
-    ProbeTransientSolver solver(model);
+    ProbeSolver solver(model);
 
     REQUIRE_THROWS_AS(solver.restart_for_test(), std::invalid_argument);
 
-    solver.set_output_name("restart_output");
-    solver.set_simulation_time(0.0, 3.0, 1.0, 2.0);
+    configure(solver, "restart_output", {pycanha::DataModelAttribute::T});
     solver.initialize();
 
     solver.set_converged(/*value=*/true);
     solver.set_state(2.5, 4, 2);
     solver.restart_for_test();
 
-    REQUIRE_FALSE(solver.solver_converged);
+    REQUIRE_FALSE(solver.converged());
     REQUIRE(solver.current_time() == Catch::Approx(0.0));
     REQUIRE(model->time == Catch::Approx(0.0));
     REQUIRE(solver.current_time_iter() == -1);
     REQUIRE(solver.current_output_index() == 0);
-}
-
-TEST_CASE("Solver expands and restores coupling sparsity patterns",
-          "[solver][transient]") {
-    ProbeTransientSolver solver(make_probe_model());
-
-    solver.set_output_name("expand_restore_output");
-    solver.set_simulation_time(0.0, 3.0, 1.0, 2.0);
-    solver.initialize();
-
-    const NonZeroCounts before = solver.coupling_nonzero_counts();
-    solver.expand_couplings_for_test();
-    const NonZeroCounts expanded = solver.coupling_nonzero_counts();
-
-    REQUIRE(expanded.kldd == expanded.krdd);
-    REQUIRE(expanded.kldb == expanded.krdb);
-    REQUIRE(expanded.kldd >= before.kldd);
-    REQUIRE(expanded.krdd >= before.krdd);
-    REQUIRE(expanded.kldb >= before.kldb);
-    REQUIRE(expanded.krdb >= before.krdb);
-
-    solver.restore_couplings_for_test();
-    const NonZeroCounts restored = solver.coupling_nonzero_counts();
-
-    REQUIRE(restored.kldd == before.kldd);
-    REQUIRE(restored.krdd == before.krdd);
-    REQUIRE(restored.kldb == before.kldb);
-    REQUIRE(restored.krdb == before.krdb);
 }
