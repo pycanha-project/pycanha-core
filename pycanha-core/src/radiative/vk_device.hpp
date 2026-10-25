@@ -42,6 +42,8 @@ struct PhysicalDeviceCheck {
     VkPhysicalDevice physical_device = VK_NULL_HANDLE;
     DeviceInfo info;
     bool has_memory_budget = false;
+    // maxComputeWorkGroupCount[1]; see DeviceImpl::max_dispatch_emitters.
+    std::uint32_t max_dispatch_emitters = 0;
     // Preference when no device index is requested, highest wins: discrete >
     // integrated > other hardware > software (a software rasterizer like
     // lavapipe is a valid last resort — same SPIR-V, just slow). Ranking the
@@ -77,6 +79,11 @@ class DeviceImpl {
     VkQueue transfer_queue = VK_NULL_HANDLE;
     VmaAllocator allocator = VK_NULL_HANDLE;
     bool has_memory_budget = false;
+    // Most emitting faces one kernel launch may cover. The kernels give each
+    // emitter one workgroup row in the dispatch's Y dimension, and Vulkan
+    // only guarantees maxComputeWorkGroupCount[1] >= 65535 (NVIDIA reports
+    // exactly that), so longer emitter lists go out in batches of this size.
+    std::uint32_t max_dispatch_emitters = 0;
 };
 
 }  // namespace pycanha::radiative::detail

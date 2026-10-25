@@ -18,6 +18,7 @@ inline void print_package_info() {
 #else
     std::println("MKL Disabled");
 #endif
+    std::println("Accelerate Enabled: {}", ACCELERATE_ENABLED ? "Yes" : "No");
     std::println("---------------------");
 }
 }  // namespace pycanha

@@ -16,6 +16,10 @@ enum class SolverEngine {
     MKL,
     /// Eigen's sparse solvers: single-threaded, available in every build.
     EIGEN,
+    /// Apple Accelerate: multi-threaded supernodal factorisation. Only in
+    /// macOS builds with Accelerate, on macOS 15.5 or newer
+    /// (accelerate_available()).
+    ACCELERATE,
 };
 
 /// Factorisation of a direct solver. Every type computes a complete
@@ -41,14 +45,20 @@ enum class SolverEngine {
 ///  - LDLT: SimplicialLDLT with AMD ordering, only for models without
 ///    radiative couplings. It seems faster than COLAMD on small and medium
 ///    models, and uses less memory.
+///
+/// Accelerate types (the ordering; models without radiative couplings are
+/// factorised with Cholesky when the solver allows it, the others with LU):
+///  - METIS: nested dissection ordering. The default with Accelerate.
+///  - AMD: approximate minimum degree ordering (shared with Eigen).
 enum class DirectSolverType {
-    DEFAULT,  ///< TWO_LEVEL with MKL, COLAMD with Eigen
+    DEFAULT,  ///< TWO_LEVEL with MKL, COLAMD with Eigen, METIS with Accelerate
     TWO_LEVEL,
     ONE_LEVEL,
     MIN_DEGREE,
     COLAMD,
     AMD,
     LDLT,
+    METIS,
 };
 
 /// Factorisation of an iterative solver (MKL PARDISO only). After the first
@@ -68,7 +78,8 @@ enum class IterativeSolverType {
     ONE_LEVEL,
 };
 
-/// MKL when the library is built with it, Eigen otherwise.
+/// MKL when the library is built with it, then Accelerate when available,
+/// Eigen otherwise.
 [[nodiscard]] SolverEngine default_solver_engine() noexcept;
 
 [[nodiscard]] std::string_view to_string(SolverEngine engine) noexcept;
@@ -89,7 +100,8 @@ struct LinearSolverOptions {
     int iparm_3 = 0;
     /// PARDISO iparm entries applied last (index 3 replaces iparm_3).
     std::map<int, int> iparm_overrides;
-    /// Threads for the PARDISO calls, 0 for MKL's setting.
+    /// Threads for the PARDISO calls, 0 for MKL's setting. Accelerate has no
+    /// per-call thread setting and ignores it.
     int threads = 0;
     /// PARDISO statistics printed to standard output.
     bool verbose = false;
@@ -143,8 +155,8 @@ class SparseLinearSolver {
 };
 
 /// Throws std::invalid_argument when the combination is not available: MKL
-/// in a build without it, a type of the other engine, LDLT without
-/// symmetric_positive_definite, an iterative step with Eigen or with
+/// or Accelerate when not available, a type of another engine, LDLT without
+/// symmetric_positive_definite, an iterative step with Eigen, Accelerate or
 /// TWO_LEVEL.
 [[nodiscard]] std::unique_ptr<SparseLinearSolver> make_linear_solver(
     const LinearSolverOptions& options);

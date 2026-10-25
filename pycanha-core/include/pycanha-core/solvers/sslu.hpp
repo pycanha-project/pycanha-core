@@ -16,14 +16,18 @@ namespace pycanha {
  * second only confirms it, reusing the factors.
  *
  * - engine: SolverEngine::MKL (PARDISO, multi-threaded) when the library is
- *   built with MKL, SolverEngine::EIGEN otherwise. Choosing MKL in a build
- *   without it makes initialize() throw std::invalid_argument.
+ *   built with MKL, then SolverEngine::ACCELERATE (multi-threaded, macOS
+ *   15.5 or newer) when available, SolverEngine::EIGEN otherwise. Choosing
+ *   an engine that is not available makes initialize() throw
+ *   std::invalid_argument.
  * - solver_type: the factorisation (see DirectSolverType). DEFAULT is
- *   TWO_LEVEL with MKL and COLAMD with Eigen. Every type is a complete
- *   factorisation, so all of them give the same temperatures; they differ in
- *   time and memory. A type of the other engine, or LDLT for a model with
- *   radiative couplings, makes initialize() throw std::invalid_argument.
- * - allow_cholesky (MKL): Cholesky for models without radiative couplings.
+ *   TWO_LEVEL with MKL, METIS with Accelerate and COLAMD with Eigen. Every
+ *   type is a complete factorisation, so all of them give the same
+ *   temperatures; they differ in time and memory. A type of another engine,
+ *   or LDLT for a model with radiative couplings, makes initialize() throw
+ *   std::invalid_argument.
+ * - allow_cholesky (MKL, Accelerate): Cholesky for models without radiative
+ *   couplings.
  * - pardiso_iparm_overrides, mkl_threads, pardiso_verbose: PARDISO settings.
  *   pardiso_iparm_3 must stay 0: the iterative variant is SSLU_CGS.
  *

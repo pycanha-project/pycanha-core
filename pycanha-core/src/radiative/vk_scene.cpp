@@ -1185,7 +1185,29 @@ void SceneImpl::update_materials(const MaterialTable& materials) {
 void SceneImpl::dispatch_rows(const KernelDispatch& kernel,
                               std::span<const std::uint32_t> emitters,
                               const TraceSettings& settings) {
-    // (Re)upload the emitter list, growing the buffer when needed.
+    // Each emitter is one workgroup row of the dispatch, and a device caps
+    // the rows of one launch (NVIDIA at 65535); past the cap the launch is
+    // invalid and most faces are silently never traced. Batching changes
+    // nothing the kernels compute: a thread finds its face through the
+    // emitters buffer and its accumulator row through face - row_offset,
+    // its random stream is keyed on (face, global ray index, seed), and the
+    // cells are integer atomics, so the results are bit-identical. Under the
+    // cap this is the single launch sequence it always was.
+    const std::size_t batch_limit = _device.max_dispatch_emitters;
+    for (std::size_t first = 0; first < emitters.size(); first += batch_limit) {
+        dispatch_batch(
+            kernel,
+            emitters.subspan(first,
+                             std::min(batch_limit, emitters.size() - first)),
+            settings);
+    }
+}
+
+void SceneImpl::dispatch_batch(const KernelDispatch& kernel,
+                               std::span<const std::uint32_t> emitters,
+                               const TraceSettings& settings) {
+    // (Re)upload the emitter list, growing the buffer when needed. Every
+    // launch is waited for, so the previous batch is done with the buffer.
     const VkDeviceSize needed = emitters.size() * sizeof(std::uint32_t);
     if (_emitters_buf.buffer == VK_NULL_HANDLE || _emitters_buf.size < needed) {
         destroy_buffer(_emitters_buf);

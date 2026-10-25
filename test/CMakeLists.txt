@@ -114,6 +114,14 @@ if(APPLE AND PYCANHA_OPTION_RAYTRACING)
     "${CMAKE_CURRENT_SOURCE_DIR}/unit/radiative/test_mtl_transform.mm")
 endif()
 
+# Likewise the Vulkan backend has a per-launch emitter limit (the dispatch's
+# Y workgroup count) that Metal grids do not, and its test reaches the limit
+# through a hook only the Vulkan backend defines.
+if(PYCANHA_OPTION_RAYTRACING AND NOT APPLE)
+  list(APPEND UNIT_TEST_SOURCES
+    "${CMAKE_CURRENT_SOURCE_DIR}/unit/radiative/test_vk_dispatch_batching.cpp")
+endif()
+
 set(TEST_SOURCES
   ${UNIT_TEST_SOURCES}
   ${API_TEST_SOURCES}

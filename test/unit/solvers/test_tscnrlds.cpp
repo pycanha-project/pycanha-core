@@ -10,6 +10,7 @@
 #include <stdexcept>
 
 #include "pycanha-core/config.hpp"
+#include "pycanha-core/solvers/accelerate.hpp"
 #include "pycanha-core/solvers/linear_solver.hpp"
 #include "pycanha-core/solvers/tscnrlds.hpp"
 #include "pycanha-core/thermaldata/data_model.hpp"
@@ -280,9 +281,15 @@ TEST_CASE("TSCNRLDS gives the same transient with every solver option",
                  Option{SolverEngine::MKL, DirectSolverType::ONE_LEVEL, 0},
                  Option{SolverEngine::MKL, DirectSolverType::MIN_DEGREE, 0},
                  Option{SolverEngine::MKL, DirectSolverType::ONE_LEVEL, 61},
-                 Option{SolverEngine::MKL, DirectSolverType::MIN_DEGREE, 61});
+                 Option{SolverEngine::MKL, DirectSolverType::MIN_DEGREE, 61},
+                 Option{SolverEngine::ACCELERATE, DirectSolverType::METIS, 0},
+                 Option{SolverEngine::ACCELERATE, DirectSolverType::AMD, 0});
     if (option.engine == SolverEngine::MKL && !pycanha::MKL_ENABLED) {
         SKIP("MKL not built");
+    }
+    if (option.engine == SolverEngine::ACCELERATE &&
+        !pycanha::accelerate_available()) {
+        SKIP("Accelerate not available");
     }
     auto model = make_model();
     pycanha::TSCNRLDS solver(model);

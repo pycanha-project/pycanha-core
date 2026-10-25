@@ -31,9 +31,11 @@ void SSLU::initialize() {
             "LDLT needs a model without radiative couplings: radiation makes "
             "the linearised matrix unsymmetric. Use COLAMD or AMD.");
     }
+    const bool supernodal_engine =
+        engine == SolverEngine::MKL || engine == SolverEngine::ACCELERATE;
     options.symmetric_positive_definite =
         type == DirectSolverType::LDLT ||
-        (engine == SolverEngine::MKL && allow_cholesky && !has_radiation());
+        (supernodal_engine && allow_cholesky && !has_radiation());
     initialize_linearised(options);
 }
 
