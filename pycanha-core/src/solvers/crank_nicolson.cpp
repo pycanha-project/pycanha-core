@@ -7,6 +7,8 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <cstddef>
+#include <cstdint>
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -14,7 +16,9 @@
 #include <vector>
 
 #include "factorizer.hpp"
+#include "memory.hpp"
 #include "pycanha-core/globals.hpp"
+#include "pycanha-core/solvers/report.hpp"
 #include "pycanha-core/solvers/settings.hpp"
 #include "pycanha-core/solvers/solver.hpp"
 #include "pycanha-core/thermaldata/data_model.hpp"
@@ -168,6 +172,21 @@ SparseTimeSeries::SparseMatrixType build_full_coupling_matrix(
     return output;
 }
 
+// Bytes of one stored sample of build_full_coupling_matrix(), which holds
+// both triangles of every block.
+std::int64_t full_coupling_bytes(const CouplingMatrices& matrices,
+                                 Index total_nodes) {
+    constexpr auto entry_bytes =
+        static_cast<std::int64_t>(sizeof(double) + sizeof(int));
+    const auto stored = static_cast<std::int64_t>(
+        matrices.sparse_dd.nonZeros() + matrices.sparse_db.nonZeros() +
+        matrices.sparse_bb.nonZeros());
+    return (2 * stored * entry_bytes) +
+           ((static_cast<std::int64_t>(total_nodes) + 1) *
+            static_cast<std::int64_t>(sizeof(int))) +
+           static_cast<std::int64_t>(sizeof(double));
+}
+
 void append_or_replace_sparse_sample(SparseTimeSeries& series, double time,
                                      SparseTimeSeries::SparseMatrixType matrix,
                                      double eps_time) {
@@ -222,13 +241,32 @@ const DataModel& CrankNicolson::output_model() const {
 }
 
 void CrankNicolson::initialize() {
-    release();
-    // Throws before anything is built when the settings contradict.
-    initialize_common();
-    initialize_transient();
-    _factorizer = detail::make_factorizer(_resolved, /*symmetric=*/false);
+    const auto start = Clock::now();
+    begin_initialize_report();
+    if (preparation_matches()) {
+        // estimate_memory() built the pattern and ran the analysis.
+        initialize_common();
+    } else {
+        prepare(/*log_warnings=*/true);
+    }
+    if (const auto hint = detail::min_degree_hint(*_factorizer, _resolved,
+                                                  /*symmetric=*/false, nd)) {
+        warn(*hint);
+    }
+    create_output_model();
     SPDLOG_LOGGER_INFO(get_logger(), "{} initializing ({})", name(),
                        detail::describe(_resolved, /*symmetric=*/false));
+    _prepared = false;
+    _initialized = true;
+    end_initialize_report(start);
+}
+
+void CrankNicolson::prepare(bool log_warnings) {
+    release();
+    // Throws before anything is built when the settings contradict.
+    initialize_common(log_warnings);
+    compute_output_schedule();
+    _factorizer = detail::make_factorizer(_resolved, /*symmetric=*/false);
 
     _k_matrix.conservativeResize(nd, nd);
     _k_matrix.setIdentity();
@@ -307,12 +345,52 @@ void CrankNicolson::initialize() {
         throw std::runtime_error(std::string(name()) + ": analysis failed (" +
                                  _factorizer->error_message() + ")");
     }
-    detail::suggest_min_degree_if_dense(*_factorizer, _resolved,
-                                        /*symmetric=*/false, nd, name());
-    _initialized = true;
+    mark_prepared();
 }
 
-void CrankNicolson::initialize_transient() {
+SolverMemory CrankNicolson::memory_now() const {
+    using detail::bytes_of;
+    SolverMemory memory;
+    if (_factorizer) {
+        memory.factors = _factorizer->factor_bytes();
+        memory.exact = _factorizer->factor_bytes_exact();
+        memory.matrix = _factorizer->matrix_copy_bytes();
+    }
+    memory.matrix +=
+        bytes_of(_k_matrix) + bytes_of(_boundary_matrix) + bytes_of(_rhs) +
+        bytes_of(_heat_flux_n0) + bytes_of(_capacities) +
+        bytes_of(_capacities_inverse) + bytes_of(_t3_domain) +
+        bytes_of(_t3_boundary) + bytes_of(_t4_domain) + bytes_of(_t4_boundary) +
+        bytes_of(_lower_kr_indices) + bytes_of(_upper_kr_indices) +
+        bytes_of(_lower_kl_indices) + bytes_of(_upper_kl_indices) +
+        bytes_of(_diagonal_indices) + bytes_of(_radiation_linear_term) +
+        bytes_of(_kt_q_n0) + bytes_of(_ones_domain) + bytes_of(_ones_boundary) +
+        common_bytes();
+    memory.output = output_bytes();
+    return memory;
+}
+
+std::int64_t CrankNicolson::output_bytes() const {
+    const auto samples = static_cast<std::int64_t>(num_outputs);
+    const auto& attributes = _resolved.output_attributes;
+    // A dense sample stores one value per node and its time.
+    const auto dense_sample = static_cast<std::int64_t>(
+        (static_cast<std::size_t>(N) + 1) * sizeof(double));
+    const auto dense_stored = static_cast<std::int64_t>(
+        std::ranges::count_if(dense_attributes, [&attributes](auto attribute) {
+            return attributes.contains(attribute);
+        }));
+    std::int64_t bytes = samples * dense_stored * dense_sample;
+    if (attributes.contains(DataModelAttribute::KL)) {
+        bytes += samples * full_coupling_bytes(ltcs, N);
+    }
+    if (attributes.contains(DataModelAttribute::KR)) {
+        bytes += samples * full_coupling_bytes(rtcs, N);
+    }
+    return bytes;
+}
+
+void CrankNicolson::compute_output_schedule() {
     const double total_sim_time = _resolved.end_time - _resolved.start_time;
     num_time_steps = static_cast<int>(
         std::ceil((total_sim_time - eps_time) / _resolved.time_step));
@@ -328,7 +406,9 @@ void CrankNicolson::initialize_transient() {
 
     num_outputs = ((num_time_steps - 1) / wait_n_dtimes) + 2;
     num_outputs = std::max(num_outputs, 2);
+}
 
+void CrankNicolson::create_output_model() {
     const auto& attributes = _resolved.output_attributes;
     DataModel model(build_node_numbers(tmm.nodes()));
     for (const auto attribute : dense_attributes) {
@@ -417,6 +497,8 @@ void CrankNicolson::restart_solve() {
 void CrankNicolson::solve() {
     // Throws first when the solver is not initialised.
     restart_solve();
+    const auto start = Clock::now();
+    begin_solve_report();
     refresh_live_settings();
     _factorizer->apply_live_settings(_resolved);
     SPDLOG_LOGGER_INFO(get_logger(), "{} solving...", name());
@@ -439,49 +521,43 @@ void CrankNicolson::solve() {
         tmm.time = time;
         callback_transient_time_change();
 
+        int iterations = 0;
+        bool converged = false;
         for (solver_iter = 0; solver_iter < _resolved.max_iterations;
              ++solver_iter) {
+            iterations = solver_iter + 1;
             callback_solver_loop();
             build_conductance_matrix();
             build_heat_flux();
             add_capacities_to_matrix();
             solve_step();
 
-            _converged = temperature_convergence_check();
+            converged = temperature_convergence_check();
 
             {
                 PYCANHA_PROFILE_SCOPE("Write Td in TMM");
                 Td = Td_solver;
             }
 
-            if (_converged) {
+            if (converged) {
                 break;
             }
         }
-
-        if (!_converged) {
-            Index max_index = -1;
-            dTd.cwiseAbs().maxCoeff(&max_index);
-            SPDLOG_LOGGER_ERROR(get_logger(),
-                                "{} did not converge after {} iterations.",
-                                name(), _resolved.max_iterations);
-            SPDLOG_LOGGER_ERROR(get_logger(), "Time iter: {} Time: {} s",
-                                time_iter, time);
-            SPDLOG_LOGGER_ERROR(get_logger(), "Max. dT: {} K at index: {}",
-                                max_dT, max_index);
-        }
+        record_step_iterations(time_iter, time, iterations, converged);
 
         callback_transient_after_timestep();
         outputs();
     }
 
     outputs_first_last();
+    finish_solve_report(start);
 }
 
 void CrankNicolson::deinitialize() { release(); }
 
 void CrankNicolson::release() noexcept {
     _factorizer.reset();
+    _prepared = false;
     _initialized = false;
 }
 
@@ -562,11 +638,13 @@ void CrankNicolson::solve_step() {
     // The factorized matrix is -K + 2C/dt, with a positive diagonal. The
     // negated values stay in _k_matrix until the next assembly.
     _k_matrix.coeffs() *= -1.0;
+    const auto start = Clock::now();
     _factorizer->factorize_and_solve(_k_matrix, _rhs, Td_solver);
     if (!_factorizer->succeeded()) {
         throw std::runtime_error(std::string(name()) + ": solve failed (" +
                                  _factorizer->error_message() + ")");
     }
+    record_linear_solve(start, _factorizer->factors_recomputed());
 }
 
 }  // namespace pycanha::solvers::transient

@@ -52,9 +52,14 @@ class JacobianPropagation : public transient::CrankNicolson {
         return _derivative_parameter_names;
     }
 
+  protected:
+    void prepare(bool log_warnings) override;
+    [[nodiscard]] SolverMemory memory_now() const override;
+
   private:
     using DenseJacobian = Eigen::MatrixXd;
 
+    // Throws std::invalid_argument when no derivative parameter is selected.
     void collect_parameter_names();
     void fill_matrices(const Entity& entity, Index parameter_index,
                        double derivative_value);

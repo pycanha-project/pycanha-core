@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <memory>
 #include <string_view>
 #include <vector>
@@ -24,7 +25,9 @@ namespace pycanha::solvers::transient {
  * output_interval, output_attributes, output_name) are read by initialize(),
  * which also creates the output model in the thermal data; time_step is
  * required. The factorization is always LU. A step whose inner iterations do
- * not converge logs an ERROR and the run goes on.
+ * not converge within max_iterations keeps its last iteration and the run
+ * goes on: the first such step logs a WARN, the end of the run one summary
+ * WARN, and report() lists them.
  */
 class CrankNicolson : public Solver {
   public:
@@ -58,9 +61,15 @@ class CrankNicolson : public Solver {
     CrankNicolson(std::shared_ptr<ThermalMathematicalModel> tmm_shptr,
                   SolverType type);
 
-    // Time steps and outputs from the resolved settings; creates the output
-    // model.
-    void initialize_transient();
+    void prepare(bool log_warnings) override;
+    [[nodiscard]] SolverMemory memory_now() const override;
+
+    // Time steps and outputs from the resolved settings.
+    void compute_output_schedule();
+    // Creates the output model in the thermal data.
+    void create_output_model();
+    // Bytes of the output model the settings ask for.
+    [[nodiscard]] std::int64_t output_bytes() const;
     void save_output_data();
     void outputs();
     void outputs_first_last();

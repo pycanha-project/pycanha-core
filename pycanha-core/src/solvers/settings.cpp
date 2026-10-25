@@ -55,8 +55,8 @@ constexpr std::array<std::string_view, 2> names_of(EigenOrdering /*tag*/) {
 constexpr std::array<std::string_view, 2> names_of(Mutability /*tag*/) {
     return {"LIVE", "INIT"};
 }
-constexpr std::array<std::string_view, 2> names_of(Origin /*tag*/) {
-    return {"DEFAULT", "USER"};
+constexpr std::array<std::string_view, 3> names_of(Origin /*tag*/) {
+    return {"DEFAULT", "USER", "AUTO_CONFIGURE"};
 }
 constexpr std::array<std::string_view, 16> names_of(
     DataModelAttribute /*tag*/) {
@@ -356,6 +356,97 @@ bool uses_eigen_lu(const ResolvedSettings& resolved) {
 }
 
 // ---------------------------------------------------------------------------
+// Reasons: why a default has its value, or what a set value resolves to;
+// empty when there is nothing to add to "default" or "set"
+// ---------------------------------------------------------------------------
+
+using Reason = std::string (*)(const Settings&, const ResolvedSettings&,
+                               const ResolveContext&);
+
+std::string backend_reason(const Settings& /*settings*/,
+                           const ResolvedSettings& /*resolved*/,
+                           const ResolveContext& context) {
+    return context.pardiso_available ? "this build has MKL"
+                                     : "this build has no MKL";
+}
+
+std::string factorization_reason(const Settings& settings,
+                                 const ResolvedSettings& resolved,
+                                 const ResolveContext& context) {
+    if (settings.factorization.value_or(Factorization::AUTO) !=
+        Factorization::AUTO) {
+        return {};
+    }
+    if (resolved.factorization == Factorization::CHOLESKY) {
+        return "AUTO: no radiative couplings, so the matrix is symmetric";
+    }
+    if (resolved.factorization == Factorization::AUTO) {
+        return "AUTO: Cholesky or LU once the model is known";
+    }
+    if (context.solver_type != SolverType::STEADY_STATE) {
+        return "AUTO: Cholesky is not available for transients yet";
+    }
+    if (resolved.backend == Backend::EIGEN) {
+        return "AUTO: Cholesky only with PARDISO";
+    }
+    return "AUTO: radiative couplings make the matrix unsymmetric";
+}
+
+std::string threads_reason(const Settings& settings,
+                           const ResolvedSettings& /*resolved*/,
+                           const ResolveContext& /*context*/) {
+    return settings.threads.value_or(0) == 0
+               ? "0: MKL's own setting (MKL_NUM_THREADS)"
+               : std::string{};
+}
+
+std::string output_name_reason(const Settings& /*settings*/,
+                               const ResolvedSettings& /*resolved*/,
+                               const ResolveContext& /*context*/) {
+    return "the solver type in lower case";
+}
+
+// Why the one-level factorization is needed, empty when nothing needs it.
+std::string one_level_cause(const Settings& settings,
+                            const ResolvedSettings& resolved) {
+    if (resolved.reuse_factors) {
+        return "reuse_factors needs the one-level factorization";
+    }
+    if (iparm_iterates(settings)) {
+        return "pardiso.iparm[3] iterates on the previous factors, which "
+               "needs the one-level factorization";
+    }
+    if (settings.pardiso.ordering == PardisoOrdering::MIN_DEGREE) {
+        return "pardiso.ordering = MIN_DEGREE needs the one-level "
+               "factorization";
+    }
+    return {};
+}
+
+std::string pardiso_level_reason(const Settings& settings,
+                                 const ResolvedSettings& resolved,
+                                 const ResolveContext& /*context*/) {
+    if (settings.pardiso.level.has_value()) {
+        return {};
+    }
+    const std::string cause = one_level_cause(settings, resolved);
+    return cause.empty() ? "the factorization that does not livelock" : cause;
+}
+
+std::string pardiso_ordering_reason(const Settings& settings,
+                                    const ResolvedSettings& resolved,
+                                    const ResolveContext& /*context*/) {
+    if (settings.pardiso.ordering.has_value()) {
+        return {};
+    }
+    return resolved.pardiso.ordering == PardisoOrdering::MIN_DEGREE
+               ? "one-level factorization: nested dissection with it can "
+                 "livelock"
+               : "nested dissection, the ordering of the two-level "
+                 "factorization";
+}
+
+// ---------------------------------------------------------------------------
 // The field table
 // ---------------------------------------------------------------------------
 
@@ -395,6 +486,8 @@ struct FieldEntry {
     // when only the solver type decides.
     bool (*applies)(const ResolvedSettings&);
     std::string_view applies_reason;
+    // Null when there is nothing to explain beyond "default" or "set".
+    Reason reason;
 };
 
 template <typename Raw, typename Resolved, auto Default, auto Check>
@@ -444,7 +537,8 @@ struct FieldOps {
 template <typename Raw, typename Resolved, auto Default, auto Check>
 constexpr FieldEntry field(SettingField info,
                            bool (*applies)(const ResolvedSettings&) = nullptr,
-                           std::string_view applies_reason = {}) {
+                           std::string_view applies_reason = {},
+                           Reason reason = nullptr) {
     using Ops = FieldOps<Raw, Resolved, Default, Check>;
     return {.info = info,
             .is_set = &Ops::is_set,
@@ -456,7 +550,8 @@ constexpr FieldEntry field(SettingField info,
             .take = &Ops::take,
             .take_default = &Ops::take_default,
             .applies = applies,
-            .applies_reason = applies_reason};
+            .applies_reason = applies_reason,
+            .reason = reason};
 }
 
 constexpr unsigned bit(SolverType type) {
@@ -505,7 +600,8 @@ constexpr std::array<FieldEntry, field_count> field_table{
          .doc = "Library that factorizes the matrix. Default: PARDISO in "
                 "builds with MKL, EIGEN otherwise.",
          .mutability = Mutability::INIT,
-         .solver_types = all_types}),
+         .solver_types = all_types},
+        nullptr, {}, &backend_reason),
     field<Path<&S::factorization>, Path<&R::factorization>,
           &constant<default_factorization>, &any_value<Factorization>>(
         {.name = "factorization",
@@ -513,7 +609,8 @@ constexpr std::array<FieldEntry, field_count> field_table{
          .doc = "LU, CHOLESKY or AUTO. AUTO is Cholesky for a steady state "
                 "without radiative couplings with PARDISO, LU otherwise.",
          .mutability = Mutability::INIT,
-         .solver_types = all_types}),
+         .solver_types = all_types},
+        nullptr, {}, &factorization_reason),
     field<Path<&S::reuse_factors>, Path<&R::reuse_factors>,
           &constant<default_reuse_factors>, &any_value<bool>>(
         {.name = "reuse_factors",
@@ -534,7 +631,7 @@ constexpr std::array<FieldEntry, field_count> field_table{
                                        "MKL's setting (MKL_NUM_THREADS).",
                                 .mutability = Mutability::LIVE,
                                 .solver_types = all_types},
-                               &uses_pardiso, only_pardiso),
+                               &uses_pardiso, only_pardiso, &threads_reason),
     field<Path<&S::start_time>, Path<&R::start_time>, &constant<default_time>,
           &finite>({.name = "start_time",
                     .group = "",
@@ -575,7 +672,8 @@ constexpr std::array<FieldEntry, field_count> field_table{
                        .doc = "Name of the output model in the thermal data. "
                               "Default: the solver type in lower case.",
                        .mutability = Mutability::INIT,
-                       .solver_types = transient_types}),
+                       .solver_types = transient_types},
+                      nullptr, {}, &output_name_reason),
     field<Path<&S::capacity_delta>, Path<&R::capacity_delta>,
           &constant<default_capacity_delta>, &non_negative>(
         {.name = "capacity_delta",
@@ -593,7 +691,7 @@ constexpr std::array<FieldEntry, field_count> field_table{
                 "MIN_DEGREE with the one-level factorization.",
          .mutability = Mutability::INIT,
          .solver_types = all_types},
-        &uses_pardiso, only_pardiso),
+        &uses_pardiso, only_pardiso, &pardiso_ordering_reason),
     field<Path<&S::pardiso, &PardisoSettings::level>,
           Path<&R::pardiso, &ResolvedPardiso::level>, &default_pardiso_level,
           &any_value<PardisoLevel>>(
@@ -604,7 +702,7 @@ constexpr std::array<FieldEntry, field_count> field_table{
                 "MIN_DEGREE.",
          .mutability = Mutability::INIT,
          .solver_types = all_types},
-        &uses_pardiso, only_pardiso),
+        &uses_pardiso, only_pardiso, &pardiso_level_reason),
     field<Path<&S::pardiso, &PardisoSettings::iparm>,
           Path<&R::pardiso, &ResolvedPardiso::iparm>, &default_iparm,
           &iparm_indices>(
@@ -1037,6 +1135,33 @@ ResolvedSettings resolve(const Settings& settings,
                         join(resolution.contradictions)));
     }
     return std::move(resolution.resolved);
+}
+
+SettingsExplanation explain_settings(const Settings& settings,
+                                     const ResolveContext& context) {
+    Resolution resolution = resolve_unchecked(settings, context);
+    SettingsExplanation explanation;
+    for (std::size_t index = 0; index < field_table.size(); ++index) {
+        const auto& state = resolution.resolved.fields.at(index);
+        if (!state.applies) {
+            continue;
+        }
+        const FieldEntry& entry = field_table.at(index);
+        SettingValue value = entry.get_resolved(resolution.resolved);
+        std::string value_text = format_value(value);
+        explanation.fields.push_back(
+            {.name = std::string(entry.info.name),
+             .value = std::move(value),
+             .value_text = std::move(value_text),
+             .origin = state.origin,
+             .reason =
+                 entry.reason == nullptr
+                     ? std::string{}
+                     : entry.reason(settings, resolution.resolved, context)});
+    }
+    explanation.resolved = std::move(resolution.resolved);
+    explanation.contradictions = std::move(resolution.contradictions);
+    return explanation;
 }
 
 std::vector<std::string_view> changed_init_fields(

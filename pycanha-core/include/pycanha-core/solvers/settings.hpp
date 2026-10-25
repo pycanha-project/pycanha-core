@@ -89,8 +89,9 @@ enum class Mutability : std::uint8_t {
 
 /// Where an effective setting value comes from.
 enum class Origin : std::uint8_t {
-    DEFAULT,  ///< The solver's default.
-    USER,     ///< Set in the Settings.
+    DEFAULT,         ///< The solver's default.
+    USER,            ///< Set in the Settings.
+    AUTO_CONFIGURE,  ///< Set by Solver::auto_configure() and unchanged since.
 };
 
 [[nodiscard]] std::string_view to_string(SolverType type) noexcept;
@@ -287,6 +288,34 @@ struct ResolvedSettings {
  */
 [[nodiscard]] ResolvedSettings resolve(const Settings& settings,
                                        const ResolveContext& context);
+
+/// The effective value of one applicable setting and why it has it.
+struct FieldExplanation {
+    std::string name;
+    SettingValue value;
+    /// The value as Settings::to_string() prints it.
+    std::string value_text;
+    /// DEFAULT or USER; a solver reports AUTO_CONFIGURE for the values its
+    /// auto_configure() set.
+    Origin origin = Origin::DEFAULT;
+    /// Why a default has its value ("reuse_factors needs the one-level
+    /// factorization"), or what a set value resolves to; empty when there is
+    /// nothing to add.
+    std::string reason;
+};
+
+/// What resolve() gives, with a reason for every applicable field. The
+/// contradictions are listed instead of thrown.
+struct SettingsExplanation {
+    /// The effective values (each contradicting field keeps its value).
+    ResolvedSettings resolved;
+    /// The applicable fields, in setting_fields() order.
+    std::vector<FieldExplanation> fields;
+    std::vector<std::string> contradictions;
+};
+
+[[nodiscard]] SettingsExplanation explain_settings(
+    const Settings& settings, const ResolveContext& context);
 
 /// The INIT fields whose effective value differs between `before` and
 /// `after` (fields that do not apply under both are skipped).

@@ -1,10 +1,16 @@
 #pragma once
 
 #include <Eigen/Sparse>
+#include <chrono>
+#include <cstdint>
 #include <memory>
+#include <optional>
+#include <string>
 #include <string_view>
+#include <vector>
 
 #include "pycanha-core/globals.hpp"
+#include "pycanha-core/solvers/report.hpp"
 #include "pycanha-core/solvers/settings.hpp"
 #include "pycanha-core/tmm/couplingmatrices.hpp"
 #include "pycanha-core/tmm/thermalmathematicalmodel.hpp"
@@ -27,7 +33,9 @@ using WrappVectorXd = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>;
  *
  * solve() throws ModelChangedError when the model's nodes or coupling
  * patterns changed since initialize(), checked at the start and after every
- * callback.
+ * callback. An iteration loop that stops at max_iterations logs one WARN
+ * (and, in a transient, one summary WARN at the end); report() has the
+ * details.
  */
 class Solver {
   public:
@@ -61,9 +69,57 @@ class Solver {
     [[nodiscard]] ResolvedSettings resolved_settings() const;
 
     [[nodiscard]] bool initialized() const noexcept { return _initialized; }
+    /// The last solve() converged in every iteration loop.
     [[nodiscard]] bool converged() const noexcept { return _converged; }
 
+    /// What the last solve() did; initialize() clears it.
+    [[nodiscard]] const SolverReport& report() const noexcept {
+        return _report;
+    }
+
+    /// Every setting that applies, with its effective value, where it comes
+    /// from and why; the PARDISO iparm entries the settings give; the set
+    /// fields that do not apply, the warnings and the contradictions (listed,
+    /// not thrown).
+    [[nodiscard]] std::string explain() const;
+
+    /// DEFAULT, USER, or AUTO_CONFIGURE for a value auto_configure() set and
+    /// nothing changed since; DEFAULT for a field that does not apply.
+    /// Throws std::invalid_argument for an unknown name.
+    [[nodiscard]] Origin origin(std::string_view name) const;
+
+    /// The memory this solver needs for the current model and settings.
+    /**
+     * Without an initialized solver it builds the matrix pattern and runs the
+     * analysis of the factorization (see SolverMemory::exact for which
+     * figures are known and which predicted), and a following initialize() with
+     * the same settings and model structure reuses that work. On an initialized
+     * solver it gives the current figures. Throws std::invalid_argument for
+     * contradictory settings and std::runtime_error when the analysis fails.
+     */
+    [[nodiscard]] SolverMemory estimate_memory();
+
+    /// Chooses the backend, factorization, reuse_factors, threads,
+    /// pardiso.ordering, pardiso.level and eigen.ordering for the current
+    /// model, clears pardiso.iparm, and returns the new settings.
+    /**
+     * The other settings are kept. The rules prefer the configuration that
+     * is fastest for the solver type: a transient reuses factors (minimum
+     * degree, one-level), whose analysis is done once and can take long on
+     * models where a few nodes are coupled to many; a steady state uses the
+     * two-level factorization. With
+     * max_memory [bytes], a candidate whose estimate_memory() exceeds it is
+     * skipped, and when none fits the smallest is taken with a WARN. Throws
+     * std::runtime_error on an initialized solver.
+     */
+    Settings auto_configure(
+        std::optional<std::int64_t> max_memory = std::nullopt);
+    /// max_memory as "16 GB" (see parse_memory_size()).
+    Settings auto_configure(std::string_view max_memory);
+
   protected:
+    using Clock = std::chrono::steady_clock;
+
     Solver(std::shared_ptr<ThermalMathematicalModel> tmm_shptr,
            SolverType type);
 
@@ -131,10 +187,48 @@ class Solver {
     bool _converged = false;
 
     /// Resolves the settings for the current model, warns about the set
-    /// fields that do not apply, sizes the shared vectors and records the
-    /// model's structure versions. Throws std::invalid_argument for
-    /// contradictory settings.
-    void initialize_common();
+    /// fields that do not apply (with log_warnings), sizes the shared
+    /// vectors and records the model's structure versions. Throws
+    /// std::invalid_argument for contradictory settings.
+    void initialize_common(bool log_warnings = true);
+
+    /// Builds what initialize() needs that depends only on the settings and
+    /// the model's structure (sizes, patterns, the analysis of the
+    /// factorization) and calls mark_prepared() when it succeeds.
+    /// estimate_memory() runs it without the warnings.
+    virtual void prepare(bool log_warnings) = 0;
+    /// The memory of what prepare() and initialize() built.
+    [[nodiscard]] virtual SolverMemory memory_now() const = 0;
+    /// Bytes of the vectors every solver sizes in initialize_common().
+    [[nodiscard]] std::int64_t common_bytes() const noexcept;
+    void mark_prepared();
+    /// The last prepare() was not followed by initialize() and still matches
+    /// the settings and the model structure.
+    [[nodiscard]] bool preparation_matches() const;
+
+    /// Logs a WARN prefixed with the solver name and keeps it in the report.
+    void warn(const std::string& message);
+
+    void begin_initialize_report();
+    void end_initialize_report(Clock::time_point start);
+    /// Clears the counters of the report, keeping initialize()'s warnings;
+    /// the status is FAILED until finish_solve_report().
+    void begin_solve_report();
+    void record_linear_solve(Clock::time_point start, bool factorized);
+    /// The iteration loop of the steady state, or of time step `step`
+    /// ending at `time` [s]. A loop that did not converge is listed (up to
+    /// SolverReport::max_listed_steps) and the first one logs a WARN.
+    void record_steady_iterations(int iterations, bool converged);
+    void record_step_iterations(int step, double time, int iterations,
+                                bool converged);
+    /// Sets the status, the solve time and the memory; a transient with
+    /// non-converged steps logs the summary WARN. converged() follows.
+    void finish_solve_report(Clock::time_point start, bool failed = false);
+
+    SolverReport _report;
+    // True from a successful prepare() until initialize() completes or the
+    // solver is released.
+    bool _prepared = false;
     /// Refreshes the LIVE fields of the resolved settings; checks the model.
     void refresh_live_settings();
 
@@ -154,9 +248,22 @@ class Solver {
   private:
     void prepare_formulas_for_execution();
     void release_formulas_after_execution() noexcept;
+    void record_nonconverged(int step, double time, int iterations);
+    [[nodiscard]] SolverMemory estimate_memory_quietly();
+    [[nodiscard]] std::string_view auto_reason(std::string_view name) const;
+
+    // A value auto_configure() set, with the rule that chose it.
+    struct AutoValue {
+        std::string name;
+        SettingValue value;
+        std::string reason;
+    };
 
     SolverType _solver_type;
     Settings _settings;
+    Settings _prepared_settings;
+    std::vector<AutoValue> _auto_values;
+    std::vector<std::string> _initialize_warnings;
     // The model's structure versions when initialize() last ran.
     StructureVersions _initialized_structure;
 };

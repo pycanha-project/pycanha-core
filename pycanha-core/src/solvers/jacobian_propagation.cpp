@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
+#include <cstdint>
 #include <iterator>
 #include <memory>
 #include <stdexcept>
@@ -14,11 +15,13 @@
 #include <utility>
 
 #include "factorizer.hpp"
+#include "memory.hpp"
 #include "pycanha-core/globals.hpp"
 #include "pycanha-core/parameters/entity.hpp"
 #include "pycanha-core/parameters/formula.hpp"
 #include "pycanha-core/parameters/formulas.hpp"
 #include "pycanha-core/solvers/crank_nicolson.hpp"
+#include "pycanha-core/solvers/report.hpp"
 #include "pycanha-core/solvers/settings.hpp"
 #include "pycanha-core/solvers/solver.hpp"
 #include "pycanha-core/thermaldata/data_model.hpp"
@@ -52,14 +55,38 @@ JacobianPropagation::JacobianPropagation(
     std::shared_ptr<ThermalMathematicalModel> tmm_shptr)
     : CrankNicolson(std::move(tmm_shptr), SolverType::JACOBIAN_PROPAGATION) {}
 
-void JacobianPropagation::initialize() {
+void JacobianPropagation::prepare(bool log_warnings) {
     collect_parameter_names();
-    if (_derivative_parameter_names.empty()) {
-        throw std::invalid_argument(
-            "JacobianPropagation requires at least one selected derivative "
-            "parameter");
-    }
+    CrankNicolson::prepare(log_warnings);
+}
 
+SolverMemory JacobianPropagation::memory_now() const {
+    using detail::bytes_of;
+    SolverMemory memory = CrankNicolson::memory_now();
+    const auto parameters =
+        static_cast<std::int64_t>(_derivative_parameter_names.size());
+    // _d_capacity_matrix, _d_heat_flux_matrix, _m_k, _m_q, _m_c, _mt and _mb
+    // are nd x parameters, also before initialize() sizes them.
+    constexpr std::int64_t dense_matrices = 7;
+    const std::int64_t dense_bytes = static_cast<std::int64_t>(nd) *
+                                     parameters *
+                                     static_cast<std::int64_t>(sizeof(double));
+    memory.matrix += (dense_matrices * dense_bytes) + bytes_of(_sp_nd_diag);
+    for (const auto* matrices : {&_d_kl_dd_matrices, &_d_kl_db_matrices,
+                                 &_d_kr_dd_matrices, &_d_kr_db_matrices}) {
+        for (const SpMatRow& matrix : *matrices) {
+            memory.matrix += bytes_of(matrix);
+        }
+    }
+    // The JAC attribute holds one nd x parameters sample per output.
+    memory.output += static_cast<std::int64_t>(num_outputs) *
+                     (dense_bytes + static_cast<std::int64_t>(sizeof(double)));
+    return memory;
+}
+
+void JacobianPropagation::initialize() {
+    // The selection may have changed since an estimate_memory().
+    collect_parameter_names();
     CrankNicolson::initialize();
 
     auto& jacobian =
@@ -172,6 +199,11 @@ void JacobianPropagation::collect_parameter_names() {
                 "' is not produced by any ParameterFormula");
         }
         _derivative_parameter_names.push_back(parameter_name);
+    }
+    if (_derivative_parameter_names.empty()) {
+        throw std::invalid_argument(
+            "JacobianPropagation requires at least one selected derivative "
+            "parameter");
     }
 }
 
@@ -287,6 +319,8 @@ void JacobianPropagation::solve_jacobian_step() {
 void JacobianPropagation::solve() {
     // Throws first when the solver is not initialised.
     restart_solve();
+    const auto start = Clock::now();
+    begin_solve_report();
     refresh_live_settings();
     _factorizer->apply_live_settings(_resolved);
     SPDLOG_LOGGER_INFO(get_logger(), "{} solving...", name());
@@ -331,37 +365,29 @@ void JacobianPropagation::solve() {
         tmm.time = time;
         callback_transient_time_change();
 
+        int iterations = 0;
+        bool converged = false;
         for (solver_iter = 0; solver_iter < _resolved.max_iterations;
              ++solver_iter) {
+            iterations = solver_iter + 1;
             callback_solver_loop();
             build_conductance_matrix();
             build_heat_flux();
             add_capacities_to_matrix();
             solve_step();
 
-            _converged = temperature_convergence_check();
+            converged = temperature_convergence_check();
 
             {
                 PYCANHA_PROFILE_SCOPE("Write Td in TMM");
                 Td = Td_solver;
             }
 
-            if (_converged) {
+            if (converged) {
                 break;
             }
         }
-
-        if (!_converged) {
-            Index max_index = -1;
-            dTd.cwiseAbs().maxCoeff(&max_index);
-            SPDLOG_LOGGER_ERROR(get_logger(),
-                                "{} did not converge after {} iterations.",
-                                name(), _resolved.max_iterations);
-            SPDLOG_LOGGER_ERROR(get_logger(), "Time iter: {} Time: {} s",
-                                time_iter, time);
-            SPDLOG_LOGGER_ERROR(get_logger(), "Max. dT: {} K at index: {}",
-                                max_dT, max_index);
-        }
+        record_step_iterations(time_iter, time, iterations, converged);
 
         _sp_nd_diag.diagonal() =
             _capacities.array() * (2.0 / _resolved.time_step);
@@ -384,6 +410,7 @@ void JacobianPropagation::solve() {
 
     outputs_first_last();
     save_jacobian_data();
+    finish_solve_report(start);
 }
 
 void JacobianPropagation::save_jacobian_data() {

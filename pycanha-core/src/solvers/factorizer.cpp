@@ -1,13 +1,15 @@
 #include "factorizer.hpp"
 
-#include <spdlog/spdlog.h>
-
 #include <Eigen/OrderingMethods>
 #include <Eigen/SparseCholesky>
 #include <Eigen/SparseLU>
+#include <algorithm>
 #include <cstddef>
+#include <cstdint>
 #include <format>
+#include <map>
 #include <memory>
+#include <optional>
 #include <span>
 #include <stdexcept>
 #include <string>
@@ -17,7 +19,6 @@
 
 #include "pycanha-core/globals.hpp"
 #include "pycanha-core/solvers/settings.hpp"
-#include "pycanha-core/utils/logger.hpp"
 
 #if PYCANHA_USE_MKL
 #include "pardiso.hpp"
@@ -29,12 +30,69 @@ namespace {
 
 using SparseMatrix = Factorizer::SparseMatrix;
 using ColumnMajorMatrix = Eigen::SparseMatrix<double>;
+using StorageIndex = ColumnMajorMatrix::StorageIndex;
+
+constexpr auto value_bytes =
+    static_cast<std::int64_t>(sizeof(double) + sizeof(StorageIndex));
+constexpr auto index_bytes = static_cast<std::int64_t>(sizeof(StorageIndex));
+
+// Strictly lower non-zeros of the Cholesky factor of the symmetric pattern of
+// matrix + matrix^T, with row and column i moved to new_index[i]: for every
+// column k, the rows above it are walked up the elimination tree.
+std::int64_t cholesky_off_diagonal(const ColumnMajorMatrix& matrix,
+                                   std::span<const StorageIndex> new_index) {
+    const auto n = to_sizet(matrix.cols());
+    // For every permuted column, the permuted rows above it (duplicates are
+    // harmless), stored as compressed lists.
+    std::vector<std::size_t> starts(n + 1, 0);
+    const auto for_each_pair = [&matrix, new_index](auto&& action) {
+        for (Index col = 0; col < matrix.outerSize(); ++col) {
+            for (ColumnMajorMatrix::InnerIterator it(matrix, col); it; ++it) {
+                const auto row = to_sizet(new_index[to_sizet(it.row())]);
+                const auto column = to_sizet(new_index[to_sizet(col)]);
+                if (row != column) {
+                    action(std::min(row, column), std::max(row, column));
+                }
+            }
+        }
+    };
+    for_each_pair([&starts](std::size_t /*above*/, std::size_t column) {
+        ++starts[column + 1];
+    });
+    for (std::size_t k = 0; k < n; ++k) {
+        starts[k + 1] += starts[k];
+    }
+    std::vector<std::size_t> rows(starts[n]);
+    std::vector<std::size_t> fill(starts.begin(), starts.end() - 1);
+    for_each_pair([&rows, &fill](std::size_t above, std::size_t column) {
+        rows[fill[column]++] = above;
+    });
+
+    constexpr auto none = static_cast<std::size_t>(-1);
+    std::vector<std::size_t> parent(n, none);
+    std::vector<std::size_t> visited(n, none);
+    std::int64_t count = 0;
+    for (std::size_t k = 0; k < n; ++k) {
+        visited[k] = k;
+        for (std::size_t entry = starts[k]; entry < starts[k + 1]; ++entry) {
+            for (std::size_t node = rows[entry]; visited[node] != k;
+                 node = parent[node]) {
+                if (parent[node] == none) {
+                    parent[node] = k;
+                }
+                ++count;
+                visited[node] = k;
+            }
+        }
+    }
+    return count;
+}
 
 // Eigen's sparse solvers read column-major matrices. The factorizer keeps a
 // column-major copy of the pattern and, for every one of its values, the
 // position of the same entry in the row-major matrix, so each factorization
 // only gathers the values.
-template <typename EigenFactorization>
+template <typename EigenFactorization, bool Cholesky>
 class EigenFactorizer final : public Factorizer {
   public:
     explicit EigenFactorizer(std::string_view name) : _name(name) {}
@@ -56,6 +114,8 @@ class EigenFactorizer final : public Factorizer {
         }
         _factorization.analyzePattern(_column_major);
         _info = Eigen::Success;
+        _factorized = false;
+        _off_diagonal = cholesky_off_diagonal(_column_major, new_index());
     }
 
     void factorize(const SparseMatrix& matrix) override {
@@ -68,6 +128,7 @@ class EigenFactorizer final : public Factorizer {
         }
         _factorization.factorize(_column_major);
         _info = _factorization.info();
+        _factorized = _info == Eigen::Success;
     }
 
     void solve(const SparseMatrix& /*matrix*/, Eigen::VectorXd& b,
@@ -93,21 +154,62 @@ class EigenFactorizer final : public Factorizer {
                            static_cast<int>(_info));
     }
 
+    // LDLT stores the strictly lower factor, the diagonal and two
+    // permutations; its pattern is the symbolic count. LU is predicted with
+    // the same count on both triangles until its factorization is known.
+    [[nodiscard]] std::int64_t factor_bytes() const noexcept override {
+        const std::int64_t n = _column_major.cols();
+        if constexpr (Cholesky) {
+            return (_off_diagonal * value_bytes) +
+                   (n * static_cast<std::int64_t>(sizeof(double))) +
+                   (((3 * n) + 1) * index_bytes);
+        } else {
+            const std::int64_t entries =
+                _factorized ? static_cast<std::int64_t>(_factorization.nnzL() +
+                                                        _factorization.nnzU())
+                            : (2 * _off_diagonal) + n;
+            return (entries * value_bytes) + (2 * (n + 1) * index_bytes);
+        }
+    }
+    [[nodiscard]] bool factor_bytes_exact() const noexcept override {
+        return Cholesky || _factorized;
+    }
+    [[nodiscard]] std::int64_t matrix_copy_bytes() const noexcept override {
+        return (_column_major.nonZeros() * value_bytes) +
+               ((_column_major.outerSize() + 1) * index_bytes) +
+               static_cast<std::int64_t>(_source.size() * sizeof(std::size_t));
+    }
+
   private:
+    // Where the analysis moves each row and column.
+    [[nodiscard]] std::span<const StorageIndex> new_index() const {
+        if constexpr (Cholesky) {
+            const auto& indices = _factorization.permutationP().indices();
+            return {indices.data(), to_sizet(indices.size())};
+        } else {
+            const auto& indices = _factorization.colsPermutation().indices();
+            return {indices.data(), to_sizet(indices.size())};
+        }
+    }
+
     std::string_view _name;
     EigenFactorization _factorization;
     ColumnMajorMatrix _column_major;
     std::vector<std::size_t> _source;
     Eigen::ComputationInfo _info = Eigen::Success;
+    bool _factorized = false;
+    std::int64_t _off_diagonal = 0;
 };
 
 using EigenLuColamd = EigenFactorizer<
-    Eigen::SparseLU<ColumnMajorMatrix, Eigen::COLAMDOrdering<int>>>;
-using EigenLuAmd = EigenFactorizer<
-    Eigen::SparseLU<ColumnMajorMatrix, Eigen::AMDOrdering<int>>>;
+    Eigen::SparseLU<ColumnMajorMatrix, Eigen::COLAMDOrdering<int>>, false>;
+using EigenLuAmd =
+    EigenFactorizer<Eigen::SparseLU<ColumnMajorMatrix, Eigen::AMDOrdering<int>>,
+                    false>;
 using EigenLdlt =
     EigenFactorizer<Eigen::SimplicialLDLT<ColumnMajorMatrix, Eigen::Upper,
-                                          Eigen::AMDOrdering<int>>>;
+                                          Eigen::AMDOrdering<int>>,
+                    true>;
 
 std::unique_ptr<Factorizer> make_eigen(const ResolvedSettings& settings,
                                        bool symmetric) {
@@ -120,44 +222,31 @@ std::unique_ptr<Factorizer> make_eigen(const ResolvedSettings& settings,
     return std::make_unique<EigenLuColamd>("SparseLU (COLAMD)");
 }
 
+constexpr int iparm_ordering = 1;
+constexpr int iparm_iterative = 3;
+constexpr int iparm_two_level = 23;
+
 #if PYCANHA_USE_MKL
 std::unique_ptr<Factorizer> make_pardiso(const ResolvedSettings& settings,
                                          bool symmetric) {
-    // iparm[3] = 61: iterate on the previous factors (CGS, or CG for
-    // Cholesky) down to a relative residual of 1e-6 before refactorizing.
-    constexpr int reuse_iterative_step = 61;
-    constexpr int iterative_step = 3;
-    constexpr std::size_t ordering = 1;
-    constexpr std::size_t two_level = 23;
-    constexpr int minimum_degree = 0;
-
-    const auto& iparm = settings.pardiso.iparm;
-    const auto found = iparm.find(iterative_step);
-    int iparm_3 = settings.reuse_factors ? reuse_iterative_step : 0;
-    if (found != iparm.end()) {
-        iparm_3 = found->second;
-    }
+    const std::vector<IparmEntry> entries = pardiso_iparm(settings, symmetric);
+    const auto iterative =
+        std::ranges::find(entries, iparm_iterative, &IparmEntry::index);
     auto pardiso = std::make_unique<PardisoSolver>(
         symmetric ? PardisoSolver::MatrixType::SYMMETRIC_POSITIVE_DEFINITE
                   : PardisoSolver::MatrixType::STRUCTURALLY_SYMMETRIC,
-        iparm_3);
-    if (settings.pardiso.level == PardisoLevel::ONE_LEVEL) {
-        pardiso->set_iparm(two_level, 0);
-    }
-    if (settings.pardiso.ordering == PardisoOrdering::MIN_DEGREE) {
-        pardiso->set_iparm(ordering, minimum_degree);
-    }
-    for (const auto& [index, value] : iparm) {
-        if (index == iterative_step) {
+        iterative == entries.end() ? 0 : iterative->value);
+    for (const IparmEntry& entry : entries) {
+        if (entry.index == iparm_iterative) {
             continue;  // passed to the constructor
         }
-        if (index < 0 ||
-            std::cmp_greater_equal(index, PardisoSolver::iparm_size)) {
+        if (entry.index < 0 ||
+            std::cmp_greater_equal(entry.index, PardisoSolver::iparm_size)) {
             throw std::invalid_argument(
                 std::format("PARDISO iparm index {} is out of range (0 to {})",
-                            index, PardisoSolver::iparm_size - 1));
+                            entry.index, PardisoSolver::iparm_size - 1));
         }
-        pardiso->set_iparm(to_sizet(index), value);
+        pardiso->set_iparm(to_sizet(entry.index), entry.value);
     }
     pardiso->apply_live_settings(settings);
     return pardiso;
@@ -199,13 +288,70 @@ std::string describe(const ResolvedSettings& settings, bool symmetric) {
                        settings.reuse_factors ? ", reusing factors" : "", form);
 }
 
-void suggest_min_degree_if_dense(const Factorizer& factorizer,
-                                 const ResolvedSettings& settings,
-                                 bool symmetric, Eigen::Index size,
-                                 std::string_view solver_name) {
+int pardiso_matrix_type(bool symmetric) noexcept { return symmetric ? 2 : 1; }
+
+int pardiso_iterative_control(int iparm_3, bool symmetric) noexcept {
+    constexpr int decimal = 10;
+    const int method = iparm_3 % decimal;
+    if (method == 0) {
+        return iparm_3;
+    }
+    const int method_for_type = symmetric ? 2 : 1;
+    return (decimal * (iparm_3 / decimal)) + method_for_type;
+}
+
+std::vector<IparmEntry> pardiso_iparm(const ResolvedSettings& settings,
+                                      bool symmetric) {
+    // iparm[3] = 61: iterate on the previous factors (CGS, or CG for
+    // Cholesky) down to a relative residual of 1e-6 before refactorizing.
+    constexpr int reuse_iterative_step = 61;
+    constexpr int parallel_nested_dissection = 3;
+    constexpr int minimum_degree = 0;
+
+    const bool min_degree =
+        settings.pardiso.ordering == PardisoOrdering::MIN_DEGREE;
+    const bool two_level = settings.pardiso.level == PardisoLevel::TWO_LEVEL;
+    std::map<int, IparmEntry> entries;
+    entries[iparm_ordering] = {
+        .index = iparm_ordering,
+        .value = min_degree ? minimum_degree : parallel_nested_dissection,
+        .meaning = min_degree ? "minimum degree ordering"
+                              : "parallel nested dissection ordering"};
+    entries[iparm_iterative] = {
+        .index = iparm_iterative,
+        .value = pardiso_iterative_control(
+            settings.reuse_factors ? reuse_iterative_step : 0, symmetric),
+        .meaning = settings.reuse_factors
+                       ? "iterate on the previous factors down to a relative "
+                         "residual of 1e-6 (reuse_factors)"
+                       : "no iteration on the previous factors"};
+    entries[iparm_two_level] = {.index = iparm_two_level,
+                                .value = two_level ? 1 : 0,
+                                .meaning = two_level
+                                               ? "two-level factorization"
+                                               : "one-level factorization"};
+    for (const auto& [index, value] : settings.pardiso.iparm) {
+        entries[index] = {
+            .index = index,
+            .value = index == iparm_iterative
+                         ? pardiso_iterative_control(value, symmetric)
+                         : value,
+            .meaning = "set by pardiso.iparm"};
+    }
+    std::vector<IparmEntry> result;
+    result.reserve(entries.size());
+    for (auto& [index, entry] : entries) {
+        result.push_back(std::move(entry));
+    }
+    return result;
+}
+
+std::optional<std::string> min_degree_hint(const Factorizer& factorizer,
+                                           const ResolvedSettings& settings,
+                                           bool symmetric, Eigen::Index size) {
     if (settings.backend != Backend::PARDISO ||
         settings.pardiso.ordering == PardisoOrdering::MIN_DEGREE || size <= 0) {
-        return;
+        return std::nullopt;
     }
     // A factor of more than 5e7 non-zeros filling more than a quarter of the
     // dense matrix: many radiative couplings per node, where the minimum
@@ -217,14 +363,14 @@ void suggest_min_degree_if_dense(const Factorizer& factorizer,
     const double dense = symmetric ? n * (n + 1.0) / 2.0 : n * n;
     const double fraction = factor / dense;
     if (factor > large_factor && fraction > near_dense) {
-        SPDLOG_LOGGER_WARN(
-            get_logger(),
-            "{}: the factor will have {:.3g} non-zeros, {:.0f} % of a dense "
+        return std::format(
+            "the factor will have {:.3g} non-zeros, {:.0f} % of a dense "
             "matrix. For such nearly dense models (many radiative couplings "
             "per node) pardiso.ordering = MIN_DEGREE can factorize several "
             "times faster.",
-            solver_name, factor, 100.0 * fraction);
+            factor, 100.0 * fraction);
     }
+    return std::nullopt;
 }
 
 }  // namespace pycanha::solvers::detail

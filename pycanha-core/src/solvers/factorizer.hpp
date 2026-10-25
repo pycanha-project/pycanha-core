@@ -2,9 +2,12 @@
 
 #include <Eigen/Core>
 #include <Eigen/Sparse>
+#include <cstdint>
 #include <memory>
+#include <optional>
 #include <string>
 #include <string_view>
+#include <vector>
 
 #include "pycanha-core/solvers/settings.hpp"
 
@@ -60,6 +63,17 @@ class Factorizer {
     }
     /// Whether factorize_and_solve() may iterate on the previous factors.
     [[nodiscard]] virtual bool reuses_factors() const noexcept { return false; }
+
+    /// Memory of the factors [bytes] after analyze_pattern(): PARDISO's
+    /// figure, or Eigen's factor non-zeros (counted after factorize(),
+    /// predicted before).
+    [[nodiscard]] virtual std::int64_t factor_bytes() const noexcept = 0;
+    /// factor_bytes() is known, not predicted.
+    [[nodiscard]] virtual bool factor_bytes_exact() const noexcept = 0;
+    /// Memory of the factorizer's own copy of the matrix [bytes].
+    [[nodiscard]] virtual std::int64_t matrix_copy_bytes() const noexcept {
+        return 0;
+    }
 };
 
 /// The factorization the resolved settings select: PARDISO (two-level or
@@ -74,11 +88,34 @@ class Factorizer {
 [[nodiscard]] std::string describe(const ResolvedSettings& settings,
                                    bool symmetric);
 
-/// Logs a warning suggesting the minimum degree ordering when PARDISO
-/// predicts a large, near-dense factor for nested dissection.
-void suggest_min_degree_if_dense(const Factorizer& factorizer,
-                                 const ResolvedSettings& settings,
-                                 bool symmetric, Eigen::Index size,
-                                 std::string_view solver_name);
+/// One PARDISO iparm entry the settings decide (zero-based index).
+struct IparmEntry {
+    int index = 0;
+    int value = 0;
+    std::string meaning;
+};
+
+/// PARDISO matrix type: 2 (symmetric positive definite) for the Cholesky
+/// form, 1 (structurally symmetric) otherwise.
+[[nodiscard]] int pardiso_matrix_type(bool symmetric) noexcept;
+
+/// iparm[3] = 10 * L + K stops the iteration on the previous factors at a
+/// relative residual of 10^-L, with CGS (K = 1) for the unsymmetric types
+/// or CG (K = 2) for the symmetric positive definite one. K is corrected to
+/// the matrix type; K = 0 disables the iteration and is kept as given.
+[[nodiscard]] int pardiso_iterative_control(int iparm_3,
+                                            bool symmetric) noexcept;
+
+/// The iparm entries make_factorizer() passes for the settings: ordering
+/// (1), iteration on the previous factors (3), two-level factorization (23),
+/// then the pardiso.iparm entries, which replace them. In index order.
+[[nodiscard]] std::vector<IparmEntry> pardiso_iparm(
+    const ResolvedSettings& settings, bool symmetric);
+
+/// A warning suggesting the minimum degree ordering when PARDISO predicts a
+/// large, near-dense factor for nested dissection; empty otherwise.
+[[nodiscard]] std::optional<std::string> min_degree_hint(
+    const Factorizer& factorizer, const ResolvedSettings& settings,
+    bool symmetric, Eigen::Index size);
 
 }  // namespace pycanha::solvers::detail

@@ -10,8 +10,10 @@
 #include <vector>
 
 #include "factorizer.hpp"
+#include "memory.hpp"
 #include "pycanha-core/config.hpp"
 #include "pycanha-core/globals.hpp"
+#include "pycanha-core/solvers/report.hpp"
 #include "pycanha-core/solvers/settings.hpp"
 #include "pycanha-core/solvers/solver.hpp"
 #include "pycanha-core/tmm/thermalmathematicalmodel.hpp"
@@ -81,14 +83,36 @@ bool SteadyState::has_radiation() const noexcept {
 }
 
 void SteadyState::initialize() {
+    const auto start = Clock::now();
+    begin_initialize_report();
+    if (preparation_matches()) {
+        // estimate_memory() built the pattern and ran the analysis.
+        initialize_common();
+    } else {
+        prepare(/*log_warnings=*/true);
+        if (!_prepared) {
+            return;
+        }
+    }
+    _has_factors = false;
+    if (const auto hint =
+            detail::min_degree_hint(*_factorizer, _resolved, _symmetric, nd)) {
+        warn(*hint);
+    }
+    SPDLOG_LOGGER_INFO(get_logger(), "{} initializing ({})", name(),
+                       detail::describe(_resolved, _symmetric));
+    _prepared = false;
+    _initialized = true;
+    end_initialize_report(start);
+}
+
+void SteadyState::prepare(bool log_warnings) {
     release();
     // Throws before anything is built when the settings contradict.
-    initialize_common();
+    initialize_common(log_warnings);
     _symmetric = _resolved.factorization == Factorization::CHOLESKY;
     _radiation = has_radiation();
     _factorizer = detail::make_factorizer(_resolved, _symmetric);
-    SPDLOG_LOGGER_INFO(get_logger(), "{} initializing ({})", name(),
-                       detail::describe(_resolved, _symmetric));
 
     build_pattern();
 
@@ -109,9 +133,26 @@ void SteadyState::initialize() {
         release();
         return;
     }
-    detail::suggest_min_degree_if_dense(*_factorizer, _resolved, _symmetric, nd,
-                                        name());
-    _initialized = true;
+    mark_prepared();
+}
+
+SolverMemory SteadyState::memory_now() const {
+    using detail::bytes_of;
+    SolverMemory memory;
+    if (_factorizer) {
+        memory.factors = _factorizer->factor_bytes();
+        memory.exact = _factorizer->factor_bytes_exact();
+        memory.matrix = _factorizer->matrix_copy_bytes();
+    }
+    memory.matrix += bytes_of(_a_matrix) + bytes_of(_b) +
+                     bytes_of(_factorized_values) + bytes_of(_t_cubed_domain) +
+                     bytes_of(_t_fourth_boundary) +
+                     bytes_of(_radiation_linear_term) + bytes_of(_row_sums) +
+                     bytes_of(_ones_domain) + bytes_of(_ones_boundary) +
+                     bytes_of(_upper_kl_indices) + bytes_of(_lower_kl_indices) +
+                     bytes_of(_upper_kr_indices) + bytes_of(_lower_kr_indices) +
+                     bytes_of(_diagonal_indices) + common_bytes();
+    return memory;
 }
 
 void SteadyState::build_pattern() {
@@ -203,6 +244,7 @@ void SteadyState::assemble_rhs() {
 bool SteadyState::factorize_and_solve_step() {
     PYCANHA_PROFILE_SCOPE("Steady state factorize and solve");
     auto& factorizer = *_factorizer;
+    const auto start = Clock::now();
     const auto values = values_of(std::as_const(_a_matrix));
     const std::span<const double> factorized(_factorized_values.data(),
                                              values.size());
@@ -266,8 +308,8 @@ bool SteadyState::factorize_and_solve_step() {
         _factorized_values = Eigen::Map<const VectorXd>(_a_matrix.valuePtr(),
                                                         _a_matrix.nonZeros());
         _has_factors = true;
-        ++_num_factorizations;
     }
+    record_linear_solve(start, factors_recomputed);
     return true;
 }
 
@@ -279,6 +321,8 @@ void SteadyState::solve() {
             name());
         return;
     }
+    const auto start = Clock::now();
+    begin_solve_report();
     refresh_live_settings();
     _factorizer->apply_live_settings(_resolved);
     SPDLOG_LOGGER_INFO(get_logger(), "{} solving...", name());
@@ -286,13 +330,13 @@ void SteadyState::solve() {
     const FormulaExecutionGuard formula_execution(*this);
 
     _converged = false;
-    _num_factorizations = 0;
-    _iterations = 0;
+    int iterations_done = 0;
+    bool converged = false;
 
     for (solver_iter = 0; solver_iter < _resolved.max_iterations;
          ++solver_iter) {
         PYCANHA_PROFILE_SCOPE("Steady state iteration");
-        _iterations = solver_iter + 1;
+        iterations_done = solver_iter + 1;
 
         if (_radiation) {
             _t_cubed_domain = (4.0 * STF_BOLTZ) * Td.array().cube();
@@ -301,6 +345,7 @@ void SteadyState::solve() {
         assemble_rhs();
 
         if (!factorize_and_solve_step()) {
+            finish_solve_report(start, /*failed=*/true);
             return;
         }
 
@@ -314,25 +359,22 @@ void SteadyState::solve() {
             SPDLOG_LOGGER_INFO(get_logger(),
                                "{} converged. Num. iters: {}. Max. dT = {} K. "
                                "Factorizations: {}.",
-                               name(), solver_iter + 1, max_dT,
-                               _num_factorizations);
-            _converged = true;
+                               name(), iterations_done, max_dT,
+                               _report.factorizations);
+            converged = true;
             break;
         }
     }
 
-    if (!_converged) {
-        SPDLOG_LOGGER_ERROR(
-            get_logger(),
-            "{} did NOT converge after {} iterations. Max. dT = {} K.", name(),
-            _resolved.max_iterations, max_dT);
-    }
+    record_steady_iterations(iterations_done, converged);
+    finish_solve_report(start);
 }
 
 void SteadyState::deinitialize() { release(); }
 
 void SteadyState::release() noexcept {
     _factorizer.reset();
+    _prepared = false;
     _has_factors = false;
     _symmetric = false;
     _a_matrix = SpMatRow();

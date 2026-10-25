@@ -71,6 +71,8 @@ set(UNIT_TEST_SOURCES
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/solvers/test_callback_registry.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/solvers/test_model_changed.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/solvers/test_settings.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/solvers/test_report.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/solvers/test_memory_and_auto.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/tmm/test_bulk.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/tmm/test_coupling.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/tmm/test_couplings.cpp"

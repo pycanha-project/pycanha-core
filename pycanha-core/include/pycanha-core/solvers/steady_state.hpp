@@ -24,7 +24,8 @@ namespace pycanha::solvers::steady {
  *
  * A singular matrix (a group of diffusive nodes without a path to a boundary
  * node) is reported as an ERROR and leaves the temperatures of that solve
- * untouched; a solve that does not converge logs an ERROR.
+ * untouched; a solve that does not converge within max_iterations logs a
+ * WARN and keeps the temperatures of its last iteration.
  */
 class SteadyState : public Solver {
   public:
@@ -48,10 +49,14 @@ class SteadyState : public Solver {
     [[nodiscard]] bool uses_cholesky() const noexcept { return _symmetric; }
     /// Numerical factorizations done by the last solve().
     [[nodiscard]] int num_factorizations() const noexcept {
-        return _num_factorizations;
+        return _report.factorizations;
     }
     /// Iterations done by the last solve().
-    [[nodiscard]] int iterations() const noexcept { return _iterations; }
+    [[nodiscard]] int iterations() const noexcept { return _report.iterations; }
+
+  protected:
+    void prepare(bool log_warnings) override;
+    [[nodiscard]] SolverMemory memory_now() const override;
 
   private:
     // A = -K and b = -Qd of the linearised system K T = Qd, so the diagonal
@@ -74,8 +79,6 @@ class SteadyState : public Solver {
     std::vector<int> _lower_kr_indices;
     std::vector<int> _diagonal_indices;
 
-    int _num_factorizations = 0;
-    int _iterations = 0;
     bool _symmetric = false;
     bool _radiation = false;
 

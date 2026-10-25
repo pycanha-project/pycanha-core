@@ -489,3 +489,34 @@ TEST_CASE("Output presets", "[solver][settings]") {
     REQUIRE(all.contains(DataModelAttribute::JAC));
     REQUIRE_FALSE(dense.contains(DataModelAttribute::KL));
 }
+
+TEST_CASE("Explaining settings gives each applicable field a reason",
+          "[solver][settings]") {
+    Settings settings;
+    settings.reuse_factors = true;
+    settings.time_step = 1.0;
+    const auto explanation =
+        solvers::explain_settings(settings, crank_nicolson());
+    const auto field = [&explanation](std::string_view name) {
+        return *std::ranges::find(explanation.fields, name,
+                                  &solvers::FieldExplanation::name);
+    };
+    REQUIRE(field("reuse_factors").origin == Origin::USER);
+    REQUIRE(field("pardiso.level").reason ==
+            "reuse_factors needs the one-level factorization");
+    REQUIRE(field("pardiso.ordering").value_text == "MIN_DEGREE");
+    REQUIRE(explanation.contradictions.empty());
+}
+
+TEST_CASE("Explaining contradictory settings lists the contradictions",
+          "[solver][settings]") {
+    Settings settings;
+    settings.backend = Backend::EIGEN;
+    settings.reuse_factors = true;
+    const auto explanation = solvers::explain_settings(settings, steady());
+    REQUIRE(explanation.contradictions.size() == 1);
+    REQUIRE(std::ranges::none_of(explanation.fields,
+                                 [](const solvers::FieldExplanation& field) {
+                                     return field.name.starts_with("pardiso.");
+                                 }));
+}
