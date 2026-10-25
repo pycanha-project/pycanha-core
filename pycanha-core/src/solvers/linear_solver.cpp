@@ -17,6 +17,7 @@
 
 #include "pycanha-core/config.hpp"
 #include "pycanha-core/globals.hpp"
+#include "pycanha-core/solvers/accelerate.hpp"
 #include "pycanha-core/solvers/pardiso.hpp"
 #include "pycanha-core/utils/logger.hpp"
 
@@ -31,6 +32,15 @@ using ColumnMajorMatrix = Eigen::SparseMatrix<double>;
     return type == DirectSolverType::TWO_LEVEL ||
            type == DirectSolverType::ONE_LEVEL ||
            type == DirectSolverType::MIN_DEGREE;
+}
+
+[[nodiscard]] bool is_accelerate_type(DirectSolverType type) noexcept {
+    return type == DirectSolverType::METIS || type == DirectSolverType::AMD;
+}
+
+[[nodiscard]] bool is_eigen_type(DirectSolverType type) noexcept {
+    return type == DirectSolverType::COLAMD || type == DirectSolverType::AMD ||
+           type == DirectSolverType::LDLT;
 }
 
 [[nodiscard]] bool iterates(int iparm_3) noexcept {
@@ -147,11 +157,23 @@ std::unique_ptr<SparseLinearSolver> make_pardiso(
 }  // namespace
 
 SolverEngine default_solver_engine() noexcept {
-    return MKL_ENABLED ? SolverEngine::MKL : SolverEngine::EIGEN;
+    if (MKL_ENABLED) {
+        return SolverEngine::MKL;
+    }
+    return accelerate_available() ? SolverEngine::ACCELERATE
+                                  : SolverEngine::EIGEN;
 }
 
 std::string_view to_string(SolverEngine engine) noexcept {
-    return engine == SolverEngine::MKL ? "MKL" : "EIGEN";
+    switch (engine) {
+        case SolverEngine::MKL:
+            return "MKL";
+        case SolverEngine::EIGEN:
+            return "EIGEN";
+        case SolverEngine::ACCELERATE:
+            return "ACCELERATE";
+    }
+    return "UNKNOWN";
 }
 
 std::string_view to_string(DirectSolverType type) noexcept {
@@ -170,6 +192,8 @@ std::string_view to_string(DirectSolverType type) noexcept {
             return "AMD";
         case DirectSolverType::LDLT:
             return "LDLT";
+        case DirectSolverType::METIS:
+            return "METIS";
     }
     return "UNKNOWN";
 }
@@ -179,8 +203,15 @@ DirectSolverType resolve_solver_type(SolverEngine engine,
     if (type != DirectSolverType::DEFAULT) {
         return type;
     }
-    return engine == SolverEngine::MKL ? DirectSolverType::TWO_LEVEL
-                                       : DirectSolverType::COLAMD;
+    switch (engine) {
+        case SolverEngine::MKL:
+            return DirectSolverType::TWO_LEVEL;
+        case SolverEngine::ACCELERATE:
+            return DirectSolverType::METIS;
+        case SolverEngine::EIGEN:
+            break;
+    }
+    return DirectSolverType::COLAMD;
 }
 
 void SparseLinearSolver::factorize_and_solve(const SparseMatrix& matrix,
@@ -207,7 +238,7 @@ std::unique_ptr<SparseLinearSolver> make_linear_solver(
         }
         if (!is_pardiso_type(type)) {
             throw std::invalid_argument(std::format(
-                "Solver type {} belongs to the EIGEN engine. With the MKL "
+                "Solver type {} belongs to another engine. With the MKL "
                 "engine use TWO_LEVEL, ONE_LEVEL or MIN_DEGREE.",
                 to_string(type)));
         }
@@ -222,9 +253,35 @@ std::unique_ptr<SparseLinearSolver> make_linear_solver(
 #endif
     }
 
-    if (is_pardiso_type(type)) {
+    if (options.engine == SolverEngine::ACCELERATE) {
+        // Configuration errors first, so they are reported on every platform.
+        if (!is_accelerate_type(type)) {
+            throw std::invalid_argument(std::format(
+                "Solver type {} belongs to another engine. With the "
+                "ACCELERATE engine use METIS or AMD (Cholesky is chosen by "
+                "the solver, see allow_cholesky).",
+                to_string(type)));
+        }
+        if (iterates(iparm_3)) {
+            throw std::invalid_argument(
+                "The iterative step (pardiso_iparm_3) is only available with "
+                "the MKL engine.");
+        }
+        if (!accelerate_available()) {
+            throw std::invalid_argument(
+                "The ACCELERATE engine is not available: pycanha-core was "
+                "built without Accelerate, or macOS is older than 15.5. Use "
+                "the EIGEN engine.");
+        }
+#if PYCANHA_USE_ACCELERATE
+        return make_accelerate_solver(type,
+                                      options.symmetric_positive_definite);
+#endif
+    }
+
+    if (!is_eigen_type(type)) {
         throw std::invalid_argument(std::format(
-            "Solver type {} belongs to the MKL engine. With the EIGEN engine "
+            "Solver type {} belongs to another engine. With the EIGEN engine "
             "use COLAMD, AMD or LDLT.",
             to_string(type)));
     }
