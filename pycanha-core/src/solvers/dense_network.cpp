@@ -35,8 +35,6 @@ namespace {
 using VectorRef = Eigen::Ref<Eigen::VectorXd>;
 using ConstVectorRef = Eigen::Ref<const Eigen::VectorXd>;
 
-constexpr auto double_bytes = static_cast<std::int64_t>(sizeof(double));
-
 // A pivot below this fraction of the largest diagonal entry marks the matrix
 // as singular: a group of diffusive nodes without a path to a boundary node
 // leaves a pivot of about 1e-16 of the others rather than an exact zero.
@@ -251,6 +249,8 @@ class LapackCholesky final : public LapackFactors {
                &info);
     }
 };
+
+constexpr auto double_bytes = static_cast<std::int64_t>(sizeof(double));
 
 // FGMRES (MKL's reverse-communication solver) preconditioned with the factors
 // of an earlier matrix: the dense counterpart of PARDISO's iteration on
