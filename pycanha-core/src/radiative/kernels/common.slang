@@ -157,6 +157,7 @@ public float rng_next(inout Rng r) {
 // "Practical Hash-based Owen Scrambling", JCGT 9(4)) with the improved hash of
 // Vegdahl (2021, "Building a Better LK Hash").
 // ---------------------------------------------------------------------------
+#if defined(PYCANHA_METAL_BACKEND) || defined(PYCANHA_QMC)
 static const uint SOBOL_DIRECTIONS[128] = {
     // dimension 0 (van der Corput)
     0x80000000u, 0x40000000u, 0x20000000u, 0x10000000u, 0x08000000u, 0x04000000u, 0x02000000u, 0x01000000u,
@@ -211,9 +212,28 @@ public float qmc_sample(uint face, uint ray_index, uint dim) {
     uint x = owen_scramble(sobol_u32(ray_index, dim), seed);
     return float(x >> 8) * (1.0 / 16777216.0);
 }
+#else
+// The default Vulkan kernels never call it (qmc_mode() is false there); the
+// stub keeps the table and the scrambling out of them whatever the optimizer.
+public float qmc_sample(uint face, uint ray_index, uint dim) {
+    return 0.0;
+}
+#endif
 
+// On Vulkan the sampler is chosen at compile time: every kernel is built twice,
+// the second time with PYCANHA_QMC defined (<kernel>_qmc_spv), and the host
+// picks the build. The default kernels then hold none of the QMC code or its
+// table: as a dispatch-uniform push-constant flag they traced ~5 % slower than
+// main on an RTX 4070, and so did a specialization constant. Metal keeps the
+// flag.
 public bool qmc_mode() {
+#if defined(PYCANHA_METAL_BACKEND)
     return (pc.flags & FLAG_QMC) != 0u;
+#elif defined(PYCANHA_QMC)
+    return true;
+#else
+    return false;
+#endif
 }
 
 // ---------------------------------------------------------------------------
@@ -371,7 +391,12 @@ public SurfaceSample sample_face_point(uint face, uint ray_index, inout Rng rng)
 
     // 1. Area-weighted triangle pick: binary search u0 in the face's
     //    cumulative-area table (normalized to 1.0 at the last triangle).
-    float u0 = qmc ? qmc_sample(face, ray_index, 0u) : rng_next(rng);
+    float u0;
+    if (qmc) {
+        u0 = qmc_sample(face, ray_index, 0u);
+    } else {
+        u0 = rng_next(rng);
+    }
     uint first = emit_tri_offset[pair_base];
     uint lo = first;
     uint hi = emit_tri_offset[pair_base + 1u];  // one past the last triangle
