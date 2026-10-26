@@ -276,7 +276,10 @@ std::unique_ptr<Factorizer> make_factorizer(const ResolvedSettings& settings,
 #endif
 }
 
-std::string describe(const ResolvedSettings& settings, bool symmetric) {
+namespace {
+
+std::string describe_factorization(const ResolvedSettings& settings,
+                                   bool symmetric) {
     const std::string_view form = symmetric ? "Cholesky" : "LU";
     if (settings.storage == Storage::DENSE) {
         return std::format(
@@ -291,6 +294,13 @@ std::string describe(const ResolvedSettings& settings, bool symmetric) {
     return std::format("PARDISO {} {}{}, {}", to_string(settings.pardiso.level),
                        to_string(settings.pardiso.ordering),
                        settings.reuse_factors ? ", reusing factors" : "", form);
+}
+
+}  // namespace
+
+std::string describe(const ResolvedSettings& settings, bool symmetric) {
+    return describe_factorization(settings, symmetric) +
+           (settings.fixed_couplings ? ", fixed couplings" : "");
 }
 
 int pardiso_matrix_type(bool symmetric) noexcept { return symmetric ? 2 : 1; }

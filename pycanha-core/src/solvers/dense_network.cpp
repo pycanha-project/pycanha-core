@@ -2,7 +2,6 @@
 #include <Eigen/Core>
 #include <Eigen/LU>
 #include <Eigen/Sparse>
-#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <format>
@@ -12,6 +11,7 @@
 #include <string_view>
 #include <vector>
 
+#include "dense_assembly.hpp"
 #include "linearized_network.hpp"
 #include "pycanha-core/globals.hpp"
 #include "pycanha-core/solvers/settings.hpp"
@@ -32,15 +32,10 @@ namespace pycanha::solvers::detail {
 
 namespace {
 
-using DenseMatrix = Eigen::MatrixXd;
 using VectorRef = Eigen::Ref<Eigen::VectorXd>;
 using ConstVectorRef = Eigen::Ref<const Eigen::VectorXd>;
 
 constexpr auto double_bytes = static_cast<std::int64_t>(sizeof(double));
-
-[[nodiscard]] std::int64_t square_bytes(Index size) {
-    return static_cast<std::int64_t>(size) * size * double_bytes;
-}
 
 // A pivot below this fraction of the largest diagonal entry marks the matrix
 // as singular: a group of diffusive nodes without a path to a boundary node
@@ -378,19 +373,20 @@ std::unique_ptr<DenseFactors> make_factors(const ResolvedSettings& settings,
     return std::make_unique<EigenLu>();
 }
 
-// The matrix as a dense n x n array, rebuilt from the couplings at every
-// linearize(), and its factors in a second one. Fast for small models whose
-// nodes are coupled to most of the others; the memory grows with n^2.
+// The matrix as a dense n x n array, written by the assembly, and its
+// factors in a second one. Fast for small models whose nodes are coupled to
+// most of the others; the memory grows with n^2.
 class DenseNetwork final : public LinearizedNetwork {
   public:
     DenseNetwork(const ResolvedSettings& settings,
                  const NetworkCouplings& couplings,
                  const NetworkOptions& options)
-        : _couplings(couplings),
-          _options(options),
+        : _options(options),
+          _compare(options.skip_unchanged && !options.fixed_couplings),
           _size(couplings.conductive->rows()),
           _reuse(settings.reuse_factors),
-          _factors(make_factors(settings, options.symmetric)) {
+          _factors(make_factors(settings, options.symmetric)),
+          _assembly(make_dense_assembly(couplings, options)) {
         apply_live_settings(settings);
     }
 
@@ -398,11 +394,11 @@ class DenseNetwork final : public LinearizedNetwork {
 
     void allocate() override {
         _matrix = DenseMatrix::Zero(_size, _size);
-        _zero_outside_couplings = true;
-        if (_options.skip_unchanged) {
+        if (_compare) {
             _factorized.resize(_size, _size);
         }
-        _row_sums.resize(_size);
+        _rewrite = false;
+        _assembly->allocate();
         _factors->allocate(_size);
 #if PYCANHA_USE_MKL
         if (_reuse) {
@@ -412,32 +408,16 @@ class DenseNetwork final : public LinearizedNetwork {
         _has_factors = false;
     }
 
-    void linearize(const Eigen::VectorXd& t3, const Eigen::VectorXd& t,
-                   Eigen::VectorXd& radiation) override {
-        // The naive way: every coupling is copied again at every
-        // linearization, whether its value changed or not.
-        clear_written_entries();
-        _row_sums.setZero();
-        radiation.setZero();
-        if (_options.radiation) {
-            add_radiation(t3, t, radiation);
-        } else {
-            _matrix.diagonal().setZero();
-        }
-        for (Index row = 0; row < _size; ++row) {
-            for (SparseMatrix::InnerIterator it(*_couplings.conductive, row);
-                 it; ++it) {
-                _matrix(row, it.col()) -= it.value();
-                _matrix(it.col(), row) -= it.value();
-                add_to_sums(row, it.col(), it.value());
-            }
-        }
-        add_boundary_sums(*_couplings.conductive_boundary);
-        _matrix.diagonal() += _row_sums;
-    }
+    void begin_solve() override { _assembly->begin_solve(); }
 
-    void add_to_diagonal(const Eigen::VectorXd& values) override {
-        _matrix.diagonal() += values;
+    void linearize(const Eigen::VectorXd& t3, const Eigen::VectorXd& t,
+                   const Eigen::VectorXd& diagonal,
+                   Eigen::VectorXd& radiation) override {
+        if (_assembly->assemble(_matrix, _rewrite, t3, t, diagonal,
+                                radiation)) {
+            _factors_current = false;
+        }
+        _rewrite = false;
     }
 
     void multiply(const Eigen::VectorXd& x, Eigen::VectorXd& y) const override {
@@ -455,23 +435,25 @@ class DenseNetwork final : public LinearizedNetwork {
     }
 
     SolveOutcome solve(Eigen::VectorXd& b, Eigen::VectorXd& x) override {
-        if (_has_factors && _options.skip_unchanged && _matrix == _factorized) {
+        if (_has_factors &&
+            (_factors_current || (_compare && _matrix == _factorized))) {
             _factors->solve(b, x);
             return {.succeeded = true, .factorized = false};
         }
         if (_has_factors && _reuse && iterate(b, x)) {
             return {.succeeded = true, .factorized = false};
         }
-        if (_options.skip_unchanged) {
+        if (_compare) {
             _factorized = _matrix;
         }
-        // The next linearize() rebuilds the matrix; only keep_matrix needs it
-        // until then.
+        // The next linearize() writes the matrix again; only keep_matrix
+        // needs it until then.
         _has_factors = _factors->factorize(_matrix, _options.keep_matrix);
-        _zero_outside_couplings = _options.keep_matrix;
+        _rewrite = !_options.keep_matrix;
         if (!_has_factors) {
             return {.succeeded = false, .factorized = true};
         }
+        _factors_current = true;
         _factors->solve(b, x);
         return {.succeeded = true, .factorized = true};
     }
@@ -506,9 +488,8 @@ class DenseNetwork final : public LinearizedNetwork {
         return true;
     }
     [[nodiscard]] std::int64_t matrix_bytes() const noexcept override {
-        std::int64_t bytes = square_bytes(_size) +
-                             (static_cast<std::int64_t>(_size) * double_bytes);
-        if (_options.skip_unchanged) {
+        std::int64_t bytes = square_bytes(_size) + _assembly->bytes();
+        if (_compare) {
             bytes += square_bytes(_size);
         }
 #if PYCANHA_USE_MKL
@@ -520,106 +501,6 @@ class DenseNetwork final : public LinearizedNetwork {
     }
 
   private:
-    // The entries outside the couplings and the diagonal stay zero, so only
-    // the conductive entries need clearing before they are accumulated: the
-    // radiative ones and the diagonal are assigned. After a factorization
-    // that took the storage, the whole matrix is cleared.
-    void clear_written_entries() {
-        if (!_zero_outside_couplings) {
-            _matrix.setZero();
-            _zero_outside_couplings = true;
-            return;
-        }
-        for (Index row = 0; row < _size; ++row) {
-            for (SparseMatrix::InnerIterator it(*_couplings.conductive, row);
-                 it; ++it) {
-                _matrix(row, it.col()) = 0.0;
-                _matrix(it.col(), row) = 0.0;
-            }
-        }
-    }
-
-    // A_ij = -GR_ij 4 sigma Tj^3 off the diagonal and the row sums times
-    // 4 sigma Ti^3 on it (the Newton linearisation of sigma T^4), with
-    // 0.75 A t in `radiation`. The stored rows give the lower triangle
-    // column by column; the upper one is its mirror until the columns are
-    // scaled, which one vectorized pass does with the product.
-    void add_radiation(const Eigen::VectorXd& t3, const Eigen::VectorXd& t,
-                       Eigen::VectorXd& radiation) {
-        const SparseMatrix& radiative = *_couplings.radiative;
-        const std::span<const double> values(radiative.valuePtr(),
-                                             to_sizet(radiative.nonZeros()));
-        const std::span<const int> outer(radiative.outerIndexPtr(),
-                                         to_sizet(_size + 1));
-        const std::span<const int> inner(radiative.innerIndexPtr(),
-                                         values.size());
-        add_boundary_sums(*_couplings.radiative_boundary);
-        // Spans and a local sum: through the members the compiler reloads
-        // the sums after every write to the matrix.
-        const std::span<double> sums(_row_sums.data(), to_sizet(_size));
-        for (Index col = 0; col < _size; ++col) {
-            const std::span<double> column(_matrix.col(col).data(),
-                                           to_sizet(_size));
-            double sum = 0.0;
-            for (int k = outer[to_sizet(col)]; k < outer[to_sizet(col) + 1];
-                 ++k) {
-                const auto row = to_sizet(inner[to_sizet(k)]);
-                const double coupling = values[to_sizet(k)];
-                sum += coupling;
-                if (row != to_sizet(col)) {
-                    sums[row] += coupling;
-                    column[row] = -coupling;
-                }
-            }
-            sums[to_sizet(col)] += sum;
-        }
-        mirror_lower_to_upper();
-        _matrix.diagonal() = _row_sums;
-        for (Index col = 0; col < _size; ++col) {
-            auto column = _matrix.col(col);
-            column *= t3[col];
-            radiation.noalias() += column * t[col];
-        }
-        radiation *= 0.75;
-        _row_sums.setZero();
-    }
-
-    // Copies the strict lower triangle to the upper one in square tiles
-    // that fit the L1 cache: a plain transposed copy would read a new cache
-    // line for every entry.
-    void mirror_lower_to_upper() {
-        constexpr Index tile = 32;
-        for (Index col_start = 0; col_start < _size; col_start += tile) {
-            const Index col_end = std::min(col_start + tile, _size);
-            for (Index row_start = 0; row_start < col_end; row_start += tile) {
-                // Entry (i, j) above the diagonal takes entry (j, i).
-                for (Index j = col_start; j < col_end; ++j) {
-                    const Index row_end = std::min(row_start + tile, j);
-                    for (Index i = row_start; i < row_end; ++i) {
-                        _matrix(i, j) = _matrix(j, i);
-                    }
-                }
-            }
-        }
-    }
-
-    // The sums of the couplings of each row, as the product of the stored
-    // upper triangle with a vector of ones counts them.
-    void add_to_sums(Index row, Index col, double value) {
-        _row_sums[row] += value;
-        if (col != row) {
-            _row_sums[col] += value;
-        }
-    }
-
-    void add_boundary_sums(const SparseMatrix& boundary) {
-        for (Index row = 0; row < boundary.outerSize(); ++row) {
-            for (SparseMatrix::InnerIterator it(boundary, row); it; ++it) {
-                _row_sums[row] += it.value();
-            }
-        }
-    }
-
     // Iterates on the current factors; false when it does not converge.
     bool iterate(Eigen::VectorXd& b, Eigen::VectorXd& x) {
 #if PYCANHA_USE_MKL
@@ -631,20 +512,27 @@ class DenseNetwork final : public LinearizedNetwork {
 #endif
     }
 
-    NetworkCouplings _couplings;
     NetworkOptions _options;
+    // skip_unchanged without fixed_couplings (a fixed assembly says itself
+    // when the matrix changes).
+    bool _compare;
     Index _size;
     bool _reuse;
     std::unique_ptr<DenseFactors> _factors;
+    std::unique_ptr<DenseAssembly> _assembly;
     DenseMatrix _matrix;
+    // The matrix last factorized, with _compare.
     DenseMatrix _factorized;
-    Eigen::VectorXd _row_sums;
 #if PYCANHA_USE_MKL
     FactorReuse _factor_reuse;
 #endif
     int _threads = 0;
     bool _has_factors = false;
-    bool _zero_outside_couplings = false;
+    // The factors belong to the matrix as it is now (not to an earlier one).
+    bool _factors_current = false;
+    // A factorization took the matrix storage: the next assemble() writes it
+    // in full.
+    bool _rewrite = false;
 };
 
 }  // namespace

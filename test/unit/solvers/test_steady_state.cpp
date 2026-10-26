@@ -195,10 +195,13 @@ TEST_CASE(
 
     const auto config =
         GENERATE(from_range(direct_configs(/*radiation=*/false)));
-    INFO(config.name);
+    const bool fixed = GENERATE(false, true);
+    INFO(config.name << (fixed ? ", fixed couplings" : ""));
     models::reset_temperatures(model, 293.15);
     SteadyState solver(model);
-    configure(solver, config.settings, 1e-6);
+    Settings settings = config.settings;
+    settings.fixed_couplings = fixed;
+    configure(solver, settings, 1e-6);
     solver.initialize();
     REQUIRE(solver.initialized());
     REQUIRE(solver.uses_cholesky() ==
@@ -222,10 +225,13 @@ TEST_CASE(
 
     const auto config =
         GENERATE(from_range(direct_configs(/*radiation=*/true)));
-    INFO(config.name);
+    const bool fixed = GENERATE(false, true);
+    INFO(config.name << (fixed ? ", fixed couplings" : ""));
     models::reset_temperatures(model, 250.0);
     SteadyState solver(model);
-    configure(solver, config.settings, tolerance);
+    Settings settings = config.settings;
+    settings.fixed_couplings = fixed;
+    configure(solver, settings, tolerance);
     solver.initialize();
     REQUIRE_FALSE(solver.uses_cholesky());
     solver.solve();

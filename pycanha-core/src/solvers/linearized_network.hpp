@@ -34,12 +34,18 @@ struct NetworkOptions {
     bool symmetric = false;
     /// The model has radiative couplings.
     bool radiation = false;
-    /// solve() reuses the current factors while the matrix is unchanged.
+    /// solve() compares the matrix with the one last factorized and reuses
+    /// the factors when they are equal. Not needed with fixed_couplings,
+    /// which knows when the matrix changes.
     bool skip_unchanged = false;
     /// The matrix is still needed after solve() (multiply()); otherwise a
     /// dense factorization may overwrite it, and the next linearize()
     /// rebuilds it.
     bool keep_matrix = false;
+    /// The couplings and the diagonal passed to linearize() stay as they are
+    /// at the first linearize() of each solve(): the user's promise, trusted
+    /// and never checked.
+    bool fixed_couplings = false;
 };
 
 /// What solve() did.
@@ -54,8 +60,13 @@ struct SolveOutcome {
  * linearize() sets A = -K, with K the conductance matrix with the radiation
  * linearized at the given temperatures: K_ij = GL_ij + GR_ij 4 sigma Tj^3 off
  * the diagonal, and minus the sum of the couplings of row i, boundary
- * couplings included, on it. The solvers add their own diagonal terms. A is
- * symmetric positive definite without radiative couplings.
+ * couplings included, on it. The network holds A + D, with D the diagonal
+ * the solver passes to linearize() (2C/dt in a transient). A is symmetric
+ * positive definite without radiative couplings.
+ *
+ * With fixed_couplings the matrix is built from constants read once per
+ * solve(); otherwise every linearize() reads the couplings again. Either way
+ * the network knows when its factors belong to the current matrix.
  */
 class LinearizedNetwork {
   public:
@@ -70,23 +81,26 @@ class LinearizedNetwork {
     [[nodiscard]] virtual bool analyze() = 0;
     /// The storage only a run needs; estimate_memory() never calls it.
     virtual void allocate() = 0;
+    /// A new solve() starts: with fixed_couplings the next linearize() reads
+    /// the couplings and the diagonal again.
+    virtual void begin_solve() = 0;
 
-    /// A at the temperatures `t` (t3 = 4 sigma t^3), and 0.75 A_rad t in
-    /// `radiation`: the part of the Newton linearisation that moves to the
-    /// right-hand side (zero without radiative couplings).
+    /// A + diag(diagonal) at the temperatures `t` (t3 = 4 sigma t^3), and
+    /// 0.75 A_rad t in `radiation`: the part of the Newton linearisation
+    /// that moves to the right-hand side (zero without radiative couplings).
+    /// An empty `diagonal` adds nothing.
     virtual void linearize(const Eigen::VectorXd& t3, const Eigen::VectorXd& t,
+                           const Eigen::VectorXd& diagonal,
                            Eigen::VectorXd& radiation) = 0;
-    /// A += diag(values).
-    virtual void add_to_diagonal(const Eigen::VectorXd& values) = 0;
-    /// y = A x.
+    /// y = (A + D) x.
     virtual void multiply(const Eigen::VectorXd& x,
                           Eigen::VectorXd& y) const = 0;
     virtual void multiply(const Eigen::MatrixXd& x,
                           Eigen::MatrixXd& y) const = 0;
 
-    /// Solves A x = b. Factorizes A, unless the factors already belong to it
-    /// (skip_unchanged) or reuse_factors iterates on older ones, starting
-    /// from the x given.
+    /// Solves (A + D) x = b. Factorizes the matrix, unless the factors
+    /// already belong to it or reuse_factors iterates on older ones,
+    /// starting from the x given.
     [[nodiscard]] virtual SolveOutcome solve(Eigen::VectorXd& b,
                                              Eigen::VectorXd& x) = 0;
     /// Several right-hand sides with the current factors; false on failure.

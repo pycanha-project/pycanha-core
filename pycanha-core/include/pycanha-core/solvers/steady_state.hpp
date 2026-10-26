@@ -19,7 +19,8 @@ namespace pycanha::solvers::steady {
  * reuse_factors, pardiso.*, eigen.*). Each iteration refactorizes only when
  * the matrix values differ from those of the last factorization, so the second
  * iteration of a linear model, or a new solve of an unchanged model, costs
- * one solve with the existing factors.
+ * one solve with the existing factors. With fixed_couplings the couplings
+ * are read once per solve() and the matrices are not compared.
  *
  * A singular matrix (a group of diffusive nodes without a path to a boundary
  * node) is reported as an ERROR and leaves the temperatures of that solve

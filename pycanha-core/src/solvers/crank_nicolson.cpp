@@ -276,7 +276,8 @@ void CrankNicolson::prepare(bool log_warnings) {
                              {.symmetric = _symmetric,
                               .radiation = has_radiation(),
                               .skip_unchanged = false,
-                              .keep_matrix = keeps_matrix_after_solve()});
+                              .keep_matrix = keeps_matrix_after_solve(),
+                              .fixed_couplings = _resolved.fixed_couplings});
 
     _rhs = VectorXd::Zero(nd);
     _heat_flux_n0 = VectorXd::Zero(nd);
@@ -447,6 +448,7 @@ void CrankNicolson::solve() {
     begin_solve_report();
     refresh_live_settings();
     _network->apply_live_settings(_resolved);
+    _network->begin_solve();
     SPDLOG_LOGGER_INFO(get_logger(), "{} solving...", name());
 
     const FormulaExecutionGuard formula_execution(*this);
@@ -454,8 +456,6 @@ void CrankNicolson::solve() {
     callback_transient_time_change();
     callback_solver_loop();
     outputs_first_last();
-
-    build_capacities();
 
     for (time_iter = 0; time_iter < num_time_steps; ++time_iter) {
         callback_solver_loop();
@@ -475,7 +475,6 @@ void CrankNicolson::solve() {
             callback_solver_loop();
             build_conductance_matrix();
             build_heat_flux();
-            add_capacities_to_matrix();
             solve_step();
 
             converged = temperature_convergence_check();
@@ -516,12 +515,15 @@ void CrankNicolson::build_capacities() {
     _capacity_diagonal = (2.0 / _resolved.time_step) * _capacities;
 }
 
+// -K + 2C/dt at the current temperatures, couplings and capacities.
 void CrankNicolson::build_conductance_matrix() {
+    build_capacities();
     PYCANHA_PROFILE_SCOPE("Linearization");
     _t3_domain = (4.0 * STF_BOLTZ) * Td.array().cube();
     _t4_domain = STF_BOLTZ * Td.array().square().square();
     _t4_boundary = STF_BOLTZ * Tb.array().square().square();
-    _network->linearize(_t3_domain, Td, _radiation_linear_term);
+    _network->linearize(_t3_domain, Td, _capacity_diagonal,
+                        _radiation_linear_term);
 }
 
 void CrankNicolson::build_heat_flux() {
@@ -533,16 +535,11 @@ void CrankNicolson::build_heat_flux() {
 
 void CrankNicolson::store_heat_flux_at_n0() {
     PYCANHA_PROFILE_SCOPE("Store Q_n0");
-    // K Td + Qd, with K = -A.
+    // K Td + Qd, with K = -A: the network holds A + 2C/dt.
     _network->multiply(Td, _kt_q_n0);
-    _kt_q_n0 = Qd - _kt_q_n0;
+    _kt_q_n0 = Qd - _kt_q_n0 + _capacity_diagonal.cwiseProduct(Td);
     _heat_flux_n0 =
         _kt_q_n0 + (2.0 / _resolved.time_step) * _capacities.cwiseProduct(Td);
-}
-
-void CrankNicolson::add_capacities_to_matrix() {
-    PYCANHA_PROFILE_SCOPE("Add C to K");
-    _network->add_to_diagonal(_capacity_diagonal);
 }
 
 void CrankNicolson::solve_step() {

@@ -318,6 +318,7 @@ void JacobianPropagation::solve() {
     begin_solve_report();
     refresh_live_settings();
     _network->apply_live_settings(_resolved);
+    _network->begin_solve();
     SPDLOG_LOGGER_INFO(get_logger(), "{} solving...", name());
 
     const FormulaExecutionGuard formula_execution(*this);
@@ -334,8 +335,6 @@ void JacobianPropagation::solve() {
     callback_solver_loop();
     outputs_first_last();
 
-    build_capacities();
-
     build_conductance_matrix();
     build_heat_flux();
     store_heat_flux_at_n0();
@@ -351,9 +350,9 @@ void JacobianPropagation::solve() {
         build_heat_flux();
         store_heat_flux_at_n0();
 
-        // (K + 2C/dt) Mt, with K = -A.
+        // (K + 2C/dt) Mt, with K = -A: the network holds A + 2C/dt.
         _network->multiply(_mt, _mb);
-        _mb = _capacity_diagonal.asDiagonal() * _mt - _mb;
+        _mb = (2.0 * (_capacity_diagonal.asDiagonal() * _mt)) - _mb;
         _mb += _m_c + _m_k + _m_q;
 
         time += _resolved.time_step;
@@ -368,7 +367,6 @@ void JacobianPropagation::solve() {
             callback_solver_loop();
             build_conductance_matrix();
             build_heat_flux();
-            add_capacities_to_matrix();
             solve_step();
 
             converged = temperature_convergence_check();

@@ -85,7 +85,7 @@ class Factorizer {
     const ResolvedSettings& settings, bool symmetric);
 
 /// For the logs: "PARDISO TWO_LEVEL NESTED_DISSECTION, Cholesky",
-/// "LAPACK dense, LU".
+/// "LAPACK dense, LU, fixed couplings".
 [[nodiscard]] std::string describe(const ResolvedSettings& settings,
                                    bool symmetric);
 

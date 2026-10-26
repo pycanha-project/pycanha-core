@@ -168,6 +168,7 @@ struct Settings {
     std::optional<Backend> backend;
     std::optional<Factorization> factorization;
     std::optional<bool> reuse_factors;
+    std::optional<bool> fixed_couplings;
     std::optional<int> threads;
     std::optional<double> start_time;
     std::optional<double> end_time;
@@ -262,6 +263,7 @@ struct ResolvedSettings {
     Backend backend = Backend::EIGEN;
     Factorization factorization = Factorization::AUTO;
     bool reuse_factors = false;
+    bool fixed_couplings = false;
     int threads = 0;
     double start_time = 0.0;
     double end_time = 0.0;

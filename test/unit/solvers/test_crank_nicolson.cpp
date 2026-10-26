@@ -301,9 +301,11 @@ TEST_CASE("CrankNicolson gives the same transient with every configuration",
     if (option.backend != Backend::EIGEN && !pycanha::MKL_ENABLED) {
         SKIP("MKL not built");
     }
+    const bool fixed = GENERATE(false, true);
     auto model = make_model();
     CrankNicolson solver(model);
     Settings settings;
+    settings.fixed_couplings = fixed;
     settings.storage = option.storage;
     settings.backend = option.backend;
     settings.pardiso.level = option.level;

@@ -218,9 +218,11 @@ TEST_CASE("JacobianPropagation gives the same result with every configuration",
     if (option.backend != Backend::EIGEN && !pycanha::MKL_ENABLED) {
         SKIP("MKL not built");
     }
+    const bool fixed = GENERATE(false, true);
     auto model = make_python_example_model();
     pycanha::solvers::sensitivity::JacobianPropagation solver(model);
     pycanha::solvers::Settings settings;
+    settings.fixed_couplings = fixed;
     settings.max_iterations = 50;
     settings.tolerance = 1.0e-9;
     settings.storage = option.storage;

@@ -110,6 +110,7 @@ Settings fully_set() {
     settings.backend = Backend::EIGEN;
     settings.factorization = Factorization::LU;
     settings.reuse_factors = true;
+    settings.fixed_couplings = true;
     settings.threads = 4;
     settings.start_time = 10.0;
     settings.end_time = 100.0;

@@ -25,7 +25,11 @@ namespace pycanha::solvers::transient {
  * output_interval, output_attributes, output_name) are read by initialize(),
  * which also creates the output model in the thermal data; time_step is
  * required. The factorization is LU, or Cholesky for a model without
- * radiative couplings (see Settings: factorization). A step whose inner
+ * radiative couplings (see Settings: factorization). Every inner iteration
+ * reads the couplings and the capacities again, so formulas and callbacks
+ * may change them during the run; with fixed_couplings they are read once
+ * per solve() and the matrix is factorized again only when the temperatures
+ * change it. A step whose inner
  * iterations do not converge within max_iterations keeps its last iteration
  * and the run goes on: the first such step logs a WARN, the end of the run
  * one summary WARN, and report() lists them.
@@ -86,7 +90,6 @@ class CrankNicolson : public Solver {
     void build_conductance_matrix();
     void build_heat_flux();
     void store_heat_flux_at_n0();
-    void add_capacities_to_matrix();
     void solve_step();
     void release() noexcept;
 
@@ -100,7 +103,7 @@ class CrankNicolson : public Solver {
     int wait_n_dtimes = 0;
     int idata_out = 0;
 
-    // -K (+ 2C/dt after add_capacities_to_matrix()) and its factors.
+    // -K + 2C/dt and its factors.
     std::unique_ptr<detail::LinearizedNetwork> _network;
     bool _symmetric = false;
     VectorXd _rhs;

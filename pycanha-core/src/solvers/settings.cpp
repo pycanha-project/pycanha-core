@@ -260,6 +260,7 @@ std::string_view iparm_indices(const std::map<int, int>& value) {
 constexpr double default_tolerance = 1e-3;
 constexpr int default_max_iterations = 5;
 constexpr bool default_reuse_factors = false;
+constexpr bool default_fixed_couplings = false;
 constexpr int default_threads = 0;
 constexpr double default_time = 0.0;
 constexpr double default_capacity_delta = 1e-7;
@@ -597,7 +598,7 @@ using R = ResolvedSettings;
 
 // Resolution walks the table in order: a default or an applicability rule
 // may only read fields above it.
-constexpr std::size_t field_count = 19;
+constexpr std::size_t field_count = 20;
 constexpr std::array<FieldEntry, field_count> field_table{
     field<Path<&S::tolerance>, Path<&R::tolerance>,
           &constant<default_tolerance>, &positive>(
@@ -662,6 +663,22 @@ constexpr std::array<FieldEntry, field_count> field_table{
                 "EIGEN.",
          .mutability = Mutability::INIT,
          .solver_types = reuse_types}),
+    field<Path<&S::fixed_couplings>, Path<&R::fixed_couplings>,
+          &constant<default_fixed_couplings>, &any_value<bool>>(
+        {.name = "fixed_couplings",
+         .group = "",
+         .doc = "The user's promise that the conductive and radiative "
+                "couplings and the capacities stay as they are when solve() "
+                "starts: no formula or callback changes them during the run. "
+                "The constant part of the matrix is then built once per "
+                "solve(), and the matrix is factorized again only when the "
+                "temperatures change it (never without radiative couplings). "
+                "Trusted, not checked: a change during the run gives wrong "
+                "results. "
+                "Default: false, every iteration reads the couplings and the "
+                "capacities again. auto_configure() never sets it.",
+         .mutability = Mutability::INIT,
+         .solver_types = all_types}),
     field<Path<&S::threads>, Path<&R::threads>, &constant<default_threads>,
           &non_negative_count>({.name = "threads",
                                 .group = "",

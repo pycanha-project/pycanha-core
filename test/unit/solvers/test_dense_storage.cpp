@@ -4,6 +4,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/generators/catch_generators.hpp>
 #include <catch2/generators/catch_generators_range.hpp>
+#include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <optional>
@@ -82,6 +83,14 @@ std::vector<Config> transient_configs(bool radiation) {
         configs.push_back(config("DENSE LAPACK reuse", Storage::DENSE,
                                  Backend::LAPACK, std::nullopt,
                                  /*reuse=*/true));
+    }
+    // Each configuration again with fixed_couplings.
+    const std::size_t varying = configs.size();
+    for (std::size_t k = 0; k < varying; ++k) {
+        Config fixed = configs[k];
+        fixed.name += ", fixed couplings";
+        fixed.settings.fixed_couplings = true;
+        configs.push_back(std::move(fixed));
     }
     return configs;
 }

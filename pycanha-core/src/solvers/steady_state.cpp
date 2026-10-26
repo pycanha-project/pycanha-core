@@ -52,15 +52,17 @@ void SteadyState::prepare(bool log_warnings) {
     initialize_common(log_warnings);
     _symmetric = _resolved.factorization == Factorization::CHOLESKY;
     _radiation = has_radiation();
-    _network = detail::make_network(_resolved,
-                                    {.conductive = &KLdd,
-                                     .conductive_boundary = &KLdb,
-                                     .radiative = &KRdd,
-                                     .radiative_boundary = &KRdb},
-                                    {.symmetric = _symmetric,
-                                     .radiation = _radiation,
-                                     .skip_unchanged = true,
-                                     .keep_matrix = false});
+    _network =
+        detail::make_network(_resolved,
+                             {.conductive = &KLdd,
+                              .conductive_boundary = &KLdb,
+                              .radiative = &KRdd,
+                              .radiative_boundary = &KRdb},
+                             {.symmetric = _symmetric,
+                              .radiation = _radiation,
+                              .skip_unchanged = true,
+                              .keep_matrix = false,
+                              .fixed_couplings = _resolved.fixed_couplings});
 
     _b = VectorXd::Zero(nd);
     _t_cubed_domain = VectorXd::Zero(nd);
@@ -161,6 +163,7 @@ void SteadyState::solve() {
     begin_solve_report();
     refresh_live_settings();
     _network->apply_live_settings(_resolved);
+    _network->begin_solve();
     SPDLOG_LOGGER_INFO(get_logger(), "{} solving...", name());
 
     const FormulaExecutionGuard formula_execution(*this);
@@ -179,7 +182,9 @@ void SteadyState::solve() {
         }
         {
             PYCANHA_PROFILE_SCOPE("Steady state linearize");
-            _network->linearize(_t_cubed_domain, Td, _radiation_linear_term);
+            // No diagonal of its own: the steady state solves -K T = -Qd.
+            _network->linearize(_t_cubed_domain, Td, VectorXd{},
+                                _radiation_linear_term);
         }
         assemble_rhs();
 
