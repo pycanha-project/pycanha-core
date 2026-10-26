@@ -16,6 +16,7 @@
 #include <vector>
 
 #include "factorizer.hpp"
+#include "linearized_network.hpp"
 #include "memory.hpp"
 #include "pycanha-core/globals.hpp"
 #include "pycanha-core/solvers/report.hpp"
@@ -27,7 +28,6 @@
 #include "pycanha-core/tmm/couplingmatrices.hpp"
 #include "pycanha-core/tmm/nodes.hpp"
 #include "pycanha-core/tmm/thermalmathematicalmodel.hpp"
-#include "pycanha-core/utils/SparseUtils.hpp"
 #include "pycanha-core/utils/logger.hpp"
 #include "pycanha-core/utils/profiling.hpp"
 
@@ -249,13 +249,13 @@ void CrankNicolson::initialize() {
     } else {
         prepare(/*log_warnings=*/true);
     }
-    if (const auto hint = detail::min_degree_hint(*_factorizer, _resolved,
-                                                  /*symmetric=*/false, nd)) {
+    _network->allocate();
+    if (const auto hint = _network->hint(_resolved)) {
         warn(*hint);
     }
     create_output_model();
     SPDLOG_LOGGER_INFO(get_logger(), "{} initializing ({})", name(),
-                       detail::describe(_resolved, /*symmetric=*/false));
+                       detail::describe(_resolved, _symmetric));
     _prepared = false;
     _initialized = true;
     end_initialize_report(start);
@@ -266,84 +266,34 @@ void CrankNicolson::prepare(bool log_warnings) {
     // Throws before anything is built when the settings contradict.
     initialize_common(log_warnings);
     compute_output_schedule();
-    _factorizer = detail::make_factorizer(_resolved, /*symmetric=*/false);
-
-    _k_matrix.conservativeResize(nd, nd);
-    _k_matrix.setIdentity();
-    _k_matrix += KRdd.selfadjointView<Eigen::Upper>();
-    _k_matrix += KLdd.selfadjointView<Eigen::Upper>();
-    sparse_utils::set_to_zero(_k_matrix);
-    sparse_utils::add_zero_diag_square(_k_matrix);
-    sparse_utils::set_to_zero(_k_matrix);
-
-    _boundary_matrix.conservativeResize(nd, nb);
-    _boundary_matrix = KRdb + KLdb;
-    sparse_utils::set_to_zero(_boundary_matrix);
+    _symmetric = _resolved.factorization == Factorization::CHOLESKY;
+    _network =
+        detail::make_network(_resolved,
+                             {.conductive = &KLdd,
+                              .conductive_boundary = &KLdb,
+                              .radiative = &KRdd,
+                              .radiative_boundary = &KRdb},
+                             {.symmetric = _symmetric,
+                              .radiation = has_radiation(),
+                              .skip_unchanged = false,
+                              .keep_matrix = keeps_matrix_after_solve()});
 
     _rhs = VectorXd::Zero(nd);
     _heat_flux_n0 = VectorXd::Zero(nd);
     _capacities = VectorXd::Zero(nd);
     _capacities_inverse = VectorXd::Zero(nd);
-
-    _upper_kl_indices.resize(to_sizet(KLdd.nonZeros()));
-    _lower_kl_indices.resize(to_sizet(KLdd.nonZeros()));
-    _upper_kr_indices.resize(to_sizet(KRdd.nonZeros()));
-    _lower_kr_indices.resize(to_sizet(KRdd.nonZeros()));
-    _diagonal_indices.resize(to_sizet(nd));
-
+    _capacity_diagonal = VectorXd::Zero(nd);
     _radiation_linear_term = VectorXd::Zero(nd);
     _kt_q_n0 = VectorXd::Zero(nd);
     _ones_domain = VectorXd::Ones(nd);
     _ones_boundary = VectorXd::Ones(nb);
-
-    // TODO(PYC-402): Replace pointer arithmetic with Eigen iterators to avoid
-    // manual index pointer math.
-    // NOLINTBEGIN(cppcoreguidelines-pro-bounds-pointer-arithmetic)
-    // NOLINTBEGIN(readability-suspicious-call-argument)
-    for (Index row = 0; row < KLdd.outerSize(); ++row) {
-        for (Index idx = KLdd.outerIndexPtr()[row];
-             idx < KLdd.outerIndexPtr()[row + 1]; ++idx) {
-            const Index col = KLdd.innerIndexPtr()[idx];
-            _upper_kl_indices[to_sizet(idx)] = static_cast<int>(
-                &_k_matrix.coeffRef(row, col) - _k_matrix.valuePtr());
-            // TODO(PYC-403): Verify symmetric accessor ordering.
-            // NOLINTNEXTLINE(readability-suspicious-call-argument)
-            _lower_kl_indices[to_sizet(idx)] = static_cast<int>(
-                &_k_matrix.coeffRef(col, row) - _k_matrix.valuePtr());
-        }
-    }
-
-    for (Index row = 0; row < KRdd.outerSize(); ++row) {
-        for (Index idx = KRdd.outerIndexPtr()[row];
-             idx < KRdd.outerIndexPtr()[row + 1]; ++idx) {
-            const Index col = KRdd.innerIndexPtr()[idx];
-            _upper_kr_indices[to_sizet(idx)] = static_cast<int>(
-                &_k_matrix.coeffRef(row, col) - _k_matrix.valuePtr());
-            // TODO(PYC-403): Verify symmetric accessor ordering.
-            // NOLINTNEXTLINE(readability-suspicious-call-argument)
-            _lower_kr_indices[to_sizet(idx)] = static_cast<int>(
-                &_k_matrix.coeffRef(col, row) - _k_matrix.valuePtr());
-        }
-    }
-    // NOLINTEND(readability-suspicious-call-argument)
-    // NOLINTEND(cppcoreguidelines-pro-bounds-pointer-arithmetic)
-
-    for (Index row = 0; row < nd; ++row) {
-        _diagonal_indices[to_sizet(row)] = static_cast<int>(
-            &_k_matrix.coeffRef(row, row) - _k_matrix.valuePtr());
-    }
-
     _t3_domain = VectorXd::Zero(nd);
-    _t3_boundary = VectorXd::Zero(nb);
     _t4_domain = VectorXd::Zero(nd);
     _t4_boundary = VectorXd::Zero(nb);
 
-    build_conductance_matrix();
-
-    _factorizer->analyze_pattern(_k_matrix);
-    if (!_factorizer->succeeded()) {
+    if (!_network->analyze()) {
         throw std::runtime_error(std::string(name()) + ": analysis failed (" +
-                                 _factorizer->error_message() + ")");
+                                 _network->error_message() + ")");
     }
     mark_prepared();
 }
@@ -351,21 +301,17 @@ void CrankNicolson::prepare(bool log_warnings) {
 SolverMemory CrankNicolson::memory_now() const {
     using detail::bytes_of;
     SolverMemory memory;
-    if (_factorizer) {
-        memory.factors = _factorizer->factor_bytes();
-        memory.exact = _factorizer->factor_bytes_exact();
-        memory.matrix = _factorizer->matrix_copy_bytes();
+    if (_network) {
+        memory.factors = _network->factor_bytes();
+        memory.exact = _network->factor_bytes_exact();
+        memory.matrix = _network->matrix_bytes();
     }
     memory.matrix +=
-        bytes_of(_k_matrix) + bytes_of(_boundary_matrix) + bytes_of(_rhs) +
-        bytes_of(_heat_flux_n0) + bytes_of(_capacities) +
-        bytes_of(_capacities_inverse) + bytes_of(_t3_domain) +
-        bytes_of(_t3_boundary) + bytes_of(_t4_domain) + bytes_of(_t4_boundary) +
-        bytes_of(_lower_kr_indices) + bytes_of(_upper_kr_indices) +
-        bytes_of(_lower_kl_indices) + bytes_of(_upper_kl_indices) +
-        bytes_of(_diagonal_indices) + bytes_of(_radiation_linear_term) +
-        bytes_of(_kt_q_n0) + bytes_of(_ones_domain) + bytes_of(_ones_boundary) +
-        common_bytes();
+        bytes_of(_rhs) + bytes_of(_heat_flux_n0) + bytes_of(_capacities) +
+        bytes_of(_capacities_inverse) + bytes_of(_capacity_diagonal) +
+        bytes_of(_t3_domain) + bytes_of(_t4_domain) + bytes_of(_t4_boundary) +
+        bytes_of(_radiation_linear_term) + bytes_of(_kt_q_n0) +
+        bytes_of(_ones_domain) + bytes_of(_ones_boundary) + common_bytes();
     memory.output = output_bytes();
     return memory;
 }
@@ -500,7 +446,7 @@ void CrankNicolson::solve() {
     const auto start = Clock::now();
     begin_solve_report();
     refresh_live_settings();
-    _factorizer->apply_live_settings(_resolved);
+    _network->apply_live_settings(_resolved);
     SPDLOG_LOGGER_INFO(get_logger(), "{} solving...", name());
 
     const FormulaExecutionGuard formula_execution(*this);
@@ -556,7 +502,8 @@ void CrankNicolson::solve() {
 void CrankNicolson::deinitialize() { release(); }
 
 void CrankNicolson::release() noexcept {
-    _factorizer.reset();
+    _network.reset();
+    _symmetric = false;
     _prepared = false;
     _initialized = false;
 }
@@ -566,50 +513,15 @@ void CrankNicolson::build_capacities() {
     _capacities = Cd;
     _capacities.array() += _resolved.capacity_delta;
     _capacities_inverse = _capacities.cwiseInverse();
+    _capacity_diagonal = (2.0 / _resolved.time_step) * _capacities;
 }
 
 void CrankNicolson::build_conductance_matrix() {
     PYCANHA_PROFILE_SCOPE("Linearization");
-
     _t3_domain = (4.0 * STF_BOLTZ) * Td.array().cube();
-    _t3_boundary = (4.0 * STF_BOLTZ) * Tb.array().cube();
     _t4_domain = STF_BOLTZ * Td.array().square().square();
     _t4_boundary = STF_BOLTZ * Tb.array().square().square();
-
-    sparse_utils::set_to_zero(_k_matrix);
-    sparse_utils::set_to_zero(_boundary_matrix);
-
-    sparse_utils::copy_2_values_with_idx(_k_matrix.valuePtr(), KRdd.valuePtr(),
-                                         _lower_kr_indices, _upper_kr_indices);
-
-    _rhs = -(KRdd.selfadjointView<Eigen::Upper>() * _ones_domain);
-    _rhs.noalias() -= KRdb * _ones_boundary;
-
-    sparse_utils::copy_values_with_idx(_k_matrix.valuePtr(), _rhs.data(),
-                                       _diagonal_indices);
-
-    // TODO(PYC-404): Replace pointer arithmetic with Eigen iterators within
-    // conductance assembly.
-    // NOLINTBEGIN(cppcoreguidelines-pro-bounds-pointer-arithmetic)
-    for (Index idx = 0; idx < _k_matrix.nonZeros(); ++idx) {
-        const Index column = _k_matrix.innerIndexPtr()[idx];
-        _k_matrix.valuePtr()[idx] *= _t3_domain[column];
-    }
-    // NOLINTEND(cppcoreguidelines-pro-bounds-pointer-arithmetic)
-
-    static const double q_alpha = -0.75;
-
-    _radiation_linear_term.noalias() = q_alpha * (_k_matrix * Td);
-
-    sparse_utils::copy_sum_2_values_with_idx(_k_matrix.valuePtr(),
-                                             KLdd.valuePtr(), _lower_kl_indices,
-                                             _upper_kl_indices);
-
-    _rhs =
-        KLdd.selfadjointView<Eigen::Upper>() * (-VectorXd::Ones(KLdd.cols())) -
-        KLdb * VectorXd::Ones(KLdb.cols());
-    sparse_utils::copy_sum_values_with_idx(_k_matrix.valuePtr(), _rhs.data(),
-                                           _diagonal_indices);
+    _network->linearize(_t3_domain, Td, _radiation_linear_term);
 }
 
 void CrankNicolson::build_heat_flux() {
@@ -621,30 +533,30 @@ void CrankNicolson::build_heat_flux() {
 
 void CrankNicolson::store_heat_flux_at_n0() {
     PYCANHA_PROFILE_SCOPE("Store Q_n0");
-    _kt_q_n0 = _k_matrix * Td + Qd;
+    // K Td + Qd, with K = -A.
+    _network->multiply(Td, _kt_q_n0);
+    _kt_q_n0 = Qd - _kt_q_n0;
     _heat_flux_n0 =
         _kt_q_n0 + (2.0 / _resolved.time_step) * _capacities.cwiseProduct(Td);
 }
 
 void CrankNicolson::add_capacities_to_matrix() {
     PYCANHA_PROFILE_SCOPE("Add C to K");
-    _k_matrix.diagonal() -= (2.0 / _resolved.time_step) * _capacities;
+    _network->add_to_diagonal(_capacity_diagonal);
 }
 
 void CrankNicolson::solve_step() {
     PYCANHA_PROFILE_SCOPE("Solver Step");
     _rhs = Qd + _heat_flux_n0;
 
-    // The factorized matrix is -K + 2C/dt, with a positive diagonal. The
-    // negated values stay in _k_matrix until the next assembly.
-    _k_matrix.coeffs() *= -1.0;
+    // The network holds -K + 2C/dt, with a positive diagonal.
     const auto start = Clock::now();
-    _factorizer->factorize_and_solve(_k_matrix, _rhs, Td_solver);
-    if (!_factorizer->succeeded()) {
+    const detail::SolveOutcome outcome = _network->solve(_rhs, Td_solver);
+    if (!outcome.succeeded) {
         throw std::runtime_error(std::string(name()) + ": solve failed (" +
-                                 _factorizer->error_message() + ")");
+                                 _network->error_message() + ")");
     }
-    record_linear_solve(start, _factorizer->factors_recomputed());
+    record_linear_solve(start, outcome.factorized);
 }
 
 }  // namespace pycanha::solvers::transient

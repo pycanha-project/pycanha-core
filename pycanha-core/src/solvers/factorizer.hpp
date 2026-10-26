@@ -84,7 +84,8 @@ class Factorizer {
 [[nodiscard]] std::unique_ptr<Factorizer> make_factorizer(
     const ResolvedSettings& settings, bool symmetric);
 
-/// For the logs: "PARDISO TWO_LEVEL NESTED_DISSECTION, Cholesky".
+/// For the logs: "PARDISO TWO_LEVEL NESTED_DISSECTION, Cholesky",
+/// "LAPACK dense, LU".
 [[nodiscard]] std::string describe(const ResolvedSettings& settings,
                                    bool symmetric);
 

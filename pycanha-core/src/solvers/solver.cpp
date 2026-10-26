@@ -513,8 +513,12 @@ Settings Solver::auto_configure(std::optional<std::int64_t> max_memory) {
     if (max_memory.has_value() && *max_memory <= 0) {
         throw std::invalid_argument("max_memory must be positive");
     }
+    // Nodes appended since the last coupling access have not grown the
+    // matrices yet.
+    tnw.synchronize_structure();
     const std::vector<detail::AutoCandidate> candidates =
-        detail::auto_candidates(_solver_type, MKL_ENABLED);
+        detail::auto_candidates(_solver_type, MKL_ENABLED,
+                                detail::network_shape(KLdd, KRdd));
 
     Settings base = _settings;
     detail::clear_auto_fields(base);
@@ -548,13 +552,13 @@ Settings Solver::auto_configure(std::optional<std::int64_t> max_memory) {
     set_settings(settings_for(candidates.at(chosen)));
 
     _auto_values.clear();
-    std::ranges::transform(
-        candidates.at(chosen).fields, std::back_inserter(_auto_values),
-        [](const detail::AutoField& field) {
-            return AutoValue{.name = std::string(field.name),
-                             .value = field.value,
-                             .reason = std::string(field.reason)};
-        });
+    std::ranges::transform(candidates.at(chosen).fields,
+                           std::back_inserter(_auto_values),
+                           [](const detail::AutoField& field) {
+                               return AutoValue{.name = std::string(field.name),
+                                                .value = field.value,
+                                                .reason = field.reason};
+                           });
     if (!fits) {
         SPDLOG_LOGGER_WARN(
             get_logger(),
@@ -567,6 +571,10 @@ Settings Solver::auto_configure(std::optional<std::int64_t> max_memory) {
                        detail::describe(resolved, resolved.factorization ==
                                                       Factorization::CHOLESKY));
     return settings();
+}
+
+bool Solver::has_radiation() const noexcept {
+    return KRdd.nonZeros() != 0 || KRdb.nonZeros() != 0;
 }
 
 bool Solver::temperature_convergence_check() {

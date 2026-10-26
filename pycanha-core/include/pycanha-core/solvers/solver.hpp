@@ -99,17 +99,48 @@ class Solver {
      */
     [[nodiscard]] SolverMemory estimate_memory();
 
-    /// Chooses the backend, factorization, reuse_factors, threads,
+    /// Chooses the storage, backend, factorization, reuse_factors, threads,
     /// pardiso.ordering, pardiso.level and eigen.ordering for the current
     /// model, clears pardiso.iparm, and returns the new settings.
     /**
-     * The other settings are kept. The rules prefer the configuration that
-     * is fastest for the solver type: a transient reuses factors (minimum
-     * degree, one-level), whose analysis is done once and can take long on
-     * models where a few nodes are coupled to many; a steady state uses the
-     * two-level factorization. With
-     * max_memory [bytes], a candidate whose estimate_memory() exceeds it is
-     * skipped, and when none fits the smallest is taken with a WARN. Throws
+     * The other settings are kept. The candidates, in order of preference:
+     *
+     * | Solver              | # | With MKL                     | Without MKL  |
+     * |---------------------|---|------------------------------|--------------|
+     * | SteadyState         | 1 | DENSE LAPACK, reuse (rule S) | DENSE EIGEN  |
+     * | SteadyState         | 2 | PARDISO TWO_LEVEL ND         | EIGEN COLAMD |
+     * | SteadyState         | 3 | PARDISO ONE_LEVEL MD         | EIGEN AMD    |
+     * | CrankNicolson       | 1 | DENSE LAPACK, reuse (rule T) | DENSE EIGEN  |
+     * | CrankNicolson       | 2 | PARDISO ONE_LEVEL MD, reuse  | EIGEN COLAMD |
+     * | CrankNicolson       | 3 | PARDISO TWO_LEVEL ND         | EIGEN AMD    |
+     * | JacobianPropagation | 1 | DENSE LAPACK (rule T)        | DENSE EIGEN  |
+     * | JacobianPropagation | 2 | PARDISO TWO_LEVEL ND         | EIGEN COLAMD |
+     * | JacobianPropagation | 3 | PARDISO ONE_LEVEL MD         | EIGEN AMD    |
+     *
+     * Candidates 2 and 3 are SPARSE; ND is NESTED_DISSECTION, MD MIN_DEGREE
+     * and "reuse" reuse_factors = true. Candidate 1 exists only when its rule
+     * holds, with n the diffusive nodes and a coupling a conductive or
+     * radiative link between two of them:
+     * - rule S: n <= 5000 and at least 100 couplings per node on average;
+     * - rule T: n <= 2000 and at least 20 % of the n x n matrix filled.
+     * Dense storage wins where nodes see hundreds of others: it needs no
+     * analysis, and the sparse factors of such a matrix are nearly dense
+     * anyway. Rule T is stricter because a sparse transient does its
+     * analysis once for all its steps.
+     *
+     * Every candidate sets factorization = AUTO (Cholesky without radiative
+     * couplings, except with sparse Eigen; LU otherwise) and, with MKL,
+     * threads = 0. reuse_factors iterates on the previous factors (PARDISO
+     * CGS, or CG for Cholesky; LAPACK FGMRES) and refactorizes only when that
+     * fails. It needs MKL and never applies to JacobianPropagation, whose
+     * sensitivity solve needs the factors of the current matrix. A steady
+     * state without it still solves an unchanged matrix with the existing
+     * factors. The PARDISO minimum degree analysis is done once, but can
+     * take long on models where a few nodes are coupled to many.
+     *
+     * Without max_memory the first candidate is taken. With max_memory
+     * [bytes], a candidate whose estimate_memory() exceeds it is skipped, and
+     * when none fits the smallest is taken with a WARN. Throws
      * std::runtime_error on an initialized solver.
      */
     Settings auto_configure(
@@ -244,6 +275,10 @@ class Solver {
     void check_model_unchanged(std::string_view callback = {}) const;
 
     [[nodiscard]] bool temperature_convergence_check();
+
+    /// The model has radiative couplings (between diffusive nodes or to
+    /// boundary nodes).
+    [[nodiscard]] bool has_radiation() const noexcept;
 
   private:
     void prepare_formulas_for_execution();

@@ -15,6 +15,7 @@
 #include "factorizer.hpp"
 #include "pycanha-core/config.hpp"
 #include "pycanha-core/globals.hpp"
+#include "thread_scope.hpp"
 
 namespace pycanha::solvers::detail {
 
@@ -54,26 +55,6 @@ constexpr std::size_t iparm_peak_analysis = 14;
 constexpr std::size_t iparm_permanent_analysis = 15;
 constexpr std::size_t iparm_factorization_memory = 16;
 constexpr std::int64_t kilobyte = 1024;
-
-// Sets the MKL threads of the calling thread for one PARDISO call and
-// restores the previous setting afterwards. 0 leaves MKL's setting.
-class ThreadScope {
-  public:
-    explicit ThreadScope(int threads)
-        : _previous(threads > 0 ? mkl_set_num_threads_local(threads) : -1) {}
-    ~ThreadScope() {
-        if (_previous >= 0) {
-            mkl_set_num_threads_local(_previous);
-        }
-    }
-    ThreadScope(const ThreadScope&) = delete;
-    ThreadScope& operator=(const ThreadScope&) = delete;
-    ThreadScope(ThreadScope&&) = delete;
-    ThreadScope& operator=(ThreadScope&&) = delete;
-
-  private:
-    int _previous;
-};
 
 }  // namespace
 

@@ -28,19 +28,33 @@ enum class SolverType : std::uint8_t {
                            ///< of the temperatures with respect to parameters.
 };
 
+/// How the matrix of an implicit solver is stored and factorised.
+enum class Storage : std::uint8_t {
+    /// Only the non-zero entries: the choice for large models.
+    SPARSE,
+    /// Every entry of the n x n matrix [n^2 * 8 bytes each]: faster for small
+    /// models whose nodes are coupled to most of the others (radiative
+    /// enclosures).
+    DENSE,
+};
+
 /// Library that factorises the matrix of an implicit solver.
 enum class Backend : std::uint8_t {
-    /// Intel MKL PARDISO: multi-threaded supernodal factorisation. Only in
-    /// builds with MKL.
+    /// Intel MKL PARDISO: multi-threaded supernodal factorisation, sparse
+    /// storage only. Only in builds with MKL.
     PARDISO,
-    /// Eigen's sparse solvers: single-threaded, in every build.
+    /// Eigen's sparse or dense solvers: in every build.
     EIGEN,
+    /// Intel MKL LAPACK: multi-threaded dense factorisation, dense storage
+    /// only. Only in builds with MKL.
+    LAPACK,
 };
 
 /// Factorisation of the matrix.
 enum class Factorization : std::uint8_t {
-    /// Cholesky when the matrix is symmetric and the solver supports it, LU
-    /// otherwise.
+    /// Cholesky when the matrix is symmetric (no radiative couplings) and the
+    /// backend has a Cholesky factorisation it prefers: PARDISO, LAPACK and
+    /// dense Eigen. LU otherwise.
     AUTO,
     /// LU, for any matrix.
     LU,
@@ -95,6 +109,7 @@ enum class Origin : std::uint8_t {
 };
 
 [[nodiscard]] std::string_view to_string(SolverType type) noexcept;
+[[nodiscard]] std::string_view to_string(Storage storage) noexcept;
 [[nodiscard]] std::string_view to_string(Backend backend) noexcept;
 [[nodiscard]] std::string_view to_string(Factorization factorization) noexcept;
 [[nodiscard]] std::string_view to_string(PardisoOrdering ordering) noexcept;
@@ -149,6 +164,7 @@ struct Settings {
 
     std::optional<double> tolerance;
     std::optional<int> max_iterations;
+    std::optional<Storage> storage;
     std::optional<Backend> backend;
     std::optional<Factorization> factorization;
     std::optional<bool> reuse_factors;
@@ -209,8 +225,8 @@ struct ResolveContext {
     /// known (factorization AUTO then stays AUTO and the Cholesky check is
     /// skipped).
     std::optional<bool> has_radiation;
-    /// Whether this build has MKL PARDISO.
-    bool pardiso_available = MKL_ENABLED;
+    /// Whether this build has MKL (PARDISO and LAPACK).
+    bool mkl_available = MKL_ENABLED;
 };
 
 /// The context of a solver of `type` for `model`.
@@ -242,6 +258,7 @@ struct ResolvedSettings {
 
     double tolerance = 0.0;
     int max_iterations = 0;
+    Storage storage = Storage::SPARSE;
     Backend backend = Backend::EIGEN;
     Factorization factorization = Factorization::AUTO;
     bool reuse_factors = false;
@@ -281,8 +298,9 @@ struct ResolvedSettings {
 /**
  * Throws std::invalid_argument listing every contradiction at once: a value
  * out of range, a combination the backend cannot do (reuse_factors with
- * Eigen, minimum degree with the two-level factorisation), or one the build or
- * the model cannot (PARDISO without MKL, Cholesky with radiation). The set
+ * Eigen, minimum degree with the two-level factorisation, PARDISO with dense
+ * storage), or one the build or the model cannot (PARDISO or LAPACK without
+ * MKL, Cholesky with radiation). The set
  * fields that do not apply are listed in not_applied, for the solver to warn
  * about.
  */

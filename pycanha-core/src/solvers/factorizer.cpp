@@ -278,6 +278,11 @@ std::unique_ptr<Factorizer> make_factorizer(const ResolvedSettings& settings,
 
 std::string describe(const ResolvedSettings& settings, bool symmetric) {
     const std::string_view form = symmetric ? "Cholesky" : "LU";
+    if (settings.storage == Storage::DENSE) {
+        return std::format(
+            "{} dense, {}{}", to_string(settings.backend), form,
+            settings.reuse_factors ? ", reusing factors (FGMRES)" : "");
+    }
     if (settings.backend == Backend::EIGEN) {
         return std::format(
             "EIGEN {}, {}",

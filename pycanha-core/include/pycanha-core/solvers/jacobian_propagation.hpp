@@ -55,6 +55,10 @@ class JacobianPropagation : public transient::CrankNicolson {
   protected:
     void prepare(bool log_warnings) override;
     [[nodiscard]] SolverMemory memory_now() const override;
+    // The sensitivity products read the matrix of the last solve.
+    [[nodiscard]] bool keeps_matrix_after_solve() const noexcept override {
+        return true;
+    }
 
   private:
     using DenseJacobian = Eigen::MatrixXd;
@@ -84,7 +88,6 @@ class JacobianPropagation : public transient::CrankNicolson {
     DenseJacobian _m_c;
     DenseJacobian _mt;
     DenseJacobian _mb;
-    SpMatRow _sp_nd_diag;
 };
 
 }  // namespace pycanha::solvers::sensitivity

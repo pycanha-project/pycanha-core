@@ -37,8 +37,11 @@ namespace {
 constexpr std::array<std::string_view, 3> names_of(SolverType /*tag*/) {
     return {"STEADY_STATE", "CRANK_NICOLSON", "JACOBIAN_PROPAGATION"};
 }
-constexpr std::array<std::string_view, 2> names_of(Backend /*tag*/) {
-    return {"PARDISO", "EIGEN"};
+constexpr std::array<std::string_view, 2> names_of(Storage /*tag*/) {
+    return {"SPARSE", "DENSE"};
+}
+constexpr std::array<std::string_view, 3> names_of(Backend /*tag*/) {
+    return {"PARDISO", "EIGEN", "LAPACK"};
 }
 constexpr std::array<std::string_view, 3> names_of(Factorization /*tag*/) {
     return {"AUTO", "LU", "CHOLESKY"};
@@ -271,10 +274,23 @@ std::remove_cvref_t<decltype(Value)> constant(
     return Value;
 }
 
-Backend default_backend(const Settings& /*settings*/,
+// Dense when backend = LAPACK asks for it, sparse otherwise.
+Storage default_storage(const Settings& settings,
                         const ResolvedSettings& /*resolved*/,
+                        const ResolveContext& /*context*/) {
+    return settings.backend == Backend::LAPACK ? Storage::DENSE
+                                               : Storage::SPARSE;
+}
+
+// The MKL library for the storage when the build has MKL, Eigen otherwise.
+Backend default_backend(const Settings& /*settings*/,
+                        const ResolvedSettings& resolved,
                         const ResolveContext& context) {
-    return context.pardiso_available ? Backend::PARDISO : Backend::EIGEN;
+    if (!context.mkl_available) {
+        return Backend::EIGEN;
+    }
+    return resolved.storage == Storage::DENSE ? Backend::LAPACK
+                                              : Backend::PARDISO;
 }
 
 std::set<DataModelAttribute> default_output_attributes(
@@ -350,8 +366,13 @@ PardisoLevel default_pardiso_level(const Settings& settings,
 bool uses_pardiso(const ResolvedSettings& resolved) {
     return resolved.backend == Backend::PARDISO;
 }
-bool uses_eigen_lu(const ResolvedSettings& resolved) {
+bool uses_mkl(const ResolvedSettings& resolved) {
+    return resolved.backend == Backend::PARDISO ||
+           resolved.backend == Backend::LAPACK;
+}
+bool uses_eigen_sparse_lu(const ResolvedSettings& resolved) {
     return resolved.backend == Backend::EIGEN &&
+           resolved.storage == Storage::SPARSE &&
            resolved.factorization != Factorization::CHOLESKY;
 }
 
@@ -364,10 +385,14 @@ using Reason = std::string (*)(const Settings&, const ResolvedSettings&,
                                const ResolveContext&);
 
 std::string backend_reason(const Settings& /*settings*/,
-                           const ResolvedSettings& /*resolved*/,
+                           const ResolvedSettings& resolved,
                            const ResolveContext& context) {
-    return context.pardiso_available ? "this build has MKL"
-                                     : "this build has no MKL";
+    if (!context.mkl_available) {
+        return "this build has no MKL";
+    }
+    return resolved.storage == Storage::DENSE
+               ? "this build has MKL; dense storage"
+               : "this build has MKL; sparse storage";
 }
 
 std::string factorization_reason(const Settings& settings,
@@ -383,11 +408,8 @@ std::string factorization_reason(const Settings& settings,
     if (resolved.factorization == Factorization::AUTO) {
         return "AUTO: Cholesky or LU once the model is known";
     }
-    if (context.solver_type != SolverType::STEADY_STATE) {
-        return "AUTO: Cholesky is not available for transients yet";
-    }
-    if (resolved.backend == Backend::EIGEN) {
-        return "AUTO: Cholesky only with PARDISO";
+    if (!context.has_radiation.value_or(false)) {
+        return "AUTO: Eigen's sparse LU is preferred to its Cholesky";
     }
     return "AUTO: radiative couplings make the matrix unsymmetric";
 }
@@ -396,7 +418,7 @@ std::string threads_reason(const Settings& settings,
                            const ResolvedSettings& /*resolved*/,
                            const ResolveContext& /*context*/) {
     return settings.threads.value_or(0) == 0
-               ? "0: MKL's own setting (MKL_NUM_THREADS)"
+               ? "0: MKL's own setting (MKL_NUM_THREADS or the physical cores)"
                : std::string{};
 }
 
@@ -568,13 +590,14 @@ constexpr auto reuse_types = static_cast<std::uint8_t>(
     bit(SolverType::STEADY_STATE) | bit(SolverType::CRANK_NICOLSON));
 
 constexpr std::string_view only_pardiso = "only with backend = PARDISO";
+constexpr std::string_view only_mkl = "only with backend = PARDISO or LAPACK";
 
 using S = Settings;
 using R = ResolvedSettings;
 
 // Resolution walks the table in order: a default or an applicability rule
 // may only read fields above it.
-constexpr std::size_t field_count = 18;
+constexpr std::size_t field_count = 19;
 constexpr std::array<FieldEntry, field_count> field_table{
     field<Path<&S::tolerance>, Path<&R::tolerance>,
           &constant<default_tolerance>, &positive>(
@@ -593,12 +616,24 @@ constexpr std::array<FieldEntry, field_count> field_table{
                 "step.",
          .mutability = Mutability::LIVE,
          .solver_types = all_types}),
+    field<Path<&S::storage>, Path<&R::storage>, &default_storage,
+          &any_value<Storage>>(
+        {.name = "storage",
+         .group = "",
+         .doc = "SPARSE or DENSE storage of the matrix. DENSE needs n^2 * 8 "
+                "bytes per matrix and pays off for small models whose nodes "
+                "are coupled to most of the others. Default: SPARSE, or DENSE "
+                "with backend = LAPACK.",
+         .mutability = Mutability::INIT,
+         .solver_types = all_types}),
     field<Path<&S::backend>, Path<&R::backend>, &default_backend,
           &any_value<Backend>>(
         {.name = "backend",
          .group = "",
-         .doc = "Library that factorizes the matrix. Default: PARDISO in "
-                "builds with MKL, EIGEN otherwise.",
+         .doc = "Library that factorizes the matrix: PARDISO (sparse) or "
+                "LAPACK (dense) in builds with MKL, EIGEN (both) in every "
+                "build. Default: the MKL library for the storage in builds "
+                "with MKL, EIGEN otherwise.",
          .mutability = Mutability::INIT,
          .solver_types = all_types},
         nullptr, {}, &backend_reason),
@@ -606,8 +641,9 @@ constexpr std::array<FieldEntry, field_count> field_table{
           &constant<default_factorization>, &any_value<Factorization>>(
         {.name = "factorization",
          .group = "",
-         .doc = "LU, CHOLESKY or AUTO. AUTO is Cholesky for a steady state "
-                "without radiative couplings with PARDISO, LU otherwise.",
+         .doc = "LU, CHOLESKY or AUTO. CHOLESKY needs a model without "
+                "radiative couplings. AUTO is Cholesky for such a model with "
+                "PARDISO, LAPACK or dense Eigen, LU otherwise.",
          .mutability = Mutability::INIT,
          .solver_types = all_types},
         nullptr, {}, &factorization_reason),
@@ -618,20 +654,23 @@ constexpr std::array<FieldEntry, field_count> field_table{
          .doc = "Solve a changed matrix by iterating on the factors of an "
                 "earlier one, and refactorize only when that fails. Faster "
                 "when the matrix changes little between iterations or time "
-                "steps. The iteration stops at a relative residual of 1e-6 "
-                "(PARDISO iparm[3] = 61, overridden by pardiso.iparm), and "
-                "that residual stays in the temperatures. Needs the PARDISO "
-                "one-level factorization.",
+                "steps. The iteration stops at a relative residual of 1e-6, "
+                "and that residual stays in the temperatures. PARDISO "
+                "iterates with CGS (iparm[3] = 61, overridden by "
+                "pardiso.iparm) and needs the one-level factorization; "
+                "LAPACK with FGMRES, on 20 iterations at most. Not with "
+                "EIGEN.",
          .mutability = Mutability::INIT,
          .solver_types = reuse_types}),
     field<Path<&S::threads>, Path<&R::threads>, &constant<default_threads>,
           &non_negative_count>({.name = "threads",
                                 .group = "",
-                                .doc = "Threads of the PARDISO calls; 0 keeps "
-                                       "MKL's setting (MKL_NUM_THREADS).",
+                                .doc = "Threads of the PARDISO and LAPACK "
+                                       "calls; 0 keeps MKL's setting "
+                                       "(MKL_NUM_THREADS).",
                                 .mutability = Mutability::LIVE,
                                 .solver_types = all_types},
-                               &uses_pardiso, only_pardiso, &threads_reason),
+                               &uses_mkl, only_mkl, &threads_reason),
     field<Path<&S::start_time>, Path<&R::start_time>, &constant<default_time>,
           &finite>({.name = "start_time",
                     .group = "",
@@ -730,7 +769,8 @@ constexpr std::array<FieldEntry, field_count> field_table{
          .doc = "Ordering of Eigen's sparse LU. Default: COLAMD.",
          .mutability = Mutability::INIT,
          .solver_types = all_types},
-        &uses_eigen_lu, "only with backend = EIGEN and an LU factorization"),
+        &uses_eigen_sparse_lu,
+        "only with backend = EIGEN, sparse storage and an LU factorization"),
 };
 
 constexpr std::array<SettingField, field_count> make_public_fields() {
@@ -772,15 +812,16 @@ struct Resolution {
     std::vector<std::string> contradictions;
 };
 
-// AUTO becomes LU or Cholesky once the backend, the solver type and the
-// model are known; it stays AUTO without a model.
+// AUTO becomes LU or Cholesky once the backend and the model are known; it
+// stays AUTO without a model. Eigen's sparse LU is preferred to its sparse
+// Cholesky (LDLT), which is faster only on some conduction models.
 void resolve_auto_factorization(ResolvedSettings& resolved,
                                 const ResolveContext& context) {
     if (resolved.factorization != Factorization::AUTO) {
         return;
     }
-    if (resolved.backend == Backend::EIGEN ||
-        context.solver_type != SolverType::STEADY_STATE) {
+    if (resolved.backend == Backend::EIGEN &&
+        resolved.storage == Storage::SPARSE) {
         resolved.factorization = Factorization::LU;
     } else if (context.has_radiation.has_value()) {
         resolved.factorization = *context.has_radiation
@@ -792,8 +833,13 @@ void resolve_auto_factorization(ResolvedSettings& resolved,
 void check_pardiso(const Settings& settings, const ResolvedSettings& resolved,
                    const ResolveContext& context,
                    std::vector<std::string>& contradictions) {
-    if (!context.pardiso_available) {
+    if (!context.mkl_available) {
         contradictions.emplace_back("backend = PARDISO needs a build with MKL");
+    }
+    if (resolved.storage == Storage::DENSE) {
+        contradictions.emplace_back(
+            "backend = PARDISO needs storage = SPARSE; use backend = LAPACK "
+            "or EIGEN for dense storage");
     }
     if (resolved.reuse_factors &&
         resolved.pardiso.level == PardisoLevel::TWO_LEVEL) {
@@ -824,10 +870,6 @@ void check_transient(const Settings& settings, const ResolvedSettings& resolved,
     if (resolved.end_time < resolved.start_time) {
         contradictions.emplace_back("end_time is before start_time");
     }
-    if (resolved.factorization == Factorization::CHOLESKY) {
-        contradictions.push_back(std::format(
-            "factorization = CHOLESKY is not available for {} yet", type));
-    }
 }
 
 void check_combinations(const Settings& settings, const ResolveContext& context,
@@ -836,19 +878,27 @@ void check_combinations(const Settings& settings, const ResolveContext& context,
     auto& contradictions = out.contradictions;
     if (resolved.backend == Backend::PARDISO) {
         check_pardiso(settings, resolved, context, contradictions);
+    } else if (resolved.backend == Backend::LAPACK) {
+        if (!context.mkl_available) {
+            contradictions.emplace_back(
+                "backend = LAPACK needs a build with MKL");
+        }
+        if (resolved.storage == Storage::SPARSE) {
+            contradictions.emplace_back(
+                "backend = LAPACK needs storage = DENSE");
+        }
     } else if (resolved.reuse_factors) {
         contradictions.emplace_back(
-            "reuse_factors = true needs backend = PARDISO: Eigen cannot "
-            "reuse factors");
+            "reuse_factors = true needs backend = PARDISO or LAPACK: Eigen "
+            "cannot reuse factors");
     }
-    if (context.solver_type == SolverType::STEADY_STATE) {
-        if (resolved.factorization == Factorization::CHOLESKY &&
-            context.has_radiation.value_or(false)) {
-            contradictions.emplace_back(
-                "factorization = CHOLESKY needs a model without radiative "
-                "couplings");
-        }
-    } else {
+    if (resolved.factorization == Factorization::CHOLESKY &&
+        context.has_radiation.value_or(false)) {
+        contradictions.emplace_back(
+            "factorization = CHOLESKY needs a model without radiative "
+            "couplings");
+    }
+    if (context.solver_type != SolverType::STEADY_STATE) {
         check_transient(settings, resolved, context, contradictions);
     }
     if (resolved.backend == Backend::PARDISO &&
@@ -952,7 +1002,7 @@ std::string print_for_type(const Settings& settings, SolverType type) {
     const Resolution resolution = resolve_unchecked(
         settings, ResolveContext{.solver_type = type,
                                  .has_radiation = std::nullopt,
-                                 .pardiso_available = MKL_ENABLED});
+                                 .mkl_available = MKL_ENABLED});
     const ResolvedSettings& resolved = resolution.resolved;
     std::string text = std::format("Settings for {}", enum_name(type));
     for (std::size_t index = 0; index < field_table.size(); ++index) {
@@ -1000,6 +1050,9 @@ std::string join(const std::vector<std::string>& parts) {
 // ---------------------------------------------------------------------------
 
 std::string_view to_string(SolverType type) noexcept { return enum_name(type); }
+std::string_view to_string(Storage storage) noexcept {
+    return enum_name(storage);
+}
 std::string_view to_string(Backend backend) noexcept {
     return enum_name(backend);
 }
@@ -1111,7 +1164,7 @@ ResolveContext resolve_context(SolverType type,
     return {.solver_type = type,
             .has_radiation = radiative.get_num_diff_diff_couplings() != 0 ||
                              radiative.get_num_diff_bound_couplings() != 0,
-            .pardiso_available = MKL_ENABLED};
+            .mkl_available = MKL_ENABLED};
 }
 
 bool ResolvedSettings::applies(std::string_view name) const {

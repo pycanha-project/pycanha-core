@@ -2,23 +2,22 @@
 
 #include <memory>
 #include <string_view>
-#include <vector>
 
 #include "pycanha-core/solvers/solver.hpp"
 
 namespace pycanha::solvers::detail {
-class Factorizer;
+class LinearizedNetwork;
 }  // namespace pycanha::solvers::detail
 
 namespace pycanha::solvers::steady {
 
 /// Steady state of the network.
 /**
- * Newton linearisation of the radiation, assembled in place into a matrix
- * whose pattern is built once in initialize(), and solved with a sparse
- * direct factorization (see Settings: backend, factorization, reuse_factors,
- * pardiso.*, eigen.*). Each iteration refactorizes only when the matrix
- * values differ from those of the last factorization, so the second
+ * Newton linearisation of the radiation, assembled into a sparse matrix
+ * whose pattern is built once in initialize(), or into a dense one, and solved
+ * with a direct factorization (see Settings: storage, backend, factorization,
+ * reuse_factors, pardiso.*, eigen.*). Each iteration refactorizes only when
+ * the matrix values differ from those of the last factorization, so the second
  * iteration of a linear model, or a new solve of an unchanged model, costs
  * one solve with the existing factors.
  *
@@ -61,32 +60,16 @@ class SteadyState : public Solver {
   private:
     // A = -K and b = -Qd of the linearised system K T = Qd, so the diagonal
     // is positive, which Cholesky needs.
-    SpMatRow _a_matrix;
+    std::unique_ptr<detail::LinearizedNetwork> _network;
     VectorXd _b;
-    VectorXd _factorized_values;
-    bool _has_factors = false;
 
     VectorXd _t_cubed_domain;
     VectorXd _t_fourth_boundary;
     VectorXd _radiation_linear_term;
-    VectorXd _row_sums;
-    VectorXd _ones_domain;
-    VectorXd _ones_boundary;
-
-    std::vector<int> _upper_kl_indices;
-    std::vector<int> _lower_kl_indices;
-    std::vector<int> _upper_kr_indices;
-    std::vector<int> _lower_kr_indices;
-    std::vector<int> _diagonal_indices;
 
     bool _symmetric = false;
     bool _radiation = false;
 
-    std::unique_ptr<detail::Factorizer> _factorizer;
-
-    [[nodiscard]] bool has_radiation() const noexcept;
-    void build_pattern();
-    void assemble_matrix();
     void assemble_rhs();
     [[nodiscard]] bool factorize_and_solve_step();
     void release() noexcept;

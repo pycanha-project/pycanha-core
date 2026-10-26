@@ -223,6 +223,7 @@ using pycanha::solvers::Backend;
 using pycanha::solvers::PardisoLevel;
 using pycanha::solvers::PardisoOrdering;
 using pycanha::solvers::Settings;
+using pycanha::solvers::Storage;
 using pycanha::solvers::transient::CrankNicolson;
 
 // The reference run: 100 000 s in steps of 1000 s, an output every 10 000 s.
@@ -278,6 +279,7 @@ TEST_CASE("CrankNicolson gives the same transient with every configuration",
         std::optional<PardisoLevel> level;
         std::optional<PardisoOrdering> ordering;
         bool reuse;
+        Storage storage = Storage::SPARSE;
     };
     const auto option = GENERATE(
         Option{Backend::EIGEN, std::nullopt, std::nullopt, false},
@@ -289,13 +291,20 @@ TEST_CASE("CrankNicolson gives the same transient with every configuration",
         Option{Backend::PARDISO, std::nullopt,
                PardisoOrdering::NESTED_DISSECTION, true},
         Option{Backend::PARDISO, std::nullopt, PardisoOrdering::MIN_DEGREE,
-               true});
-    if (option.backend == Backend::PARDISO && !pycanha::MKL_ENABLED) {
+               true},
+        Option{Backend::EIGEN, std::nullopt, std::nullopt, false,
+               Storage::DENSE},
+        Option{Backend::LAPACK, std::nullopt, std::nullopt, false,
+               Storage::DENSE},
+        Option{Backend::LAPACK, std::nullopt, std::nullopt, true,
+               Storage::DENSE});
+    if (option.backend != Backend::EIGEN && !pycanha::MKL_ENABLED) {
         SKIP("MKL not built");
     }
     auto model = make_model();
     CrankNicolson solver(model);
     Settings settings;
+    settings.storage = option.storage;
     settings.backend = option.backend;
     settings.pardiso.level = option.level;
     settings.pardiso.ordering = option.ordering;

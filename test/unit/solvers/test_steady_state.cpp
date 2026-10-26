@@ -30,6 +30,7 @@ using pycanha::solvers::Factorization;
 using pycanha::solvers::PardisoLevel;
 using pycanha::solvers::PardisoOrdering;
 using pycanha::solvers::Settings;
+using pycanha::solvers::Storage;
 using pycanha::solvers::steady::SteadyState;
 using pycanha::test_models::Model;
 namespace models = pycanha::test_models;
@@ -73,13 +74,30 @@ Config pardiso(PardisoLevel level, std::optional<PardisoOrdering> ordering,
     return config;
 }
 
+Config dense(Backend backend,
+             std::optional<Factorization> factorization = std::nullopt) {
+    Config config{.name = std::string("DENSE ") +
+                          std::string(pycanha::solvers::to_string(backend)) +
+                          (factorization.has_value() ? " LU" : ""),
+                  .settings = {}};
+    config.settings.storage = Storage::DENSE;
+    config.settings.backend = backend;
+    config.settings.factorization = factorization;
+    return config;
+}
+
 // Every backend configuration of this build. Cholesky only without
 // radiation.
 std::vector<Config> direct_configs(bool radiation) {
-    std::vector<Config> configs = {eigen(EigenOrdering::COLAMD),
-                                   eigen(EigenOrdering::AMD)};
+    std::vector<Config> configs = {
+        eigen(EigenOrdering::COLAMD), eigen(EigenOrdering::AMD),
+        dense(Backend::EIGEN), dense(Backend::EIGEN, Factorization::LU)};
     if (!radiation) {
         configs.push_back(eigen_cholesky());
+    }
+    if (pycanha::MKL_ENABLED) {
+        configs.push_back(dense(Backend::LAPACK));
+        configs.push_back(dense(Backend::LAPACK, Factorization::LU));
     }
     if (pycanha::MKL_ENABLED) {
         configs.push_back(pardiso(PardisoLevel::TWO_LEVEL, std::nullopt));
@@ -93,13 +111,16 @@ std::vector<Config> direct_configs(bool radiation) {
     return configs;
 }
 
-// Cholesky is chosen explicitly, or by AUTO for PARDISO without radiation.
+// Cholesky is chosen explicitly, or by AUTO without radiation for PARDISO
+// and for dense storage.
 bool expects_cholesky(const Config& config, bool radiation) {
     const auto& settings = config.settings;
     if (settings.factorization == Factorization::CHOLESKY) {
         return true;
     }
-    return !radiation && settings.backend == Backend::PARDISO &&
+    const bool prefers_cholesky = settings.backend == Backend::PARDISO ||
+                                  settings.storage == Storage::DENSE;
+    return !radiation && prefers_cholesky &&
            !settings.factorization.has_value();
 }
 
@@ -408,10 +429,12 @@ TEST_CASE("SteadyState applies PARDISO settings", "[solver][steady]") {
 // Factor reuse (PARDISO only)
 // ---------------------------------------------------------------------------
 
-TEST_CASE("Factor reuse needs PARDISO", "[solver][steady][reuse]") {
+TEST_CASE("Factor reuse needs PARDISO or LAPACK", "[solver][steady][reuse]") {
+    const auto storage = GENERATE(Storage::SPARSE, Storage::DENSE);
     const auto model = models::make_small_radiative_model();
     SteadyState solver(model);
     Settings settings;
+    settings.storage = storage;
     settings.backend = Backend::EIGEN;
     settings.reuse_factors = true;
     solver.set_settings(settings);
@@ -448,6 +471,76 @@ TEST_CASE("Factor reuse matches a direct solve on a radiative plate",
             1e-6);
     // One factorization, the other iterations iterate on it.
     REQUIRE(solver.num_factorizations() == 1);
+}
+
+TEST_CASE("Dense factor reuse matches a direct solve on a radiative plate",
+          "[solver][steady][reuse][dense]") {
+    if (!pycanha::MKL_ENABLED) {
+        SKIP("MKL not built");
+    }
+    constexpr double tolerance = 1e-8;
+    const auto model = models::make_plate(20, /*radiation=*/true);
+    const auto reference = solve_reference(model, tolerance);
+
+    models::reset_temperatures(model, 250.0);
+    SteadyState solver(model);
+    Settings settings = dense(Backend::LAPACK).settings;
+    settings.reuse_factors = true;
+    configure(solver, settings, tolerance);
+    solver.initialize();
+    solver.solve();
+    REQUIRE(solver.converged());
+    REQUIRE(models::max_difference(models::temperatures(model), reference) <
+            1e-6);
+    // The later iterations iterate on the first factors.
+    REQUIRE(solver.num_factorizations() < solver.iterations());
+}
+
+TEST_CASE("Dense factor reuse never solves with factors of an older matrix",
+          "[solver][steady][reuse][dense]") {
+    if (!pycanha::MKL_ENABLED) {
+        SKIP("MKL not built");
+    }
+    // As with PARDISO: iteration 3 sees the values of iteration 2, but the
+    // factors still belong to the iteration-1 matrix.
+    const auto model = models::make_plate(12, /*radiation=*/false);
+    const int node_1 = 1;
+    const int node_2 = 2;
+    const double original =
+        model->conductive_couplings().get_coupling_value(node_1, node_2);
+    model->conductive_couplings().set_coupling_value(node_1, node_2,
+                                                     2.0 * original);
+    const auto reference = solve_reference(model, 1e-9);
+    model->conductive_couplings().set_coupling_value(node_1, node_2, original);
+    models::reset_temperatures(model, 293.15);
+
+    models::install_callback(model, models::double_coupling_once, node_1,
+                             node_2);
+    SteadyState solver(model);
+    Settings settings = dense(Backend::LAPACK).settings;
+    settings.reuse_factors = true;
+    settings.max_iterations = 3;
+    settings.tolerance = 1e-300;
+    solver.set_settings(settings);
+    solver.initialize();
+    solver.solve();
+    model->c_callbacks_active = false;
+
+    REQUIRE(solver.num_factorizations() == 1);
+    REQUIRE(models::max_difference(models::temperatures(model), reference) <
+            1e-4);
+}
+
+TEST_CASE("SteadyState refuses LAPACK in a build without MKL",
+          "[solver][steady][dense]") {
+    if (pycanha::MKL_ENABLED) {
+        SKIP("MKL built");
+    }
+    const auto model = models::make_small_radiative_model();
+    SteadyState solver(model);
+    solver.set_settings(dense(Backend::LAPACK).settings);
+    REQUIRE_THROWS_AS(solver.initialize(), std::invalid_argument);
+    REQUIRE_FALSE(solver.initialized());
 }
 
 TEST_CASE("Factor reuse uses Cholesky and CG on a conduction model",

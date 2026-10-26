@@ -200,6 +200,8 @@ add_library(${LIB_NAME} STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/solver_registry.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/factorizer.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/pardiso.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/sparse_network.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/dense_network.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/steady_state.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/crank_nicolson.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/jacobian_propagation.cpp

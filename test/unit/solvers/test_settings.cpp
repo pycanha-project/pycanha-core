@@ -33,19 +33,19 @@ using pycanha::solvers::ResolvedSettings;
 using pycanha::solvers::Settings;
 using pycanha::solvers::SettingValue;
 using pycanha::solvers::SolverType;
+using pycanha::solvers::Storage;
 namespace solvers = pycanha::solvers;
 
 // Contexts that do not depend on how the library was built: PARDISO is
 // available and the model has no radiation unless the name says otherwise.
 ResolveContext context(SolverType type) {
-    return {
-        .solver_type = type, .has_radiation = false, .pardiso_available = true};
+    return {.solver_type = type, .has_radiation = false, .mkl_available = true};
 }
 ResolveContext steady() { return context(SolverType::STEADY_STATE); }
 ResolveContext crank_nicolson() { return context(SolverType::CRANK_NICOLSON); }
 ResolveContext steady_without_pardiso() {
     ResolveContext without = steady();
-    without.pardiso_available = false;
+    without.mkl_available = false;
     return without;
 }
 ResolveContext steady_with_radiation() {
@@ -57,6 +57,11 @@ ResolveContext steady_without_model() {
     ResolveContext unknown = steady();
     unknown.has_radiation.reset();
     return unknown;
+}
+ResolveContext crank_nicolson_with_radiation() {
+    ResolveContext radiative = crank_nicolson();
+    radiative.has_radiation = true;
+    return radiative;
 }
 
 // Settings with the time step that transient solvers need.
@@ -101,6 +106,7 @@ Settings fully_set() {
     settings.solver_type = SolverType::CRANK_NICOLSON;
     settings.tolerance = 1e-4;
     settings.max_iterations = 20;
+    settings.storage = Storage::DENSE;
     settings.backend = Backend::EIGEN;
     settings.factorization = Factorization::LU;
     settings.reuse_factors = true;
@@ -163,7 +169,9 @@ TEST_CASE("Transient defaults", "[solver][settings]") {
             std::set<DataModelAttribute>{DataModelAttribute::T});
     REQUIRE(resolved.capacity_delta == Catch::Approx(1e-7));
     REQUIRE(resolved.output_interval == 0.0);
-    REQUIRE(resolved.factorization == Factorization::LU);
+    REQUIRE(resolved.storage == Storage::SPARSE);
+    // No radiative couplings: the matrix is symmetric.
+    REQUIRE(resolved.factorization == Factorization::CHOLESKY);
 }
 
 TEST_CASE("Factor reuse selects a stall-safe one-level factorization",
@@ -216,18 +224,59 @@ TEST_CASE("PARDISO level and ordering default from each other",
     REQUIRE(contains(risky.warnings.front(), "livelock"));
 }
 
-TEST_CASE("AUTO factorization follows the backend, solver and model",
+namespace {
+
+Factorization auto_factorization(const ResolveContext& resolve_context,
+                                 Storage storage) {
+    Settings settings = with_time_step();
+    settings.factorization = Factorization::AUTO;
+    settings.storage = storage;
+    return solvers::resolve(settings, resolve_context).factorization;
+}
+
+}  // namespace
+
+TEST_CASE("AUTO factorization is Cholesky without radiation",
           "[solver][settings]") {
-    const auto factorization = [](const ResolveContext& resolve_context) {
-        Settings settings = with_time_step();
-        settings.factorization = Factorization::AUTO;
-        return solvers::resolve(settings, resolve_context).factorization;
-    };
-    REQUIRE(factorization(steady()) == Factorization::CHOLESKY);
-    REQUIRE(factorization(steady_with_radiation()) == Factorization::LU);
-    REQUIRE(factorization(steady_without_model()) == Factorization::AUTO);
-    REQUIRE(factorization(steady_without_pardiso()) == Factorization::LU);
-    REQUIRE(factorization(crank_nicolson()) == Factorization::LU);
+    const Storage storage = GENERATE(Storage::SPARSE, Storage::DENSE);
+    INFO(solvers::to_string(storage));
+    REQUIRE(auto_factorization(steady(), storage) == Factorization::CHOLESKY);
+    REQUIRE(auto_factorization(crank_nicolson(), storage) ==
+            Factorization::CHOLESKY);
+    REQUIRE(auto_factorization(steady_without_model(), storage) ==
+            Factorization::AUTO);
+}
+
+TEST_CASE("AUTO factorization is LU with radiation or Eigen's sparse LU",
+          "[solver][settings]") {
+    const Storage storage = GENERATE(Storage::SPARSE, Storage::DENSE);
+    INFO(solvers::to_string(storage));
+    REQUIRE(auto_factorization(steady_with_radiation(), storage) ==
+            Factorization::LU);
+    REQUIRE(auto_factorization(crank_nicolson_with_radiation(), storage) ==
+            Factorization::LU);
+    // Without MKL: Eigen's sparse LU, or Eigen's dense Cholesky.
+    REQUIRE(auto_factorization(steady_without_pardiso(), storage) ==
+            (storage == Storage::DENSE ? Factorization::CHOLESKY
+                                       : Factorization::LU));
+}
+
+TEST_CASE("Dense storage selects its backend", "[solver][settings]") {
+    Settings dense;
+    dense.storage = Storage::DENSE;
+    REQUIRE(solvers::resolve(dense, steady()).backend == Backend::LAPACK);
+    REQUIRE(solvers::resolve(dense, steady_without_pardiso()).backend ==
+            Backend::EIGEN);
+
+    // LAPACK alone asks for dense storage.
+    Settings lapack;
+    lapack.backend = Backend::LAPACK;
+    const ResolvedSettings resolved = solvers::resolve(lapack, steady());
+    REQUIRE(resolved.storage == Storage::DENSE);
+    REQUIRE(resolved.origin("storage") == Origin::DEFAULT);
+
+    Settings sparse;
+    REQUIRE(solvers::resolve(sparse, steady()).storage == Storage::SPARSE);
 }
 
 TEST_CASE("Contradictions are refused", "[solver][settings]") {
@@ -264,11 +313,33 @@ TEST_CASE("Contradictions are refused", "[solver][settings]") {
                  settings.factorization = Factorization::CHOLESKY;
              },
              steady_with_radiation(), "without radiative couplings"},
-        Case{"Cholesky for a transient",
+        Case{"Cholesky with radiation in a transient",
              [](Settings& settings) {
                  settings.factorization = Factorization::CHOLESKY;
              },
-             crank_nicolson(), "not available for CRANK_NICOLSON"},
+             crank_nicolson_with_radiation(), "without radiative couplings"},
+        Case{"PARDISO with dense storage",
+             [](Settings& settings) {
+                 settings.storage = Storage::DENSE;
+                 settings.backend = Backend::PARDISO;
+             },
+             steady(), "backend = PARDISO needs storage = SPARSE"},
+        Case{"LAPACK with sparse storage",
+             [](Settings& settings) {
+                 settings.storage = Storage::SPARSE;
+                 settings.backend = Backend::LAPACK;
+             },
+             steady(), "backend = LAPACK needs storage = DENSE"},
+        Case{"LAPACK without MKL",
+             [](Settings& settings) { settings.backend = Backend::LAPACK; },
+             steady_without_pardiso(), "LAPACK needs a build with MKL"},
+        Case{"reuse with dense Eigen",
+             [](Settings& settings) {
+                 settings.storage = Storage::DENSE;
+                 settings.backend = Backend::EIGEN;
+                 settings.reuse_factors = true;
+             },
+             steady(), "Eigen cannot reuse factors"},
         Case{"no time step",
              [](Settings& settings) { settings.time_step.reset(); },
              crank_nicolson(), "CRANK_NICOLSON needs time_step"},
@@ -293,10 +364,10 @@ TEST_CASE("Every contradiction is listed at once", "[solver][settings]") {
     settings.max_iterations = 0;
     settings.factorization = Factorization::CHOLESKY;
     const std::string message =
-        contradiction_of(settings, context(SolverType::CRANK_NICOLSON));
+        contradiction_of(settings, crank_nicolson_with_radiation());
     REQUIRE(contains(message, "max_iterations must be at least 1"));
     REQUIRE(contains(message, "needs time_step"));
-    REQUIRE(contains(message, "CHOLESKY is not available"));
+    REQUIRE(contains(message, "CHOLESKY needs a model without radiative"));
 }
 
 TEST_CASE("Set fields that do not apply are ignored with the reason",
@@ -320,7 +391,27 @@ TEST_CASE("Set fields that do not apply are ignored with the reason",
              },
              steady_without_pardiso(), "only with backend = PARDISO"},
         Case{"threads", [](Settings& settings) { settings.threads = 2; },
-             steady_without_pardiso(), "only with backend = PARDISO"},
+             steady_without_pardiso(), "only with backend = PARDISO or LAPACK"},
+        Case{"pardiso.ordering",
+             [](Settings& settings) {
+                 settings.storage = Storage::DENSE;
+                 settings.pardiso.ordering = PardisoOrdering::MIN_DEGREE;
+             },
+             steady(), "only with backend = PARDISO"},
+        Case{"threads",
+             [](Settings& settings) {
+                 settings.storage = Storage::DENSE;
+                 settings.backend = Backend::EIGEN;
+                 settings.threads = 2;
+             },
+             steady(), "only with backend = PARDISO or LAPACK"},
+        Case{"eigen.ordering",
+             [](Settings& settings) {
+                 settings.storage = Storage::DENSE;
+                 settings.backend = Backend::EIGEN;
+                 settings.eigen.ordering = EigenOrdering::AMD;
+             },
+             steady(), "sparse storage"},
         Case{"eigen.ordering",
              [](Settings& settings) {
                  settings.eigen.ordering = EigenOrdering::AMD;
@@ -376,7 +467,7 @@ TEST_CASE("Bad names and values are refused and change nothing",
     REQUIRE_THROWS_AS(settings.set("tolerance", SettingValue{-1.0}),
                       std::invalid_argument);
     REQUIRE_THROWS_AS(
-        settings.set("backend", SettingValue{std::string("LAPACK")}),
+        settings.set("backend", SettingValue{std::string("MUMPS")}),
         std::invalid_argument);
     REQUIRE_THROWS_AS(settings.set("pardiso.iparm",
                                    SettingValue{std::map<int, int>{{64, 1}}}),

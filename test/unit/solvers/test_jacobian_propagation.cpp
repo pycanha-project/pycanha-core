@@ -1,11 +1,14 @@
 #include <array>
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/generators/catch_generators.hpp>
 #include <cmath>
 #include <cstddef>
 #include <memory>
+#include <optional>
 #include <stdexcept>
 
+#include "pycanha-core/config.hpp"
 #include "pycanha-core/parameters/formulas.hpp"
 #include "pycanha-core/solvers/jacobian_propagation.hpp"
 #include "pycanha-core/solvers/settings.hpp"
@@ -191,6 +194,45 @@ TEST_CASE("JacobianPropagation reproduces the Python example",
     REQUIRE(solver.derivative_parameter_names().at(1) == "C");
 
     require_python_example_samples(temperature_output, jacobian_output);
+}
+
+TEST_CASE("JacobianPropagation gives the same result with every configuration",
+          "[solver][transient][jacobian][dense]") {
+    using pycanha::solvers::Backend;
+    using pycanha::solvers::Factorization;
+    using pycanha::solvers::Storage;
+    struct Option {
+        Storage storage;
+        Backend backend;
+        std::optional<Factorization> factorization;
+    };
+    const auto option = GENERATE(
+        Option{Storage::SPARSE, Backend::EIGEN, Factorization::LU},
+        Option{Storage::SPARSE, Backend::EIGEN, Factorization::CHOLESKY},
+        Option{Storage::SPARSE, Backend::PARDISO, std::nullopt},
+        Option{Storage::SPARSE, Backend::PARDISO, Factorization::LU},
+        Option{Storage::DENSE, Backend::EIGEN, std::nullopt},
+        Option{Storage::DENSE, Backend::EIGEN, Factorization::LU},
+        Option{Storage::DENSE, Backend::LAPACK, std::nullopt},
+        Option{Storage::DENSE, Backend::LAPACK, Factorization::LU});
+    if (option.backend != Backend::EIGEN && !pycanha::MKL_ENABLED) {
+        SKIP("MKL not built");
+    }
+    auto model = make_python_example_model();
+    pycanha::solvers::sensitivity::JacobianPropagation solver(model);
+    pycanha::solvers::Settings settings;
+    settings.max_iterations = 50;
+    settings.tolerance = 1.0e-9;
+    settings.storage = option.storage;
+    settings.backend = option.backend;
+    settings.factorization = option.factorization;
+    solver.set_settings(settings);
+    solver.set_simulation_time(0.0, end_time, time_step, output_stride);
+    solver.initialize();
+    solver.solve();
+    const auto& output_model =
+        model->thermal_data().models().get_model("jacobian_propagation");
+    require_python_example_samples(output_model.T(), output_model.jacobian());
 }
 
 TEST_CASE("JacobianPropagation needs a derivative parameter",

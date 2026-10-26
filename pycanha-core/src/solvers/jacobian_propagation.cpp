@@ -14,7 +14,7 @@
 #include <unordered_set>
 #include <utility>
 
-#include "factorizer.hpp"
+#include "linearized_network.hpp"
 #include "memory.hpp"
 #include "pycanha-core/globals.hpp"
 #include "pycanha-core/parameters/entity.hpp"
@@ -27,7 +27,6 @@
 #include "pycanha-core/thermaldata/data_model.hpp"
 #include "pycanha-core/thermaldata/dense_matrix_time_series.hpp"
 #include "pycanha-core/tmm/thermalmathematicalmodel.hpp"
-#include "pycanha-core/utils/SparseUtils.hpp"
 #include "pycanha-core/utils/logger.hpp"
 #include "pycanha-core/utils/profiling.hpp"
 
@@ -71,7 +70,7 @@ SolverMemory JacobianPropagation::memory_now() const {
     const std::int64_t dense_bytes = static_cast<std::int64_t>(nd) *
                                      parameters *
                                      static_cast<std::int64_t>(sizeof(double));
-    memory.matrix += (dense_matrices * dense_bytes) + bytes_of(_sp_nd_diag);
+    memory.matrix += dense_matrices * dense_bytes;
     for (const auto* matrices : {&_d_kl_dd_matrices, &_d_kl_db_matrices,
                                  &_d_kr_dd_matrices, &_d_kr_db_matrices}) {
         for (const SpMatRow& matrix : *matrices) {
@@ -124,9 +123,6 @@ void JacobianPropagation::initialize() {
     _m_c = DenseJacobian::Zero(nd, to_idx(_derivative_parameter_names.size()));
     _mt = DenseJacobian::Zero(nd, to_idx(_derivative_parameter_names.size()));
     _mb = DenseJacobian::Zero(nd, to_idx(_derivative_parameter_names.size()));
-
-    _sp_nd_diag.resize(nd, nd);
-    sparse_utils::add_zero_diag_square(_sp_nd_diag);
 
     std::unordered_map<std::string, Index> parameter_lookup;
     parameter_lookup.reserve(_derivative_parameter_names.size());
@@ -308,11 +304,10 @@ void JacobianPropagation::build_mc() {
 
 void JacobianPropagation::solve_jacobian_step() {
     // With the factors of the last solve_step(), several right-hand sides.
-    _factorizer->solve(_k_matrix, _mb, _mt);
-    if (!_factorizer->succeeded()) {
+    if (!_network->solve(_mb, _mt)) {
         throw std::runtime_error(std::string(name()) +
                                  ": jacobian solve failed (" +
-                                 _factorizer->error_message() + ")");
+                                 _network->error_message() + ")");
     }
 }
 
@@ -322,7 +317,7 @@ void JacobianPropagation::solve() {
     const auto start = Clock::now();
     begin_solve_report();
     refresh_live_settings();
-    _factorizer->apply_live_settings(_resolved);
+    _network->apply_live_settings(_resolved);
     SPDLOG_LOGGER_INFO(get_logger(), "{} solving...", name());
 
     const FormulaExecutionGuard formula_execution(*this);
@@ -356,9 +351,9 @@ void JacobianPropagation::solve() {
         build_heat_flux();
         store_heat_flux_at_n0();
 
-        _sp_nd_diag.diagonal() =
-            _capacities.array() * (2.0 / _resolved.time_step);
-        _mb = (_sp_nd_diag + _k_matrix) * _mt;
+        // (K + 2C/dt) Mt, with K = -A.
+        _network->multiply(_mt, _mb);
+        _mb = _capacity_diagonal.asDiagonal() * _mt - _mb;
         _mb += _m_c + _m_k + _m_q;
 
         time += _resolved.time_step;
@@ -389,10 +384,9 @@ void JacobianPropagation::solve() {
         }
         record_step_iterations(time_iter, time, iterations, converged);
 
-        _sp_nd_diag.diagonal() =
-            _capacities.array() * (2.0 / _resolved.time_step);
-        // solve_step() left -K + 2C/dt in _k_matrix.
-        _kt_q_n0 = (-_k_matrix + _sp_nd_diag) * Td + Qd;
+        // K Td + Qd: the network holds -K + 2C/dt after solve_step().
+        _network->multiply(Td, _kt_q_n0);
+        _kt_q_n0 = _capacity_diagonal.cwiseProduct(Td) - _kt_q_n0 + Qd;
 
         build_mc();
         build_mk();
