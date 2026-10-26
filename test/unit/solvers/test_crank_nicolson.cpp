@@ -7,12 +7,13 @@
 #include <iostream>
 #include <iterator>
 #include <memory>
+#include <optional>
 #include <stdexcept>
+#include <string>
 
 #include "pycanha-core/config.hpp"
-#include "pycanha-core/solvers/accelerate.hpp"
-#include "pycanha-core/solvers/linear_solver.hpp"
-#include "pycanha-core/solvers/tscnrlds.hpp"
+#include "pycanha-core/solvers/crank_nicolson.hpp"
+#include "pycanha-core/solvers/settings.hpp"
 #include "pycanha-core/thermaldata/data_model.hpp"
 #include "pycanha-core/thermaldata/dense_time_series.hpp"
 #include "pycanha-core/thermaldata/thermaldata.hpp"
@@ -187,14 +188,15 @@ std::shared_ptr<pycanha::ThermalMathematicalModel> make_model() {
 bool compare_temps(const pycanha::ThermalMathematicalModel& model,
                    bool print_diffs = false) {
     const auto& thermal_data = model.thermal_data();
-    if (!thermal_data.models().has_model("TSCNRLDS")) {
+    if (!thermal_data.models().has_model("crank_nicolson")) {
         if (print_diffs) {
-            std::cout << "Thermal data model 'TSCNRLDS' not found.\n";
+            std::cout << "Thermal data model 'crank_nicolson' not found.\n";
         }
         return false;
     }
 
-    const auto& output_model = thermal_data.models().get_model("TSCNRLDS");
+    const auto& output_model =
+        thermal_data.models().get_model("crank_nicolson");
     const auto& output_table = output_model.T();
     if (!has_expected_output_shape(output_table, print_diffs)) {
         return false;
@@ -217,6 +219,22 @@ bool compare_temps(const pycanha::ThermalMathematicalModel& model,
     return all_within_tol;
 }
 
+using pycanha::solvers::AccelerateOrdering;
+using pycanha::solvers::Backend;
+using pycanha::solvers::PardisoLevel;
+using pycanha::solvers::PardisoOrdering;
+using pycanha::solvers::Settings;
+using pycanha::solvers::Storage;
+using pycanha::solvers::transient::CrankNicolson;
+
+// The reference run: 100 000 s in steps of 1000 s, an output every 10 000 s.
+void configure(CrankNicolson& solver, Settings settings) {
+    settings.max_iterations = 100;
+    settings.tolerance = 1e-6;
+    solver.set_settings(settings);
+    solver.set_simulation_time(0.0, 100000.0, 1000.0, 10000.0);
+}
+
 void reset_model_temps(pycanha::ThermalMathematicalModel& model) {
     model.nodes().set_T(10, init_temp);
     model.nodes().set_T(15, init_temp);
@@ -226,18 +244,13 @@ void reset_model_temps(pycanha::ThermalMathematicalModel& model) {
 
 }  // namespace
 
-TEST_CASE("TSCNRLDS solves a simple model", "[solver][tscnrlds]") {
+TEST_CASE("CrankNicolson solves a simple model", "[solver][transient]") {
     auto model = make_model();
 
-    pycanha::TSCNRLDS solver(model);
-    solver.max_iters = 100;
-    solver.abstol_temp = 1e-6;
-    solver.set_simulation_time(0.0, 100000.0, 1000.0, 10000.0);
-
+    CrankNicolson solver(model);
+    configure(solver, {});
     solver.initialize();
-
-    REQUIRE(solver.solver_initialized);
-
+    REQUIRE(solver.initialized());
     solver.solve();
 
     // In case of error, set print_diffs to true to see detailed comparison
@@ -246,81 +259,154 @@ TEST_CASE("TSCNRLDS solves a simple model", "[solver][tscnrlds]") {
     // Re-run to verify no errors (like mem-leaks) on multiple initializations
     solver.deinitialize();
     reset_model_temps(*model);
-    solver.max_iters = 100;
-    solver.abstol_temp = 1e-6;
-    solver.set_simulation_time(0.0, 100000.0, 1000.0, 10000.0);
+    configure(solver, {});
     solver.initialize();
     solver.solve();
     REQUIRE(compare_temps(*model, false));
 
-    // Create another solver instance to verify multiple solvers work in the
-    // same model
-    auto solver2 = pycanha::TSCNRLDS(model);
+    // Another solver instance on the same model.
+    CrankNicolson solver2(model);
     reset_model_temps(*model);
-    solver2.max_iters = 100;
-    solver2.abstol_temp = 1e-6;
-    solver2.set_simulation_time(0.0, 100000.0, 1000.0, 10000.0);
+    configure(solver2, {});
     solver2.initialize();
     solver2.solve();
     REQUIRE(compare_temps(*model, false));
 }
 
-TEST_CASE("TSCNRLDS gives the same transient with every solver option",
-          "[solver][tscnrlds]") {
-    using pycanha::DirectSolverType;
-    using pycanha::SolverEngine;
+TEST_CASE("CrankNicolson gives the same transient with every configuration",
+          "[solver][transient]") {
     struct Option {
-        SolverEngine engine;
-        DirectSolverType type;
-        int iparm_3;
+        Backend backend;
+        std::optional<PardisoLevel> level;
+        std::optional<PardisoOrdering> ordering;
+        bool reuse;
+        Storage storage = Storage::SPARSE;
+        std::optional<AccelerateOrdering> accelerate_ordering = std::nullopt;
     };
-    const auto option =
-        GENERATE(Option{SolverEngine::EIGEN, DirectSolverType::COLAMD, 0},
-                 Option{SolverEngine::EIGEN, DirectSolverType::AMD, 0},
-                 Option{SolverEngine::MKL, DirectSolverType::TWO_LEVEL, 0},
-                 Option{SolverEngine::MKL, DirectSolverType::ONE_LEVEL, 0},
-                 Option{SolverEngine::MKL, DirectSolverType::MIN_DEGREE, 0},
-                 Option{SolverEngine::MKL, DirectSolverType::ONE_LEVEL, 61},
-                 Option{SolverEngine::MKL, DirectSolverType::MIN_DEGREE, 61},
-                 Option{SolverEngine::ACCELERATE, DirectSolverType::METIS, 0},
-                 Option{SolverEngine::ACCELERATE, DirectSolverType::AMD, 0});
-    if (option.engine == SolverEngine::MKL && !pycanha::MKL_ENABLED) {
+    const auto option = GENERATE(
+        Option{Backend::EIGEN, std::nullopt, std::nullopt, false},
+        Option{Backend::PARDISO, PardisoLevel::TWO_LEVEL, std::nullopt, false},
+        Option{Backend::PARDISO, PardisoLevel::ONE_LEVEL,
+               PardisoOrdering::NESTED_DISSECTION, false},
+        Option{Backend::PARDISO, PardisoLevel::ONE_LEVEL,
+               PardisoOrdering::MIN_DEGREE, false},
+        Option{Backend::PARDISO, std::nullopt,
+               PardisoOrdering::NESTED_DISSECTION, true},
+        Option{Backend::PARDISO, std::nullopt, PardisoOrdering::MIN_DEGREE,
+               true},
+        Option{Backend::EIGEN, std::nullopt, std::nullopt, false,
+               Storage::DENSE},
+        Option{Backend::LAPACK, std::nullopt, std::nullopt, false,
+               Storage::DENSE},
+        Option{Backend::LAPACK, std::nullopt, std::nullopt, true,
+               Storage::DENSE},
+        Option{Backend::ACCELERATE, std::nullopt, std::nullopt, false,
+               Storage::SPARSE, AccelerateOrdering::METIS},
+        Option{Backend::ACCELERATE, std::nullopt, std::nullopt, false,
+               Storage::SPARSE, AccelerateOrdering::AMD});
+    const bool needs_mkl =
+        option.backend == Backend::PARDISO || option.backend == Backend::LAPACK;
+    if (needs_mkl && !pycanha::MKL_ENABLED) {
         SKIP("MKL not built");
     }
-    if (option.engine == SolverEngine::ACCELERATE &&
-        !pycanha::accelerate_available()) {
+    if (option.backend == Backend::ACCELERATE &&
+        !pycanha::solvers::accelerate_available()) {
         SKIP("Accelerate not available");
     }
+    const bool fixed = GENERATE(false, true);
     auto model = make_model();
-    pycanha::TSCNRLDS solver(model);
-    solver.engine = option.engine;
-    solver.solver_type = option.type;
-    solver.pardiso_iparm_3 = option.iparm_3;
-    solver.max_iters = 100;
-    solver.abstol_temp = 1e-6;
-    solver.set_simulation_time(0.0, 100000.0, 1000.0, 10000.0);
+    CrankNicolson solver(model);
+    Settings settings;
+    settings.fixed_couplings = fixed;
+    settings.storage = option.storage;
+    settings.backend = option.backend;
+    settings.pardiso.level = option.level;
+    settings.pardiso.ordering = option.ordering;
+    settings.reuse_factors = option.reuse;
+    settings.accelerate.ordering = option.accelerate_ordering;
+    configure(solver, settings);
     solver.initialize();
-    REQUIRE(solver.solver_initialized);
+    REQUIRE(solver.initialized());
     solver.solve();
     REQUIRE(compare_temps(*model, false));
 }
 
-TEST_CASE("TSCNRLDS rejects unavailable solver options", "[solver][tscnrlds]") {
-    using pycanha::DirectSolverType;
-    using pycanha::SolverEngine;
+TEST_CASE("CrankNicolson with Eigen AMD gives the same transient",
+          "[solver][transient]") {
     auto model = make_model();
-    pycanha::TSCNRLDS solver(model);
-    solver.set_simulation_time(0.0, 100000.0, 1000.0, 10000.0);
+    CrankNicolson solver(model);
+    Settings settings;
+    settings.backend = Backend::EIGEN;
+    settings.eigen.ordering = pycanha::solvers::EigenOrdering::AMD;
+    configure(solver, settings);
+    solver.initialize();
+    solver.solve();
+    REQUIRE(compare_temps(*model, false));
+}
 
-    SECTION("LDLT") {
-        solver.engine = SolverEngine::EIGEN;
-        solver.solver_type = DirectSolverType::LDLT;
-        REQUIRE_THROWS_AS(solver.initialize(), std::invalid_argument);
+TEST_CASE("CrankNicolson refuses unavailable configurations",
+          "[solver][transient]") {
+    const auto model = make_model();
+    CrankNicolson solver(model);
+    const auto refused = [&solver]() {
+        try {
+            solver.initialize();
+        } catch (const std::invalid_argument&) {
+            return !solver.initialized();
+        }
+        return false;
+    };
+
+    Settings cholesky;
+    cholesky.factorization = pycanha::solvers::Factorization::CHOLESKY;
+    configure(solver, cholesky);
+    REQUIRE(refused());
+
+    solver.set_settings(Settings{});  // no time step
+    REQUIRE(refused());
+
+    // Refused on every platform: Accelerate cannot reuse factors.
+    Settings accelerate_reuse;
+    accelerate_reuse.backend = Backend::ACCELERATE;
+    accelerate_reuse.reuse_factors = true;
+    configure(solver, accelerate_reuse);
+    REQUIRE(refused());
+
+    if (pycanha::MKL_ENABLED) {
+        Settings reuse;
+        reuse.reuse_factors = true;
+        reuse.pardiso.level = PardisoLevel::TWO_LEVEL;
+        configure(solver, reuse);
+        REQUIRE(refused());
     }
-    SECTION("The iterative step with the two-level factorisation") {
-        solver.engine = pycanha::default_solver_engine();
-        solver.pardiso_iparm_3 = 61;
-        REQUIRE_THROWS_AS(solver.initialize(), std::invalid_argument);
-    }
-    REQUIRE_FALSE(solver.solver_initialized);
+}
+
+TEST_CASE("CrankNicolson validates the simulation time",
+          "[solver][transient]") {
+    CrankNicolson solver(make_model());
+    REQUIRE_THROWS_AS(solver.set_simulation_time(2.0, 1.0, 1.0, 0.0),
+                      std::invalid_argument);
+    REQUIRE_THROWS_AS(solver.set_simulation_time(0.0, 1.0, 0.0, 0.0),
+                      std::invalid_argument);
+    REQUIRE_THROWS_AS(solver.set_simulation_time(0.0, 1.0, 1.0, -0.5),
+                      std::invalid_argument);
+    REQUIRE_THROWS_AS(solver.solve(), std::invalid_argument);
+}
+
+TEST_CASE("CrankNicolson freezes time and output settings while initialized",
+          "[solver][transient]") {
+    auto model = make_model();
+    CrankNicolson solver(model);
+    configure(solver, {});
+    solver.initialize();
+    REQUIRE_THROWS_AS(solver.set_simulation_time(0.0, 50000.0, 1000.0, 0.0),
+                      std::runtime_error);
+    REQUIRE_THROWS_AS(
+        solver.set("output_name",
+                   pycanha::solvers::SettingValue{std::string("other")}),
+        std::runtime_error);
+    REQUIRE_NOTHROW(
+        solver.set("tolerance", pycanha::solvers::SettingValue{1e-5}));
+    solver.solve();
+    REQUIRE(compare_temps(*model, false));
 }

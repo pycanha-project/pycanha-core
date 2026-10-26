@@ -5,7 +5,9 @@
 #include <Eigen/Core>
 #include <memory>
 
+#include "pycanha-core/config.hpp"
 #include "pycanha-core/globals.hpp"
+#include "pycanha-core/solvers/settings.hpp"
 #include "pycanha-core/tmm/conductivecouplings.hpp"
 #include "pycanha-core/tmm/node.hpp"
 #include "pycanha-core/tmm/nodes.hpp"
@@ -18,8 +20,19 @@ using Model = std::shared_ptr<ThermalMathematicalModel>;
 inline constexpr int boundary_node = 100000;
 inline constexpr int space_node = 100001;
 
+// The backend of sparse storage by default in this build and on this
+// machine: PARDISO with MKL, otherwise Accelerate where available, otherwise
+// Eigen.
+inline solvers::Backend default_sparse_backend() {
+    if (MKL_ENABLED) {
+        return solvers::Backend::PARDISO;
+    }
+    return solvers::accelerate_available() ? solvers::Backend::ACCELERATE
+                                           : solvers::Backend::EIGEN;
+}
+
 // Two conductive and five radiative couplings; the expected steady state is
-// known (the SSLU reference test).
+// known (the steady-state reference test).
 inline Model make_small_radiative_model() {
     auto model = std::make_shared<ThermalMathematicalModel>("small");
     for (const int num : {10, 15, 20, 25}) {

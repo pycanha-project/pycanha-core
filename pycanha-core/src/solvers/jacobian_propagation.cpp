@@ -1,10 +1,11 @@
-#include "pycanha-core/solvers/tscnrlds_jacobian.hpp"
+#include "pycanha-core/solvers/jacobian_propagation.hpp"
 
 #include <spdlog/spdlog.h>
 
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
+#include <cstdint>
 #include <iterator>
 #include <memory>
 #include <stdexcept>
@@ -13,21 +14,23 @@
 #include <unordered_set>
 #include <utility>
 
+#include "linearized_network.hpp"
+#include "memory.hpp"
 #include "pycanha-core/globals.hpp"
 #include "pycanha-core/parameters/entity.hpp"
 #include "pycanha-core/parameters/formula.hpp"
 #include "pycanha-core/parameters/formulas.hpp"
+#include "pycanha-core/solvers/crank_nicolson.hpp"
+#include "pycanha-core/solvers/report.hpp"
+#include "pycanha-core/solvers/settings.hpp"
 #include "pycanha-core/solvers/solver.hpp"
-#include "pycanha-core/solvers/tscnrlds.hpp"
 #include "pycanha-core/thermaldata/data_model.hpp"
 #include "pycanha-core/thermaldata/dense_matrix_time_series.hpp"
-#include "pycanha-core/thermaldata/thermaldata.hpp"
 #include "pycanha-core/tmm/thermalmathematicalmodel.hpp"
-#include "pycanha-core/utils/SparseUtils.hpp"
 #include "pycanha-core/utils/logger.hpp"
 #include "pycanha-core/utils/profiling.hpp"
 
-namespace pycanha {
+namespace pycanha::solvers::sensitivity {
 
 namespace {
 
@@ -47,29 +50,49 @@ namespace {
 
 }  // namespace
 
-TSCNRLDS_JACOBIAN::TSCNRLDS_JACOBIAN(
+JacobianPropagation::JacobianPropagation(
     std::shared_ptr<ThermalMathematicalModel> tmm_shptr)
-    : TSCNRLDS(std::move(tmm_shptr)) {
-    solver_name = "TSCNRLDS_JACOBIAN";
-    output_config.add(DataModelAttribute::JAC);
+    : CrankNicolson(std::move(tmm_shptr), SolverType::JACOBIAN_PROPAGATION) {}
+
+void JacobianPropagation::prepare(bool log_warnings) {
+    collect_parameter_names();
+    CrankNicolson::prepare(log_warnings);
 }
 
-void TSCNRLDS_JACOBIAN::initialize() {
-    collect_parameter_names();
-    if (_derivative_parameter_names.empty()) {
-        throw std::invalid_argument(
-            "TSCNRLDS_JACOBIAN requires at least one selected derivative "
-            "parameter");
+SolverMemory JacobianPropagation::memory_now() const {
+    using detail::bytes_of;
+    SolverMemory memory = CrankNicolson::memory_now();
+    const auto parameters =
+        static_cast<std::int64_t>(_derivative_parameter_names.size());
+    // _d_capacity_matrix, _d_heat_flux_matrix, _m_k, _m_q, _m_c, _mt and _mb
+    // are nd x parameters, also before initialize() sizes them.
+    constexpr std::int64_t dense_matrices = 7;
+    const std::int64_t dense_bytes = static_cast<std::int64_t>(nd) *
+                                     parameters *
+                                     static_cast<std::int64_t>(sizeof(double));
+    memory.matrix += dense_matrices * dense_bytes;
+    for (const auto* matrices : {&_d_kl_dd_matrices, &_d_kl_db_matrices,
+                                 &_d_kr_dd_matrices, &_d_kr_db_matrices}) {
+        for (const SpMatRow& matrix : *matrices) {
+            memory.matrix += bytes_of(matrix);
+        }
     }
+    // The JAC attribute holds one nd x parameters sample per output.
+    memory.output += static_cast<std::int64_t>(num_outputs) *
+                     (dense_bytes + static_cast<std::int64_t>(sizeof(double)));
+    return memory;
+}
 
-    TSCNRLDS::initialize();
+void JacobianPropagation::initialize() {
+    // The selection may have changed since an estimate_memory().
+    collect_parameter_names();
+    CrankNicolson::initialize();
 
-    auto& output_model =
-        tmm.thermal_data().models().get_model(output_model_name);
-    output_model.get_matrix_attribute(DataModelAttribute::JAC) =
+    auto& jacobian =
+        output_model().get_matrix_attribute(DataModelAttribute::JAC);
+    jacobian =
         DenseMatrixTimeSeries(nd, to_idx(_derivative_parameter_names.size()));
-    output_model.get_matrix_attribute(DataModelAttribute::JAC)
-        .reserve(to_sizet(num_outputs));
+    jacobian.reserve(to_sizet(num_outputs));
 
     _d_kl_dd_matrices.clear();
     _d_kl_db_matrices.clear();
@@ -100,9 +123,6 @@ void TSCNRLDS_JACOBIAN::initialize() {
     _m_c = DenseJacobian::Zero(nd, to_idx(_derivative_parameter_names.size()));
     _mt = DenseJacobian::Zero(nd, to_idx(_derivative_parameter_names.size()));
     _mb = DenseJacobian::Zero(nd, to_idx(_derivative_parameter_names.size()));
-
-    _sp_nd_diag.resize(nd, nd);
-    sparse_utils::add_zero_diag_square(_sp_nd_diag);
 
     std::unordered_map<std::string, Index> parameter_lookup;
     parameter_lookup.reserve(_derivative_parameter_names.size());
@@ -147,7 +167,7 @@ void TSCNRLDS_JACOBIAN::initialize() {
     }
 }
 
-void TSCNRLDS_JACOBIAN::collect_parameter_names() {
+void JacobianPropagation::collect_parameter_names() {
     _parameter_names.clear();
     _derivative_parameter_names.clear();
 
@@ -176,11 +196,16 @@ void TSCNRLDS_JACOBIAN::collect_parameter_names() {
         }
         _derivative_parameter_names.push_back(parameter_name);
     }
+    if (_derivative_parameter_names.empty()) {
+        throw std::invalid_argument(
+            "JacobianPropagation requires at least one selected derivative "
+            "parameter");
+    }
 }
 
-void TSCNRLDS_JACOBIAN::fill_matrices(const Entity& entity,
-                                      Index parameter_index,
-                                      double derivative_value) {
+void JacobianPropagation::fill_matrices(const Entity& entity,
+                                        Index parameter_index,
+                                        double derivative_value) {
     const auto type = entity.type();
 
     if (type == EntityType::gl || type == EntityType::gr) {
@@ -232,7 +257,7 @@ void TSCNRLDS_JACOBIAN::fill_matrices(const Entity& entity,
                        entity.string_representation());
 }
 
-void TSCNRLDS_JACOBIAN::build_mk() {
+void JacobianPropagation::build_mk() {
     for (std::size_t parameter_index = 0;
          parameter_index < _derivative_parameter_names.size();
          ++parameter_index) {
@@ -257,7 +282,7 @@ void TSCNRLDS_JACOBIAN::build_mk() {
     }
 }
 
-void TSCNRLDS_JACOBIAN::build_mq() {
+void JacobianPropagation::build_mq() {
     for (std::size_t parameter_index = 0;
          parameter_index < _derivative_parameter_names.size();
          ++parameter_index) {
@@ -271,49 +296,44 @@ void TSCNRLDS_JACOBIAN::build_mq() {
     }
 }
 
-void TSCNRLDS_JACOBIAN::build_mc() {
+void JacobianPropagation::build_mc() {
     const VectorXd initial_temperature_derivative =
         _capacities_inverse.asDiagonal() * (-_kt_q_n0);
     _m_c = initial_temperature_derivative.asDiagonal() * _d_capacity_matrix;
 }
 
-void TSCNRLDS_JACOBIAN::solve_jacobian_step() {
+void JacobianPropagation::solve_jacobian_step() {
     // With the factors of the last solve_step(), several right-hand sides.
-    _linear_solver->solve(_k_matrix, _mb, _mt);
-    if (!_linear_solver->succeeded()) {
-        throw std::runtime_error(solver_name + ": jacobian solve failed (" +
-                                 _linear_solver->error_message() + ")");
+    if (!_network->solve(_mb, _mt)) {
+        throw std::runtime_error(std::string(name()) +
+                                 ": jacobian solve failed (" +
+                                 _network->error_message() + ")");
     }
 }
 
-void TSCNRLDS_JACOBIAN::solve() {
-    if (!structure_unchanged_since_initialize()) {
-        return;
-    }
-    SPDLOG_LOGGER_INFO(get_logger(), "TSCNRLDS_JACOBIAN solving...");
+void JacobianPropagation::solve() {
+    // Throws first when the solver is not initialised.
+    restart_solve();
+    const auto start = Clock::now();
+    begin_solve_report();
+    refresh_live_settings();
+    _network->apply_live_settings(_resolved);
+    _network->begin_solve();
+    SPDLOG_LOGGER_INFO(get_logger(), "{} solving...", name());
 
     const FormulaExecutionGuard formula_execution(*this);
 
-    if (_derivative_parameter_names.empty()) {
-        TSCNRLDS::solve();
-        return;
-    }
-
-    restart_solve();
-    auto& output_model =
-        tmm.thermal_data().models().get_model(output_model_name);
-    output_model.get_matrix_attribute(DataModelAttribute::JAC) =
+    auto& jacobian =
+        output_model().get_matrix_attribute(DataModelAttribute::JAC);
+    jacobian =
         DenseMatrixTimeSeries(nd, to_idx(_derivative_parameter_names.size()));
-    output_model.get_matrix_attribute(DataModelAttribute::JAC)
-        .reserve(to_sizet(num_outputs));
+    jacobian.reserve(to_sizet(num_outputs));
     _mt.setZero();
     _mb.setZero();
 
     callback_transient_time_change();
     callback_solver_loop();
     outputs_first_last();
-
-    build_capacities();
 
     build_conductance_matrix();
     build_heat_flux();
@@ -330,49 +350,41 @@ void TSCNRLDS_JACOBIAN::solve() {
         build_heat_flux();
         store_heat_flux_at_n0();
 
-        _sp_nd_diag.diagonal() = _capacities.array() * (2.0 / dtime);
-        _mb = (_sp_nd_diag + _k_matrix) * _mt;
+        // (K + 2C/dt) Mt, with K = -A: the network holds A + 2C/dt.
+        _network->multiply(_mt, _mb);
+        _mb = (2.0 * (_capacity_diagonal.asDiagonal() * _mt)) - _mb;
         _mb += _m_c + _m_k + _m_q;
 
-        time += dtime;
+        time += _resolved.time_step;
         tmm.time = time;
         callback_transient_time_change();
 
-        for (solver_iter = 0; solver_iter < max_iters; ++solver_iter) {
+        int iterations = 0;
+        bool converged = false;
+        for (solver_iter = 0; solver_iter < _resolved.max_iterations;
+             ++solver_iter) {
+            iterations = solver_iter + 1;
             callback_solver_loop();
             build_conductance_matrix();
             build_heat_flux();
-            add_capacities_to_matrix();
             solve_step();
 
-            solver_converged = temperature_convergence_check();
+            converged = temperature_convergence_check();
 
             {
                 PYCANHA_PROFILE_SCOPE("Write Td in TMM");
                 Td = Td_solver;
             }
 
-            if (solver_converged) {
+            if (converged) {
                 break;
             }
         }
+        record_step_iterations(time_iter, time, iterations, converged);
 
-        if (!solver_converged) {
-            Index max_index = -1;
-            dTd.cwiseAbs().maxCoeff(&max_index);
-            SPDLOG_LOGGER_ERROR(
-                get_logger(),
-                "TSCNRLDS_JACOBIAN did not converge after {} iterations.",
-                max_iters);
-            SPDLOG_LOGGER_ERROR(get_logger(), "Time iter: {} Time: {} s",
-                                time_iter, time);
-            SPDLOG_LOGGER_ERROR(get_logger(), "Max. dT: {} K at index: {}",
-                                max_dT, max_index);
-        }
-
-        _sp_nd_diag.diagonal() = _capacities.array() * (2.0 / dtime);
-        // solve_step() left -K + 2C/dt in _k_matrix.
-        _kt_q_n0 = (-_k_matrix + _sp_nd_diag) * Td + Qd;
+        // K Td + Qd: the network holds -K + 2C/dt after solve_step().
+        _network->multiply(Td, _kt_q_n0);
+        _kt_q_n0 = _capacity_diagonal.cwiseProduct(Td) - _kt_q_n0 + Qd;
 
         build_mc();
         build_mk();
@@ -390,13 +402,12 @@ void TSCNRLDS_JACOBIAN::solve() {
 
     outputs_first_last();
     save_jacobian_data();
+    finish_solve_report(start);
 }
 
-void TSCNRLDS_JACOBIAN::save_jacobian_data() {
-    auto& output_series = tmm.thermal_data()
-                              .models()
-                              .get_model(output_model_name)
-                              .get_matrix_attribute(DataModelAttribute::JAC);
+void JacobianPropagation::save_jacobian_data() {
+    auto& output_series =
+        output_model().get_matrix_attribute(DataModelAttribute::JAC);
     if ((output_series.num_timesteps() > 0) &&
         (std::abs(output_series.time_at(output_series.num_timesteps() - 1) -
                   time) <= eps_time)) {
@@ -407,4 +418,4 @@ void TSCNRLDS_JACOBIAN::save_jacobian_data() {
     output_series.push_back(time, _mt);
 }
 
-}  // namespace pycanha
+}  // namespace pycanha::solvers::sensitivity

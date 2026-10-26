@@ -3,17 +3,19 @@
 #include <Eigen/Core>
 #include <Eigen/Sparse>
 
-#include "pycanha-core/solvers/linear_solver.hpp"
+#include "factorizer.hpp"
+#include "pycanha-core/solvers/settings.hpp"
 
 #if PYCANHA_USE_MKL
 #include <mkl_types.h>
 
 #include <array>
 #include <cstddef>
+#include <cstdint>
 #include <string>
 #include <vector>
 
-namespace pycanha {
+namespace pycanha::solvers::detail {
 
 /// RAII wrapper of one MKL PARDISO handle for a real sparse matrix.
 /**
@@ -23,7 +25,7 @@ namespace pycanha {
  * entry stored. The pattern passed to analyze_pattern() must not change until
  * the next analyze_pattern() or release(); only the values may.
  */
-class PardisoSolver : public SparseLinearSolver {
+class PardisoSolver : public Factorizer {
   public:
     enum class MatrixType : MKL_INT {
         STRUCTURALLY_SYMMETRIC = 1,
@@ -76,7 +78,19 @@ class PardisoSolver : public SparseLinearSolver {
     [[nodiscard]] Eigen::Index perturbed_pivots() const noexcept override;
     [[nodiscard]] Eigen::Index factor_nonzeros() const noexcept override;
     [[nodiscard]] bool factors_recomputed() const noexcept override;
-    [[nodiscard]] bool iterative() const noexcept override;
+    [[nodiscard]] bool reuses_factors() const noexcept override;
+    /// PARDISO's own peak: the larger of the analysis peak (iparm[14]) and
+    /// the permanent analysis memory plus the factorization and solve memory
+    /// (iparm[15] + iparm[16]).
+    [[nodiscard]] std::int64_t factor_bytes() const noexcept override;
+    /// The two-level analysis gives the memory the factorization uses; the
+    /// one-level analysis gives an upper bound, made exact by the first
+    /// factorization.
+    [[nodiscard]] bool factor_bytes_exact() const noexcept override;
+    void apply_live_settings(const ResolvedSettings& settings) override {
+        set_threads(settings.threads);
+        set_verbose(settings.pardiso.verbose);
+    }
 
     [[nodiscard]] Eigen::ComputationInfo info() const noexcept;
     [[nodiscard]] MKL_INT error() const noexcept { return _error; }
@@ -98,12 +112,17 @@ class PardisoSolver : public SparseLinearSolver {
     MKL_INT _message_level = 0;
     int _threads = 0;
     bool _analyzed = false;
+    // Whether the handle holds factors, and whether the last factorize() or
+    // factorize_and_solve() computed them. iparm[19] cannot tell the first
+    // phase 23, which must factorize, from a later one that iterated.
+    bool _has_factors = false;
+    bool _recomputed = true;
     Eigen::Index _analyzed_non_zeros = 0;
 
     void run_phase(MKL_INT phase, const SparseMatrix& matrix, MKL_INT nrhs,
                    double* b, double* x);
 };
 
-}  // namespace pycanha
+}  // namespace pycanha::solvers::detail
 
 #endif  // PYCANHA_USE_MKL

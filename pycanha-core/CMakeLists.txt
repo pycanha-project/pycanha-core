@@ -194,18 +194,20 @@ add_library(${LIB_NAME} STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/utils/SparseUtils.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/callback_registry.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/solver.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/settings.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/report.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/auto_configure.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/solver_registry.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/ss.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/factorizer.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/accelerate.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/linear_solver.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/pardiso.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/sslu.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/sslu_cgs.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/ts.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/tscn.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/tscnrl.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/tscnrlds.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/tscnrlds_jacobian.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/sparse_assembly.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/sparse_network.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/dense_assembly.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/dense_network.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/steady_state.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/crank_nicolson.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/jacobian_propagation.cpp
 
     # Pure-CPU radiative services, built regardless of the raytracing option.
     ${CMAKE_CURRENT_SOURCE_DIR}/src/radiative/aggregate.cpp
