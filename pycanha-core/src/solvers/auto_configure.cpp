@@ -150,10 +150,23 @@ AutoCandidate eigen(std::string_view ordering, std::string_view reason) {
              text("eigen.ordering", ordering, reason)}};
 }
 
+// Accelerate cannot reuse factors, so reuse_factors keeps its default.
+AutoCandidate accelerate(std::string_view ordering, std::string_view reason) {
+    return {{text("storage", "SPARSE", sparse_reason),
+             text("backend", "ACCELERATE",
+                  "this build has no MKL: Accelerate factorizes in parallel"),
+             text("factorization", "AUTO", auto_reason),
+             text("accelerate.ordering", ordering, reason)}};
+}
+
 // The sparse candidates, preferred first.
 std::vector<AutoCandidate> sparse_candidates(SolverType type,
-                                             bool mkl_available) {
-    if (!mkl_available) {
+                                             const Libraries& libraries) {
+    if (!libraries.mkl && libraries.accelerate) {
+        return {accelerate("METIS", "nested dissection, Accelerate's default"),
+                accelerate("AMD", fallback_reason)};
+    }
+    if (!libraries.mkl) {
         return {eigen("COLAMD",
                       "the ordering with the least fill on most "
                       "models"),
@@ -237,14 +250,15 @@ std::string dense_reason(SolverType type, const NetworkShape& shape) {
     return {};
 }
 
-std::vector<AutoCandidate> auto_candidates(SolverType type, bool mkl_available,
+std::vector<AutoCandidate> auto_candidates(SolverType type,
+                                           const Libraries& libraries,
                                            const NetworkShape& shape) {
     std::vector<AutoCandidate> candidates;
     if (const std::string reason = dense_reason(type, shape); !reason.empty()) {
         candidates.push_back(dense(
-            mkl_available, type != SolverType::JACOBIAN_PROPAGATION, reason));
+            libraries.mkl, type != SolverType::JACOBIAN_PROPAGATION, reason));
     }
-    std::ranges::move(sparse_candidates(type, mkl_available),
+    std::ranges::move(sparse_candidates(type, libraries),
                       std::back_inserter(candidates));
     return candidates;
 }
@@ -259,6 +273,7 @@ void clear_auto_fields(Settings& settings) {
     settings.pardiso.level.reset();
     settings.pardiso.iparm.reset();
     settings.eigen.ordering.reset();
+    settings.accelerate.ordering.reset();
 }
 
 }  // namespace pycanha::solvers::detail

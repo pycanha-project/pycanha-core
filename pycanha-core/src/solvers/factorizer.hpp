@@ -78,7 +78,8 @@ class Factorizer {
 
 /// The factorization the resolved settings select: PARDISO (two-level or
 /// one-level, nested dissection or minimum degree, with or without reuse),
-/// Eigen's sparse LU (COLAMD or AMD) or Eigen's LDLT. `symmetric` selects the
+/// Accelerate's LU or Cholesky (METIS or AMD), Eigen's sparse LU (COLAMD or
+/// AMD) or Eigen's LDLT. `symmetric` selects the
 /// Cholesky form, which takes the upper triangle only. Throws
 /// std::invalid_argument for an iparm index out of range.
 [[nodiscard]] std::unique_ptr<Factorizer> make_factorizer(

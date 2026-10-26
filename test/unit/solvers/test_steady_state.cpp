@@ -24,6 +24,7 @@
 
 namespace {
 
+using pycanha::solvers::AccelerateOrdering;
 using pycanha::solvers::Backend;
 using pycanha::solvers::EigenOrdering;
 using pycanha::solvers::Factorization;
@@ -74,6 +75,18 @@ Config pardiso(PardisoLevel level, std::optional<PardisoOrdering> ordering,
     return config;
 }
 
+Config accelerate(AccelerateOrdering ordering,
+                  std::optional<Factorization> factorization = std::nullopt) {
+    Config config{.name = std::string("ACCELERATE ") +
+                          std::string(pycanha::solvers::to_string(ordering)) +
+                          (factorization.has_value() ? " LU" : ""),
+                  .settings = {}};
+    config.settings.backend = Backend::ACCELERATE;
+    config.settings.accelerate.ordering = ordering;
+    config.settings.factorization = factorization;
+    return config;
+}
+
 Config dense(Backend backend,
              std::optional<Factorization> factorization = std::nullopt) {
     Config config{.name = std::string("DENSE ") +
@@ -108,17 +121,24 @@ std::vector<Config> direct_configs(bool radiation) {
         configs.push_back(
             pardiso(PardisoLevel::TWO_LEVEL, std::nullopt, Factorization::LU));
     }
+    if (pycanha::solvers::accelerate_available()) {
+        configs.push_back(accelerate(AccelerateOrdering::METIS));
+        configs.push_back(accelerate(AccelerateOrdering::AMD));
+        configs.push_back(
+            accelerate(AccelerateOrdering::METIS, Factorization::LU));
+    }
     return configs;
 }
 
-// Cholesky is chosen explicitly, or by AUTO without radiation for PARDISO
-// and for dense storage.
+// Cholesky is chosen explicitly, or by AUTO without radiation for PARDISO,
+// ACCELERATE and dense storage.
 bool expects_cholesky(const Config& config, bool radiation) {
     const auto& settings = config.settings;
     if (settings.factorization == Factorization::CHOLESKY) {
         return true;
     }
     const bool prefers_cholesky = settings.backend == Backend::PARDISO ||
+                                  settings.backend == Backend::ACCELERATE ||
                                   settings.storage == Storage::DENSE;
     return !radiation && prefers_cholesky &&
            !settings.factorization.has_value();
@@ -141,12 +161,17 @@ bool has_small_model_solution(const Model& model) {
            nodes.get_T(99) == 3.15;
 }
 
-// The backends of this build.
+// The sparse backends of this build (and of the running macOS for
+// Accelerate).
 std::vector<Backend> available_backends() {
+    std::vector<Backend> backends = {Backend::EIGEN};
     if (pycanha::MKL_ENABLED) {
-        return {Backend::EIGEN, Backend::PARDISO};
+        backends.push_back(Backend::PARDISO);
     }
-    return {Backend::EIGEN};
+    if (pycanha::solvers::accelerate_available()) {
+        backends.push_back(Backend::ACCELERATE);
+    }
+    return backends;
 }
 
 Eigen::VectorXd solve_reference(const Model& model, double tolerance) {
@@ -177,8 +202,7 @@ TEST_CASE("SteadyState defaults", "[solver][steady]") {
     const auto model = models::make_small_radiative_model();
     SteadyState solver(model);
     const auto resolved = solver.resolved_settings();
-    REQUIRE(resolved.backend ==
-            (pycanha::MKL_ENABLED ? Backend::PARDISO : Backend::EIGEN));
+    REQUIRE(resolved.backend == models::default_sparse_backend());
     REQUIRE(resolved.pardiso.level == PardisoLevel::TWO_LEVEL);
     REQUIRE_FALSE(resolved.reuse_factors);
     REQUIRE(solver.settings().solver_type ==
@@ -277,6 +301,44 @@ TEST_CASE("SteadyState refuses PARDISO in a build without MKL",
     REQUIRE_FALSE(solver.initialized());
 }
 
+TEST_CASE("SteadyState refuses ACCELERATE where it is not available",
+          "[solver][steady]") {
+    if (pycanha::solvers::accelerate_available()) {
+        SKIP("Accelerate available");
+    }
+    const auto model = models::make_small_radiative_model();
+    SteadyState solver(model);
+    solver.set_settings(accelerate(AccelerateOrdering::METIS).settings);
+    REQUIRE_THROWS_AS(solver.initialize(), std::invalid_argument);
+    REQUIRE_FALSE(solver.initialized());
+}
+
+TEST_CASE("SteadyState with Accelerate refactorizes and reinitializes",
+          "[solver][steady]") {
+    if (!pycanha::solvers::accelerate_available()) {
+        SKIP("Accelerate not available");
+    }
+    // A radiative model refactorizes at every iteration, reusing the symbolic
+    // analysis; a new initialize() analyzes the pattern again.
+    constexpr double tolerance = 1e-8;
+    const auto model = models::make_plate(15, /*radiation=*/true);
+    const auto reference = solve_reference(model, tolerance);
+    SteadyState solver(model);
+    configure(solver, accelerate(AccelerateOrdering::METIS).settings,
+              tolerance);
+    for (int round = 0; round < 2; ++round) {
+        INFO("round " << round);
+        models::reset_temperatures(model, 250.0);
+        solver.initialize();
+        solver.solve();
+        REQUIRE(solver.converged());
+        REQUIRE(solver.num_factorizations() == solver.iterations());
+        REQUIRE(models::max_difference(models::temperatures(model), reference) <
+                1e-6);
+        solver.deinitialize();
+    }
+}
+
 TEST_CASE("SteadyState refactorizes when a coupling changes every iteration",
           "[solver][steady]") {
     const auto backend = GENERATE(from_range(available_backends()));
@@ -360,13 +422,14 @@ TEST_CASE("SteadyState freezes init settings while initialized",
                pycanha::solvers::SettingValue{std::int64_t{1}});
     solver.solve();
     REQUIRE(solver.iterations() == 1);
+    // Init: storage is SPARSE by default in every build.
     REQUIRE_THROWS_AS(
-        solver.set("backend",
-                   pycanha::solvers::SettingValue{std::string("EIGEN")}),
+        solver.set("storage",
+                   pycanha::solvers::SettingValue{std::string("DENSE")}),
         std::runtime_error);
     solver.deinitialize();
     REQUIRE_NOTHROW(solver.set(
-        "backend", pycanha::solvers::SettingValue{std::string("EIGEN")}));
+        "storage", pycanha::solvers::SettingValue{std::string("DENSE")}));
 }
 
 TEST_CASE(
@@ -437,11 +500,12 @@ TEST_CASE("SteadyState applies PARDISO settings", "[solver][steady]") {
 
 TEST_CASE("Factor reuse needs PARDISO or LAPACK", "[solver][steady][reuse]") {
     const auto storage = GENERATE(Storage::SPARSE, Storage::DENSE);
+    const auto backend = GENERATE(Backend::EIGEN, Backend::ACCELERATE);
     const auto model = models::make_small_radiative_model();
     SteadyState solver(model);
     Settings settings;
     settings.storage = storage;
-    settings.backend = Backend::EIGEN;
+    settings.backend = backend;
     settings.reuse_factors = true;
     solver.set_settings(settings);
     REQUIRE_THROWS_AS(solver.initialize(), std::invalid_argument);

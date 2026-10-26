@@ -23,6 +23,9 @@
 #if PYCANHA_USE_MKL
 #include "pardiso.hpp"
 #endif
+#if PYCANHA_USE_ACCELERATE
+#include "accelerate.hpp"
+#endif
 
 namespace pycanha::solvers::detail {
 
@@ -268,6 +271,16 @@ std::unique_ptr<Factorizer> make_factorizer(const ResolvedSettings& settings,
     if (settings.backend == Backend::EIGEN) {
         return make_eigen(settings, symmetric);
     }
+    if (settings.backend == Backend::ACCELERATE) {
+#if PYCANHA_USE_ACCELERATE
+        return make_accelerate_factorizer(settings.accelerate.ordering,
+                                          symmetric);
+#else
+        throw std::invalid_argument(
+            "backend = ACCELERATE needs a macOS build with Accelerate; use "
+            "backend = EIGEN");
+#endif
+    }
 #if PYCANHA_USE_MKL
     return make_pardiso(settings, symmetric);
 #else
@@ -290,6 +303,10 @@ std::string describe_factorization(const ResolvedSettings& settings,
         return std::format(
             "EIGEN {}, {}",
             symmetric ? "AMD" : to_string(settings.eigen.ordering), form);
+    }
+    if (settings.backend == Backend::ACCELERATE) {
+        return std::format("ACCELERATE {}, {}",
+                           to_string(settings.accelerate.ordering), form);
     }
     return std::format("PARDISO {} {}{}, {}", to_string(settings.pardiso.level),
                        to_string(settings.pardiso.ordering),

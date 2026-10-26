@@ -20,6 +20,7 @@
 namespace {
 
 using pycanha::DataModelAttribute;
+using pycanha::solvers::AccelerateOrdering;
 using pycanha::solvers::Backend;
 using pycanha::solvers::EigenOrdering;
 using pycanha::solvers::Factorization;
@@ -36,10 +37,14 @@ using pycanha::solvers::SolverType;
 using pycanha::solvers::Storage;
 namespace solvers = pycanha::solvers;
 
-// Contexts that do not depend on how the library was built: PARDISO is
-// available and the model has no radiation unless the name says otherwise.
+// Contexts that do not depend on how the library was built or where it runs:
+// PARDISO is available, Accelerate is not, and the model has no radiation
+// unless the name says otherwise.
 ResolveContext context(SolverType type) {
-    return {.solver_type = type, .has_radiation = false, .mkl_available = true};
+    return {.solver_type = type,
+            .has_radiation = false,
+            .mkl_available = true,
+            .accelerate_available = false};
 }
 ResolveContext steady() { return context(SolverType::STEADY_STATE); }
 ResolveContext crank_nicolson() { return context(SolverType::CRANK_NICOLSON); }
@@ -47,6 +52,21 @@ ResolveContext steady_without_pardiso() {
     ResolveContext without = steady();
     without.mkl_available = false;
     return without;
+}
+// A macOS build without MKL on macOS 15.5 or newer.
+ResolveContext with_accelerate(SolverType type) {
+    ResolveContext accelerate = context(type);
+    accelerate.mkl_available = false;
+    accelerate.accelerate_available = true;
+    return accelerate;
+}
+ResolveContext steady_with_accelerate() {
+    return with_accelerate(SolverType::STEADY_STATE);
+}
+ResolveContext steady_with_accelerate_and_radiation() {
+    ResolveContext radiative = steady_with_accelerate();
+    radiative.has_radiation = true;
+    return radiative;
 }
 ResolveContext steady_with_radiation() {
     ResolveContext radiative = steady();
@@ -125,6 +145,7 @@ Settings fully_set() {
     settings.pardiso.iparm = std::map<int, int>{{3, 61}};
     settings.pardiso.verbose = true;
     settings.eigen.ordering = EigenOrdering::AMD;
+    settings.accelerate.ordering = AccelerateOrdering::AMD;
     return settings;
 }
 
@@ -156,6 +177,37 @@ TEST_CASE("Unset settings resolve to the defaults", "[solver][settings]") {
         solvers::resolve({}, steady_without_pardiso());
     REQUIRE(without_mkl.backend == Backend::EIGEN);
     REQUIRE(without_mkl.eigen.ordering == EigenOrdering::COLAMD);
+
+    const ResolvedSettings accelerate =
+        solvers::resolve({}, steady_with_accelerate());
+    REQUIRE(accelerate.backend == Backend::ACCELERATE);
+    REQUIRE(accelerate.accelerate.ordering == AccelerateOrdering::METIS);
+    REQUIRE(accelerate.applies("accelerate.ordering"));
+    REQUIRE_FALSE(accelerate.applies("threads"));
+}
+
+TEST_CASE("Without MKL, Accelerate is the sparse default only",
+          "[solver][settings]") {
+    const auto type =
+        GENERATE(SolverType::STEADY_STATE, SolverType::CRANK_NICOLSON,
+                 SolverType::JACOBIAN_PROPAGATION);
+    INFO(solvers::to_string(type));
+    const ResolvedSettings sparse =
+        solvers::resolve(with_time_step(), with_accelerate(type));
+    REQUIRE(sparse.backend == Backend::ACCELERATE);
+    // No radiative couplings: Accelerate factorizes with Cholesky.
+    REQUIRE(sparse.factorization == Factorization::CHOLESKY);
+
+    Settings dense = with_time_step();
+    dense.storage = Storage::DENSE;
+    REQUIRE(solvers::resolve(dense, with_accelerate(type)).backend ==
+            Backend::EIGEN);
+
+    // MKL, when built, comes first.
+    ResolveContext both = with_accelerate(type);
+    both.mkl_available = true;
+    REQUIRE(solvers::resolve(with_time_step(), both).backend ==
+            Backend::PARDISO);
 }
 
 TEST_CASE("Transient defaults", "[solver][settings]") {
@@ -352,7 +404,30 @@ TEST_CASE("Contradictions are refused", "[solver][settings]") {
              crank_nicolson(), "end_time is before start_time"},
         Case{"value out of range",
              [](Settings& settings) { settings.tolerance = -1.0; }, steady(),
-             "tolerance must be positive"});
+             "tolerance must be positive"},
+        Case{"ACCELERATE where it is not available",
+             [](Settings& settings) { settings.backend = Backend::ACCELERATE; },
+             steady(), "ACCELERATE needs a macOS build with Accelerate"},
+        Case{"ACCELERATE with dense storage",
+             [](Settings& settings) {
+                 settings.storage = Storage::DENSE;
+                 settings.backend = Backend::ACCELERATE;
+             },
+             steady_with_accelerate(),
+             "backend = ACCELERATE needs storage = SPARSE"},
+        Case{"reuse with ACCELERATE",
+             [](Settings& settings) {
+                 settings.backend = Backend::ACCELERATE;
+                 settings.reuse_factors = true;
+             },
+             steady_with_accelerate(), "Accelerate cannot reuse factors"},
+        Case{"Cholesky with radiation with ACCELERATE",
+             [](Settings& settings) {
+                 settings.backend = Backend::ACCELERATE;
+                 settings.factorization = Factorization::CHOLESKY;
+             },
+             steady_with_accelerate_and_radiation(),
+             "without radiative couplings"});
     INFO(test_case.name);
     Settings settings = with_time_step();
     test_case.change(settings);
@@ -424,7 +499,19 @@ TEST_CASE("Set fields that do not apply are ignored with the reason",
                  settings.factorization = Factorization::CHOLESKY;
                  settings.eigen.ordering = EigenOrdering::AMD;
              },
-             steady(), "an LU factorization"});
+             steady(), "an LU factorization"},
+        Case{"accelerate.ordering",
+             [](Settings& settings) {
+                 settings.accelerate.ordering = AccelerateOrdering::AMD;
+             },
+             steady(), "only with backend = ACCELERATE"},
+        Case{"threads", [](Settings& settings) { settings.threads = 2; },
+             steady_with_accelerate(), "only with backend = PARDISO or LAPACK"},
+        Case{"pardiso.level",
+             [](Settings& settings) {
+                 settings.pardiso.level = PardisoLevel::ONE_LEVEL;
+             },
+             steady_with_accelerate(), "only with backend = PARDISO"});
     INFO(test_case.field);
     Settings settings = with_time_step();
     test_case.change(settings);

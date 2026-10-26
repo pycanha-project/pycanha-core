@@ -48,13 +48,17 @@ enum class Backend : std::uint8_t {
     /// Intel MKL LAPACK: multi-threaded dense factorisation, dense storage
     /// only. Only in builds with MKL.
     LAPACK,
+    /// Apple Accelerate: multi-threaded supernodal factorisation, sparse
+    /// storage only. Only in macOS builds with Accelerate, on macOS 15.5 or
+    /// newer (see accelerate_available()).
+    ACCELERATE,
 };
 
 /// Factorisation of the matrix.
 enum class Factorization : std::uint8_t {
     /// Cholesky when the matrix is symmetric (no radiative couplings) and the
-    /// backend has a Cholesky factorisation it prefers: PARDISO, LAPACK and
-    /// dense Eigen. LU otherwise.
+    /// backend has a Cholesky factorisation it prefers: PARDISO, ACCELERATE,
+    /// LAPACK and dense Eigen. LU otherwise.
     AUTO,
     /// LU, for any matrix.
     LU,
@@ -93,6 +97,14 @@ enum class EigenOrdering : std::uint8_t {
     AMD,
 };
 
+/// Fill-reducing ordering of Accelerate.
+enum class AccelerateOrdering : std::uint8_t {
+    /// Nested dissection (METIS).
+    METIS,
+    /// Approximate minimum degree.
+    AMD,
+};
+
 /// Whether a setting may change while the solver is initialised.
 enum class Mutability : std::uint8_t {
     /// Read at every solve(): it may change at any time.
@@ -115,8 +127,13 @@ enum class Origin : std::uint8_t {
 [[nodiscard]] std::string_view to_string(PardisoOrdering ordering) noexcept;
 [[nodiscard]] std::string_view to_string(PardisoLevel level) noexcept;
 [[nodiscard]] std::string_view to_string(EigenOrdering ordering) noexcept;
+[[nodiscard]] std::string_view to_string(AccelerateOrdering ordering) noexcept;
 [[nodiscard]] std::string_view to_string(Mutability mutability) noexcept;
 [[nodiscard]] std::string_view to_string(Origin origin) noexcept;
+
+/// Whether backend = ACCELERATE can be used: the build has Apple Accelerate
+/// and the running macOS has its sparse LU (macOS 15.5 or newer).
+[[nodiscard]] bool accelerate_available() noexcept;
 
 /// Every temperature, capacity, load and node attribute stored per node.
 [[nodiscard]] std::set<DataModelAttribute> all_dense_output_attributes();
@@ -149,6 +166,13 @@ struct EigenSettings {
     [[nodiscard]] bool operator==(const EigenSettings&) const = default;
 };
 
+/// Accelerate settings, used only with Backend::ACCELERATE.
+struct AccelerateSettings {
+    std::optional<AccelerateOrdering> ordering;
+
+    [[nodiscard]] bool operator==(const AccelerateSettings&) const = default;
+};
+
 /// The settings of every solver type.
 /**
  * Each field is set (holds a value) or unset (the solver's default, which may
@@ -179,6 +203,7 @@ struct Settings {
     std::optional<double> capacity_delta;
     PardisoSettings pardiso;
     EigenSettings eigen;
+    AccelerateSettings accelerate;
 
     [[nodiscard]] bool operator==(const Settings&) const = default;
 
@@ -204,7 +229,7 @@ struct Settings {
 /// Documentation of one setting.
 struct SettingField {
     std::string_view name;   ///< "tolerance", "pardiso.level"
-    std::string_view group;  ///< "", "pardiso" or "eigen"
+    std::string_view group;  ///< "", "pardiso", "eigen" or "accelerate"
     std::string_view doc;
     Mutability mutability = Mutability::INIT;
     std::uint8_t solver_types = 0;  ///< One bit per SolverType.
@@ -228,6 +253,8 @@ struct ResolveContext {
     std::optional<bool> has_radiation;
     /// Whether this build has MKL (PARDISO and LAPACK).
     bool mkl_available = MKL_ENABLED;
+    /// Whether ACCELERATE can be used (see accelerate_available()).
+    bool accelerate_available = solvers::accelerate_available();
 };
 
 /// The context of a solver of `type` for `model`.
@@ -253,6 +280,11 @@ struct ResolvedEigen {
     EigenOrdering ordering = EigenOrdering::COLAMD;
 };
 
+/// Effective Accelerate settings.
+struct ResolvedAccelerate {
+    AccelerateOrdering ordering = AccelerateOrdering::METIS;
+};
+
 /// The effective value of every setting for one solver type.
 struct ResolvedSettings {
     SolverType solver_type = SolverType::STEADY_STATE;
@@ -274,6 +306,7 @@ struct ResolvedSettings {
     double capacity_delta = 0.0;
     ResolvedPardiso pardiso;
     ResolvedEigen eigen;
+    ResolvedAccelerate accelerate;
 
     /// Set fields ignored for this solver type or backend.
     std::vector<NotApplied> not_applied;
@@ -300,9 +333,10 @@ struct ResolvedSettings {
 /**
  * Throws std::invalid_argument listing every contradiction at once: a value
  * out of range, a combination the backend cannot do (reuse_factors with
- * Eigen, minimum degree with the two-level factorisation, PARDISO with dense
- * storage), or one the build or the model cannot (PARDISO or LAPACK without
- * MKL, Cholesky with radiation). The set
+ * Eigen or ACCELERATE, minimum degree with the two-level factorisation,
+ * PARDISO or ACCELERATE with dense storage), or one the build or the model
+ * cannot (PARDISO or LAPACK without MKL, ACCELERATE when
+ * accelerate_available() is false, Cholesky with radiation). The set
  * fields that do not apply are listed in not_applied, for the solver to warn
  * about.
  */

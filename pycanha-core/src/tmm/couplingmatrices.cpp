@@ -739,13 +739,17 @@ std::vector<CouplingMatrices::RowGrowth> CouplingMatrices::count_growth(
         while (next < entries.size() && entries[next].row == row) {
             // A group of entries for the same column counts once.
             const StorageIndex col = entries[next].col;
-            const std::size_t group_end = to_sizet(
-                std::ranges::find_if(entries.subspan(next),
-                                     [row, col](const BlockEntry& entry) {
-                                         return entry.row != row ||
-                                                entry.col != col;
-                                     }) -
-                entries.begin());
+            // Measured within the tail: iterators of two different spans
+            // cannot be subtracted, and MSVC's debug STL asserts on it.
+            const auto tail = entries.subspan(next);
+            const std::size_t group_end =
+                next + to_sizet(std::ranges::find_if(
+                                    tail,
+                                    [row, col](const BlockEntry& entry) {
+                                        return entry.row != row ||
+                                               entry.col != col;
+                                    }) -
+                                tail.begin());
             while (stored < stored_end && inner[to_sizet(stored)] < col) {
                 ++stored;
             }

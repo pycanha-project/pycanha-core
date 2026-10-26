@@ -55,6 +55,10 @@ std::vector<Storing> every_storing() {
             {.storage = Storage::SPARSE, .backend = Backend::PARDISO});
         all.push_back({.storage = Storage::DENSE, .backend = Backend::LAPACK});
     }
+    if (pycanha::solvers::accelerate_available()) {
+        all.push_back(
+            {.storage = Storage::SPARSE, .backend = Backend::ACCELERATE});
+    }
     return all;
 }
 

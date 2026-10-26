@@ -40,8 +40,8 @@ constexpr std::array<std::string_view, 3> names_of(SolverType /*tag*/) {
 constexpr std::array<std::string_view, 2> names_of(Storage /*tag*/) {
     return {"SPARSE", "DENSE"};
 }
-constexpr std::array<std::string_view, 3> names_of(Backend /*tag*/) {
-    return {"PARDISO", "EIGEN", "LAPACK"};
+constexpr std::array<std::string_view, 4> names_of(Backend /*tag*/) {
+    return {"PARDISO", "EIGEN", "LAPACK", "ACCELERATE"};
 }
 constexpr std::array<std::string_view, 3> names_of(Factorization /*tag*/) {
     return {"AUTO", "LU", "CHOLESKY"};
@@ -54,6 +54,9 @@ constexpr std::array<std::string_view, 2> names_of(PardisoLevel /*tag*/) {
 }
 constexpr std::array<std::string_view, 2> names_of(EigenOrdering /*tag*/) {
     return {"COLAMD", "AMD"};
+}
+constexpr std::array<std::string_view, 2> names_of(AccelerateOrdering /*tag*/) {
+    return {"METIS", "AMD"};
 }
 constexpr std::array<std::string_view, 2> names_of(Mutability /*tag*/) {
     return {"LIVE", "INIT"};
@@ -267,6 +270,8 @@ constexpr double default_capacity_delta = 1e-7;
 constexpr bool default_verbose = false;
 constexpr Factorization default_factorization = Factorization::AUTO;
 constexpr EigenOrdering default_eigen_ordering = EigenOrdering::COLAMD;
+constexpr AccelerateOrdering default_accelerate_ordering =
+    AccelerateOrdering::METIS;
 
 template <const auto& Value>
 std::remove_cvref_t<decltype(Value)> constant(
@@ -283,15 +288,19 @@ Storage default_storage(const Settings& settings,
                                                : Storage::SPARSE;
 }
 
-// The MKL library for the storage when the build has MKL, Eigen otherwise.
+// The MKL library for the storage when the build has MKL. Without it,
+// Accelerate for sparse storage when available, Eigen otherwise.
 Backend default_backend(const Settings& /*settings*/,
                         const ResolvedSettings& resolved,
                         const ResolveContext& context) {
-    if (!context.mkl_available) {
-        return Backend::EIGEN;
+    const bool dense = resolved.storage == Storage::DENSE;
+    if (context.mkl_available) {
+        return dense ? Backend::LAPACK : Backend::PARDISO;
     }
-    return resolved.storage == Storage::DENSE ? Backend::LAPACK
-                                              : Backend::PARDISO;
+    if (context.accelerate_available && !dense) {
+        return Backend::ACCELERATE;
+    }
+    return Backend::EIGEN;
 }
 
 std::set<DataModelAttribute> default_output_attributes(
@@ -371,6 +380,9 @@ bool uses_mkl(const ResolvedSettings& resolved) {
     return resolved.backend == Backend::PARDISO ||
            resolved.backend == Backend::LAPACK;
 }
+bool uses_accelerate(const ResolvedSettings& resolved) {
+    return resolved.backend == Backend::ACCELERATE;
+}
 bool uses_eigen_sparse_lu(const ResolvedSettings& resolved) {
     return resolved.backend == Backend::EIGEN &&
            resolved.storage == Storage::SPARSE &&
@@ -388,12 +400,14 @@ using Reason = std::string (*)(const Settings&, const ResolvedSettings&,
 std::string backend_reason(const Settings& /*settings*/,
                            const ResolvedSettings& resolved,
                            const ResolveContext& context) {
+    std::string_view library = "this build has MKL";
     if (!context.mkl_available) {
-        return "this build has no MKL";
+        library = resolved.backend == Backend::ACCELERATE
+                      ? "this build has no MKL; Accelerate is available"
+                      : "this build has no MKL";
     }
-    return resolved.storage == Storage::DENSE
-               ? "this build has MKL; dense storage"
-               : "this build has MKL; sparse storage";
+    return std::format("{}; {} storage", library,
+                       resolved.storage == Storage::DENSE ? "dense" : "sparse");
 }
 
 std::string factorization_reason(const Settings& settings,
@@ -598,7 +612,7 @@ using R = ResolvedSettings;
 
 // Resolution walks the table in order: a default or an applicability rule
 // may only read fields above it.
-constexpr std::size_t field_count = 20;
+constexpr std::size_t field_count = 21;
 constexpr std::array<FieldEntry, field_count> field_table{
     field<Path<&S::tolerance>, Path<&R::tolerance>,
           &constant<default_tolerance>, &positive>(
@@ -632,9 +646,11 @@ constexpr std::array<FieldEntry, field_count> field_table{
         {.name = "backend",
          .group = "",
          .doc = "Library that factorizes the matrix: PARDISO (sparse) or "
-                "LAPACK (dense) in builds with MKL, EIGEN (both) in every "
+                "LAPACK (dense) in builds with MKL, ACCELERATE (sparse) in "
+                "macOS builds on macOS 15.5 or newer, EIGEN (both) in every "
                 "build. Default: the MKL library for the storage in builds "
-                "with MKL, EIGEN otherwise.",
+                "with MKL, otherwise ACCELERATE for sparse storage where "
+                "available, EIGEN otherwise.",
          .mutability = Mutability::INIT,
          .solver_types = all_types},
         nullptr, {}, &backend_reason),
@@ -644,7 +660,7 @@ constexpr std::array<FieldEntry, field_count> field_table{
          .group = "",
          .doc = "LU, CHOLESKY or AUTO. CHOLESKY needs a model without "
                 "radiative couplings. AUTO is Cholesky for such a model with "
-                "PARDISO, LAPACK or dense Eigen, LU otherwise.",
+                "PARDISO, ACCELERATE, LAPACK or dense Eigen, LU otherwise.",
          .mutability = Mutability::INIT,
          .solver_types = all_types},
         nullptr, {}, &factorization_reason),
@@ -660,7 +676,7 @@ constexpr std::array<FieldEntry, field_count> field_table{
                 "iterates with CGS (iparm[3] = 61, overridden by "
                 "pardiso.iparm) and needs the one-level factorization; "
                 "LAPACK with FGMRES, on 20 iterations at most. Not with "
-                "EIGEN.",
+                "EIGEN or ACCELERATE.",
          .mutability = Mutability::INIT,
          .solver_types = reuse_types}),
     field<Path<&S::fixed_couplings>, Path<&R::fixed_couplings>,
@@ -788,6 +804,17 @@ constexpr std::array<FieldEntry, field_count> field_table{
          .solver_types = all_types},
         &uses_eigen_sparse_lu,
         "only with backend = EIGEN, sparse storage and an LU factorization"),
+    field<Path<&S::accelerate, &AccelerateSettings::ordering>,
+          Path<&R::accelerate, &ResolvedAccelerate::ordering>,
+          &constant<default_accelerate_ordering>,
+          &any_value<AccelerateOrdering>>(
+        {.name = "accelerate.ordering",
+         .group = "accelerate",
+         .doc = "Fill-reducing ordering of Accelerate's LU and Cholesky. "
+                "Default: METIS.",
+         .mutability = Mutability::INIT,
+         .solver_types = all_types},
+        &uses_accelerate, "only with backend = ACCELERATE"),
 };
 
 constexpr std::array<SettingField, field_count> make_public_fields() {
@@ -877,6 +904,26 @@ void check_pardiso(const Settings& settings, const ResolvedSettings& resolved,
     }
 }
 
+void check_accelerate(const ResolvedSettings& resolved,
+                      const ResolveContext& context,
+                      std::vector<std::string>& contradictions) {
+    if (!context.accelerate_available) {
+        contradictions.emplace_back(
+            "backend = ACCELERATE needs a macOS build with Accelerate, "
+            "running on macOS 15.5 or newer");
+    }
+    if (resolved.storage == Storage::DENSE) {
+        contradictions.emplace_back(
+            "backend = ACCELERATE needs storage = SPARSE; use backend = "
+            "LAPACK or EIGEN for dense storage");
+    }
+    if (resolved.reuse_factors) {
+        contradictions.emplace_back(
+            "reuse_factors = true needs backend = PARDISO or LAPACK: "
+            "Accelerate cannot reuse factors");
+    }
+}
+
 void check_transient(const Settings& settings, const ResolvedSettings& resolved,
                      const ResolveContext& context,
                      std::vector<std::string>& contradictions) {
@@ -904,6 +951,8 @@ void check_combinations(const Settings& settings, const ResolveContext& context,
             contradictions.emplace_back(
                 "backend = LAPACK needs storage = DENSE");
         }
+    } else if (resolved.backend == Backend::ACCELERATE) {
+        check_accelerate(resolved, context, contradictions);
     } else if (resolved.reuse_factors) {
         contradictions.emplace_back(
             "reuse_factors = true needs backend = PARDISO or LAPACK: Eigen "
@@ -1017,9 +1066,11 @@ std::string print_set_fields(const Settings& settings) {
 
 std::string print_for_type(const Settings& settings, SolverType type) {
     const Resolution resolution = resolve_unchecked(
-        settings, ResolveContext{.solver_type = type,
-                                 .has_radiation = std::nullopt,
-                                 .mkl_available = MKL_ENABLED});
+        settings,
+        ResolveContext{.solver_type = type,
+                       .has_radiation = std::nullopt,
+                       .mkl_available = MKL_ENABLED,
+                       .accelerate_available = accelerate_available()});
     const ResolvedSettings& resolved = resolution.resolved;
     std::string text = std::format("Settings for {}", enum_name(type));
     for (std::size_t index = 0; index < field_table.size(); ++index) {
@@ -1083,6 +1134,9 @@ std::string_view to_string(PardisoLevel level) noexcept {
     return enum_name(level);
 }
 std::string_view to_string(EigenOrdering ordering) noexcept {
+    return enum_name(ordering);
+}
+std::string_view to_string(AccelerateOrdering ordering) noexcept {
     return enum_name(ordering);
 }
 std::string_view to_string(Mutability mutability) noexcept {
@@ -1181,7 +1235,8 @@ ResolveContext resolve_context(SolverType type,
     return {.solver_type = type,
             .has_radiation = radiative.get_num_diff_diff_couplings() != 0 ||
                              radiative.get_num_diff_bound_couplings() != 0,
-            .mkl_available = MKL_ENABLED};
+            .mkl_available = MKL_ENABLED,
+            .accelerate_available = accelerate_available()};
 }
 
 bool ResolvedSettings::applies(std::string_view name) const {

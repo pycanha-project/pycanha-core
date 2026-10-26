@@ -1,4 +1,6 @@
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/generators/catch_generators.hpp>
+#include <cstddef>
 #include <cstdint>
 #include <map>
 #include <memory>
@@ -14,6 +16,7 @@
 #include "pycanha-core/tmm/node.hpp"
 #include "pycanha-core/tmm/thermalmathematicalmodel.hpp"
 #include "solver_test_models.hpp"
+#include "solvers/auto_configure.hpp"
 
 namespace {
 
@@ -198,9 +201,53 @@ TEST_CASE("auto_configure() picks the steady-state configuration",
     REQUIRE(chosen == solver.settings());
     REQUIRE(chosen.tolerance == 1e-5);
     REQUIRE_FALSE(chosen.pardiso.iparm.has_value());
-    REQUIRE(chosen.backend ==
-            (pycanha::MKL_ENABLED ? Backend::PARDISO : Backend::EIGEN));
+    REQUIRE(chosen.backend == models::default_sparse_backend());
     REQUIRE(solver.origin("backend") == Origin::AUTO_CONFIGURE);
+}
+
+TEST_CASE("auto_configure() prefers Accelerate without MKL", "[solver][auto]") {
+    // The candidates themselves, so that every platform checks them.
+    using pycanha::solvers::SettingValue;
+    using pycanha::solvers::SolverType;
+    const auto type =
+        GENERATE(SolverType::STEADY_STATE, SolverType::CRANK_NICOLSON,
+                 SolverType::JACOBIAN_PROPAGATION);
+    const auto candidates = pycanha::solvers::detail::auto_candidates(
+        type, {.mkl = false, .accelerate = true},
+        pycanha::solvers::detail::NetworkShape{
+            .nodes = 10000, .mean_couplings = 4.0, .fill = 5e-4});
+    REQUIRE(candidates.size() == 2);
+    for (const auto& [index, ordering] :
+         std::map<std::size_t, std::string>{{0, "METIS"}, {1, "AMD"}}) {
+        Settings settings;
+        for (const auto& field : candidates.at(index).fields) {
+            settings.set(field.name, field.value);
+        }
+        REQUIRE(settings.backend == Backend::ACCELERATE);
+        REQUIRE(settings.get("accelerate.ordering") == SettingValue{ordering});
+        REQUIRE_FALSE(settings.reuse_factors.value_or(false));
+    }
+}
+
+TEST_CASE("An Accelerate estimate comes from its analysis",
+          "[solver][memory]") {
+    if (!pycanha::solvers::accelerate_available()) {
+        SKIP("Accelerate not available");
+    }
+    // Cholesky without radiation is fixed by the analysis; the LU may
+    // pivot, so its figure stays a prediction.
+    const bool radiation = GENERATE(false, true);
+    const auto model = models::make_plate(plate_size, radiation);
+    SteadyState solver(model);
+    solver.set("backend", std::string("ACCELERATE"));
+    const SolverMemory estimate = solver.estimate_memory();
+    REQUIRE(estimate.factors > 0);
+    REQUIRE(estimate.exact == !radiation);
+
+    solver.initialize();
+    solver.solve();
+    REQUIRE(solver.converged());
+    REQUIRE(solver.report().memory.factors == estimate.factors);
 }
 
 TEST_CASE("auto_configure() reuses factors in a transient", "[solver][auto]") {
@@ -262,7 +309,10 @@ TEST_CASE("A changed auto_configure() value becomes the user's",
     SteadyState solver(model);
     static_cast<void>(solver.auto_configure());
     solver.set("backend", std::string("EIGEN"));
+    // A change only when auto_configure() chose another backend.
     REQUIRE(solver.origin("backend") ==
-            (pycanha::MKL_ENABLED ? Origin::USER : Origin::AUTO_CONFIGURE));
+            (models::default_sparse_backend() == Backend::EIGEN
+                 ? Origin::AUTO_CONFIGURE
+                 : Origin::USER));
     REQUIRE(solver.origin("factorization") == Origin::AUTO_CONFIGURE);
 }

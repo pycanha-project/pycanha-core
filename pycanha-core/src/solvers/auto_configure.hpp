@@ -47,14 +47,21 @@ struct NetworkShape {
 [[nodiscard]] std::string dense_reason(SolverType type,
                                        const NetworkShape& shape);
 
+/// The factorization libraries a solver can use.
+struct Libraries {
+    bool mkl = false;         ///< PARDISO and LAPACK
+    bool accelerate = false;  ///< Apple Accelerate's sparse solvers
+};
+
 /// The candidates for a solver type and model, preferred first; the later
-/// ones are tried only when the earlier ones do not fit max_memory.
+/// ones are tried only when the earlier ones do not fit max_memory. Sparse
+/// storage takes PARDISO with MKL, else Accelerate, else Eigen.
 [[nodiscard]] std::vector<AutoCandidate> auto_candidates(
-    SolverType type, bool mkl_available, const NetworkShape& shape);
+    SolverType type, const Libraries& libraries, const NetworkShape& shape);
 
 /// The settings auto_configure() owns: storage, backend, factorization,
-/// reuse_factors, threads, pardiso.ordering, pardiso.level, pardiso.iparm
-/// and eigen.ordering. Unsets them.
+/// reuse_factors, threads, pardiso.ordering, pardiso.level, pardiso.iparm,
+/// eigen.ordering and accelerate.ordering. Unsets them.
 void clear_auto_fields(Settings& settings);
 
 }  // namespace pycanha::solvers::detail

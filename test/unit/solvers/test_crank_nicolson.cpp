@@ -219,6 +219,7 @@ bool compare_temps(const pycanha::ThermalMathematicalModel& model,
     return all_within_tol;
 }
 
+using pycanha::solvers::AccelerateOrdering;
 using pycanha::solvers::Backend;
 using pycanha::solvers::PardisoLevel;
 using pycanha::solvers::PardisoOrdering;
@@ -280,6 +281,7 @@ TEST_CASE("CrankNicolson gives the same transient with every configuration",
         std::optional<PardisoOrdering> ordering;
         bool reuse;
         Storage storage = Storage::SPARSE;
+        std::optional<AccelerateOrdering> accelerate_ordering = std::nullopt;
     };
     const auto option = GENERATE(
         Option{Backend::EIGEN, std::nullopt, std::nullopt, false},
@@ -297,9 +299,19 @@ TEST_CASE("CrankNicolson gives the same transient with every configuration",
         Option{Backend::LAPACK, std::nullopt, std::nullopt, false,
                Storage::DENSE},
         Option{Backend::LAPACK, std::nullopt, std::nullopt, true,
-               Storage::DENSE});
-    if (option.backend != Backend::EIGEN && !pycanha::MKL_ENABLED) {
+               Storage::DENSE},
+        Option{Backend::ACCELERATE, std::nullopt, std::nullopt, false,
+               Storage::SPARSE, AccelerateOrdering::METIS},
+        Option{Backend::ACCELERATE, std::nullopt, std::nullopt, false,
+               Storage::SPARSE, AccelerateOrdering::AMD});
+    const bool needs_mkl =
+        option.backend == Backend::PARDISO || option.backend == Backend::LAPACK;
+    if (needs_mkl && !pycanha::MKL_ENABLED) {
         SKIP("MKL not built");
+    }
+    if (option.backend == Backend::ACCELERATE &&
+        !pycanha::solvers::accelerate_available()) {
+        SKIP("Accelerate not available");
     }
     const bool fixed = GENERATE(false, true);
     auto model = make_model();
@@ -311,6 +323,7 @@ TEST_CASE("CrankNicolson gives the same transient with every configuration",
     settings.pardiso.level = option.level;
     settings.pardiso.ordering = option.ordering;
     settings.reuse_factors = option.reuse;
+    settings.accelerate.ordering = option.accelerate_ordering;
     configure(solver, settings);
     solver.initialize();
     REQUIRE(solver.initialized());
@@ -350,6 +363,13 @@ TEST_CASE("CrankNicolson refuses unavailable configurations",
     REQUIRE(refused());
 
     solver.set_settings(Settings{});  // no time step
+    REQUIRE(refused());
+
+    // Refused on every platform: Accelerate cannot reuse factors.
+    Settings accelerate_reuse;
+    accelerate_reuse.backend = Backend::ACCELERATE;
+    accelerate_reuse.reuse_factors = true;
+    configure(solver, accelerate_reuse);
     REQUIRE(refused());
 
     if (pycanha::MKL_ENABLED) {

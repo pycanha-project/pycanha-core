@@ -517,8 +517,10 @@ Settings Solver::auto_configure(std::optional<std::int64_t> max_memory) {
     // matrices yet.
     tnw.synchronize_structure();
     const std::vector<detail::AutoCandidate> candidates =
-        detail::auto_candidates(_solver_type, MKL_ENABLED,
-                                detail::network_shape(KLdd, KRdd));
+        detail::auto_candidates(
+            _solver_type,
+            {.mkl = MKL_ENABLED, .accelerate = accelerate_available()},
+            detail::network_shape(KLdd, KRdd));
 
     Settings base = _settings;
     detail::clear_auto_fields(base);

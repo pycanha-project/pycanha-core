@@ -69,6 +69,12 @@ constexpr std::string_view MKL_VERSION = "@MKL_VERSION@";
 constexpr bool MKL_ENABLED = false;
 constexpr std::string_view MKL_VERSION = "N/A";
 #endif
+// Apple Accelerate sparse solvers (configured via CMake option, macOS only)
+#ifdef PYCANHA_USE_ACCELERATE
+constexpr bool ACCELERATE_ENABLED = PYCANHA_USE_ACCELERATE != 0;
+#else
+constexpr bool ACCELERATE_ENABLED = false;
+#endif
 // Logging:
 //   - SPDLOG_ACTIVE_LEVEL is set by CMake. The default is TRACE in Debug and
 //     INFO otherwise, but it can be overridden with

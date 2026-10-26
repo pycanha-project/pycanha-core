@@ -199,6 +199,7 @@ add_library(${LIB_NAME} STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/auto_configure.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/solver_registry.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/factorizer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/accelerate.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/pardiso.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/sparse_assembly.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/sparse_network.cpp
@@ -367,6 +368,21 @@ else()
     set(MKL_VERSION "N/A")
     target_compile_definitions(${LIB_NAME} PUBLIC PYCANHA_USE_MKL=0)
     message(STATUS "Intel MKL disabled - using Eigen native solvers")
+endif()
+# ============================================================================
+
+# ============================================================================
+# Apple Accelerate Configuration
+# ============================================================================
+# The sparse solvers of the Accelerate system framework (macOS only): no extra
+# dependency. LU needs macOS 15.5 at run time, which is checked when the
+# solver is created.
+if(APPLE AND PYCANHA_OPTION_USE_ACCELERATE)
+    target_link_libraries(${LIB_NAME} PRIVATE "-framework Accelerate")
+    target_compile_definitions(${LIB_NAME} PUBLIC PYCANHA_USE_ACCELERATE=1)
+    message(STATUS "Apple Accelerate enabled - sparse LU and Cholesky solvers")
+else()
+    target_compile_definitions(${LIB_NAME} PUBLIC PYCANHA_USE_ACCELERATE=0)
 endif()
 # ============================================================================
 

@@ -197,8 +197,10 @@ TEST_CASE("A conduction transient uses Cholesky",
     settings.storage = storage;
     solver.set_settings(settings);
     solver.set_simulation_time(0.0, 100.0, 10.0, 20.0);
+    // Only Eigen's sparse storage prefers its LU.
     const Factorization expected =
-        pycanha::MKL_ENABLED || storage == Storage::DENSE
+        models::default_sparse_backend() != Backend::EIGEN ||
+                storage == Storage::DENSE
             ? Factorization::CHOLESKY
             : Factorization::LU;
     REQUIRE(solver.resolved_settings().factorization == expected);

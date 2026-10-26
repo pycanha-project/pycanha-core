@@ -214,9 +214,17 @@ TEST_CASE("JacobianPropagation gives the same result with every configuration",
         Option{Storage::DENSE, Backend::EIGEN, std::nullopt},
         Option{Storage::DENSE, Backend::EIGEN, Factorization::LU},
         Option{Storage::DENSE, Backend::LAPACK, std::nullopt},
-        Option{Storage::DENSE, Backend::LAPACK, Factorization::LU});
-    if (option.backend != Backend::EIGEN && !pycanha::MKL_ENABLED) {
+        Option{Storage::DENSE, Backend::LAPACK, Factorization::LU},
+        Option{Storage::SPARSE, Backend::ACCELERATE, std::nullopt},
+        Option{Storage::SPARSE, Backend::ACCELERATE, Factorization::LU});
+    const bool needs_mkl =
+        option.backend == Backend::PARDISO || option.backend == Backend::LAPACK;
+    if (needs_mkl && !pycanha::MKL_ENABLED) {
         SKIP("MKL not built");
+    }
+    if (option.backend == Backend::ACCELERATE &&
+        !pycanha::solvers::accelerate_available()) {
+        SKIP("Accelerate not available");
     }
     const bool fixed = GENERATE(false, true);
     auto model = make_python_example_model();
