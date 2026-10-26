@@ -63,6 +63,7 @@ class SteadyState : public Solver {
     // is positive, which Cholesky needs.
     std::unique_ptr<detail::LinearizedNetwork> _network;
     VectorXd _b;
+    VectorXd _a_times_t;  // A T, for the correction form
 
     VectorXd _t_cubed_domain;
     VectorXd _t_fourth_boundary;

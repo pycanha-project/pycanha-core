@@ -61,10 +61,13 @@ void SteadyState::prepare(bool log_warnings) {
                              {.symmetric = _symmetric,
                               .radiation = _radiation,
                               .skip_unchanged = true,
-                              .keep_matrix = false,
+                              // the correction form multiplies by the matrix
+                              // after a factorization may have taken it
+                              .keep_matrix = _resolved.correction_form,
                               .fixed_couplings = _resolved.fixed_couplings});
 
     _b = VectorXd::Zero(nd);
+    _a_times_t = VectorXd::Zero(nd);
     _t_cubed_domain = VectorXd::Zero(nd);
     _t_fourth_boundary = VectorXd::Zero(nb);
     _radiation_linear_term = VectorXd::Zero(nd);
@@ -187,14 +190,24 @@ void SteadyState::solve() {
                                 _radiation_linear_term);
         }
         assemble_rhs();
+        if (_resolved.correction_form) {
+            // A dT = b - A T: the same iteration, solved for the change
+            _network->multiply(Td, _a_times_t);
+            _b -= _a_times_t;
+        }
 
         if (!factorize_and_solve_step()) {
             finish_solve_report(start, /*failed=*/true);
             return;
         }
 
-        dTd = Td_solver - Td;
-        Td = Td_solver;
+        if (_resolved.correction_form) {
+            dTd = Td_solver;
+            Td += dTd;
+        } else {
+            dTd = Td_solver - Td;
+            Td = Td_solver;
+        }
         max_dT = dTd.cwiseAbs().maxCoeff();
 
         this->callback_solver_loop();

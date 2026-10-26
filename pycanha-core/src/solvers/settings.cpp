@@ -263,6 +263,7 @@ std::string_view iparm_indices(const std::map<int, int>& value) {
 constexpr double default_tolerance = 1e-3;
 constexpr int default_max_iterations = 5;
 constexpr bool default_reuse_factors = false;
+constexpr bool default_correction_form = true;
 constexpr bool default_fixed_couplings = false;
 constexpr int default_threads = 0;
 constexpr double default_time = 0.0;
@@ -603,6 +604,8 @@ constexpr auto transient_types = static_cast<std::uint8_t>(
 // derivatives, so they must belong to the current matrix.
 constexpr auto reuse_types = static_cast<std::uint8_t>(
     bit(SolverType::STEADY_STATE) | bit(SolverType::CRANK_NICOLSON));
+constexpr auto steady_types =
+    static_cast<std::uint8_t>(bit(SolverType::STEADY_STATE));
 
 constexpr std::string_view only_pardiso = "only with backend = PARDISO";
 constexpr std::string_view only_mkl = "only with backend = PARDISO or LAPACK";
@@ -612,7 +615,7 @@ using R = ResolvedSettings;
 
 // Resolution walks the table in order: a default or an applicability rule
 // may only read fields above it.
-constexpr std::size_t field_count = 21;
+constexpr std::size_t field_count = 22;
 constexpr std::array<FieldEntry, field_count> field_table{
     field<Path<&S::tolerance>, Path<&R::tolerance>,
           &constant<default_tolerance>, &positive>(
@@ -672,13 +675,29 @@ constexpr std::array<FieldEntry, field_count> field_table{
                 "earlier one, and refactorize only when that fails. Faster "
                 "when the matrix changes little between iterations or time "
                 "steps. The iteration stops at a relative residual of 1e-6, "
-                "and that residual stays in the temperatures. PARDISO "
+                "and that residual stays in the temperatures (in a steady "
+                "state with correction_form, only in each iteration's "
+                "change). PARDISO "
                 "iterates with CGS (iparm[3] = 61, overridden by "
                 "pardiso.iparm) and needs the one-level factorization; "
                 "LAPACK with FGMRES, on 20 iterations at most. Not with "
                 "EIGEN or ACCELERATE.",
          .mutability = Mutability::INIT,
          .solver_types = reuse_types}),
+    field<Path<&S::correction_form>, Path<&R::correction_form>,
+          &constant<default_correction_form>, &any_value<bool>>(
+        {.name = "correction_form",
+         .group = "",
+         .doc = "Solve each steady iteration for the temperature change, "
+                "A dT = b - A T, instead of the temperatures, A T = b. The "
+                "same equations, so a direct solve gives the same answer to "
+                "rounding. With reuse_factors the iteration's relative "
+                "residual then stays in the change, which shrinks as the "
+                "iterations converge, instead of in the temperatures: the "
+                "answer of a direct solve, also with a looser "
+                "pardiso.iparm[3]. Default: true.",
+         .mutability = Mutability::INIT,
+         .solver_types = steady_types}),
     field<Path<&S::fixed_couplings>, Path<&R::fixed_couplings>,
           &constant<default_fixed_couplings>, &any_value<bool>>(
         {.name = "fixed_couplings",
