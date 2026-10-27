@@ -150,7 +150,8 @@ void validate_material_properties(const MaterialTable& materials) {
 }  // namespace
 
 GpuBuffer SceneImpl::create_buffer(VkDeviceSize size, VkBufferUsageFlags usage,
-                                   BufferMemory memory) {
+                                   BufferMemory memory,
+                                   VkDeviceSize alignment) {
     GpuBuffer out;
     out.size = size;
     const VkBufferCreateInfo buffer_info{
@@ -183,8 +184,10 @@ GpuBuffer SceneImpl::create_buffer(VkDeviceSize size, VkBufferUsageFlags usage,
     // follow-up allocations on such offsets.
     constexpr VkDeviceSize min_alignment = 16;
     check(vmaCreateBufferWithAlignment(_device.allocator, &buffer_info,
-                                       &alloc_info, min_alignment, &out.buffer,
-                                       &out.allocation, &result_info),
+                                       &alloc_info,
+                                       std::max(min_alignment, alignment),
+                                       &out.buffer, &out.allocation,
+                                       &result_info),
           "buffer allocation");
     out.mapped = result_info.pMappedData;
     _allocated_bytes += size;
@@ -681,7 +684,8 @@ void SceneImpl::build_blas(const std::vector<ScenePart>& parts) {
             create_buffer(sizes.accelerationStructureSize, accel_storage_usage,
                           BufferMemory::DeviceLocal);
         GpuBuffer scratch = create_buffer(sizes.buildScratchSize, scratch_usage,
-                                          BufferMemory::DeviceLocal);
+                                          BufferMemory::DeviceLocal,
+                                          _device.scratch_alignment);
 
         VkAccelerationStructureCreateInfoKHR create{};
         create.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR;
@@ -788,7 +792,7 @@ void SceneImpl::build_tlas_first() {
         create_buffer(std::max(sizes.buildScratchSize, sizes.updateScratchSize),
                       VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
                           VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
-                      BufferMemory::DeviceLocal);
+                      BufferMemory::DeviceLocal, _device.scratch_alignment);
 
     VkAccelerationStructureCreateInfoKHR create{};
     create.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR;
