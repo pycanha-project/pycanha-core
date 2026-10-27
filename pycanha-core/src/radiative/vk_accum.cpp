@@ -53,6 +53,26 @@ constexpr auto accum_usage =
 constexpr auto readback_usage =
     static_cast<VkBufferUsageFlags>(VK_BUFFER_USAGE_TRANSFER_DST_BIT);
 
+// Merges one Tiled block (the read-back cells of the block's emitter rows)
+// into the host rows. Each emitter adds only into its own host row, so the
+// rows merge in parallel without changing any sum (cells add with wrap: the
+// exchange lost column may carry negative, wrapped, Russian-roulette
+// adjustments). On large scenes this merge, run on one thread, was nearly
+// all of a trace's time while the GPU sat idle.
+template <typename Cell>
+void merge_block_rows(std::span<const Cell> scratch, std::size_t cols,
+                      std::span<const std::uint32_t> block_emitters,
+                      std::uint32_t row_offset,
+                      std::vector<HostCountRow>& host_rows) {
+    const unsigned threads = worker_count(
+        {}, block_emitters.size(), block_emitters.size() * cols);
+    parallel_for_index(block_emitters.size(), threads, [&](std::size_t index) {
+        const std::uint32_t face = block_emitters[index];
+        host_rows[face].add_dense(scratch.subspan(
+            static_cast<std::size_t>(face - row_offset) * cols, cols));
+    });
+}
+
 }  // namespace
 
 VfAccumImpl::VfAccumImpl(SceneImpl& scene, const AccumConfig& config)
@@ -103,16 +123,7 @@ void VfAccumImpl::absorb_block(std::span<const std::uint32_t> block_emitters,
     const std::span<const std::uint32_t> scratch(
         static_cast<const std::uint32_t*>(checked_mapped(_readback)),
         static_cast<std::size_t>(_config.tile_rows) * cols);
-    for (const std::uint32_t face : block_emitters) {
-        const std::size_t row = face - row_offset;
-        auto& host_row = _host_rows[face];
-        for (std::size_t col = 0; col < cols; ++col) {
-            const std::uint32_t cell = scratch[(row * cols) + col];
-            if (cell != 0) {
-                host_row[static_cast<std::uint32_t>(col)] += cell;
-            }
-        }
-    }
+    merge_block_rows(scratch, cols, block_emitters, row_offset, _host_rows);
 }
 
 void VfAccumImpl::record_batch(std::span<const std::uint32_t> emitters,
@@ -195,18 +206,7 @@ void ExchangeAccumImpl::absorb_block(
     const std::span<const std::uint64_t> scratch(
         static_cast<const std::uint64_t*>(checked_mapped(_readback)),
         static_cast<std::size_t>(_config.tile_rows) * cols);
-    for (const std::uint32_t face : block_emitters) {
-        const std::size_t row = face - row_offset;
-        auto& host_row = _host_rows[face];
-        // Cells add with wrap: the lost column may carry negative (wrapped)
-        // Russian-roulette adjustments.
-        for (std::size_t col = 0; col < cols; ++col) {
-            const std::uint64_t cell = scratch[(row * cols) + col];
-            if (cell != 0) {
-                host_row[static_cast<std::uint32_t>(col)] += cell;
-            }
-        }
-    }
+    merge_block_rows(scratch, cols, block_emitters, row_offset, _host_rows);
 }
 
 float ExchangeAccumImpl::prepare_batch(std::uint64_t rays_per_face) {
