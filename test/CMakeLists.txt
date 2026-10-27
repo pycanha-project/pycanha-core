@@ -138,7 +138,8 @@ set(TEST_HEADERS "")
 #Tests need Catch2
 find_package(Catch2 REQUIRED)
 find_package(HDF5 REQUIRED COMPONENTS CXX)
-find_package(symengine REQUIRED CONFIG)
+find_package(manifold REQUIRED CONFIG)
+find_package(SymEngine REQUIRED CONFIG)
 
 # Create the target "tests_lib". This target only includes the library and prints info
 # It is useful for cppcheck to avoid warnings with Catch2
@@ -158,11 +159,7 @@ target_link_libraries(${TEST_TARGET_NAME} PRIVATE ${LIB_NAME})
 target_link_libraries(${TEST_TARGET_NAME} PRIVATE Catch2::Catch2WithMain)
 target_link_libraries(${TEST_TARGET_NAME} PRIVATE HDF5::HDF5)
 target_link_libraries(${TEST_TARGET_NAME} PRIVATE symengine)
-if(TARGET manifold::manifold)
-  target_link_libraries(${TEST_TARGET_NAME} PRIVATE manifold::manifold)
-elseif(TARGET manifold)
-  target_link_libraries(${TEST_TARGET_NAME} PRIVATE manifold)
-endif()
+target_link_libraries(${TEST_TARGET_NAME} PRIVATE manifold::manifold)
 if(UNIX AND NOT APPLE)
   target_link_libraries(${TEST_TARGET_NAME} PRIVATE m)
 endif()
@@ -295,10 +292,7 @@ if (PYCANHA_OPTION_CPPCHECK)
                 --suppress=unusedFunction --suppress=unmatchedSuppression
                 --suppress=missingIncludeSystem --suppress=toomanyconfigs
                 --suppress=constStatement          
-                --suppress=*:${CMAKE_BINARY_DIR}/_deps/manifold-src/*
                 --inline-suppr
-                # Ignore third-party Manifold sources pulled by FetchContent.
-                -i${CMAKE_BINARY_DIR}/_deps/manifold-src
                 ${CPP_CHECK_WARNING_AS_ERRORS}
             USES_TERMINAL)
     else()
