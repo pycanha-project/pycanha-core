@@ -41,22 +41,22 @@ class Recipe_pycanha_core(ConanFile):
     # Includes both Conan dependencies and tooling hints used by CMake/docs.
     DEPENDENCY_VERSIONS = {
         "eigen": "5.0.1",
-        "manifold": "3.4.1",
-        "mkl": "2025.3.1",
-        "catch2": "3.13.0",
+        "manifold": "3.5.4",
+        "mkl": "2026.2.0",
+        "catch2": "3.16.0",
         "hdf5": "1.14.6",
-        "symengine": "0.14.0",
+        "symengine": "0.15.0",
         "spdlog": "1.17.0",
         # Raytracing (PYCANHA_OPTION_RAYTRACING). One coherent SDK version:
-        "vulkan-headers": "1.4.350.0",
-        "volk": "1.4.350.0",
+        "vulkan-headers": "1.4.357.0",
+        "volk": "1.4.357.0",
         "vulkan-memory-allocator": "3.3.0",
-        "spirv-tools": "1.4.350.0",  # tool_requires: spirv-val build check
+        "spirv-tools": "1.4.357.0",  # tool_requires: spirv-val build check
         # slangc prebuilt release fetched by CMake (no Conan recipe exists;
         # the per-version SHA256 pins live in cmake/Slang.cmake):
-        "slang": "2026.12.2",
-        "doxygen": "1.9.4",  # Tested version, but this is just a hint for CMake
-        "doxygen_awesome_css": "v2.2.0",
+        "slang": "2026.20",
+        "doxygen": "1.15.0",  # Tested version, but this is just a hint for CMake
+        "doxygen_awesome_css": "v2.5.0",
     }
     options = {
         "fPIC": [True, False],

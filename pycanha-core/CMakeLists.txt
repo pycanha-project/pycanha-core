@@ -85,11 +85,15 @@ if(PYCANHA_USE_FETCHCONTENT_MANIFOLD)
     # nanobind extension); Conan sets CMAKE_POSITION_INDEPENDENT_CODE from fPIC.
     set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 
+    # SYSTEM: manifold's public headers are third-party code, so our
+    # warnings-as-errors flags must not apply to them (3.5's math.h has
+    # implicit uint64_t -> uint32_t narrowing that MSVC /W4 flags).
     FetchContent_Declare(
         manifold
         GIT_REPOSITORY https://github.com/elalish/manifold.git
         GIT_TAG v${PYCANHA_OPTION_MANIFOLD_VERSION}
-        GIT_SHALLOW TRUE)
+        GIT_SHALLOW TRUE
+        SYSTEM)
     FetchContent_MakeAvailable(manifold)
     set(PYCANHA_MANIFOLD_TARGET manifold)
 else()
@@ -97,19 +101,24 @@ else()
     set(PYCANHA_MANIFOLD_TARGET manifold::manifold)
 endif()
 
-# Normalize MANIFOLD_PAR for clang-tidy/tooling.
-# TODO: Check if needed
-get_target_property(_pycanha_manifold_compile_options
-                    ${PYCANHA_MANIFOLD_TARGET}
-                    INTERFACE_COMPILE_OPTIONS)
-if(_pycanha_manifold_compile_options)
-    list(TRANSFORM _pycanha_manifold_compile_options
-         REPLACE "^-DMANIFOLD_PAR=-1$" "-DMANIFOLD_PAR=(-1)")
-    set_target_properties(${PYCANHA_MANIFOLD_TARGET}
-                          PROPERTIES
-                          INTERFACE_COMPILE_OPTIONS
-                          "${_pycanha_manifold_compile_options}")
-endif()
+# Manifold's serial backend propagates MANIFOLD_PAR=-1 to its consumers, and
+# clang-tidy's bugprone-macro-parentheses rejects that bare negative value in
+# every file that includes a Manifold header. Wrap it in parentheses. Manifold
+# 3.5 sets it as a compile definition; older releases used a compile option.
+foreach(_pycanha_manifold_property INTERFACE_COMPILE_DEFINITIONS
+                                   INTERFACE_COMPILE_OPTIONS)
+    get_target_property(_pycanha_manifold_values
+                        ${PYCANHA_MANIFOLD_TARGET}
+                        ${_pycanha_manifold_property})
+    if(_pycanha_manifold_values)
+        list(TRANSFORM _pycanha_manifold_values
+             REPLACE "^(-D)?MANIFOLD_PAR=-1$" "\\1MANIFOLD_PAR=(-1)")
+        set_target_properties(${PYCANHA_MANIFOLD_TARGET}
+                              PROPERTIES
+                              ${_pycanha_manifold_property}
+                              "${_pycanha_manifold_values}")
+    endif()
+endforeach()
 
 
 # MyLib Library
