@@ -21,6 +21,12 @@ struct TraceSettings {
     // Emit along the face normal instead of the cosine-weighted hemisphere
     // (the legacy `_Nodes` debugging mode; vf/exchange kernels only).
     bool normal_emission = false;
+    // Rays leave a surface by a fixed number of float ULPs of the point
+    // (Waechter & Binder 2019; ~15 um at 1 m) instead of an epsilon of 1e-4
+    // of the scene's diagonal (0.15-0.2 mm in a 1.5 m scene), through which
+    // rays leak past sub-millimetre features. Off by default: the golden
+    // values pin the scaled epsilon.
+    bool robust_offset = false;
 };
 
 // Accumulator buffer layout. Kernels are identical in both layouts and cells
