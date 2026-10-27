@@ -24,7 +24,8 @@ set(PYCANHA_USE_MKL_INT 0)
 find_package(Eigen3 REQUIRED CONFIG)
 find_package(spdlog REQUIRED CONFIG)
 find_package(HDF5 REQUIRED COMPONENTS CXX)
-find_package(symengine REQUIRED CONFIG)
+find_package(manifold REQUIRED CONFIG)
+find_package(SymEngine REQUIRED CONFIG)
 
 # Raytracing backends. Off => only the stub (is_available() == false).
 #  - Vulkan (Windows/Linux): vulkan-headers + volk (runtime loader, no
@@ -63,62 +64,6 @@ else()
         ${CMAKE_CURRENT_SOURCE_DIR}/src/radiative/radiative_stub.cpp
     )
 endif()
-
-if(PYCANHA_USE_FETCHCONTENT_MANIFOLD)
-    include(FetchContent)
-
-    set(MANIFOLD_TEST OFF CACHE BOOL "" FORCE)
-    set(MANIFOLD_CROSS_SECTION OFF CACHE BOOL "" FORCE)
-    set(MANIFOLD_PAR OFF CACHE BOOL "" FORCE)
-    set(MANIFOLD_PYBIND OFF CACHE BOOL "" FORCE)
-
-    # Manifold's own CMakeLists defaults BUILD_SHARED_LIBS to ON, so it would
-    # build a shared library (manifold.dll / libmanifold.so / libmanifold.dylib).
-    # We want a *static* manifold that gets archived into the package and linked
-    # statically into consumers (see the package_info() note in conanfile.py):
-    #  - conanfile.py only packages *.a / *.lib, so a shared manifold is not
-    #    installed on Linux/macOS and the consumer's find_package() fails with
-    #    "Library 'manifold' not found in package".
-    #  - a static manifold also removes the need to bundle the manifold runtime
-    #    (manifold.dll) alongside the Python bindings.
-    # Build manifold with PIC so it can be linked into shared consumers (the
-    # nanobind extension); Conan sets CMAKE_POSITION_INDEPENDENT_CODE from fPIC.
-    set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
-
-    # SYSTEM: manifold's public headers are third-party code, so our
-    # warnings-as-errors flags must not apply to them (3.5's math.h has
-    # implicit uint64_t -> uint32_t narrowing that MSVC /W4 flags).
-    FetchContent_Declare(
-        manifold
-        GIT_REPOSITORY https://github.com/elalish/manifold.git
-        GIT_TAG v${PYCANHA_OPTION_MANIFOLD_VERSION}
-        GIT_SHALLOW TRUE
-        SYSTEM)
-    FetchContent_MakeAvailable(manifold)
-    set(PYCANHA_MANIFOLD_TARGET manifold)
-else()
-    find_package(manifold REQUIRED CONFIG)
-    set(PYCANHA_MANIFOLD_TARGET manifold::manifold)
-endif()
-
-# Manifold's serial backend propagates MANIFOLD_PAR=-1 to its consumers, and
-# clang-tidy's bugprone-macro-parentheses rejects that bare negative value in
-# every file that includes a Manifold header. Wrap it in parentheses. Manifold
-# 3.5 sets it as a compile definition; older releases used a compile option.
-foreach(_pycanha_manifold_property INTERFACE_COMPILE_DEFINITIONS
-                                   INTERFACE_COMPILE_OPTIONS)
-    get_target_property(_pycanha_manifold_values
-                        ${PYCANHA_MANIFOLD_TARGET}
-                        ${_pycanha_manifold_property})
-    if(_pycanha_manifold_values)
-        list(TRANSFORM _pycanha_manifold_values
-             REPLACE "^(-D)?MANIFOLD_PAR=-1$" "\\1MANIFOLD_PAR=(-1)")
-        set_target_properties(${PYCANHA_MANIFOLD_TARGET}
-                              PROPERTIES
-                              ${_pycanha_manifold_property}
-                              "${_pycanha_manifold_values}")
-    endif()
-endforeach()
 
 
 # MyLib Library
@@ -247,12 +192,6 @@ target_include_directories(${LIB_NAME}
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
 )
-# CDT is entered via #include <CDT/include/CDT.h> through this parent directory.
-# It MUST be a separate call with SYSTEM first (SYSTEM is only recognised as the
-# first argument after the target); folding it into the call above left CDT as a
-# non-system -I, so its third-party-header warnings tripped our -Werror.
-target_include_directories(${LIB_NAME} SYSTEM PRIVATE
-    $<BUILD_INTERFACE:${cdt_SOURCE_DIR}>)
 
 target_link_libraries( ${LIB_NAME}
     PUBLIC
@@ -261,7 +200,7 @@ target_link_libraries( ${LIB_NAME}
     symengine
     PRIVATE
     HDF5::HDF5
-    ${PYCANHA_MANIFOLD_TARGET}
+    manifold::manifold
 )
 
 if(PYCANHA_OPTION_RAYTRACING)

@@ -41,7 +41,7 @@ class Recipe_pycanha_core(ConanFile):
     # Includes both Conan dependencies and tooling hints used by CMake/docs.
     DEPENDENCY_VERSIONS = {
         "eigen": "5.0.1",
-        "manifold": "3.5.4",
+        "manifold": "3.5.1",
         "mkl": "2026.2.0",
         "catch2": "3.16.0",
         "hdf5": "1.14.6",
@@ -128,8 +128,10 @@ class Recipe_pycanha_core(ConanFile):
             transitive_libs=True,
         )
         # transitive_headers=True is used when the dependencies of the library are headers needed by the consumer.
-        # Manifold is intentionally not a Conan requirement yet.
-        # We fetch the pinned version from CMake until a suitable Conan recipe is available.
+        # The installed gmm/cutting headers include Manifold's.
+        self.requires(
+            f"manifold/{versions['manifold']}", transitive_headers=True
+        )
 
         # Raytracing dependencies: vulkan-headers + volk only — no link-time
         # Vulkan loader (volk dlopens the driver at Device::create, so the
@@ -227,9 +229,6 @@ class Recipe_pycanha_core(ConanFile):
         tc.cache_variables["CONAN_PROJECT_VERSION"] = self.version
 
         # Export centrally managed version hints for CMake and docs tooling.
-        tc.cache_variables["PYCANHA_OPTION_MANIFOLD_VERSION"] = (
-            self.DEPENDENCY_VERSIONS["manifold"]
-        )
         tc.cache_variables["PYCANHA_OPTION_DOXYGEN_VERSION"] = self.DEPENDENCY_VERSIONS[
             "doxygen"
         ]
@@ -304,17 +303,20 @@ class Recipe_pycanha_core(ConanFile):
             dst=os.path.join(self.package_folder, "include"),
         )
 
-        # Copy static library files (.lib for MSVC, .a for GCC/Clang)
+        # Copy the static library (.lib for MSVC, .a for GCC/Clang). Name it:
+        # the build folder also holds the import libraries of the test
+        # executables and of the fetched slangc toolchain. The pattern matches
+        # the path relative to the build folder, hence the leading "*".
         copy(
             self,
-            pattern="*.lib",
+            pattern="*pycanha-core.lib",
             src=self.build_folder,
             dst=os.path.join(self.package_folder, "lib"),
             keep_path=False,
         )
         copy(
             self,
-            pattern="*.a",
+            pattern="*libpycanha-core.a",
             src=self.build_folder,
             dst=os.path.join(self.package_folder, "lib"),
             keep_path=False,
@@ -340,17 +342,11 @@ class Recipe_pycanha_core(ConanFile):
         # -- Now this is not necessary. Because I'm using CMake install() to copy pycanha-core/include to the package/include folder
         #    So now the headers are in the include folder, and conan will find them automatically.
 
-        # Manifold is built from source (FetchContent) and installed into the
-        # package lib dir, but it is a separate static library that pycanha-core
-        # links against — its symbols are NOT merged into pycanha-core.lib. It
-        # must therefore be advertised to consumers (e.g. the Python bindings),
-        # otherwise linking a consumer fails with unresolved manifold::Manifold
-        # symbols. (Manifold is intentionally not a Conan requirement; it ships
-        # inside this package instead.)
-        self.cpp_info.libs = ["pycanha-core", "manifold"]
+        self.cpp_info.libs = ["pycanha-core"]
         self.cpp_info.requires = [
             "eigen::eigen3",
             "hdf5::hdf5",
+            "manifold::manifold",
             "spdlog::libspdlog",
             "symengine::symengine",
         ]
@@ -562,7 +558,7 @@ class Recipe_pycanha_core(ConanFile):
         mkl_names = ["mkl_intel_lp64", "mkl_intel_thread", "mkl_core", "iomp5"]
         for name in mkl_names:
             so_file = lib_dir / f"lib{name}.so"
-            if so_file.exists() or so_file.is_symlink():
+            if so_file.exists():
                 self.cpp_info.system_libs.append(name)
             else:
                 # No unversioned .so: link by full path to versioned file
@@ -580,15 +576,19 @@ class Recipe_pycanha_core(ConanFile):
     def _ensure_mkl_dev_symlinks(self, lib_dir):
         """Create unversioned .so symlinks if missing.
 
-        pip MKL packages may only ship versioned .so.2 files. The linker
-        needs unversioned .so symlinks to resolve -l flags.
+        pip MKL packages may only ship versioned .so.N files. The linker
+        needs unversioned .so symlinks to resolve -l flags. A link left
+        dangling by an MKL upgrade that changed N (2025 ships .so.2, 2026
+        .so.3) is replaced, since pip does not own it and never removes it.
         """
         if self.settings.os == "Windows":
             return
         for name in ["mkl_intel_lp64", "mkl_intel_thread", "mkl_core", "iomp5"]:
             so_link = lib_dir / f"lib{name}.so"
-            if so_link.exists() or so_link.is_symlink():
+            if so_link.exists():
                 continue
+            if so_link.is_symlink():
+                so_link.unlink()
             versioned = sorted(lib_dir.glob(f"lib{name}.so.*"))
             if versioned:
                 try:

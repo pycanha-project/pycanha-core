@@ -16,7 +16,8 @@ unmodified from its repository at the version listed.
 | [Boost](https://github.com/boostorg/boost) (Multiprecision, used by SymEngine) | 1.86.0 | BSL-1.0 | [boost/](boost/) |
 | [fast_float](https://github.com/fastfloat/fast_float) (used by SymEngine) | 6.1.5 | MIT or Apache-2.0 or BSL-1.0 | [fast_float/](fast_float/) |
 | [spdlog](https://github.com/gabime/spdlog) | 1.17.0 | MIT | [spdlog/](spdlog/) |
-| [Manifold](https://github.com/elalish/manifold) | 3.5.4 | Apache-2.0 | [manifold/](manifold/) |
+| [Manifold](https://github.com/elalish/manifold) | 3.5.1 | Apache-2.0 | [manifold/](manifold/) |
+| [Clipper2](https://github.com/AngusJohnson/Clipper2) (used by Manifold) | 2.0.1 | BSL-1.0 | [clipper2/](clipper2/) |
 | [Vulkan-Headers](https://github.com/KhronosGroup/Vulkan-Headers) | 1.4.357.0 | Apache-2.0 or MIT | [vulkan-headers/](vulkan-headers/) |
 | [volk](https://github.com/zeux/volk) | 1.4.357.0 | MIT | [volk/](volk/) |
 | [Vulkan Memory Allocator](https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator) | 3.3.0 | MIT | [vulkan-memory-allocator/](vulkan-memory-allocator/) |
@@ -33,8 +34,8 @@ When a dependency version changes in `conanfile.py`:
    license or a new bundled component may add an obligation.
 3. Check whether the bump added or removed a library compiled into
    pycanha-core (`conan graph info .` lists the host dependencies; Boost,
-   fast_float and zlib come in through other packages). Add or remove the row
-   and the folder to match.
+   fast_float, zlib and Clipper2 come in through other packages). Add or
+   remove the row and the folder to match.
 
 Only code that ends up inside pycanha-core is listed. Tools used to build,
 test or document it, and libraries loaded from the user's system at run time
