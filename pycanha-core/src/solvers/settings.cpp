@@ -719,7 +719,10 @@ constexpr std::array<FieldEntry, field_count> field_table{
     field<Path<&S::time_step>, Path<&R::time_step>, &constant<default_time>,
           &positive>({.name = "time_step",
                       .group = "",
-                      .doc = "Time step [s]. Required.",
+                      .doc = "Time step [s]. Required. When the run is not "
+                             "a whole number of steps, its last one or two "
+                             "steps are shorter, so that it ends at "
+                             "end_time.",
                       .mutability = Mutability::INIT,
                       .solver_types = transient_types}),
     field<Path<&S::output_interval>, Path<&R::output_interval>,

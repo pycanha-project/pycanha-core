@@ -33,6 +33,12 @@ namespace pycanha::solvers::transient {
  * iterations do not converge within max_iterations keeps its last iteration
  * and the run goes on: the first such step logs a WARN, the end of the run
  * one summary WARN, and report() lists them.
+ *
+ * The run ends at end_time. When end_time - start_time is not a whole number
+ * of time steps, the steps keep time_step while at least two of them remain,
+ * and the rest is taken in one step, or in two equal steps when it is longer
+ * than time_step, as ESATAN does. Outputs come every output_interval along
+ * the full steps, and at the end.
  */
 class CrankNicolson : public Solver {
   public:
@@ -75,6 +81,15 @@ class CrankNicolson : public Solver {
 
     // Time steps and outputs from the resolved settings.
     void compute_output_schedule();
+    // Length [s] of step `iter` (0-based): time_step, or the shortened end.
+    [[nodiscard]] double step_length(int iter) const noexcept;
+    // Whether the step just solved (time_iter) ends at an output time: the
+    // last step, or one closing an output interval along the full steps.
+    [[nodiscard]] bool output_due() const noexcept;
+    // Sets the length of step time_iter before its matrix is built.
+    void begin_step();
+    // Moves the time to the end of step time_iter.
+    void advance_time();
     // Creates the output model in the thermal data.
     void create_output_model();
     // Bytes of the output model the settings ask for.
@@ -99,6 +114,11 @@ class CrankNicolson : public Solver {
     double time = 0.0;
     int time_iter = 0;
     int num_time_steps = 0;
+    // Steps of time_step; the rest of num_time_steps are of _end_step.
+    int _full_steps = 0;
+    double _end_step = 0.0;
+    // Length of the current step [s].
+    double _step = 0.0;
     int num_outputs = 0;
     int wait_n_dtimes = 0;
     int idata_out = 0;
