@@ -183,6 +183,33 @@ Eigen::VectorXd solve_reference(const Model& model, double tolerance) {
     return models::temperatures(model);
 }
 
+struct LooseReuse {
+    bool converged = false;
+    int factorizations = 0;
+    double difference = 0.0;
+};
+
+// Factor reuse stopping at a loose relative residual, compared with a direct
+// solve.
+LooseReuse solve_loose_reuse(double reuse_tolerance) {
+    constexpr double tolerance = 1e-9;
+    const auto model = models::make_plate(20, /*radiation=*/true);
+    const auto reference = solve_reference(model, tolerance);
+
+    models::reset_temperatures(model, 250.0);
+    SteadyState solver(model);
+    Settings settings;
+    settings.reuse_factors = true;
+    settings.reuse_tolerance = reuse_tolerance;
+    configure(solver, settings, tolerance);
+    solver.initialize();
+    solver.solve();
+    return {.converged = solver.converged(),
+            .factorizations = solver.num_factorizations(),
+            .difference =
+                models::max_difference(models::temperatures(model), reference)};
+}
+
 }  // namespace
 
 TEST_CASE("SteadyState solves a simple model", "[solver][steady]") {
@@ -205,7 +232,6 @@ TEST_CASE("SteadyState defaults", "[solver][steady]") {
     REQUIRE(resolved.backend == models::default_sparse_backend());
     REQUIRE(resolved.pardiso.level == PardisoLevel::TWO_LEVEL);
     REQUIRE_FALSE(resolved.reuse_factors);
-    REQUIRE(resolved.correction_form);
     REQUIRE(solver.settings().solver_type ==
             pycanha::solvers::SolverType::STEADY_STATE);
     REQUIRE(solver.name() == "SteadyState");
@@ -544,52 +570,36 @@ TEST_CASE("Factor reuse matches a direct solve on a radiative plate",
     REQUIRE(solver.num_factorizations() == 1);
 }
 
-TEST_CASE("Factor reuse solved for the change keeps a direct solve's answer "
-          "at a loose iterative step",
-          "[solver][steady][reuse]") {
+TEST_CASE(
+    "Factor reuse keeps a direct solve's answer at a loose iterative "
+    "step",
+    "[solver][steady][reuse]") {
     if (!pycanha::MKL_ENABLED) {
         SKIP("MKL not built");
     }
-    // A relative residual of 1e-4 (iparm[3] = 41) left in the temperatures
-    // is far above the tolerance; left in the change it shrinks with every
-    // iteration.
-    constexpr double tolerance = 1e-9;
-    const auto model = models::make_plate(20, /*radiation=*/true);
-    const auto reference = solve_reference(model, tolerance);
+    // A relative residual of 1e-1 (iparm[3] = 11) stays in each change, which
+    // shrinks with every iteration, and every iteration after the first
+    // still reuses the factors.
+    const LooseReuse loose = solve_loose_reuse(1e-1);
+    REQUIRE(loose.converged);
+    REQUIRE(loose.factorizations == 1);
+    REQUIRE(loose.difference < 1e-7);
+}
 
-    models::reset_temperatures(model, 250.0);
+TEST_CASE("Factor reuse stops on a zero residual", "[solver][steady][reuse]") {
+    if (!pycanha::MKL_ENABLED) {
+        SKIP("MKL not built");
+    }
+    const auto model = models::make_settling_model();
     SteadyState solver(model);
     Settings settings;
     settings.reuse_factors = true;
-    settings.pardiso.iparm = std::map<int, int>{{3, 41}};
-    configure(solver, settings, tolerance);
+    configure(solver, settings, 1e-6);
     solver.initialize();
-    REQUIRE(solver.resolved_settings().correction_form);
     solver.solve();
     REQUIRE(solver.converged());
-    REQUIRE(models::max_difference(models::temperatures(model), reference) <
-            1e-7);
-}
-
-TEST_CASE("SteadyState gives the same answer solved for the change or not",
-          "[solver][steady]") {
-    const auto backend = GENERATE(from_range(available_backends()));
-    constexpr double tolerance = 1e-10;
-    const auto model = models::make_plate(20, /*radiation=*/true);
-    const auto solve_with = [&](bool correction) {
-        models::reset_temperatures(model, 250.0);
-        SteadyState solver(model);
-        Settings settings;
-        settings.backend = backend;
-        settings.correction_form = correction;
-        configure(solver, settings, tolerance);
-        solver.initialize();
-        solver.solve();
-        REQUIRE(solver.converged());
-        return models::temperatures(model);
-    };
-    const auto direct = solve_with(false);
-    REQUIRE(models::max_difference(solve_with(true), direct) < 1e-9);
+    REQUIRE(solver.iterations() == 2);
+    REQUIRE(solver.num_factorizations() == 1);
 }
 
 TEST_CASE("Dense factor reuse matches a direct solve on a radiative plate",

@@ -61,9 +61,7 @@ void SteadyState::prepare(bool log_warnings) {
                              {.symmetric = _symmetric,
                               .radiation = _radiation,
                               .skip_unchanged = true,
-                              // the correction form multiplies by the matrix
-                              // after a factorization may have taken it
-                              .keep_matrix = _resolved.correction_form,
+                              .keep_matrix = false,
                               .fixed_couplings = _resolved.fixed_couplings});
 
     _b = VectorXd::Zero(nd);
@@ -89,8 +87,8 @@ SolverMemory SteadyState::memory_now() const {
         memory.exact = _network->factor_bytes_exact();
         memory.matrix = _network->matrix_bytes();
     }
-    memory.matrix += bytes_of(_b) + bytes_of(_t_cubed_domain) +
-                     bytes_of(_t_fourth_boundary) +
+    memory.matrix += bytes_of(_b) + bytes_of(_a_times_t) +
+                     bytes_of(_t_cubed_domain) + bytes_of(_t_fourth_boundary) +
                      bytes_of(_radiation_linear_term) + common_bytes();
     return memory;
 }
@@ -190,18 +188,26 @@ void SteadyState::solve() {
                                 _radiation_linear_term);
         }
         assemble_rhs();
-        if (_resolved.correction_form) {
-            // A dT = b - A T: the same iteration, solved for the change
+        if (_resolved.reuse_factors) {
+            // A dT = b - A T: the same iteration, solved for the change, so
+            // the residual of an iteration on old factors stays in a change
+            // that shrinks as the solve converges. The product follows
+            // linearize(), so the matrix is the current one. The iteration
+            // starts from x: zero, closer to this change than the last one.
             _network->multiply(Td, _a_times_t);
             _b -= _a_times_t;
+            Td_solver.setZero();
         }
 
-        if (!factorize_and_solve_step()) {
+        // A zero residual is solved by a zero change, and PARDISO's
+        // iteration on old factors fails on a zero right-hand side.
+        const bool settled = _resolved.reuse_factors && _b.isZero(0.0);
+        if (!settled && !factorize_and_solve_step()) {
             finish_solve_report(start, /*failed=*/true);
             return;
         }
 
-        if (_resolved.correction_form) {
+        if (_resolved.reuse_factors) {
             dTd = Td_solver;
             Td += dTd;
         } else {
