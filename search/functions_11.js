@@ -1,4 +1,5 @@
 var searchData=
 [
-  ['zero_5fpivot_0',['zero_pivot',['../classpycanha_1_1SparseLinearSolver.html#a011b595859a9362e50ea344bf3c31f6b',1,'pycanha::SparseLinearSolver']]]
+  ['unset_0',['unset',['../classpycanha_1_1solvers_1_1Solver.html#a21ac6268fe4c46e2b2635e73cba2aff5',1,'pycanha::solvers::Solver']]],
+  ['uses_5fcholesky_1',['uses_cholesky',['../classpycanha_1_1solvers_1_1steady_1_1SteadyState.html#a1920276a10758fc0e7c0971ffbb9e83f',1,'pycanha::solvers::steady::SteadyState']]]
 ];

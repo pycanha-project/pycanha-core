@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['directsolvertype_0',['DirectSolverType',['../namespacepycanha.html#ac39dca56261a6b845e2976a7868a5c08',1,'pycanha']]]
+  ['nodeattribute_0',['NodeAttribute',['../namespacepycanha.html#ad42172d3e42aee979fca4c11f923913d',1,'pycanha']]]
 ];

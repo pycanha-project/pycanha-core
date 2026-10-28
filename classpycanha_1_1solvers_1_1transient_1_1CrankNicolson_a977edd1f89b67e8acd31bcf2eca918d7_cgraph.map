@@ -1,0 +1,18 @@
+<map id="pycanha::solvers::transient::CrankNicolson::prepare" name="pycanha::solvers::transient::CrankNicolson::prepare">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,75,203,119"/>
+<area shape="poly" id="edge9_Node000001_Node000001" title=" " alt="" coords="57,74,56,65,64,56,80,50,104,48,131,51,148,59,143,60,129,56,104,53,81,55,67,60,61,66,63,74"/>
+<area shape="rect" id="Node000002" href="$classpycanha_1_1solvers_1_1Solver.html#a38f1032bae06f0561241b9b15052cba7" title=" " alt="" coords="259,5,440,50"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="185,72,256,53,251,56,187,77"/>
+<area shape="rect" id="Node000003" href="$classpycanha_1_1solvers_1_1Solver.html#ac9bf674b85aadb0c3a75538bf58d619f" title=" " alt="" coords="259,75,440,119"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="203,94,246,96,241,98,203,100"/>
+<area shape="rect" id="Node000007" href="$classpycanha_1_1solvers_1_1transient_1_1CrankNicolson.html#acbd1cfd35d3e10a3ee5cf65e0d1c8719" title="&quot;SteadyState&quot;, &quot;CrankNicolson&quot;, &quot;JacobianPropagation&quot;." alt="" coords="251,144,448,189"/>
+<area shape="poly" id="edge8_Node000001_Node000007" title=" " alt="" coords="186,117,256,139,251,140,186,123"/>
+<area shape="rect" id="Node000004" href="$namespacepycanha.html#af116674b7649af0e33b3d7e78ecb1b1b" title=" " alt="" coords="738,39,891,67"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="433,71,496,60,613,50,725,50,719,51,614,55,496,65,434,77"/>
+<area shape="rect" id="Node000005" href="$classpycanha_1_1solvers_1_1Solver.html#a6c35ecaf5a08f16779c997f132ed012e" title="&quot;SteadyState&quot;, &quot;CrankNicolson&quot;, &quot;JacobianPropagation&quot;." alt="" coords="724,105,905,150"/>
+<area shape="poly" id="edge4_Node000003_Node000005" title=" " alt="" coords="432,117,496,129,606,135,712,136,706,136,606,141,496,134,432,123"/>
+<area shape="rect" id="Node000006" href="$classpycanha_1_1solvers_1_1Solver.html#a9db32bd1e9ba06d75d7afa3a2071fbec" title="Logs a WARN prefixed with the solver name and keeps it in the report." alt="" coords="496,75,676,119"/>
+<area shape="poly" id="edge5_Node000003_Node000006" title=" " alt="" coords="440,94,483,97,478,97,440,100"/>
+<area shape="poly" id="edge6_Node000006_Node000004" title=" " alt="" coords="676,77,721,71,727,70,677,82"/>
+<area shape="poly" id="edge7_Node000006_Node000005" title=" " alt="" coords="677,106,711,113,706,113,677,112"/>
+</map>

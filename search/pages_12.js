@@ -1,5 +1,5 @@
 var searchData=
 [
-  ['workflow_0',['Development workflow',['../md_docs_2workflow.html',1,'']]],
-  ['works_1',['How it works',['../index.html#autotoc_md3',1,'']]]
+  ['validation_20on_20main_20and_20pull_20requests_0',['Continuous validation on &lt;span class=&quot;tt&quot;&gt;main&lt;/span&gt; and pull requests',['../md_docs_2cicd.html#autotoc_md29',1,'']]],
+  ['versioning_1',['Releases and versioning',['../md_docs_2workflow.html#autotoc_md26',1,'']]]
 ];

@@ -1,0 +1,11 @@
+<map id="pycanha::solvers::Solver::initialize_common" name="pycanha::solvers::Solver::initialize_common">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,41,186,86"/>
+<area shape="rect" id="Node000002" href="$namespacepycanha.html#af116674b7649af0e33b3d7e78ecb1b1b" title=" " alt="" coords="476,5,629,33"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="174,38,233,26,351,16,463,16,458,17,352,21,234,31,176,43"/>
+<area shape="rect" id="Node000003" href="$classpycanha_1_1solvers_1_1Solver.html#a6c35ecaf5a08f16779c997f132ed012e" title="&quot;SteadyState&quot;, &quot;CrankNicolson&quot;, &quot;JacobianPropagation&quot;." alt="" coords="462,72,642,116"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="173,83,234,95,343,102,449,102,444,102,343,107,233,100,173,89"/>
+<area shape="rect" id="Node000004" href="$classpycanha_1_1solvers_1_1Solver.html#a9db32bd1e9ba06d75d7afa3a2071fbec" title="Logs a WARN prefixed with the solver name and keeps it in the report." alt="" coords="234,41,414,86"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="186,61,221,63,216,64,186,66"/>
+<area shape="poly" id="edge4_Node000004_Node000002" title=" " alt="" coords="414,43,459,37,464,36,415,48"/>
+<area shape="poly" id="edge5_Node000004_Node000003" title=" " alt="" coords="414,73,449,80,444,80,414,78"/>
+</map>

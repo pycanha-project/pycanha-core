@@ -1,9 +1,13 @@
 var searchData=
 [
-  ['linear_5fsolver_5foptions_0',['linear_solver_options',['../classpycanha_1_1Solver.html#a433476baae46d5ff262e8702b8082e4c',1,'pycanha::Solver']]],
-  ['local_5fstorage_5fdestructor_1',['local_storage_destructor',['../classpycanha_1_1Node.html#a6b3e48a500d2f713fc7ee37e26693749',1,'pycanha::Node']]],
-  ['log_5fbuffer_5fcapacity_2',['log_buffer_capacity',['../namespacepycanha.html#ad0e05b63bc741d89e81adf73a7170bd1',1,'pycanha']]],
-  ['log_5fdirectory_3',['log_directory',['../namespacepycanha.html#a99d5025e530ce403f77ed3e87ed0f384',1,'pycanha']]],
-  ['log_5fnoexcept_4',['log_noexcept',['../namespacepycanha.html#abe6cb830e8474b6527b461ec6d7539f6',1,'pycanha']]],
-  ['log_5frecords_5',['log_records',['../namespacepycanha.html#a61e43b6ad435b91b84a0ecc8eae1bd5d',1,'pycanha']]]
+  ['initialize_5fcommon_0',['initialize_common',['../classpycanha_1_1solvers_1_1Solver.html#ac9bf674b85aadb0c3a75538bf58d619f',1,'pycanha::solvers::Solver']]],
+  ['insert_5fdisplace_1',['insert_displace',['../classpycanha_1_1Nodes.html#a2ef3ee52b5de782b318b9860a7becff3',1,'pycanha::Nodes::insert_displace(Eigen::SparseVector&lt; LiteralString &gt; &amp;sparse, Index index, const LiteralString &amp;string)'],['../classpycanha_1_1Nodes.html#a895139c425f3a01fd1b92a73767242de',1,'pycanha::Nodes::insert_displace(Eigen::SparseVector&lt; LiteralString &gt; &amp;sparse, Index index, const std::string &amp;string)'],['../classpycanha_1_1Nodes.html#aa0e2f06fa9cb58a93fae6dd4ec2acbfd',1,'pycanha::Nodes::insert_displace(Eigen::SparseVector&lt; double &gt; &amp;sparse, Index index, double value)']]],
+  ['is_5fmapped_2',['is_mapped',['../classpycanha_1_1Nodes.html#a3ffd64ed6c712b4506d7877c87108578',1,'pycanha::Nodes']]],
+  ['is_5fnode_3',['is_node',['../classpycanha_1_1Nodes.html#a5b7dd878a79e54c370e9273a32403736',1,'pycanha::Nodes']]],
+  ['is_5fradiative_5factive_4',['is_radiative_active',['../classpycanha_1_1gmm_1_1ThermalMesh.html#a24556da698cfcb9839e484b3a10fe965',1,'pycanha::gmm::ThermalMesh']]],
+  ['is_5fset_5',['is_set',['../structpycanha_1_1solvers_1_1Settings.html#ae44477175d06f9e90a82917b7dee5fc4',1,'pycanha::solvers::Settings']]],
+  ['is_5fside_5factive_6',['is_side_active',['../classpycanha_1_1gmm_1_1ThermalMesh.html#aae3a47011c3fdce2cdea46bc30898856',1,'pycanha::gmm::ThermalMesh']]],
+  ['is_5fsupported_7',['is_supported',['../classpycanha_1_1gmm_1_1FacePairGeometryEvaluator.html#a1add2fb803e3fee6e2888777fc6564a8',1,'pycanha::gmm::FacePairGeometryEvaluator']]],
+  ['is_5fvalid_8',['is_valid',['../classpycanha_1_1gmm_1_1TriangularPrism.html#ab613d1f2e2a87136e5b2ad97acf67157',1,'pycanha::gmm::TriangularPrism']]],
+  ['iterations_9',['iterations',['../classpycanha_1_1solvers_1_1steady_1_1SteadyState.html#a9067d8965b64a21cda7fc975806aceff',1,'pycanha::solvers::steady::SteadyState']]]
 ];

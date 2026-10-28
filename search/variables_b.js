@@ -1,8 +1,9 @@
 var searchData=
 [
-  ['qa_5fvector_0',['qa_vector',['../classpycanha_1_1Nodes.html#a466e776b262f4bb1e8f7bc6f34df27a0',1,'pycanha::Nodes']]],
-  ['qe_5fvector_1',['qe_vector',['../classpycanha_1_1Nodes.html#ab57d8aab00c45369f356d6c5807385a4',1,'pycanha::Nodes']]],
-  ['qi_5fvector_2',['qi_vector',['../classpycanha_1_1Nodes.html#a9bb7d595e8083804ea2f27f24c19d80e',1,'pycanha::Nodes']]],
-  ['qr_5fvector_3',['qr_vector',['../classpycanha_1_1Nodes.html#a8ac3e23668604c12945a21eb6b081b02',1,'pycanha::Nodes']]],
-  ['qs_5fvector_4',['qs_vector',['../classpycanha_1_1Nodes.html#af28cf045462f0f1c4e9c176701392bd9',1,'pycanha::Nodes']]]
+  ['name_0',['name',['../structpycanha_1_1solvers_1_1SettingField.html#a495abe2033819e649633be9c81d18030',1,'pycanha::solvers::SettingField']]],
+  ['node_1',['node',['../structpycanha_1_1solvers_1_1NonConvergedStep.html#a322d5b803a9ec044069204724dccf803',1,'pycanha::solvers::NonConvergedStep']]],
+  ['node_5fsides_2',['node_sides',['../structpycanha_1_1conduction_1_1NetworkPart.html#aecb953e0ad8eace1e372a398312e783b',1,'pycanha::conduction::NetworkPart']]],
+  ['nonconverged_3',['nonconverged',['../structpycanha_1_1solvers_1_1SolverReport.html#af86d07c0e571487d2b983943a5f6243f',1,'pycanha::solvers::SolverReport']]],
+  ['nonconverged_5fsteps_4',['nonconverged_steps',['../structpycanha_1_1solvers_1_1SolverReport.html#ad9051b98c3484da7daa8c14304bbe091',1,'pycanha::solvers::SolverReport']]],
+  ['not_5fapplied_5',['not_applied',['../structpycanha_1_1solvers_1_1ResolvedSettings.html#a7aedf7af2154ab0a9d50652ddf57354b',1,'pycanha::solvers::ResolvedSettings']]]
 ];

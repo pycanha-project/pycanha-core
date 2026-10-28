@@ -1,0 +1,11 @@
+<map id="pycanha::solvers::transient::CrankNicolson::set_simulation_time" name="pycanha::solvers::transient::CrankNicolson::set_simulation_time">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,60,270,105"/>
+<area shape="poly" id="edge5_Node000001_Node000001" title=" " alt="" coords="86,58,85,50,93,41,111,35,138,33,166,36,185,44,180,45,165,41,137,39,112,41,96,45,90,51,91,60"/>
+<area shape="rect" id="Node000002" href="$classpycanha_1_1solvers_1_1Solver.html#a6672a14189a23a73661c2ecd20259a5d" title=" " alt="" coords="318,29,498,74"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="270,65,305,63,299,64,271,70"/>
+<area shape="rect" id="Node000003" href="$classpycanha_1_1solvers_1_1Solver.html#a6da06f89ed8456ac485ea3a732dfbfb7" title="A copy, with solver_type set to this solver&#39;s type." alt="" coords="546,60,726,105"/>
+<area shape="poly" id="edge6_Node000001_Node000003" title=" " alt="" coords="270,83,318,84,498,84,533,86,527,86,498,89,318,89,270,88"/>
+<area shape="poly" id="edge2_Node000002_Node000002" title=" " alt="" coords="365,27,363,19,370,10,385,5,408,3,433,5,449,14,444,14,431,10,408,8,387,10,373,15,368,21,369,30"/>
+<area shape="poly" id="edge3_Node000002_Node000003" title=" " alt="" coords="498,61,533,68,528,68,498,66"/>
+<area shape="poly" id="edge4_Node000003_Node000003" title=" " alt="" coords="593,58,591,50,599,41,614,35,636,33,661,36,677,45,672,44,660,41,636,39,615,41,602,45,596,51,597,61"/>
+</map>

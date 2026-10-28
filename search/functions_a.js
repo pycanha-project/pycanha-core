@@ -1,9 +1,8 @@
 var searchData=
 [
-  ['node_0',['Node',['../classpycanha_1_1Node.html#a1a03ae20add186d6c3641a6f3bc74a87',1,'pycanha::Node::Node(NodeNum node_num)'],['../classpycanha_1_1Node.html#a00dbc2185ad3bc9c730c6b6a08b1433b',1,'pycanha::Node::Node(NodeNum node_num, const std::weak_ptr&lt; Nodes &gt; &amp;parent_pointer)']]],
-  ['node_5fnumbers_1',['node_numbers',['../classpycanha_1_1Nodes.html#aa515420ed2654a9274804ddea62010a6',1,'pycanha::Nodes']]],
-  ['node_5fof_2',['node_of',['../classpycanha_1_1gmm_1_1ThermalMesh.html#aac124a372d1692a68060071bf2c39b25',1,'pycanha::gmm::ThermalMesh']]],
-  ['nodes_3',['Nodes',['../classpycanha_1_1Nodes.html#a2997cd286bfea8e687eab639ce2ec0c5',1,'pycanha::Nodes']]],
-  ['num_5ffactorizations_4',['num_factorizations',['../classpycanha_1_1SteadyStateSolver.html#adcc0fbc436ecf867fc994c706511406d',1,'pycanha::SteadyStateSolver']]],
-  ['num_5fnodes_5',['num_nodes',['../classpycanha_1_1Nodes.html#a9cd78e014d17ef07b1246bb52fafb593',1,'pycanha::Nodes']]]
+  ['matrix_5fbytes_0',['matrix_bytes',['../classpycanha_1_1solvers_1_1detail_1_1LinearizedNetwork.html#a11f5c1af7a2ddefa51a24766f28a98ec',1,'pycanha::solvers::detail::LinearizedNetwork']]],
+  ['matrix_5fcopy_5fbytes_1',['matrix_copy_bytes',['../classpycanha_1_1solvers_1_1detail_1_1Factorizer.html#a4e1820e2e7972e24aef15a598c8082b7',1,'pycanha::solvers::detail::Factorizer']]],
+  ['memory_5fnow_2',['memory_now',['../classpycanha_1_1solvers_1_1transient_1_1CrankNicolson.html#afad42e1a0070474efb6fa248ae6fe967',1,'pycanha::solvers::transient::CrankNicolson::memory_now()'],['../classpycanha_1_1solvers_1_1sensitivity_1_1JacobianPropagation.html#a7b64685be933baa0d6fc72c085f9b442',1,'pycanha::solvers::sensitivity::JacobianPropagation::memory_now()'],['../classpycanha_1_1solvers_1_1Solver.html#a8b54474db691160124bbe21955103bbf',1,'pycanha::solvers::Solver::memory_now()'],['../classpycanha_1_1solvers_1_1steady_1_1SteadyState.html#a89fec8b46a95f1e2c137f8769d073479',1,'pycanha::solvers::steady::SteadyState::memory_now()']]],
+  ['meridian_5flength_3',['meridian_length',['../classpycanha_1_1conduction_1_1MeridianProfile.html#ab4e231c6ad8b64f43b710b7304bb09c4',1,'pycanha::conduction::MeridianProfile']]],
+  ['multiply_4',['multiply',['../classpycanha_1_1solvers_1_1detail_1_1LinearizedNetwork.html#a471efc8ab407490426a96d7f3e609f60',1,'pycanha::solvers::detail::LinearizedNetwork']]]
 ];

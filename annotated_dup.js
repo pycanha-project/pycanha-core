@@ -101,6 +101,54 @@ var annotated_dup =
         [ "AccumConfig", "structpycanha_1_1radiative_1_1AccumConfig.html", null ],
         [ "PhysicalDeviceCheck", "structpycanha_1_1radiative_1_1PhysicalDeviceCheck.html", null ]
       ] ],
+      [ "solvers", null, [
+        [ "detail", null, [
+          [ "AutoField", "structpycanha_1_1solvers_1_1detail_1_1AutoField.html", null ],
+          [ "AutoCandidate", "structpycanha_1_1solvers_1_1detail_1_1AutoCandidate.html", null ],
+          [ "NetworkShape", "structpycanha_1_1solvers_1_1detail_1_1NetworkShape.html", "structpycanha_1_1solvers_1_1detail_1_1NetworkShape" ],
+          [ "Libraries", "structpycanha_1_1solvers_1_1detail_1_1Libraries.html", "structpycanha_1_1solvers_1_1detail_1_1Libraries" ],
+          [ "DenseAssembly", "classpycanha_1_1solvers_1_1detail_1_1DenseAssembly.html", "classpycanha_1_1solvers_1_1detail_1_1DenseAssembly" ],
+          [ "Factorizer", "classpycanha_1_1solvers_1_1detail_1_1Factorizer.html", "classpycanha_1_1solvers_1_1detail_1_1Factorizer" ],
+          [ "IparmEntry", "structpycanha_1_1solvers_1_1detail_1_1IparmEntry.html", null ],
+          [ "NetworkCouplings", "structpycanha_1_1solvers_1_1detail_1_1NetworkCouplings.html", "structpycanha_1_1solvers_1_1detail_1_1NetworkCouplings" ],
+          [ "NetworkOptions", "structpycanha_1_1solvers_1_1detail_1_1NetworkOptions.html", "structpycanha_1_1solvers_1_1detail_1_1NetworkOptions" ],
+          [ "SolveOutcome", "structpycanha_1_1solvers_1_1detail_1_1SolveOutcome.html", "structpycanha_1_1solvers_1_1detail_1_1SolveOutcome" ],
+          [ "LinearizedNetwork", "classpycanha_1_1solvers_1_1detail_1_1LinearizedNetwork.html", "classpycanha_1_1solvers_1_1detail_1_1LinearizedNetwork" ],
+          [ "SparseAssembly", "classpycanha_1_1solvers_1_1detail_1_1SparseAssembly.html", "classpycanha_1_1solvers_1_1detail_1_1SparseAssembly" ],
+          [ "ThreadScope", "classpycanha_1_1solvers_1_1detail_1_1ThreadScope.html", null ]
+        ] ],
+        [ "transient", null, [
+          [ "CrankNicolson", "classpycanha_1_1solvers_1_1transient_1_1CrankNicolson.html", "classpycanha_1_1solvers_1_1transient_1_1CrankNicolson" ]
+        ] ],
+        [ "sensitivity", null, [
+          [ "JacobianPropagation", "classpycanha_1_1solvers_1_1sensitivity_1_1JacobianPropagation.html", "classpycanha_1_1solvers_1_1sensitivity_1_1JacobianPropagation" ]
+        ] ],
+        [ "steady", null, [
+          [ "SteadyState", "classpycanha_1_1solvers_1_1steady_1_1SteadyState.html", "classpycanha_1_1solvers_1_1steady_1_1SteadyState" ]
+        ] ],
+        [ "ModelChangedError", "classpycanha_1_1solvers_1_1ModelChangedError.html", null ],
+        [ "SolverMemory", "structpycanha_1_1solvers_1_1SolverMemory.html", "structpycanha_1_1solvers_1_1SolverMemory" ],
+        [ "NonConvergedStep", "structpycanha_1_1solvers_1_1NonConvergedStep.html", "structpycanha_1_1solvers_1_1NonConvergedStep" ],
+        [ "SolverReport", "structpycanha_1_1solvers_1_1SolverReport.html", "structpycanha_1_1solvers_1_1SolverReport" ],
+        [ "PardisoSettings", "structpycanha_1_1solvers_1_1PardisoSettings.html", "structpycanha_1_1solvers_1_1PardisoSettings" ],
+        [ "EigenSettings", "structpycanha_1_1solvers_1_1EigenSettings.html", null ],
+        [ "AccelerateSettings", "structpycanha_1_1solvers_1_1AccelerateSettings.html", null ],
+        [ "Settings", "structpycanha_1_1solvers_1_1Settings.html", "structpycanha_1_1solvers_1_1Settings" ],
+        [ "SettingField", "structpycanha_1_1solvers_1_1SettingField.html", "structpycanha_1_1solvers_1_1SettingField" ],
+        [ "ResolveContext", "structpycanha_1_1solvers_1_1ResolveContext.html", "structpycanha_1_1solvers_1_1ResolveContext" ],
+        [ "NotApplied", "structpycanha_1_1solvers_1_1NotApplied.html", null ],
+        [ "ResolvedPardiso", "structpycanha_1_1solvers_1_1ResolvedPardiso.html", null ],
+        [ "ResolvedEigen", "structpycanha_1_1solvers_1_1ResolvedEigen.html", null ],
+        [ "ResolvedAccelerate", "structpycanha_1_1solvers_1_1ResolvedAccelerate.html", null ],
+        [ "ResolvedSettings", "structpycanha_1_1solvers_1_1ResolvedSettings.html", "structpycanha_1_1solvers_1_1ResolvedSettings" ],
+        [ "FieldExplanation", "structpycanha_1_1solvers_1_1FieldExplanation.html", "structpycanha_1_1solvers_1_1FieldExplanation" ],
+        [ "SettingsExplanation", "structpycanha_1_1solvers_1_1SettingsExplanation.html", "structpycanha_1_1solvers_1_1SettingsExplanation" ],
+        [ "Solver", "classpycanha_1_1solvers_1_1Solver.html", "classpycanha_1_1solvers_1_1Solver" ],
+        [ "SteadySolvers", "classpycanha_1_1solvers_1_1SteadySolvers.html", null ],
+        [ "TransientSolvers", "classpycanha_1_1solvers_1_1TransientSolvers.html", null ],
+        [ "SensitivitySolvers", "classpycanha_1_1solvers_1_1SensitivitySolvers.html", null ],
+        [ "SolverRegistry", "classpycanha_1_1solvers_1_1SolverRegistry.html", null ]
+      ] ],
       [ "random_generators", null, [
         [ "RealGenerator", "classpycanha_1_1random__generators_1_1RealGenerator.html", null ],
         [ "IntGenerator", "classpycanha_1_1random__generators_1_1IntGenerator.html", null ]
@@ -118,20 +166,6 @@ var annotated_dup =
       [ "TemperatureVariable", "classpycanha_1_1TemperatureVariable.html", null ],
       [ "CallbackContext", "classpycanha_1_1CallbackContext.html", null ],
       [ "CallbackRegistry", "classpycanha_1_1CallbackRegistry.html", null ],
-      [ "LinearSolverOptions", "structpycanha_1_1LinearSolverOptions.html", "structpycanha_1_1LinearSolverOptions" ],
-      [ "SparseLinearSolver", "classpycanha_1_1SparseLinearSolver.html", "classpycanha_1_1SparseLinearSolver" ],
-      [ "IntPairHash", "structpycanha_1_1IntPairHash.html", null ],
-      [ "Solver", "classpycanha_1_1Solver.html", "classpycanha_1_1Solver" ],
-      [ "SolverOutputConfig", "structpycanha_1_1SolverOutputConfig.html", null ],
-      [ "SolverRegistry", "classpycanha_1_1SolverRegistry.html", null ],
-      [ "SteadyStateSolver", "classpycanha_1_1SteadyStateSolver.html", "classpycanha_1_1SteadyStateSolver" ],
-      [ "SSLU", "classpycanha_1_1SSLU.html", null ],
-      [ "SSLU_CGS", "classpycanha_1_1SSLU__CGS.html", null ],
-      [ "TransientSolver", "classpycanha_1_1TransientSolver.html", null ],
-      [ "TSCN", "classpycanha_1_1TSCN.html", null ],
-      [ "TSCNRL", "classpycanha_1_1TSCNRL.html", null ],
-      [ "TSCNRLDS", "classpycanha_1_1TSCNRLDS.html", null ],
-      [ "TSCNRLDS_JACOBIAN", "classpycanha_1_1TSCNRLDS__JACOBIAN.html", null ],
       [ "DataModel", "classpycanha_1_1DataModel.html", null ],
       [ "DataModelStore", "classpycanha_1_1DataModelStore.html", null ],
       [ "DataTableStore", "classpycanha_1_1DataTableStore.html", null ],
@@ -156,6 +190,7 @@ var annotated_dup =
       [ "EntitiesHelper", "classpycanha_1_1EntitiesHelper.html", null ],
       [ "ThermalMathematicalModel", "classpycanha_1_1ThermalMathematicalModel.html", "classpycanha_1_1ThermalMathematicalModel" ],
       [ "ThermalModel", "classpycanha_1_1ThermalModel.html", "classpycanha_1_1ThermalModel" ],
+      [ "StructureVersions", "structpycanha_1_1StructureVersions.html", null ],
       [ "ThermalNetwork", "classpycanha_1_1ThermalNetwork.html", "classpycanha_1_1ThermalNetwork" ],
       [ "ProfileResult", "structpycanha_1_1ProfileResult.html", null ],
       [ "InstrumentationSession", "structpycanha_1_1InstrumentationSession.html", null ],

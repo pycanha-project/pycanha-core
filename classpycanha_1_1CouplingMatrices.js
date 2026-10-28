@@ -12,5 +12,6 @@ var classpycanha_1_1CouplingMatrices =
     [ "add_ovw_coupling_from_node_idxs_verbose", "classpycanha_1_1CouplingMatrices.html#ae969e5c4a6ec2b4c1ee1cc55e973a46d", null ],
     [ "add_sum_coupling_from_node_idxs", "classpycanha_1_1CouplingMatrices.html#a3e82c3b07c76240c4df9fa7a43ca44e1", null ],
     [ "add_sum_coupling_from_node_idxs_verbose", "classpycanha_1_1CouplingMatrices.html#af34b080ded161758f3233564ddd1e04a", null ],
-    [ "append_couplings", "classpycanha_1_1CouplingMatrices.html#a5e0843d5845763f4bfaab45b5bee3a6e", null ]
+    [ "append_couplings", "classpycanha_1_1CouplingMatrices.html#a5e0843d5845763f4bfaab45b5bee3a6e", null ],
+    [ "structure_version", "classpycanha_1_1CouplingMatrices.html#a3687232fe6cd2da687c8428e53febb2e", null ]
 ];

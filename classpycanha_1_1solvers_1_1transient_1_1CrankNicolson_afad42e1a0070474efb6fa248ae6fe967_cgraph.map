@@ -1,0 +1,6 @@
+<map id="pycanha::solvers::transient::CrankNicolson::memory_now" name="pycanha::solvers::transient::CrankNicolson::memory_now">
+<area shape="rect" id="Node000001" title="The memory of what prepare() and initialize() built." alt="" coords="5,29,226,74"/>
+<area shape="poly" id="edge2_Node000001_Node000001" title=" " alt="" coords="68,28,67,19,75,10,91,5,116,3,142,5,160,14,155,14,141,10,115,8,92,10,78,15,72,21,73,30"/>
+<area shape="rect" id="Node000002" href="$classpycanha_1_1solvers_1_1Solver.html#a83cd53b868d0a2b57c5d8e7943d80bed" title="Bytes of the vectors every solver sizes in initialize_common()." alt="" coords="274,29,454,74"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="226,49,261,52,255,52,226,54"/>
+</map>

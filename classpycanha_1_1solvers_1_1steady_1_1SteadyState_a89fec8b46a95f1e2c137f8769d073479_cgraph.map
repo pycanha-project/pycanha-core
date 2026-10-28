@@ -1,0 +1,6 @@
+<map id="pycanha::solvers::steady::SteadyState::memory_now" name="pycanha::solvers::steady::SteadyState::memory_now">
+<area shape="rect" id="Node000001" title="The memory of what prepare() and initialize() built." alt="" coords="5,29,211,74"/>
+<area shape="poly" id="edge2_Node000001_Node000001" title=" " alt="" coords="62,28,61,19,69,10,84,5,108,3,134,5,151,14,146,14,133,10,108,8,85,10,71,15,66,21,67,30"/>
+<area shape="rect" id="Node000002" href="$classpycanha_1_1solvers_1_1Solver.html#a83cd53b868d0a2b57c5d8e7943d80bed" title="Bytes of the vectors every solver sizes in initialize_common()." alt="" coords="259,29,439,74"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="211,49,246,51,240,52,211,54"/>
+</map>

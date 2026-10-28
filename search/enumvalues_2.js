@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['mkl_0',['MKL',['../namespacepycanha.html#ae2fc612d52a2376bb734df09365b3de9a6a8f79dd53a94059a5cdcd066199a06f',1,'pycanha']]]
+  ['sum_0',['SUM',['../namespacepycanha.html#a22dc61f520c4990847af9ef4cc49d354a6970bdc2201030b9c03fbdcf3973858a',1,'pycanha']]]
 ];

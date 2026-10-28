@@ -1,0 +1,9 @@
+<map id="pycanha::solvers::Solver::estimate_memory" name="pycanha::solvers::Solver::estimate_memory">
+<area shape="rect" id="Node000001" title="The memory this solver needs for the current model and settings." alt="" coords="5,57,186,102"/>
+<area shape="rect" id="Node000002" href="$namespacepycanha.html#af116674b7649af0e33b3d7e78ecb1b1b" title=" " alt="" coords="247,5,400,33"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="182,54,256,36,251,39,184,59"/>
+<area shape="rect" id="Node000003" href="$classpycanha_1_1solvers_1_1Solver.html#a6c35ecaf5a08f16779c997f132ed012e" title="&quot;SteadyState&quot;, &quot;CrankNicolson&quot;, &quot;JacobianPropagation&quot;." alt="" coords="234,57,414,102"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="186,77,221,78,216,80,186,82"/>
+<area shape="rect" id="Node000004" href="$structpycanha_1_1solvers_1_1SolverMemory.html#a3704b2be10c48624448b0b8c8f469b5b" title="&quot;1.21 GB (factors 1.02 GB, matrix 121 MB, output 64.0 MB)&quot;." alt="" coords="234,126,414,171"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="172,99,236,120,230,122,171,105"/>
+</map>

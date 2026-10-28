@@ -1,0 +1,25 @@
+<map id="pycanha::solvers::Solver::finish_solve_report" name="pycanha::solvers::Solver::finish_solve_report">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,195,186,239"/>
+<area shape="rect" id="Node000002" href="$classpycanha_1_1solvers_1_1Solver.html#a8b54474db691160124bbe21955103bbf" title="The memory of what prepare() and initialize() built." alt="" coords="234,195,414,239"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="185,223,221,225,216,227,187,228"/>
+<area shape="rect" id="Node000009" href="$classpycanha_1_1solvers_1_1Solver.html#a9db32bd1e9ba06d75d7afa3a2071fbec" title="Logs a WARN prefixed with the solver name and keeps it in the report." alt="" coords="467,333,647,378"/>
+<area shape="poly" id="edge13_Node000001_Node000009" title=" " alt="" coords="173,237,467,326,464,330,172,243"/>
+<area shape="poly" id="edge5_Node000002_Node000001" title=" " alt="" coords="231,209,202,211,200,205,236,207"/>
+<area shape="rect" id="Node000003" href="$classpycanha_1_1solvers_1_1Solver.html#a75792764d29a99a2069d431de2ac406c" title=" " alt="" coords="467,264,647,309"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="401,237,468,259,462,259,401,243"/>
+<area shape="rect" id="Node000005" href="$classpycanha_1_1solvers_1_1Solver.html#a2a5ccf391e6a0e27bce371c50f71b344" title="The last solve() converged in every iteration loop." alt="" coords="700,96,881,141"/>
+<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="344,192,394,148,426,127,461,110,517,97,576,91,633,92,688,99,682,100,632,97,576,97,518,102,463,116,429,131,397,152,347,196"/>
+<area shape="rect" id="Node000006" href="$classpycanha_1_1solvers_1_1Solver.html#a7de5206ebac46d416dd99b00336bd344" title=" " alt="" coords="467,195,647,239"/>
+<area shape="poly" id="edge6_Node000002_Node000006" title=" " alt="" coords="414,214,454,216,449,218,415,220"/>
+<area shape="rect" id="Node000007" href="$classpycanha_1_1solvers_1_1Solver.html#a5f1f61061372e2dee23106e2177fa9a2" title=" " alt="" coords="462,125,652,170"/>
+<area shape="poly" id="edge7_Node000002_Node000007" title=" " alt="" coords="400,192,467,174,463,176,402,197"/>
+<area shape="rect" id="Node000008" href="$classpycanha_1_1solvers_1_1Solver.html#a4a28b1e747de44d3454566015d6c4f45" title="Refreshes the LIVE fields of the resolved settings; checks the model." alt="" coords="467,5,647,50"/>
+<area shape="poly" id="edge9_Node000002_Node000008" title=" " alt="" coords="340,192,390,132,423,97,460,67,483,56,478,59,464,71,427,101,393,135,343,196"/>
+<area shape="poly" id="edge10_Node000002_Node000009" title=" " alt="" coords="351,237,402,278,463,319,476,327,470,326,461,323,399,282,350,242"/>
+<area shape="rect" id="Node000004" href="$classpycanha_1_1solvers_1_1Solver.html#a6c35ecaf5a08f16779c997f132ed012e" title="&quot;SteadyState&quot;, &quot;CrankNicolson&quot;, &quot;JacobianPropagation&quot;." alt="" coords="700,268,881,313"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="648,285,687,288,682,289,648,291"/>
+<area shape="poly" id="edge8_Node000007_Node000005" title=" " alt="" coords="652,133,688,131,682,132,654,138"/>
+<area shape="poly" id="edge12_Node000009_Node000004" title=" " alt="" coords="639,330,691,318,696,317,640,335"/>
+<area shape="rect" id="Node000010" href="$namespacepycanha.html#af116674b7649af0e33b3d7e78ecb1b1b" title=" " alt="" coords="714,342,867,370"/>
+<area shape="poly" id="edge11_Node000009_Node000010" title=" " alt="" coords="648,353,701,356,696,356,648,358"/>
+</map>

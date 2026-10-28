@@ -1,0 +1,9 @@
+<map id="pycanha::solvers::ResolvedSettings" name="pycanha::solvers::ResolvedSettings">
+<area shape="rect" id="Node000001" title="The effective value of every setting for one solver type." alt="" coords="329,75,528,119"/>
+<area shape="rect" id="Node000002" href="$structpycanha_1_1solvers_1_1ResolvedPardiso.html" title="Effective PARDISO settings." alt="" coords="5,5,205,50"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="220,46,305,64,340,74,335,74,304,69,220,51"/>
+<area shape="rect" id="Node000003" href="$structpycanha_1_1solvers_1_1ResolvedEigen.html" title="Effective Eigen settings." alt="" coords="5,75,205,119"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="220,94,331,96,326,98,220,100"/>
+<area shape="rect" id="Node000004" href="$structpycanha_1_1solvers_1_1ResolvedAccelerate.html" title="Effective Accelerate settings." alt="" coords="5,144,205,189"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="219,142,304,125,334,120,340,119,305,130,220,148"/>
+</map>

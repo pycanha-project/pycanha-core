@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['default_0',['DEFAULT',['../namespacepycanha.html#ac39dca56261a6b845e2976a7868a5c08a5b39c8b553c821e7cddc6da64b5bd2ee',1,'pycanha']]]
+  ['new_0',['NEW',['../namespacepycanha.html#a22dc61f520c4990847af9ef4cc49d354a24d459a81449d7210c8f9a86c2913034',1,'pycanha']]]
 ];

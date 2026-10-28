@@ -1,17 +1,45 @@
 <map id="pycanha::ESATANReader" name="pycanha::ESATANReader">
-<area shape="rect" id="Node000001" title=" " alt="" coords="558,246,739,274"/>
-<area shape="rect" id="Node000002" href="$classpycanha_1_1ThermalMathematicalModel.html" title=" " alt="" coords="540,106,768,151"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="654,164,651,247,647,244,650,168"/>
-<area shape="rect" id="Node000004" href="$classpycanha_1_1Solver.html" title=" " alt="" coords="291,246,417,274"/>
-<area shape="poly" id="edge4_Node000004_Node000002" title=" " alt="" coords="522,139,439,154,405,164,382,177,370,192,362,211,356,247,352,244,357,209,365,189,379,173,403,159,438,149,527,137"/>
-<area shape="rect" id="Node000007" href="$classpycanha_1_1EntitiesHelper.html" title=" " alt="" coords="763,246,940,274"/>
-<area shape="poly" id="edge8_Node000007_Node000002" title=" " alt="" coords="697,158,716,173,738,198,762,220,811,246,805,245,758,224,734,201,712,177,696,163"/>
-<area shape="rect" id="Node000003" href="$classpycanha_1_1SolverRegistry.html" title=" " alt="" coords="564,5,744,33"/>
-<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="656,47,656,107,652,104,652,51"/>
-<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="396,236,423,220,448,195,458,184,474,172,506,158,537,150,542,149,508,163,477,177,462,188,451,199,426,224,398,241"/>
-<area shape="rect" id="Node000005" href="$classpycanha_1_1ThermalNetwork.html" title=" " alt="" coords="5,114,199,142"/>
-<area shape="poly" id="edge5_Node000004_Node000005" title=" " alt="" coords="140,147,281,220,330,246,324,245,278,224,139,152"/>
-<area shape="rect" id="Node000006" href="$classpycanha_1_1CouplingMatrices.html" title=" " alt="" coords="223,114,421,142"/>
-<area shape="poly" id="edge6_Node000004_Node000006" title=" " alt="" coords="319,156,320,189,326,221,342,247,337,245,321,223,314,190,316,160"/>
-<area shape="poly" id="edge7_Node000002_Node000007" title=" " alt="" coords="842,230,830,203,810,177,790,163,768,152,769,147,792,158,813,173,835,200,847,232"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="1142,522,1324,549"/>
+<area shape="rect" id="Node000002" href="$classpycanha_1_1ThermalMathematicalModel.html" title=" " alt="" coords="697,513,925,558"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="941,533,1144,535,1139,536,941,538"/>
+<area shape="rect" id="Node000007" href="$classpycanha_1_1solvers_1_1Solver.html" title="Base of every solver type." alt="" coords="1143,259,1323,287"/>
+<area shape="poly" id="edge7_Node000007_Node000002" title=" " alt="" coords="856,502,899,475,948,450,996,437,1036,433,1074,427,1117,407,1152,379,1182,345,1222,288,1226,285,1186,348,1156,383,1120,412,1075,432,1036,438,997,442,950,455,902,479,858,507"/>
+<area shape="rect" id="Node000021" href="$classpycanha_1_1EntitiesHelper.html" title=" " alt="" coords="1145,606,1321,633"/>
+<area shape="poly" id="edge22_Node000021_Node000002" title=" " alt="" coords="929,559,950,563,1155,605,1150,605,949,568,929,564"/>
+<area shape="rect" id="Node000003" href="$classpycanha_1_1solvers_1_1SolverRegistry.html" title=" " alt="" coords="369,513,549,558"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="564,533,699,535,694,536,565,538"/>
+<area shape="rect" id="Node000004" href="$classpycanha_1_1solvers_1_1SteadySolvers.html" title="Steady&#45;state solvers of a model, created on first use." alt="" coords="17,444,202,488"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="217,482,321,502,371,514,366,515,320,507,217,487"/>
+<area shape="rect" id="Node000005" href="$classpycanha_1_1solvers_1_1TransientSolvers.html" title="Transient solvers of a model, created on first use." alt="" coords="10,513,209,558"/>
+<area shape="poly" id="edge4_Node000003_Node000005" title=" " alt="" coords="224,533,371,534,366,537,225,538"/>
+<area shape="rect" id="Node000006" href="$classpycanha_1_1solvers_1_1SensitivitySolvers.html" title="Sensitivity solvers of a model, created on first use." alt="" coords="5,582,214,627"/>
+<area shape="poly" id="edge5_Node000003_Node000006" title=" " alt="" coords="228,581,320,563,371,555,366,556,321,568,230,586"/>
+<area shape="poly" id="edge6_Node000002_Node000007" title=" " alt="" coords="1226,300,1213,343,1192,391,1161,440,1142,461,1120,480,1098,494,1077,502,1039,507,999,507,950,511,926,516,926,511,949,506,999,501,1039,502,1076,497,1095,489,1117,476,1138,458,1157,436,1187,389,1208,341,1222,303"/>
+<area shape="rect" id="Node000008" href="$classpycanha_1_1ThermalNetwork.html" title=" " alt="" coords="714,27,908,55"/>
+<area shape="poly" id="edge8_Node000007_Node000008" title=" " alt="" coords="923,27,972,29,1023,36,1074,50,1120,73,1144,93,1165,116,1198,169,1219,220,1231,260,1226,258,1214,222,1193,171,1161,119,1140,97,1117,78,1072,55,1022,41,972,34,924,32"/>
+<area shape="rect" id="Node000009" href="$classpycanha_1_1CouplingMatrices.html" title=" " alt="" coords="712,103,910,131"/>
+<area shape="poly" id="edge9_Node000007_Node000009" title=" " alt="" coords="925,122,1037,136,1085,145,1119,157,1154,179,1183,206,1225,259,1220,258,1179,210,1150,183,1117,162,1084,151,1036,141,926,128"/>
+<area shape="rect" id="Node000010" href="$structpycanha_1_1solvers_1_1ResolvedSettings.html" title="The effective value of every setting for one solver type." alt="" coords="712,154,911,199"/>
+<area shape="poly" id="edge10_Node000007_Node000010" title=" " alt="" coords="926,183,1021,197,1119,219,1166,237,1208,258,1202,258,1164,242,1118,225,1020,202,927,189"/>
+<area shape="rect" id="Node000011" href="$structpycanha_1_1solvers_1_1ResolvedPardiso.html" title="Effective PARDISO settings." alt="" coords="359,16,558,60"/>
+<area shape="poly" id="edge11_Node000010_Node000011" title=" " alt="" coords="573,52,627,70,675,99,684,110,688,120,691,131,699,140,718,154,713,154,695,144,686,133,683,122,679,112,671,103,624,75,574,57"/>
+<area shape="rect" id="Node000012" href="$structpycanha_1_1solvers_1_1ResolvedEigen.html" title="Effective Eigen settings." alt="" coords="359,85,558,130"/>
+<area shape="poly" id="edge12_Node000010_Node000012" title=" " alt="" coords="573,125,674,143,713,153,708,155,672,149,574,130"/>
+<area shape="rect" id="Node000013" href="$structpycanha_1_1solvers_1_1ResolvedAccelerate.html" title="Effective Accelerate settings." alt="" coords="359,154,558,199"/>
+<area shape="poly" id="edge13_Node000010_Node000013" title=" " alt="" coords="573,174,714,176,709,178,574,179"/>
+<area shape="rect" id="Node000014" href="$structpycanha_1_1solvers_1_1SolverReport.html" title="What the last solve() did. initialize() clears it." alt="" coords="721,224,901,268"/>
+<area shape="poly" id="edge14_Node000007_Node000014" title=" " alt="" coords="917,248,1119,259,1145,264,1140,264,1118,265,917,253"/>
+<area shape="rect" id="Node000015" href="$structpycanha_1_1solvers_1_1SolverMemory.html" title=" " alt="" coords="369,224,549,268"/>
+<area shape="poly" id="edge15_Node000014_Node000015" title=" " alt="" coords="564,243,723,245,718,247,565,249"/>
+<area shape="rect" id="Node000016" href="$structpycanha_1_1solvers_1_1Settings.html" title="The settings of every solver type." alt="" coords="715,302,907,329"/>
+<area shape="poly" id="edge16_Node000007_Node000016" title=" " alt="" coords="923,322,1019,322,1118,312,1162,300,1199,288,1204,286,1163,305,1119,317,1019,327,924,327"/>
+<area shape="rect" id="Node000017" href="$structpycanha_1_1solvers_1_1PardisoSettings.html" title="PARDISO settings, used only with Backend::PARDISO." alt="" coords="366,293,552,338"/>
+<area shape="poly" id="edge17_Node000016_Node000017" title=" " alt="" coords="567,313,717,314,712,316,568,318"/>
+<area shape="rect" id="Node000018" href="$structpycanha_1_1solvers_1_1EigenSettings.html" title="Eigen settings, used only with Backend::EIGEN." alt="" coords="345,362,573,389"/>
+<area shape="poly" id="edge18_Node000016_Node000018" title=" " alt="" coords="588,357,673,343,752,329,747,331,673,348,589,362"/>
+<area shape="rect" id="Node000019" href="$structpycanha_1_1solvers_1_1AccelerateSettings.html" title="Accelerate settings, used only with Backend::ACCELERATE." alt="" coords="355,413,563,458"/>
+<area shape="poly" id="edge19_Node000016_Node000019" title=" " alt="" coords="577,425,627,411,671,386,680,376,682,365,686,352,695,340,716,331,720,328,699,344,691,354,688,366,684,378,675,390,629,416,579,431"/>
+<area shape="rect" id="Node000020" href="$structpycanha_1_1StructureVersions.html" title=" " alt="" coords="712,354,910,381"/>
+<area shape="poly" id="edge20_Node000007_Node000020" title=" " alt="" coords="926,376,1021,374,1070,367,1117,354,1147,340,1175,321,1216,288,1221,285,1178,326,1150,344,1119,359,1071,372,1022,379,926,382"/>
+<area shape="poly" id="edge21_Node000002_Node000021" title=" " alt="" coords="1179,638,1127,653,1069,661,1008,661,948,648,912,631,879,608,830,561,832,556,883,603,915,626,950,643,1009,655,1069,655,1126,647,1174,638"/>
 </map>

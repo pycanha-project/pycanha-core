@@ -1,7 +1,8 @@
 var searchData=
 [
-  ['merged_0',['merged',['../structpycanha_1_1BulkReport.html#a2274959faece1de3da59cf90368246da',1,'pycanha::BulkReport']]],
-  ['message_1',['message',['../structpycanha_1_1LogRecord.html#aafbce2676be06c7ae21855b39e14ae3b',1,'pycanha::LogRecord']]],
-  ['min_5fconductance_2',['min_conductance',['../structpycanha_1_1conduction_1_1TmmBuildOptions.html#aae69abbc2b7eacd04ab35ee0d3e9a48d',1,'pycanha::conduction::TmmBuildOptions']]],
-  ['mkl_5fthreads_3',['mkl_threads',['../classpycanha_1_1Solver.html#affe8894f3293518af5412a18f122a918',1,'pycanha::Solver']]]
+  ['initial_5ftemperature_0',['initial_temperature',['../structpycanha_1_1conduction_1_1TmmBuildOptions.html#ae2565c1a0ce4cb131cf5fbbeb2789ff7',1,'pycanha::conduction::TmmBuildOptions']]],
+  ['initialize_5ftime_1',['initialize_time',['../structpycanha_1_1solvers_1_1SolverReport.html#a24ff2702efa351163282ff90b189ffeb',1,'pycanha::solvers::SolverReport']]],
+  ['intra_5fprimitive_5fconductors_2',['intra_primitive_conductors',['../structpycanha_1_1conduction_1_1TmmBuildOptions.html#a445d7ad35e88272683d7cc434e1fffd3',1,'pycanha::conduction::TmmBuildOptions']]],
+  ['iparm_3',['iparm',['../structpycanha_1_1solvers_1_1PardisoSettings.html#ab8ffb4a9c7f74d6ab228dc72e1bac50e',1,'pycanha::solvers::PardisoSettings']]],
+  ['iterations_4',['iterations',['../structpycanha_1_1solvers_1_1NonConvergedStep.html#ab54d4d5d48ebaaa260e9d221ad46368b',1,'pycanha::solvers::NonConvergedStep::iterations'],['../structpycanha_1_1solvers_1_1SolverReport.html#ac6a85d0dda57d1c4dbeb0f042fd68330',1,'pycanha::solvers::SolverReport::iterations']]]
 ];

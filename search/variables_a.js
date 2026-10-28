@@ -1,9 +1,13 @@
 var searchData=
 [
-  ['pardiso_5fiparm_5f3_0',['pardiso_iparm_3',['../classpycanha_1_1Solver.html#ad6cf245e5d8d4559f1455c49147b2135',1,'pycanha::Solver']]],
-  ['pardiso_5fiparm_5foverrides_1',['pardiso_iparm_overrides',['../classpycanha_1_1Solver.html#a27120abbafb7fc8d810613ea9543b03d',1,'pycanha::Solver']]],
-  ['pardiso_5fverbose_2',['pardiso_verbose',['../classpycanha_1_1Solver.html#a1c6ad0a6851049be5eab318a7e1472f6',1,'pycanha::Solver']]],
-  ['pid_3',['pid',['../structpycanha_1_1LogRecord.html#ae8619918e9c8321dbcfc82d6fbd65e8a',1,'pycanha::LogRecord']]],
-  ['position_5fweight_4',['position_weight',['../structpycanha_1_1conduction_1_1NetworkPart.html#ae63e31d5573102ee11f6d9995f974141',1,'pycanha::conduction::NetworkPart']]],
-  ['position_5fx_5',['position_x',['../structpycanha_1_1conduction_1_1NetworkPart.html#a1723b574b0f9ac0b363b5bb10fba335f',1,'pycanha::conduction::NetworkPart']]]
+  ['matrix_0',['matrix',['../structpycanha_1_1solvers_1_1SolverMemory.html#a8884476ad035e00064952e143bb24b7f',1,'pycanha::solvers::SolverMemory']]],
+  ['max_5fdt_1',['max_dT',['../structpycanha_1_1solvers_1_1NonConvergedStep.html#aa0dd9c4308412c0cf334f53a22eff9cd',1,'pycanha::solvers::NonConvergedStep::max_dT'],['../structpycanha_1_1solvers_1_1SolverReport.html#adf8a25d23dea66e35fb1e3496dd342b1',1,'pycanha::solvers::SolverReport::max_dT']]],
+  ['max_5fstep_5fiterations_2',['max_step_iterations',['../structpycanha_1_1solvers_1_1SolverReport.html#ad232fbf5b058070ffc809fbc897cc24a',1,'pycanha::solvers::SolverReport']]],
+  ['mean_5fcouplings_3',['mean_couplings',['../structpycanha_1_1solvers_1_1detail_1_1NetworkShape.html#a1cf1fa9dba575724d016d47994ecba2c',1,'pycanha::solvers::detail::NetworkShape']]],
+  ['memory_4',['memory',['../structpycanha_1_1solvers_1_1SolverReport.html#ad9e7684f864496d6eaa5c8a290bca189',1,'pycanha::solvers::SolverReport']]],
+  ['merged_5',['merged',['../structpycanha_1_1BulkReport.html#a2274959faece1de3da59cf90368246da',1,'pycanha::BulkReport']]],
+  ['message_6',['message',['../structpycanha_1_1LogRecord.html#aafbce2676be06c7ae21855b39e14ae3b',1,'pycanha::LogRecord']]],
+  ['min_5fconductance_7',['min_conductance',['../structpycanha_1_1conduction_1_1TmmBuildOptions.html#aae69abbc2b7eacd04ab35ee0d3e9a48d',1,'pycanha::conduction::TmmBuildOptions']]],
+  ['mkl_8',['mkl',['../structpycanha_1_1solvers_1_1detail_1_1Libraries.html#ae67eaff6e59c4e07a2078952f09ba32f',1,'pycanha::solvers::detail::Libraries']]],
+  ['mkl_5favailable_9',['mkl_available',['../structpycanha_1_1solvers_1_1ResolveContext.html#adbd7739e671d5b3fce2db12b2473d56b',1,'pycanha::solvers::ResolveContext']]]
 ];

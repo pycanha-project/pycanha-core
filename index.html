@@ -28,7 +28,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.23</span>
+   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.24</span>
    </div>
    <div id="projectbrief">The C++ core of pycanha</div>
   </td>
@@ -97,7 +97,7 @@ $(function(){initNavTree('index.html','',''); });
 <div class="textblock"><p><a class="anchor" id="md_docs_2introduction"></a></p>
 <p><img src="https://img.shields.io/badge/C%2B%2B-23-blue" alt="C++" class="inline"/> <a href="https://github.com/pycanha-project/pycanha-core/actions/workflows/ci.yml"><img src="https://github.com/pycanha-project/pycanha-core/actions/workflows/ci.yml/badge.svg" alt="ci" style="pointer-events: none;" class="inline"/></a> <a href="https://github.com/pycanha-project/pycanha-core/actions/workflows/code-checks.yml"><img src="https://github.com/pycanha-project/pycanha-core/actions/workflows/code-checks.yml/badge.svg" alt="Code Checks" style="pointer-events: none;" class="inline"/></a> <a href="https://codecov.io/gh/pycanha-project/pycanha-core"><img src="https://codecov.io/gh/pycanha-project/pycanha-core/graph/badge.svg?token=XZRHKH2G8I" alt="codecov" style="pointer-events: none;" class="inline"/></a> <a href="https://pycanha-project.github.io/pycanha-core/"><img src="https://img.shields.io/badge/doc-GitHub%20Pages-blue" alt="docs" class="inline"/></a></p>
 <p><span class="tt">pycanha-core</span> is the C++ core library behind pycanha. The current codebase is organized around a model-owned API for thermal network construction, parameterized model definition, solver execution, and post-processing of transient results.</p>
-<h1 class="doxsection"><a class="anchor" id="autotoc_md2"></a>
+<h1 class="doxsection"><a class="anchor" id="autotoc_md3"></a>
 Current implementation status</h1>
 <p>The public entry point is <span class="tt"><a class="el" href="classpycanha_1_1ThermalModel.html">pycanha::ThermalModel</a></span>. It owns the main subsystems and keeps their identities stable across a workflow:</p>
 <ul>
@@ -106,19 +106,19 @@ Current implementation status</h1>
 <li><span class="tt">parameters()</span>: named scalar parameters.</li>
 <li><span class="tt">formulas()</span>: symbolic expressions that map parameters to model quantities such as heat loads, conductances, and capacities.</li>
 <li><span class="tt">thermal_data()</span>: lookup tables and solver-generated output models.</li>
-<li><span class="tt">solvers()</span>: steady-state and transient solver registry.</li>
+<li><span class="tt">solvers()</span>: solver registry, grouped as <span class="tt">steady()</span>, <span class="tt">transient()</span> and <span class="tt">sensitivity()</span>.</li>
 <li><span class="tt">callbacks()</span>: lifecycle hooks for solver-controlled updates during transient runs.</li>
 </ul>
 <p>The currently implemented public modules include:</p>
 <ul>
 <li>Thermal network primitives: nodes, couplings, conductive and radiative coupling containers, and thermal network/model wrappers.</li>
 <li>Parameter and formula infrastructure: entities, variables, formulas, parameter collections, and derivative-aware parameter registration.</li>
-<li>Solver implementations: <span class="tt">SSLU</span>, <span class="tt">TSCNRLDS</span>, and <span class="tt">TSCNRLDS_JACOBIAN</span>.</li>
+<li>Solver types: <span class="tt">steady::SteadyState</span>, <span class="tt">transient::CrankNicolson</span> and <span class="tt">sensitivity::JacobianPropagation</span>, all configured through one <span class="tt">solvers::Settings</span>.</li>
 <li>Thermal data containers: lookup tables, dense and sparse time series, data models, and stores.</li>
 <li>Geometry support under <span class="tt">gmm</span>: primitives, transformations, meshes, triangulation, materials, and geometry model wrappers.</li>
 <li>Utilities: logging, profiling support, sparse matrix helpers, random generators, and package metadata.</li>
 </ul>
-<h1 class="doxsection"><a class="anchor" id="autotoc_md3"></a>
+<h1 class="doxsection"><a class="anchor" id="autotoc_md4"></a>
 How it works</h1>
 <p>The intended workflow is:</p>
 <ol type="1">
@@ -126,7 +126,7 @@ How it works</h1>
 <li>Add nodes and couplings to <span class="tt">tm.tmm()</span>.</li>
 <li>Register named parameters in <span class="tt">tm.parameters()</span>.</li>
 <li>Bind those parameters to model quantities through <span class="tt">tm.formulas()</span> and call <span class="tt">apply_formulas()</span>.</li>
-<li>Retrieve a solver from <span class="tt">tm.solvers()</span>, configure it, then call <span class="tt">initialize()</span>, <span class="tt">solve()</span>, and <span class="tt">deinitialize()</span>.</li>
+<li>Retrieve a solver from <span class="tt">tm.solvers()</span>, configure it with <span class="tt">set_settings()</span>, then call <span class="tt">initialize()</span>, <span class="tt">solve()</span>, and <span class="tt">deinitialize()</span>.</li>
 <li>Read temperatures directly from the model or inspect solver outputs stored in <span class="tt">tm.thermal_data()</span>.</li>
 </ol>
 <p>This is the smallest complete steady-state example exercised by the API tests:</p>
@@ -153,14 +153,14 @@ How it works</h1>
 <div class="line">tm.formulas().add_formula(<span class="stringliteral">&quot;GL(1,2)&quot;</span>, <span class="stringliteral">&quot;contact_conductance&quot;</span>);</div>
 <div class="line">tm.formulas().apply_formulas();</div>
 <div class="line"> </div>
-<div class="line"><span class="keyword">auto</span>&amp; solver = tm.solvers().sslu();</div>
+<div class="line"><span class="keyword">auto</span>&amp; solver = tm.solvers().steady().steady_state();</div>
 <div class="line">solver.initialize();</div>
 <div class="line">solver.solve();</div>
 <div class="line">solver.deinitialize();</div>
 <div class="ttc" id="aclasspycanha_1_1Node_html"><div class="ttname"><a href="classpycanha_1_1Node.html">pycanha::Node</a></div><div class="ttdef"><b>Definition</b> node.hpp:51</div></div>
-<div class="ttc" id="aclasspycanha_1_1ThermalModel_html"><div class="ttname"><a href="classpycanha_1_1ThermalModel.html">pycanha::ThermalModel</a></div><div class="ttdef"><b>Definition</b> thermalmodel.hpp:18</div></div>
-</div><!-- fragment --><p>Transient workflows follow the same ownership model. <span class="tt">TSCNRLDS</span> stores its output in <span class="tt">tm.thermal_data().models()</span>, and <span class="tt">callbacks()</span> can inject model updates during the solver loop.</p>
-<h1 class="doxsection"><a class="anchor" id="autotoc_md4"></a>
+<div class="ttc" id="aclasspycanha_1_1ThermalModel_html"><div class="ttname"><a href="classpycanha_1_1ThermalModel.html">pycanha::ThermalModel</a></div><div class="ttdef"><b>Definition</b> thermalmodel.hpp:21</div></div>
+</div><!-- fragment --><p>Transient workflows follow the same ownership model. <span class="tt">CrankNicolson</span> stores its output in <span class="tt">tm.thermal_data().models()</span>, and <span class="tt">callbacks()</span> can inject model updates during the solver loop.</p>
+<h1 class="doxsection"><a class="anchor" id="autotoc_md5"></a>
 Build and runtime status</h1>
 <ul>
 <li>The package is built as a static library. It is no longer a header-only distribution.</li>
@@ -171,7 +171,7 @@ Build and runtime status</h1>
 <li>Unit and API tests are built with Catch2 and run through CTest.</li>
 <li>Documentation is generated with Doxygen and published to GitHub Pages on release.</li>
 </ul>
-<h1 class="doxsection"><a class="anchor" id="autotoc_md5"></a>
+<h1 class="doxsection"><a class="anchor" id="autotoc_md6"></a>
 Additional documentation</h1>
 <ul>
 <li>Logging and profiling details: logging.md</li>

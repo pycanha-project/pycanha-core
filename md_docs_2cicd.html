@@ -28,7 +28,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.23</span>
+   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.24</span>
    </div>
    <div id="projectbrief">The C++ core of pycanha</div>
   </td>
@@ -94,12 +94,12 @@ $(function(){initNavTree('md_docs_2cicd.html','',''); });
   <div class="headertitle"><div class="title">CI/CD </div></div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><p><a class="anchor" id="autotoc_md27"></a></p>
+<div class="textblock"><p><a class="anchor" id="autotoc_md28"></a></p>
 <p>The repository currently uses five GitHub Actions workflows under <span class="tt">.github/workflows</span>. They fall into two groups: continuous validation on <span class="tt">main</span> and pull requests, and documentation publication on release.</p>
-<h1 class="doxsection"><a class="anchor" id="autotoc_md28"></a>
+<h1 class="doxsection"><a class="anchor" id="autotoc_md29"></a>
 Continuous validation on <span class="tt">main</span> and pull requests</h1>
 <p>These workflows verify the repository state. They do not rewrite source files or publish artifacts.</p>
-<h2 class="doxsection"><a class="anchor" id="autotoc_md29"></a>
+<h2 class="doxsection"><a class="anchor" id="autotoc_md30"></a>
 Code Checks</h2>
 <p>Defined in <span class="tt">code-checks.yml</span>.</p>
 <p>This workflow runs repository-wide style and static-analysis checks:</p>
@@ -110,7 +110,7 @@ Code Checks</h2>
 <li><span class="tt">cppcheck</span></li>
 </ul>
 <p>The static-analysis job configures the project through Conan and CMake before invoking the analysis targets.</p>
-<h2 class="doxsection"><a class="anchor" id="autotoc_md30"></a>
+<h2 class="doxsection"><a class="anchor" id="autotoc_md31"></a>
 CI</h2>
 <p>Defined in <span class="tt">ci.yml</span>.</p>
 <p>This is the main build-and-test matrix. It currently runs <span class="tt">conan create</span> for both <span class="tt">Debug</span> and <span class="tt">Release</span> with the following host configurations:</p>
@@ -120,17 +120,17 @@ CI</h2>
 <li>macOS latest with Clang and MKL disabled</li>
 </ul>
 <p>The purpose of this workflow is to validate that the static library, its tests, and its Conan packaging path remain consistent across the supported configurations.</p>
-<h2 class="doxsection"><a class="anchor" id="autotoc_md31"></a>
+<h2 class="doxsection"><a class="anchor" id="autotoc_md32"></a>
 Coverage</h2>
 <p>Defined in <span class="tt">coverage.yml</span>.</p>
 <p>This workflow performs a debug build on Ubuntu with GCC 14, enables the coverage configuration, builds the <span class="tt">coverage</span> target, and uploads the resulting report to Codecov.</p>
-<h2 class="doxsection"><a class="anchor" id="autotoc_md32"></a>
+<h2 class="doxsection"><a class="anchor" id="autotoc_md33"></a>
 Documentation</h2>
 <p>Defined in <span class="tt">docs.yml</span>.</p>
 <p>This workflow validates that the documentation can be configured and built on Ubuntu. It installs the documentation toolchain, configures the project through Conan with the documentation options profile, and builds the <span class="tt">doc</span> target.</p>
-<h1 class="doxsection"><a class="anchor" id="autotoc_md33"></a>
+<h1 class="doxsection"><a class="anchor" id="autotoc_md34"></a>
 Release-time publication</h1>
-<h2 class="doxsection"><a class="anchor" id="autotoc_md34"></a>
+<h2 class="doxsection"><a class="anchor" id="autotoc_md35"></a>
 Deploy</h2>
 <p>Defined in <span class="tt">deploy.yml</span>.</p>
 <p>This workflow runs only when a GitHub release is published. It rebuilds the documentation and deploys the generated HTML to GitHub Pages.</p>

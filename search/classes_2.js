@@ -12,7 +12,8 @@ var searchData=
   ['couplingchunk_9',['CouplingChunk',['../structpycanha_1_1CouplingChunk.html',1,'pycanha']]],
   ['couplingmatrices_10',['CouplingMatrices',['../classpycanha_1_1CouplingMatrices.html',1,'pycanha']]],
   ['couplings_11',['Couplings',['../classpycanha_1_1Couplings.html',1,'pycanha']]],
-  ['cube_12',['Cube',['../classpycanha_1_1gmm_1_1Cube.html',1,'pycanha::gmm']]],
-  ['cutbackend_13',['CutBackend',['../classpycanha_1_1gmm_1_1cutting_1_1CutBackend.html',1,'pycanha::gmm::cutting']]],
-  ['cylinder_14',['Cylinder',['../classpycanha_1_1gmm_1_1Cylinder.html',1,'pycanha::gmm']]]
+  ['cranknicolson_12',['CrankNicolson',['../classpycanha_1_1solvers_1_1transient_1_1CrankNicolson.html',1,'pycanha::solvers::transient']]],
+  ['cube_13',['Cube',['../classpycanha_1_1gmm_1_1Cube.html',1,'pycanha::gmm']]],
+  ['cutbackend_14',['CutBackend',['../classpycanha_1_1gmm_1_1cutting_1_1CutBackend.html',1,'pycanha::gmm::cutting']]],
+  ['cylinder_15',['Cylinder',['../classpycanha_1_1gmm_1_1Cylinder.html',1,'pycanha::gmm']]]
 ];

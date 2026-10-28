@@ -1,11 +1,8 @@
 var searchData=
 [
-  ['validateedgehash_0',['ValidateEdgeHash',['../structpycanha_1_1gmm_1_1mesh_1_1ops_1_1detail_1_1ValidateEdgeHash.html',1,'pycanha::gmm::mesh::ops::detail']]],
-  ['validation_20on_20main_20and_20pull_20requests_1',['Continuous validation on &lt;span class=&quot;tt&quot;&gt;main&lt;/span&gt; and pull requests',['../md_docs_2cicd.html#autotoc_md28',1,'']]],
-  ['valueformula_2',['ValueFormula',['../classpycanha_1_1ValueFormula.html',1,'pycanha']]],
-  ['verbose_3',['verbose',['../structpycanha_1_1LinearSolverOptions.html#a37a0618897e1b7260b937236a4930025',1,'pycanha::LinearSolverOptions']]],
-  ['versioning_4',['Releases and versioning',['../md_docs_2workflow.html#autotoc_md25',1,'']]],
-  ['vfaccumimpl_5',['VfAccumImpl',['../classpycanha_1_1radiative_1_1detail_1_1VfAccumImpl.html',1,'pycanha::radiative::detail']]],
-  ['vfaccumulator_6',['VfAccumulator',['../classpycanha_1_1radiative_1_1VfAccumulator.html',1,'pycanha::radiative']]],
-  ['vfresult_7',['VfResult',['../structpycanha_1_1radiative_1_1VfResult.html',1,'pycanha::radiative']]]
+  ['unset_0',['unset',['../classpycanha_1_1solvers_1_1Solver.html#a21ac6268fe4c46e2b2635e73cba2aff5',1,'pycanha::solvers::Solver']]],
+  ['usage_1',['Current repository usage',['../md_docs_2tools.html#autotoc_md24',1,'']]],
+  ['uses_5fcholesky_2',['uses_cholesky',['../classpycanha_1_1solvers_1_1steady_1_1SteadyState.html#a1920276a10758fc0e7c0971ffbb9e83f',1,'pycanha::solvers::steady::SteadyState']]],
+  ['using_20the_20tools_3',['Using the tools',['../md_docs_2tools.html',1,'']]],
+  ['uvmesher_4',['UvMesher',['../classpycanha_1_1gmm_1_1UvMesher.html',1,'pycanha::gmm']]]
 ];

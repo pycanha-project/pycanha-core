@@ -1,8 +1,9 @@
 var searchData=
 [
-  ['namedconstants_0',['NamedConstants',['../classpycanha_1_1NamedConstants.html',1,'pycanha']]],
-  ['networkpart_1',['NetworkPart',['../structpycanha_1_1conduction_1_1NetworkPart.html',1,'pycanha::conduction']]],
-  ['node_2',['Node',['../classpycanha_1_1Node.html',1,'pycanha']]],
-  ['nodebatch_3',['NodeBatch',['../structpycanha_1_1NodeBatch.html',1,'pycanha']]],
-  ['nodes_4',['Nodes',['../classpycanha_1_1Nodes.html',1,'pycanha']]]
+  ['manifoldcutbackend_0',['ManifoldCutBackend',['../classpycanha_1_1gmm_1_1cutting_1_1ManifoldCutBackend.html',1,'pycanha::gmm::cutting']]],
+  ['materialtable_1',['MaterialTable',['../structpycanha_1_1radiative_1_1MaterialTable.html',1,'pycanha::radiative']]],
+  ['memoryestimate_2',['MemoryEstimate',['../structpycanha_1_1radiative_1_1MemoryEstimate.html',1,'pycanha::radiative']]],
+  ['meridianprofile_3',['MeridianProfile',['../classpycanha_1_1conduction_1_1MeridianProfile.html',1,'pycanha::conduction']]],
+  ['meshoptions_4',['MeshOptions',['../structpycanha_1_1gmm_1_1MeshOptions.html',1,'pycanha::gmm']]],
+  ['modelchangederror_5',['ModelChangedError',['../classpycanha_1_1solvers_1_1ModelChangedError.html',1,'pycanha::solvers']]]
 ];

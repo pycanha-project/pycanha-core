@@ -1,0 +1,7 @@
+<map id="pycanha::solvers::transient::CrankNicolson" name="pycanha::solvers::transient::CrankNicolson">
+<area shape="rect" id="Node000001" title=" " alt="" coords="10,81,208,126"/>
+<area shape="rect" id="Node000003" href="$classpycanha_1_1solvers_1_1sensitivity_1_1JacobianPropagation.html" title=" " alt="" coords="5,174,213,218"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="111,139,111,174,107,173,107,143"/>
+<area shape="rect" id="Node000002" href="$classpycanha_1_1solvers_1_1Solver.html" title="Base of every solver type." alt="" coords="19,5,199,33"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="110,46,112,81,106,80,108,51"/>
+</map>

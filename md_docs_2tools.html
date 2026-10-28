@@ -28,7 +28,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.23</span>
+   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.24</span>
    </div>
    <div id="projectbrief">The C++ core of pycanha</div>
   </td>
@@ -94,47 +94,47 @@ $(function(){initNavTree('md_docs_2tools.html','',''); });
   <div class="headertitle"><div class="title">Using the tools </div></div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><p><a class="anchor" id="autotoc_md7"></a></p>
+<div class="textblock"><p><a class="anchor" id="autotoc_md8"></a></p>
 <p>Here you can find a more detailed description of each tool and some tips on how to use them. If you want practical examples on how to use them, check the tool documentation and the <a class="el" href="md_docs_2cicd.html">CI workflows</a>.</p>
-<h1 class="doxsection"><a class="anchor" id="autotoc_md8"></a>
+<h1 class="doxsection"><a class="anchor" id="autotoc_md9"></a>
 Code formatting tools</h1>
 <p>As the name suggests, these tools format the code to follow pre-configured standard rules, so there is no need to worry about spacing, line length, new lines, etc. They perform very basic tests that should not alter the code that the compiler sees. So, for example, these tools would not reorder the <span class="tt">#include</span> statements. Because of that, ideally you should configure your IDE to apply the format upon saving.</p>
-<h2 class="doxsection"><a class="anchor" id="autotoc_md9"></a>
+<h2 class="doxsection"><a class="anchor" id="autotoc_md10"></a>
 clang-format</h2>
 <p>The format rules are configured in the root file <span class="tt">.clang-format</span>. Currently, the Google style is being used.</p>
 <p>Most IDEs will dected the <span class="tt">.clang-format</span> file and automatically format the code. In <span class="tt">VS Code</span> this works well with the <a href="https://marketplace.visualstudio.com/items?itemName=llvm-vs-code-extensions.vscode-clangd">clangd extension</a>, which uses the repository <span class="tt">.clang-format</span> file when formatting C and C++ files. You can also run manually the command <span class="tt">Format Document</span> from the command palette to format the file.</p>
-<h1 class="doxsection"><a class="anchor" id="autotoc_md10"></a>
+<h1 class="doxsection"><a class="anchor" id="autotoc_md11"></a>
 Static analysis tools</h1>
 <p>Static analysis tools perform more complex checks than formatting tools, but they also take longer to analyze and can yield many false positives. I would recomment to run the analysis everytime upon saving or opening the files if your pc can handle it.</p>
-<h2 class="doxsection"><a class="anchor" id="autotoc_md11"></a>
+<h2 class="doxsection"><a class="anchor" id="autotoc_md12"></a>
 clang-tidy</h2>
 <p>The checks are specified in the <span class="tt">.clang-tidy</span> file. Right now basically checking for everything except some specific rules for other projects or annoying checks like using auto return trailing types. The <span class="tt">.clang-tidy</span> is also configured to enforce the naming conventions I prefer. In <span class="tt">VS Code</span>, the preferred setup is the <em>clangd</em> extension.</p>
 <p>There is also a custom option in CMake, configurable through Conan, to create dedicated <span class="tt">clang-tidy</span> targets. Those targets are intentionally disabled for MSVC builds; on non-MSVC configurations they are added through <span class="tt">Tools.cmake</span> and exercised in the <span class="tt">code-checks.yml</span> workflow. Because in the end it is another CMake target, it can be invoked directly from the CMake VS Code extension, and the code will be linted automatically.</p>
-<h2 class="doxsection"><a class="anchor" id="autotoc_md12"></a>
+<h2 class="doxsection"><a class="anchor" id="autotoc_md13"></a>
 cpplint</h2>
 <p>cpplint is in between a formatting and a static analysis tool. The rules are configured in the <span class="tt">CPPLINT.cfg</span> file. In <span class="tt">VS Code</span> you can use it just by installing the <a href="https://marketplace.visualstudio.com/items?itemName=QiuMingGe.cpp-check-lint">cpp-check-lint extension</a> The extension will check and lint the code automatically when saving, but it can be configured. The extension also includes the <span class="tt">cppcheck</span> tool.</p>
-<h2 class="doxsection"><a class="anchor" id="autotoc_md13"></a>
+<h2 class="doxsection"><a class="anchor" id="autotoc_md14"></a>
 cppcheck</h2>
 <p>cppcheck is a static analysis tool that detects errors and vulnerabilities in C and C++ code. It can identify memory leaks, buffer overruns, and other issues that might cause crashes or undefined behavior. In VS Code, you can use it by installing the <a href="https://marketplace.visualstudio.com/items?itemName=QiuMingGe.cpp-check-lint">cpp-check-lint extension</a>. The extension will check the code automatically when saving, but it can be configured. The extension also includes the cpplint tool.</p>
 <p>Similar as with <span class="tt">clang-tidy</span> there is a <span class="tt">cppcheck</span> target for CMake to check all the relevant files of the library. The target is configured in the <span class="tt">CMakeLists.txt</span> file under the <span class="tt">test</span> directory. If you look at the target configuration, you can see that some files are excluded to avoid false positives. If you use <span class="tt">cppcheck</span> manually or through VS Code, you might want to exclude also those files.</p>
-<h2 class="doxsection"><a class="anchor" id="autotoc_md14"></a>
+<h2 class="doxsection"><a class="anchor" id="autotoc_md15"></a>
 CodeQL</h2>
 <p>CodeQL is a code analysis engine developed by GitHub that can analyze source code to identify security vulnerabilities, bugs, and maintainability issues. CodeQL supports multiple languages, including C and C++. This repository does not currently define a dedicated CodeQL workflow. If a CodeQL check is reintroduced later, it should be treated as a repository-level analysis step rather than a required local development task.</p>
-<h1 class="doxsection"><a class="anchor" id="autotoc_md15"></a>
+<h1 class="doxsection"><a class="anchor" id="autotoc_md16"></a>
 Testing tools</h1>
-<h2 class="doxsection"><a class="anchor" id="autotoc_md16"></a>
+<h2 class="doxsection"><a class="anchor" id="autotoc_md17"></a>
 Catch2</h2>
 <p>C++ library for unit testing. It integrates easily with CTest (CMake own test coordinator tool). In this template, everything related to the tests is under the <span class="tt">./test</span> folder. When the folder is included from the root <span class="tt">CMakeLists</span> using the <span class="tt">add_subdirectory</span> command, a <span class="tt">tests</span> target (and the clang-tidy and cppcheck targets if the options are activated) is made available.</p>
-<h2 class="doxsection"><a class="anchor" id="autotoc_md17"></a>
+<h2 class="doxsection"><a class="anchor" id="autotoc_md18"></a>
 Code coverage</h2>
 <p>Code coverage is a metric used in software testing to measure the extent to which the source code of a program has been executed by a test suite. It is expressed as a percentage, representing the ratio of the number of lines, branches, functions, or statements in the code that have been tested to the total number of lines, branches, functions, or statements.</p>
 <p>Here, we use <span class="tt">gcov</span>, <span class="tt">lcov</span> and <a href="https://codecov.io/">Codecov</a>. Check the <span class="tt">coverage</span> workflow and the <span class="tt">coverage</span> CMake target for more info.</p>
-<h1 class="doxsection"><a class="anchor" id="autotoc_md18"></a>
+<h1 class="doxsection"><a class="anchor" id="autotoc_md19"></a>
 Documentation</h1>
-<h2 class="doxsection"><a class="anchor" id="autotoc_md19"></a>
+<h2 class="doxsection"><a class="anchor" id="autotoc_md20"></a>
 Doxygen + graphviz + Doxygen Awesome CSS</h2>
 <p>Doxygen is a popular documentation generation tool for C++ code and it generates documentation from source code comments in a variety of formats, including HTML, LaTeX, and more. You can use it with <span class="tt">Graphviz</span> to also generate relationship diagrams of the classes. The default theme of doxygen is a bit outdated, so you can use CSS templates such as <a href="https://github.com/jothepro/doxygen-awesome-css">Doxygen Awesome</a> to make it much better.</p>
-<h1 class="doxsection"><a class="anchor" id="autotoc_md20"></a>
+<h1 class="doxsection"><a class="anchor" id="autotoc_md21"></a>
 Package managers: Conan</h1>
 <p>This repository uses <span class="tt">Conan</span> as the package manager and build entry point. In practice, Conan is responsible for four things:</p>
 <ul>
@@ -144,7 +144,7 @@ Package managers: Conan</h1>
 <li>defining the package version and build layout used in CI and local builds.</li>
 </ul>
 <p>The options related to the package itself and its dependencies are defined in <span class="tt">conanfile.py</span>. Compiler, standard library, architecture, and build-type selections are carried through Conan profiles.</p>
-<h2 class="doxsection"><a class="anchor" id="autotoc_md21"></a>
+<h2 class="doxsection"><a class="anchor" id="autotoc_md22"></a>
 conanfile.py</h2>
 <p>The recipe is the authoritative description of the package. Important pieces of the current recipe are:</p>
 <ul>
@@ -156,7 +156,7 @@ conanfile.py</h2>
 <li><span class="tt">generate()</span>: generation of <span class="tt">CMakeDeps</span>, <span class="tt">CMakeToolchain</span>, preset files, and the MKL runtime environment.</li>
 </ul>
 <p>For more details, check the <span class="tt">conanfile.py</span> file in the root directory and the <a href="https://docs.conan.io/2/reference/conanfile.html">Conan documentation</a>.</p>
-<h2 class="doxsection"><a class="anchor" id="autotoc_md22"></a>
+<h2 class="doxsection"><a class="anchor" id="autotoc_md23"></a>
 Conan profiles</h2>
 <p>There are several profiles under <span class="tt">.conan/profiles</span> used by the GitHub workflows and local builds. The repository currently uses three profile groups:</p>
 <ol type="1">
@@ -177,7 +177,7 @@ Conan profiles</h2>
 <div class="line">  -pr:b=ubuntu-gcc14-amd64 -pr:b=build-release -pr:b=options-doc</div>
 <div class="line">cmake --preset=conan-release</div>
 </div><!-- fragment --><p>For more information about profile settings and composition, see the <a href="https://docs.conan.io/2/reference/config_files/profiles.html">Conan profile documentation</a>.</p>
-<h2 class="doxsection"><a class="anchor" id="autotoc_md23"></a>
+<h2 class="doxsection"><a class="anchor" id="autotoc_md24"></a>
 Current repository usage</h2>
 <p>In this repository, Conan is not an optional wrapper around CMake. It is the supported way to prepare dependencies, presets, and option sets for both CI and local builds.</p>
 <p>That choice is independent of any specific binding library. If the C++ core is consumed from another C++ project or from Python bindings built with nanobind, the expectation remains the same: Conan prepares the dependency and toolchain layer, and CMake consumes the generated configuration. </p>

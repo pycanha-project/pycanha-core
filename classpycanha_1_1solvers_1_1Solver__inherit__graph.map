@@ -1,0 +1,9 @@
+<map id="pycanha::solvers::Solver" name="pycanha::solvers::Solver">
+<area shape="rect" id="Node000001" title="Base of every solver type." alt="" coords="114,5,294,33"/>
+<area shape="rect" id="Node000002" href="$classpycanha_1_1solvers_1_1steady_1_1SteadyState.html" title="Steady state of the network." alt="" coords="5,81,189,126"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="173,45,127,82,124,78,176,41"/>
+<area shape="rect" id="Node000003" href="$classpycanha_1_1solvers_1_1transient_1_1CrankNicolson.html" title=" " alt="" coords="213,81,410,126"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="234,40,286,80,280,81,233,45"/>
+<area shape="rect" id="Node000004" href="$classpycanha_1_1solvers_1_1sensitivity_1_1JacobianPropagation.html" title=" " alt="" coords="208,174,415,218"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="314,139,314,175,309,172,310,143"/>
+</map>

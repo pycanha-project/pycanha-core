@@ -51,5 +51,6 @@ var searchData=
   ['get_5ftype_48',['get_type',['../classpycanha_1_1Node.html#a55a4679e85533618ff220014344cc15b',1,'pycanha::Node::get_type()'],['../classpycanha_1_1Nodes.html#a1209e3f11ac0c65a3c5544d23aad9109',1,'pycanha::Nodes::get_type()']]],
   ['get_5fvalues_49',['get_values',['../classpycanha_1_1ConductiveCouplings.html#a3913f923864cf354734df8acd3a9e40a',1,'pycanha::ConductiveCouplings::get_values()'],['../classpycanha_1_1Couplings.html#a96cf619a41f0d2daa99c498920354980',1,'pycanha::Couplings::get_values()'],['../classpycanha_1_1Nodes.html#ade300e1596b243b9961fd95ea0422915',1,'pycanha::Nodes::get_values(NodeAttribute attribute, std::span&lt; const NodeNum &gt; node_nums, std::span&lt; double &gt; values) const'],['../classpycanha_1_1Nodes.html#ac375bb36b0dc074d48d8e4d41b98e5f9',1,'pycanha::Nodes::get_values(NodeAttribute attribute) const'],['../classpycanha_1_1RadiativeCouplings.html#a38fe8cad79874dea60a646c490fc7792',1,'pycanha::RadiativeCouplings::get_values()']]],
   ['gpubuffer_50',['GpuBuffer',['../structpycanha_1_1radiative_1_1detail_1_1GpuBuffer.html',1,'pycanha::radiative::detail']]],
-  ['graphviz_20doxygen_20awesome_20css_51',['Doxygen + graphviz + Doxygen Awesome CSS',['../md_docs_2tools.html#autotoc_md19',1,'']]]
+  ['graphviz_20doxygen_20awesome_20css_51',['Doxygen + graphviz + Doxygen Awesome CSS',['../md_docs_2tools.html#autotoc_md20',1,'']]],
+  ['group_52',['group',['../structpycanha_1_1solvers_1_1SettingField.html#a07a34bfc80770fab291ca6e51fdb5148',1,'pycanha::solvers::SettingField']]]
 ];

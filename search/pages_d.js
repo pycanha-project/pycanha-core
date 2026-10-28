@@ -1,8 +1,9 @@
 var searchData=
 [
-  ['release_20time_20publication_0',['Release-time publication',['../md_docs_2cicd.html#autotoc_md33',1,'']]],
-  ['releases_20and_20versioning_1',['Releases and versioning',['../md_docs_2workflow.html#autotoc_md25',1,'']]],
-  ['repository_20usage_2',['Current repository usage',['../md_docs_2tools.html#autotoc_md23',1,'']]],
-  ['requests_3',['Continuous validation on &lt;span class=&quot;tt&quot;&gt;main&lt;/span&gt; and pull requests',['../md_docs_2cicd.html#autotoc_md28',1,'']]],
-  ['runtime_20status_4',['Build and runtime status',['../index.html#autotoc_md4',1,'']]]
+  ['package_20managers_3a_20conan_0',['Package managers: Conan',['../md_docs_2tools.html#autotoc_md21',1,'']]],
+  ['profiles_1',['Conan profiles',['../md_docs_2tools.html#autotoc_md23',1,'']]],
+  ['publication_2',['Release-time publication',['../md_docs_2cicd.html#autotoc_md34',1,'']]],
+  ['pull_20requests_3',['Continuous validation on &lt;span class=&quot;tt&quot;&gt;main&lt;/span&gt; and pull requests',['../md_docs_2cicd.html#autotoc_md29',1,'']]],
+  ['py_4',['conanfile.py',['../md_docs_2tools.html#autotoc_md22',1,'']]],
+  ['pycanha_20core_5',['pycanha core',['../md_README.html',1,'pycanha-core'],['../index.html',1,'pycanha-core']]]
 ];

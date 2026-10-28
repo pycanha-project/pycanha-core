@@ -28,7 +28,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.23</span>
+   <div id="projectname">pycanha-core<span id="projectnumber">&#160;0.24</span>
    </div>
    <div id="projectbrief">The C++ core of pycanha</div>
   </td>
@@ -142,6 +142,7 @@ Eigen::SparseMatrix&lt; double, Eigen::RowMajor &gt;&#160;</td><td class="memIte
 Eigen::SparseMatrix&lt; double, Eigen::RowMajor &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>sparse_db_copy</b> ()</td></tr>
 <tr class="memitem:a56a3d557ceb0a0dee906a9be197d4c20" id="r_a56a3d557ceb0a0dee906a9be197d4c20"><td class="memItemLeft" align="right" valign="top"><a id="a56a3d557ceb0a0dee906a9be197d4c20" name="a56a3d557ceb0a0dee906a9be197d4c20"></a>
 Eigen::SparseMatrix&lt; double, Eigen::RowMajor &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>sparse_bb_copy</b> ()</td></tr>
+<tr class="memitem:a3687232fe6cd2da687c8428e53febb2e" id="r_a3687232fe6cd2da687c8428e53febb2e"><td class="memItemLeft" align="right" valign="top">std::uint64_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a3687232fe6cd2da687c8428e53febb2e">structure_version</a> () const noexcept</td></tr>
 <tr class="memitem:ab8511c8347ed9d73e7199d5e04bcde2a" id="r_ab8511c8347ed9d73e7199d5e04bcde2a"><td class="memItemLeft" align="right" valign="top"><a id="ab8511c8347ed9d73e7199d5e04bcde2a" name="ab8511c8347ed9d73e7199d5e04bcde2a"></a>
 Index&#160;</td><td class="memItemRight" valign="bottom"><b>get_num_diff_diff_couplings</b> () const</td></tr>
 <tr class="memitem:aef57583df6c786927730ea92831b7910" id="r_aef57583df6c786927730ea92831b7910"><td class="memItemLeft" align="right" valign="top"><a id="aef57583df6c786927730ea92831b7910" name="aef57583df6c786927730ea92831b7910"></a>
@@ -174,10 +175,12 @@ Private Types</h2></td></tr>
 using&#160;</td><td class="memItemRight" valign="bottom"><b>SparseRowMatrix</b> = Eigen::SparseMatrix&lt;double, Eigen::RowMajor&gt;</td></tr>
 <tr class="memitem:afc55dd53652b1f20d6f3d6196cdf4867" id="r_afc55dd53652b1f20d6f3d6196cdf4867"><td class="memItemLeft" align="right" valign="top"><a id="afc55dd53652b1f20d6f3d6196cdf4867" name="afc55dd53652b1f20d6f3d6196cdf4867"></a>
 using&#160;</td><td class="memItemRight" valign="bottom"><b>StorageIndex</b> = SparseRowMatrix::StorageIndex</td></tr>
-<tr class="memitem:a0705a30017caa5f8a01cb7a2deb5417a" id="r_a0705a30017caa5f8a01cb7a2deb5417a"><td class="memItemLeft" align="right" valign="top">using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a0705a30017caa5f8a01cb7a2deb5417a">AddCouplingGeneric</a></td></tr>
+<tr class="memitem:a62e261bd8b3d88d7d5f12d348590dbf5" id="r_a62e261bd8b3d88d7d5f12d348590dbf5"><td class="memItemLeft" align="right" valign="top">using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a62e261bd8b3d88d7d5f12d348590dbf5">AddCouplingGeneric</a></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pri-methods" class="groupheader"><a id="pri-methods" name="pri-methods"></a>
 Private Member Functions</h2></td></tr>
+<tr class="memitem:aeda889efdab0ec358fd86a7886d18a0d" id="r_aeda889efdab0ec358fd86a7886d18a0d"><td class="memItemLeft" align="right" valign="top"><a id="aeda889efdab0ec358fd86a7886d18a0d" name="aeda889efdab0ec358fd86a7886d18a0d"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>note_structure_change</b> () noexcept</td></tr>
 <tr class="memitem:a19ac9457c35abf7f61db54db95353fa2" id="r_a19ac9457c35abf7f61db54db95353fa2"><td class="memItemLeft" align="right" valign="top"><a id="a19ac9457c35abf7f61db54db95353fa2" name="a19ac9457c35abf7f61db54db95353fa2"></a>
 SparseRowMatrix &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>block</b> (int block_id) noexcept</td></tr>
 <tr class="memitem:a5c2c134840e6fe05acaa226ccf609fe4" id="r_a5c2c134840e6fe05acaa226ccf609fe4"><td class="memItemLeft" align="right" valign="top"><a id="a5c2c134840e6fe05acaa226ccf609fe4" name="a5c2c134840e6fe05acaa226ccf609fe4"></a>
@@ -205,8 +208,8 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>_diff_to_bound</b> (I
 Static Private Member Functions</h2></td></tr>
 <tr class="memitem:ae170e08c9d8b1f6e88c4dde9cfa7c644" id="r_ae170e08c9d8b1f6e88c4dde9cfa7c644"><td class="memItemLeft" align="right" valign="top"><a id="ae170e08c9d8b1f6e88c4dde9cfa7c644" name="ae170e08c9d8b1f6e88c4dde9cfa7c644"></a>
 static <a class="el" href="structpycanha_1_1CouplingMatrices_1_1BlockPosition.html">BlockPosition</a>&#160;</td><td class="memItemRight" valign="bottom"><b>last_stored</b> (const SparseRowMatrix &amp;matrix)</td></tr>
-<tr class="memitem:af071ec3361e581566ae261a5db26020a" id="r_af071ec3361e581566ae261a5db26020a"><td class="memItemLeft" align="right" valign="top"><a id="af071ec3361e581566ae261a5db26020a" name="af071ec3361e581566ae261a5db26020a"></a>
-static void&#160;</td><td class="memItemRight" valign="bottom"><b>merge_entries</b> (SparseRowMatrix &amp;matrix, std::vector&lt; <a class="el" href="structpycanha_1_1CouplingMatrices_1_1BlockEntry.html">BlockEntry</a> &gt; &amp;entries, std::span&lt; const double &gt; values, <a class="el" href="namespacepycanha.html#a22dc61f520c4990847af9ef4cc49d354">CouplingMerge</a> merge, <a class="el" href="structpycanha_1_1BulkReport.html">BulkReport</a> &amp;report)</td></tr>
+<tr class="memitem:a22d8146f9cb6d46583e574cae0f0cd81" id="r_a22d8146f9cb6d46583e574cae0f0cd81"><td class="memItemLeft" align="right" valign="top"><a id="a22d8146f9cb6d46583e574cae0f0cd81" name="a22d8146f9cb6d46583e574cae0f0cd81"></a>
+static Index&#160;</td><td class="memItemRight" valign="bottom"><b>merge_entries</b> (SparseRowMatrix &amp;matrix, std::vector&lt; <a class="el" href="structpycanha_1_1CouplingMatrices_1_1BlockEntry.html">BlockEntry</a> &gt; &amp;entries, std::span&lt; const double &gt; values, <a class="el" href="namespacepycanha.html#a22dc61f520c4990847af9ef4cc49d354">CouplingMerge</a> merge, <a class="el" href="structpycanha_1_1BulkReport.html">BulkReport</a> &amp;report)</td></tr>
 <tr class="memitem:a3f90774b9bff85ef1ea71ee8806c2280" id="r_a3f90774b9bff85ef1ea71ee8806c2280"><td class="memItemLeft" align="right" valign="top"><a id="a3f90774b9bff85ef1ea71ee8806c2280" name="a3f90774b9bff85ef1ea71ee8806c2280"></a>
 static void&#160;</td><td class="memItemRight" valign="bottom"><b>sort_entries</b> (std::vector&lt; <a class="el" href="structpycanha_1_1CouplingMatrices_1_1BlockEntry.html">BlockEntry</a> &gt; &amp;entries, Index rows)</td></tr>
 <tr class="memitem:a3f1cc505bd4605313ca718b6bf554dca" id="r_a3f1cc505bd4605313ca718b6bf554dca"><td class="memItemLeft" align="right" valign="top"><a id="a3f1cc505bd4605313ca718b6bf554dca" name="a3f1cc505bd4605313ca718b6bf554dca"></a>
@@ -217,18 +220,23 @@ static Index&#160;</td><td class="memItemRight" valign="bottom"><b>merge_row</b>
 static void&#160;</td><td class="memItemRight" valign="bottom"><b>remap</b> (SparseRowMatrix &amp;matrix, std::span&lt; const Index &gt; row_map, std::span&lt; const Index &gt; col_map, Index rows, Index cols)</td></tr>
 <tr class="memitem:ac239c76d39e51079b048a14b69d71aeb" id="r_ac239c76d39e51079b048a14b69d71aeb"><td class="memItemLeft" align="right" valign="top"><a id="ac239c76d39e51079b048a14b69d71aeb" name="ac239c76d39e51079b048a14b69d71aeb"></a>
 static void&#160;</td><td class="memItemRight" valign="bottom"><b>_move_node</b> (Index to_idx, Index from_idx)</td></tr>
-<tr class="memitem:ae5d1c2cf6ad26f18bd10392111c1f9de" id="r_ae5d1c2cf6ad26f18bd10392111c1f9de"><td class="memItemLeft" align="right" valign="top"><a id="ae5d1c2cf6ad26f18bd10392111c1f9de" name="ae5d1c2cf6ad26f18bd10392111c1f9de"></a>
-static void&#160;</td><td class="memItemRight" valign="bottom"><b>_add_ovw_coupling_sparse</b> (Eigen::SparseMatrix&lt; double, Eigen::RowMajor &gt; &amp;sparse, Index sp_idx1, Index sp_idx2, double val)</td></tr>
-<tr class="memitem:a70b91ac88d7a3b6bc875dd2db5c51d5b" id="r_a70b91ac88d7a3b6bc875dd2db5c51d5b"><td class="memItemLeft" align="right" valign="top"><a id="a70b91ac88d7a3b6bc875dd2db5c51d5b" name="a70b91ac88d7a3b6bc875dd2db5c51d5b"></a>
-static void&#160;</td><td class="memItemRight" valign="bottom"><b>_add_sum_coupling_sparse</b> (Eigen::SparseMatrix&lt; double, Eigen::RowMajor &gt; &amp;sparse, Index sp_idx1, Index sp_idx2, double val)</td></tr>
-<tr class="memitem:a619c00cab40d4d2f20e178a6297e9da0" id="r_a619c00cab40d4d2f20e178a6297e9da0"><td class="memItemLeft" align="right" valign="top"><a id="a619c00cab40d4d2f20e178a6297e9da0" name="a619c00cab40d4d2f20e178a6297e9da0"></a>
-static void&#160;</td><td class="memItemRight" valign="bottom"><b>_add_ovw_coupling_sparse_verbose</b> (Eigen::SparseMatrix&lt; double, Eigen::RowMajor &gt; &amp;sparse, Index sp_idx1, Index sp_idx2, double val)</td></tr>
-<tr class="memitem:afae105d06cd526bce65b495bcef1f38c" id="r_afae105d06cd526bce65b495bcef1f38c"><td class="memItemLeft" align="right" valign="top"><a id="afae105d06cd526bce65b495bcef1f38c" name="afae105d06cd526bce65b495bcef1f38c"></a>
-static void&#160;</td><td class="memItemRight" valign="bottom"><b>_add_sum_coupling_sparse_verbose</b> (Eigen::SparseMatrix&lt; double, Eigen::RowMajor &gt; &amp;sparse, Index sp_idx1, Index sp_idx2, double val)</td></tr>
-<tr class="memitem:a6af5a07aa7a0deb3349deef3294dcd7d" id="r_a6af5a07aa7a0deb3349deef3294dcd7d"><td class="memItemLeft" align="right" valign="top"><a id="a6af5a07aa7a0deb3349deef3294dcd7d" name="a6af5a07aa7a0deb3349deef3294dcd7d"></a>
-static void&#160;</td><td class="memItemRight" valign="bottom"><b>_add_new_coupling_sparse</b> (Eigen::SparseMatrix&lt; double, Eigen::RowMajor &gt; &amp;, Index, Index, double)</td></tr>
+<tr class="memitem:a2a22f20984d9193ea91d855d5ee8cf7a" id="r_a2a22f20984d9193ea91d855d5ee8cf7a"><td class="memItemLeft" align="right" valign="top"><a id="a2a22f20984d9193ea91d855d5ee8cf7a" name="a2a22f20984d9193ea91d855d5ee8cf7a"></a>
+static bool&#160;</td><td class="memItemRight" valign="bottom"><b>_add_ovw_coupling_sparse</b> (Eigen::SparseMatrix&lt; double, Eigen::RowMajor &gt; &amp;sparse, Index sp_idx1, Index sp_idx2, double val)</td></tr>
+<tr class="memitem:a2d9264f1b783df9edce29c02026a8f93" id="r_a2d9264f1b783df9edce29c02026a8f93"><td class="memItemLeft" align="right" valign="top"><a id="a2d9264f1b783df9edce29c02026a8f93" name="a2d9264f1b783df9edce29c02026a8f93"></a>
+static bool&#160;</td><td class="memItemRight" valign="bottom"><b>_add_sum_coupling_sparse</b> (Eigen::SparseMatrix&lt; double, Eigen::RowMajor &gt; &amp;sparse, Index sp_idx1, Index sp_idx2, double val)</td></tr>
+<tr class="memitem:abc8ccb0795634787523aa26bcdbd98a5" id="r_abc8ccb0795634787523aa26bcdbd98a5"><td class="memItemLeft" align="right" valign="top"><a id="abc8ccb0795634787523aa26bcdbd98a5" name="abc8ccb0795634787523aa26bcdbd98a5"></a>
+static bool&#160;</td><td class="memItemRight" valign="bottom"><b>_add_ovw_coupling_sparse_verbose</b> (Eigen::SparseMatrix&lt; double, Eigen::RowMajor &gt; &amp;sparse, Index sp_idx1, Index sp_idx2, double val)</td></tr>
+<tr class="memitem:a78899cb401f9e4ae4c35181f6a72f665" id="r_a78899cb401f9e4ae4c35181f6a72f665"><td class="memItemLeft" align="right" valign="top"><a id="a78899cb401f9e4ae4c35181f6a72f665" name="a78899cb401f9e4ae4c35181f6a72f665"></a>
+static bool&#160;</td><td class="memItemRight" valign="bottom"><b>_add_sum_coupling_sparse_verbose</b> (Eigen::SparseMatrix&lt; double, Eigen::RowMajor &gt; &amp;sparse, Index sp_idx1, Index sp_idx2, double val)</td></tr>
+<tr class="memitem:a64bd940fb9f3c4328209f9674f94542f" id="r_a64bd940fb9f3c4328209f9674f94542f"><td class="memItemLeft" align="right" valign="top"><a id="a64bd940fb9f3c4328209f9674f94542f" name="a64bd940fb9f3c4328209f9674f94542f"></a>
+static bool&#160;</td><td class="memItemRight" valign="bottom"><b>_add_new_coupling_sparse</b> (Eigen::SparseMatrix&lt; double, Eigen::RowMajor &gt; &amp;, Index, Index, double)</td></tr>
 <tr class="memitem:a3f47cc089d276580366b52b29ec54af2" id="r_a3f47cc089d276580366b52b29ec54af2"><td class="memItemLeft" align="right" valign="top"><a id="a3f47cc089d276580366b52b29ec54af2" name="a3f47cc089d276580366b52b29ec54af2"></a>
 static bool&#160;</td><td class="memItemRight" valign="bottom"><b>_validate_conductor_value</b> (double value)</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 id="header-pri-attribs" class="groupheader"><a id="pri-attribs" name="pri-attribs"></a>
+Private Attributes</h2></td></tr>
+<tr class="memitem:a6f0225014ebaa05dc9e286dbc9f9d6d3" id="r_a6f0225014ebaa05dc9e286dbc9f9d6d3"><td class="memItemLeft" align="right" valign="top"><a id="a6f0225014ebaa05dc9e286dbc9f9d6d3" name="a6f0225014ebaa05dc9e286dbc9f9d6d3"></a>
+std::uint64_t&#160;</td><td class="memItemRight" valign="bottom"><b>_structure_version</b> = 0</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-friends" class="groupheader"><a id="friends" name="friends"></a>
 Friends</h2></td></tr>
@@ -240,8 +248,8 @@ class&#160;</td><td class="memItemRight" valign="bottom"><b>Couplings</b></td></
 class&#160;</td><td class="memItemRight" valign="bottom"><b>ThermalNetwork</b></td></tr>
 </table>
 <a name="doc-typedef-members" id="doc-typedef-members"></a><h2 id="header-doc-typedef-members" class="groupheader">Member Typedef Documentation</h2>
-<a id="a0705a30017caa5f8a01cb7a2deb5417a" name="a0705a30017caa5f8a01cb7a2deb5417a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a0705a30017caa5f8a01cb7a2deb5417a">&#9670;&#160;</a></span>AddCouplingGeneric</h2>
+<a id="a62e261bd8b3d88d7d5f12d348590dbf5" name="a62e261bd8b3d88d7d5f12d348590dbf5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a62e261bd8b3d88d7d5f12d348590dbf5">&#9670;&#160;</a></span>AddCouplingGeneric</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -259,7 +267,7 @@ class&#160;</td><td class="memItemRight" valign="bottom"><b>ThermalNetwork</b></
   </tr>
 </table>
 </div><div class="memdoc">
-<b>Initial value:</b><div class="fragment"><div class="line"> void (*)(</div>
+<b>Initial value:</b><div class="fragment"><div class="line"> bool (*)(</div>
 <div class="line">        Eigen::SparseMatrix&lt;double, Eigen::RowMajor&gt;&amp;, Index, Index, double)</div>
 </div><!-- fragment -->
 </div>
@@ -342,6 +350,32 @@ Here is the call graph for this function:</div>
 <div class="dyncontent">
 <div class="center"><iframe scrolling="no" loading="lazy" frameborder="0" src="classpycanha_1_1CouplingMatrices_a5e0843d5845763f4bfaab45b5bee3a6e_cgraph.svg" width="410" height="56"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
+
+</div>
+</div>
+<a id="a3687232fe6cd2da687c8428e53febb2e" name="a3687232fe6cd2da687c8428e53febb2e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3687232fe6cd2da687c8428e53febb2e">&#9670;&#160;</a></span>structure_version()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::uint64_t pycanha::CouplingMatrices::structure_version </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span><span class="mlabel nodiscard">nodiscard</span><span class="mlabel noexcept">noexcept</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>Changes whenever a coupling is inserted or removed, or the stored couplings move for a new node order; a bulk call changes it once. A new value for an existing coupling leaves it unchanged. Solvers compare it with the value seen by initialize(), because their patterns and index tables are built from the stored entries. </p>
 
 </div>
 </div>

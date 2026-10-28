@@ -1,0 +1,9 @@
+<map id="pycanha::solvers::Settings" name="pycanha::solvers::Settings">
+<area shape="rect" id="Node000001" title="The settings of every solver type." alt="" coords="358,74,550,102"/>
+<area shape="rect" id="Node000002" href="$structpycanha_1_1solvers_1_1PardisoSettings.html" title="PARDISO settings, used only with Backend::PARDISO." alt="" coords="26,5,213,50"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="228,37,334,54,405,73,399,74,333,60,228,43"/>
+<area shape="rect" id="Node000003" href="$structpycanha_1_1solvers_1_1EigenSettings.html" title="Eigen settings, used only with Backend::EIGEN." alt="" coords="5,74,234,102"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="249,85,360,87,355,88,250,90"/>
+<area shape="rect" id="Node000004" href="$structpycanha_1_1solvers_1_1AccelerateSettings.html" title="Accelerate settings, used only with Backend::ACCELERATE." alt="" coords="15,125,224,170"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="239,131,333,115,399,103,404,102,334,121,239,136"/>
+</map>

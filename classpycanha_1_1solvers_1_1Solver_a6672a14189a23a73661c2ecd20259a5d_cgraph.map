@@ -1,0 +1,7 @@
+<map id="pycanha::solvers::Solver::set_settings" name="pycanha::solvers::Solver::set_settings">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,29,186,74"/>
+<area shape="poly" id="edge1_Node000001_Node000001" title=" " alt="" coords="52,28,51,19,58,10,73,5,96,3,120,5,136,14,131,14,119,10,95,8,74,10,61,15,56,21,57,29"/>
+<area shape="rect" id="Node000002" href="$classpycanha_1_1solvers_1_1Solver.html#a6da06f89ed8456ac485ea3a732dfbfb7" title="A copy, with solver_type set to this solver&#39;s type." alt="" coords="234,29,414,74"/>
+<area shape="poly" id="edge2_Node000001_Node000002" title=" " alt="" coords="186,49,221,51,215,52,186,54"/>
+<area shape="poly" id="edge3_Node000002_Node000002" title=" " alt="" coords="281,27,279,19,286,10,301,5,324,3,349,5,365,14,360,14,347,10,324,8,303,10,289,15,284,21,285,30"/>
+</map>

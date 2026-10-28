@@ -6,5 +6,5 @@ var searchData=
   ['instrumentor_3',['Instrumentor',['../classpycanha_1_1Instrumentor.html',1,'pycanha']]],
   ['interplocation_4',['InterpLocation',['../structpycanha_1_1detail_1_1InterpLocation.html',1,'pycanha::detail']]],
   ['intgenerator_5',['IntGenerator',['../classpycanha_1_1random__generators_1_1IntGenerator.html',1,'pycanha::random_generators']]],
-  ['intpairhash_6',['IntPairHash',['../structpycanha_1_1IntPairHash.html',1,'pycanha']]]
+  ['iparmentry_6',['IparmEntry',['../structpycanha_1_1solvers_1_1detail_1_1IparmEntry.html',1,'pycanha::solvers::detail']]]
 ];

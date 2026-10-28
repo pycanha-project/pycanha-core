@@ -1,9 +1,27 @@
 var searchData=
 [
-  ['on_20main_20and_20pull_20requests_0',['Continuous validation on &lt;span class=&quot;tt&quot;&gt;main&lt;/span&gt; and pull requests',['../md_docs_2cicd.html#autotoc_md28',1,'']]],
-  ['on_5faxis_1',['on_axis',['../classpycanha_1_1conduction_1_1MeridianProfile.html#ac279ed69d46c03a6ab25d91fa6d0b2ea',1,'pycanha::conduction::MeridianProfile']]],
-  ['operator_28_29_2',['operator()',['../classpycanha_1_1gmm_1_1FacePairGeometryEvaluator.html#a0521991dc777abcfd62e936d5f827235',1,'pycanha::gmm::FacePairGeometryEvaluator']]],
-  ['opticalmaterial_3',['OpticalMaterial',['../classpycanha_1_1gmm_1_1OpticalMaterial.html',1,'pycanha::gmm::OpticalMaterial'],['../classpycanha_1_1gmm_1_1OpticalMaterial.html#abc52e5d07c586e1b1e6c47b3695f2076',1,'pycanha::gmm::OpticalMaterial::OpticalMaterial()=default'],['../classpycanha_1_1gmm_1_1OpticalMaterial.html#ad969082bd04bef27cb2c24cb9ad81c72',1,'pycanha::gmm::OpticalMaterial::OpticalMaterial(std::string name, double emissivity_ir, double absorptivity_solar)'],['../classpycanha_1_1gmm_1_1OpticalMaterial.html#ad41ba878179d1f6495903e17b768a8ad',1,'pycanha::gmm::OpticalMaterial::OpticalMaterial(std::string name, const Properties &amp;properties)']]],
-  ['origin_4',['origin',['../structpycanha_1_1LogRecord.html#aad90886f24f5e459d85a71d66885cfeb',1,'pycanha::LogRecord']]],
-  ['overwrite_5',['OVERWRITE',['../namespacepycanha.html#a22dc61f520c4990847af9ef4cc49d354a1038b7c5b38b3977c52e47d18cc741ee',1,'pycanha']]]
+  ['name_0',['name',['../structpycanha_1_1solvers_1_1SettingField.html#a495abe2033819e649633be9c81d18030',1,'pycanha::solvers::SettingField::name'],['../classpycanha_1_1solvers_1_1transient_1_1CrankNicolson.html#acbd1cfd35d3e10a3ee5cf65e0d1c8719',1,'pycanha::solvers::transient::CrankNicolson::name()'],['../classpycanha_1_1solvers_1_1sensitivity_1_1JacobianPropagation.html#a1808b746deea8b4c339cafd87cfef824',1,'pycanha::solvers::sensitivity::JacobianPropagation::name()'],['../classpycanha_1_1solvers_1_1Solver.html#a6c35ecaf5a08f16779c997f132ed012e',1,'pycanha::solvers::Solver::name()'],['../classpycanha_1_1solvers_1_1steady_1_1SteadyState.html#ab4374f71f6edd2b34b4686d36f168c58',1,'pycanha::solvers::steady::SteadyState::name()']]],
+  ['namedconstants_1',['NamedConstants',['../classpycanha_1_1NamedConstants.html',1,'pycanha']]],
+  ['networkcouplings_2',['NetworkCouplings',['../structpycanha_1_1solvers_1_1detail_1_1NetworkCouplings.html',1,'pycanha::solvers::detail']]],
+  ['networkoptions_3',['NetworkOptions',['../structpycanha_1_1solvers_1_1detail_1_1NetworkOptions.html',1,'pycanha::solvers::detail']]],
+  ['networkpart_4',['NetworkPart',['../structpycanha_1_1conduction_1_1NetworkPart.html',1,'pycanha::conduction']]],
+  ['networkshape_5',['NetworkShape',['../structpycanha_1_1solvers_1_1detail_1_1NetworkShape.html',1,'pycanha::solvers::detail']]],
+  ['new_6',['NEW',['../namespacepycanha.html#a22dc61f520c4990847af9ef4cc49d354a24d459a81449d7210c8f9a86c2913034',1,'pycanha']]],
+  ['node_7',['Node',['../classpycanha_1_1Node.html',1,'pycanha::Node'],['../classpycanha_1_1Node.html#a1a03ae20add186d6c3641a6f3bc74a87',1,'pycanha::Node::Node(NodeNum node_num)'],['../classpycanha_1_1Node.html#a00dbc2185ad3bc9c730c6b6a08b1433b',1,'pycanha::Node::Node(NodeNum node_num, const std::weak_ptr&lt; Nodes &gt; &amp;parent_pointer)']]],
+  ['node_8',['node',['../structpycanha_1_1solvers_1_1NonConvergedStep.html#a322d5b803a9ec044069204724dccf803',1,'pycanha::solvers::NonConvergedStep']]],
+  ['node_5fnumbers_9',['node_numbers',['../classpycanha_1_1Nodes.html#aa515420ed2654a9274804ddea62010a6',1,'pycanha::Nodes']]],
+  ['node_5fof_10',['node_of',['../classpycanha_1_1gmm_1_1ThermalMesh.html#aac124a372d1692a68060071bf2c39b25',1,'pycanha::gmm::ThermalMesh']]],
+  ['node_5fsides_11',['node_sides',['../structpycanha_1_1conduction_1_1NetworkPart.html#aecb953e0ad8eace1e372a398312e783b',1,'pycanha::conduction::NetworkPart']]],
+  ['nodeattribute_12',['NodeAttribute',['../namespacepycanha.html#ad42172d3e42aee979fca4c11f923913d',1,'pycanha']]],
+  ['nodebatch_13',['NodeBatch',['../structpycanha_1_1NodeBatch.html',1,'pycanha']]],
+  ['nodes_14',['Nodes',['../classpycanha_1_1Nodes.html',1,'pycanha::Nodes'],['../classpycanha_1_1Nodes.html#a2997cd286bfea8e687eab639ce2ec0c5',1,'pycanha::Nodes::Nodes()']]],
+  ['nonconverged_15',['nonconverged',['../structpycanha_1_1solvers_1_1SolverReport.html#af86d07c0e571487d2b983943a5f6243f',1,'pycanha::solvers::SolverReport']]],
+  ['nonconverged_5fsteps_16',['nonconverged_steps',['../structpycanha_1_1solvers_1_1SolverReport.html#ad9051b98c3484da7daa8c14304bbe091',1,'pycanha::solvers::SolverReport']]],
+  ['nonconvergedstep_17',['NonConvergedStep',['../structpycanha_1_1solvers_1_1NonConvergedStep.html',1,'pycanha::solvers']]],
+  ['not_20found_18',['CMake not found',['../md_docs_2faq.html#autotoc_md37',1,'']]],
+  ['not_20found_20after_20conan_20install_19',['Eigen3 not found after conan install',['../md_docs_2faq.html#autotoc_md38',1,'']]],
+  ['not_5fapplied_20',['not_applied',['../structpycanha_1_1solvers_1_1ResolvedSettings.html#a7aedf7af2154ab0a9d50652ddf57354b',1,'pycanha::solvers::ResolvedSettings']]],
+  ['notapplied_21',['NotApplied',['../structpycanha_1_1solvers_1_1NotApplied.html',1,'pycanha::solvers']]],
+  ['num_5ffactorizations_22',['num_factorizations',['../classpycanha_1_1solvers_1_1steady_1_1SteadyState.html#a669b827c0b0a8e8d4227e9f726502329',1,'pycanha::solvers::steady::SteadyState']]],
+  ['num_5fnodes_23',['num_nodes',['../classpycanha_1_1Nodes.html#a9cd78e014d17ef07b1246bb52fafb593',1,'pycanha::Nodes']]]
 ];

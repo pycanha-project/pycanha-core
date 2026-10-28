@@ -1,0 +1,12 @@
+<map id="pycanha::solvers::Solver::auto_configure" name="pycanha::solvers::Solver::auto_configure">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,99,186,143"/>
+<area shape="rect" id="Node000002" href="$classpycanha_1_1solvers_1_1Solver.html#a6c35ecaf5a08f16779c997f132ed012e" title="&quot;SteadyState&quot;, &quot;CrankNicolson&quot;, &quot;JacobianPropagation&quot;." alt="" coords="234,5,414,50"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="148,96,233,60,252,55,247,57,235,65,150,100"/>
+<area shape="rect" id="Node000003" href="$classpycanha_1_1solvers_1_1Solver.html#a6672a14189a23a73661c2ecd20259a5d" title=" " alt="" coords="234,99,414,143"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="186,118,221,121,216,121,186,124"/>
+<area shape="rect" id="Node000004" href="$classpycanha_1_1solvers_1_1Solver.html#a6da06f89ed8456ac485ea3a732dfbfb7" title="A copy, with solver_type set to this solver&#39;s type." alt="" coords="462,129,642,174"/>
+<area shape="poly" id="edge6_Node000001_Node000004" title=" " alt="" coords="173,141,234,153,343,160,449,160,444,160,343,165,233,158,173,147"/>
+<area shape="poly" id="edge3_Node000003_Node000003" title=" " alt="" coords="281,97,279,89,286,80,301,74,324,72,349,75,365,84,360,83,347,80,324,77,303,79,289,84,284,90,285,99"/>
+<area shape="poly" id="edge4_Node000003_Node000004" title=" " alt="" coords="414,130,449,138,444,137,414,136"/>
+<area shape="poly" id="edge5_Node000004_Node000004" title=" " alt="" coords="509,127,507,119,515,110,530,105,552,103,577,105,593,115,588,114,576,110,552,108,531,110,518,115,512,121,513,130"/>
+</map>
