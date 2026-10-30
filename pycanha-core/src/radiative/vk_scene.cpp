@@ -48,6 +48,9 @@ constexpr std::uint32_t num_bindings = 12;
 // Host mirrors of the kernel flag bits in common.slang.
 constexpr std::uint32_t flag_normal_emission = 1;
 constexpr std::uint32_t flag_solar_band = 2;
+// TraceSettings::robust_offset, set for every kernel where the push
+// constants are built.
+constexpr std::uint32_t flag_robust_offset = 32;
 
 // Tolerated float slack when validating that absorptivity + specular +
 // transmission of a band does not exceed one.
@@ -1228,7 +1231,8 @@ void SceneImpl::dispatch_batch(const KernelDispatch& kernel,
         .ray_index_offset = 0,  // set per chunk below
         .batch_seed = settings.seed,
         .max_bounces = settings.max_bounces,
-        .flags = kernel.flags,
+        .flags = kernel.flags |
+                 (settings.robust_offset ? flag_robust_offset : 0U),
         .num_faces = _num_faces,
         .energy_threshold = settings.energy_threshold,
         .fp_scale = kernel.fp_scale,
