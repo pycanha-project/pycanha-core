@@ -8,6 +8,7 @@
 #include <numeric>
 #include <span>
 #include <stdexcept>
+#include <string>
 #include <vector>
 
 #include "exchange_assemble.hpp"
@@ -53,6 +54,22 @@ constexpr auto accum_usage =
 constexpr auto readback_usage =
     static_cast<VkBufferUsageFlags>(VK_BUFFER_USAGE_TRANSFER_DST_BIT);
 
+// An accumulator cell buffer is bound as one storage buffer, which a kernel
+// can address only up to the device's maxStorageBufferRange: beyond it the
+// deposits and the readback cover part of the buffer, with no error (a Dense
+// exchange buffer a few GiB beyond a 4 GiB range lost most of its
+// couplings). Refused here, with the way out.
+void check_storage_range(const SceneImpl& scene, VkDeviceSize bytes) {
+    const std::uint64_t range = scene.device().max_storage_buffer_range;
+    if (range > 0 && bytes > range) {
+        throw std::length_error(
+            "pycanha::radiative: the accumulator buffer (" +
+            std::to_string(bytes) + " bytes) exceeds the device's storage "
+            "buffer range (" + std::to_string(range) +
+            " bytes); use AccumLayout::Tiled with fewer tile_rows");
+    }
+}
+
 }  // namespace
 
 VfAccumImpl::VfAccumImpl(SceneImpl& scene, const AccumConfig& config)
@@ -71,6 +88,7 @@ VfAccumImpl::VfAccumImpl(SceneImpl& scene, const AccumConfig& config)
     }
     const VkDeviceSize cell_bytes =
         buffer_rows * matrix_columns(faces) * sizeof(std::uint32_t);
+    check_storage_range(_scene, cell_bytes);
     _counts = _scene.create_buffer(cell_bytes, accum_usage,
                                    BufferMemory::DeviceLocal);
     _readback = _scene.create_buffer(cell_bytes, readback_usage,
@@ -162,6 +180,7 @@ ExchangeAccumImpl::ExchangeAccumImpl(SceneImpl& scene, Band band,
     }
     const VkDeviceSize cell_bytes =
         buffer_rows * matrix_columns(faces) * sizeof(std::uint64_t);
+    check_storage_range(_scene, cell_bytes);
     _cells = _scene.create_buffer(cell_bytes, accum_usage,
                                   BufferMemory::DeviceLocal);
     _readback = _scene.create_buffer(cell_bytes, readback_usage,
