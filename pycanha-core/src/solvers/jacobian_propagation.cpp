@@ -345,6 +345,7 @@ void JacobianPropagation::solve() {
     save_jacobian_data();
 
     for (time_iter = 0; time_iter < num_time_steps; ++time_iter) {
+        begin_step();
         callback_solver_loop();
         build_conductance_matrix();
         build_heat_flux();
@@ -355,8 +356,7 @@ void JacobianPropagation::solve() {
         _mb = (2.0 * (_capacity_diagonal.asDiagonal() * _mt)) - _mb;
         _mb += _m_c + _m_k + _m_q;
 
-        time += _resolved.time_step;
-        tmm.time = time;
+        advance_time();
         callback_transient_time_change();
 
         int iterations = 0;
@@ -395,7 +395,7 @@ void JacobianPropagation::solve() {
 
         callback_transient_after_timestep();
         outputs();
-        if (((time_iter + 1) % wait_n_dtimes) == 0) {
+        if (output_due()) {
             save_jacobian_data();
         }
     }
