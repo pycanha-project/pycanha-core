@@ -69,8 +69,8 @@ void populate_jacobian_demo(pycanha::ThermalModel& tm,
 
     tm.parameters().add_parameter("k", 1.0);
     tm.parameters().add_parameter("C", 1.0);
-    static_cast<void>(tm.formulas().add_parameter_formula("GL(1,2)", "k"));
-    static_cast<void>(tm.formulas().add_parameter_formula("C1", "C"));
+    static_cast<void>(tm.formulas().add_formula("GL(1,2)", "k"));
+    static_cast<void>(tm.formulas().add_formula("C1", "C"));
     tm.formulas().apply_formulas();
 
     for (const auto& parameter_name : derivative_order) {

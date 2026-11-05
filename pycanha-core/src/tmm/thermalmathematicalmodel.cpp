@@ -502,10 +502,6 @@ void ThermalMathematicalModel::internal_callback_common() {
     } else {
         formulas().apply_formulas();
     }
-
-    if (python_formulas_active) {
-        python_apply_formulas();
-    }
 }
 
 void ThermalMathematicalModel::internal_callback_solver_loop() {

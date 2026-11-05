@@ -72,8 +72,8 @@ std::shared_ptr<pycanha::ThermalMathematicalModel> make_jacobian_model() {
     model->parameters().add_parameter("k", 1.0);
     model->parameters().add_parameter("C", 1.0);
 
-    static_cast<void>(model->formulas().add_parameter_formula("GL(1,2)", "k"));
-    static_cast<void>(model->formulas().add_parameter_formula("C1", "C"));
+    static_cast<void>(model->formulas().add_formula("GL(1,2)", "k"));
+    static_cast<void>(model->formulas().add_formula("C1", "C"));
     model->formulas().apply_formulas();
     model->formulas().parameters_with_derivatives().add_parameter("k");
     model->formulas().parameters_with_derivatives().add_parameter("C");
@@ -222,16 +222,19 @@ TEST_CASE("ExpressionFormula supports common math functions",
             Catch::Approx(std::sin(0.5) + std::exp(1.25)));
 }
 
-TEST_CASE("ParameterFormula validates symbols and supports compiled execution",
-          "[formulas][parameter]") {
+TEST_CASE(
+    "Parameter-only expressions validate symbols and support compiled "
+    "execution",
+    "[formulas][parameter]") {
     auto network = make_single_node_network();
     pycanha::Parameters parameters;
     parameters.add_parameter("p1", 2.0);
     parameters.add_parameter("p2", 5.0);
 
     const pycanha::Entity heat_load = pycanha::Entity::qi(*network, 1);
-    pycanha::ParameterFormula formula(heat_load, parameters, "p1 + 2*p2");
+    pycanha::ExpressionFormula formula(heat_load, parameters, "p1 + 2*p2");
 
+    REQUIRE(formula.kind() == pycanha::FormulaKind::Parameters);
     REQUIRE(formula.expression() == "p1 + 2*p2");
     REQUIRE(formula.parameter_dependencies().size() == 2);
     REQUIRE(formula.parameter_dependencies().at(0) == "p1");
@@ -257,7 +260,7 @@ TEST_CASE("ParameterFormula validates symbols and supports compiled execution",
 
     auto clone = formula.clone();
     auto* parameter_clone =
-        dynamic_cast<pycanha::ParameterFormula*>(clone.get());
+        dynamic_cast<pycanha::ExpressionFormula*>(clone.get());
     REQUIRE(parameter_clone != nullptr);
     parameters.set_parameter("p1", 1.0);
     parameters.set_parameter("p2", 3.0);
@@ -269,15 +272,17 @@ TEST_CASE("ParameterFormula validates symbols and supports compiled execution",
     REQUIRE_THROWS_AS(formula.calculate_derivatives(), std::runtime_error);
 }
 
-TEST_CASE("ParameterFormula reports invalidated parameter and entity bindings",
-          "[formulas][parameter]") {
+TEST_CASE(
+    "Parameter-only expressions report invalidated parameter and entity "
+    "bindings",
+    "[formulas][parameter]") {
     SECTION("removed parameters invalidate interpreted and compiled access") {
         auto network = make_single_node_network();
         pycanha::Parameters parameters;
         parameters.add_parameter("p1", 2.0);
 
         const pycanha::Entity heat_load = pycanha::Entity::qi(*network, 1);
-        pycanha::ParameterFormula formula(heat_load, parameters, "p1");
+        pycanha::ExpressionFormula formula(heat_load, parameters, "p1");
 
         REQUIRE_THROWS_AS(formula.apply_compiled_formula(), std::runtime_error);
 
@@ -293,7 +298,7 @@ TEST_CASE("ParameterFormula reports invalidated parameter and entity bindings",
         parameters.add_parameter("p1", 2.0);
 
         const pycanha::Entity heat_load = pycanha::Entity::qi(*network, 1);
-        pycanha::ParameterFormula formula(heat_load, parameters, "p1");
+        pycanha::ExpressionFormula formula(heat_load, parameters, "p1");
 
         network->remove_node(1);
 
@@ -302,7 +307,7 @@ TEST_CASE("ParameterFormula reports invalidated parameter and entity bindings",
     }
 }
 
-TEST_CASE("ParameterFormula rejects invalid expressions and non-double inputs",
+TEST_CASE("Expressions without a network reject non-double and unknown inputs",
           "[formulas][parameter]") {
     auto network = make_single_node_network();
     pycanha::Parameters parameters;
@@ -311,15 +316,14 @@ TEST_CASE("ParameterFormula rejects invalid expressions and non-double inputs",
 
     const pycanha::Entity heat_load = pycanha::Entity::qi(*network, 1);
 
-    REQUIRE_THROWS_AS(pycanha::ParameterFormula(heat_load, parameters, "42.0"),
-                      std::invalid_argument);
-    REQUIRE_THROWS_AS(pycanha::ParameterFormula(heat_load, parameters, "sin("),
+    REQUIRE_THROWS_AS(pycanha::ExpressionFormula(heat_load, parameters, "sin("),
                       std::invalid_argument);
     REQUIRE_THROWS_AS(
-        pycanha::ParameterFormula(heat_load, parameters, "missing + p1"),
+        pycanha::ExpressionFormula(heat_load, parameters, "missing + p1"),
         std::invalid_argument);
-    REQUIRE_THROWS_AS(pycanha::ParameterFormula(heat_load, parameters, "label"),
-                      std::invalid_argument);
+    REQUIRE_THROWS_AS(
+        pycanha::ExpressionFormula(heat_load, parameters, "label"),
+        std::invalid_argument);
 }
 
 TEST_CASE(

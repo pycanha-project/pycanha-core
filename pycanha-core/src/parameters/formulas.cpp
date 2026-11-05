@@ -3,7 +3,6 @@
 #include <spdlog/common.h>
 #include <spdlog/spdlog.h>
 #include <symengine/basic.h>
-#include <symengine/eval_double.h>
 #include <symengine/symbol.h>
 
 #include <algorithm>
@@ -52,8 +51,8 @@ void DerivativeParameterRegistry::add_parameter(
         return;
     }
 
-    // TODO: validate that derivative-selected parameters are used only by
-    // ParameterFormula entries once the formula taxonomy migration is complete.
+    // TODO(formulas): validate that derivative-selected parameters are read
+    // only by formulas that read parameters alone.
     _parameter_names.push_back(*resolved_name);
 }
 
@@ -173,30 +172,16 @@ std::shared_ptr<Formula> Formulas::create_formula(
     // Parsed once here; the formula is built from this parse. Symbols that
     // are not parameters are resolved to entities by ExpressionFormula.
     auto parsed = detail::parse_expression(formula_string);
-    if (parsed.symbols.empty()) {
-        auto formula = std::make_shared<ValueFormula>(entity);
-        formula->set_value(SymEngine::eval_double(*parsed.tree));
-        return formula;
-    }
-
-    bool all_parameter_symbols = true;
-    for (const auto& symbol : parsed.symbols) {
-        const auto& symbol_name = symbol->get_name();
-        if (parameter_storage->contains(symbol_name)) {
-            continue;
+    if (_temperature_variable_names != nullptr) {
+        for (const auto& symbol : parsed.symbols) {
+            const auto& symbol_name = symbol->get_name();
+            if (!parameter_storage->contains(symbol_name) &&
+                _temperature_variable_names->contains(symbol_name)) {
+                throw std::invalid_argument(
+                    "TemperatureVariable '" + symbol_name +
+                    "' in formulas is not implemented yet");
+            }
         }
-
-        all_parameter_symbols = false;
-        if ((_temperature_variable_names != nullptr) &&
-            _temperature_variable_names->contains(symbol_name)) {
-            throw std::invalid_argument("TemperatureVariable '" + symbol_name +
-                                        "' in formulas is not implemented yet");
-        }
-    }
-
-    if (all_parameter_symbols) {
-        return std::make_shared<ParameterFormula>(
-            entity, *parameter_storage, formula_string, std::move(parsed));
     }
 
     return std::make_shared<ExpressionFormula>(
@@ -209,57 +194,14 @@ void Formulas::set_temperature_variable_names(
     _temperature_variable_names = names;
 }
 
-ParameterFormula Formulas::create_parameter_formula(
-    const Entity& entity, const std::string& parameter) {
-    [[maybe_unused]] auto validated_network = ensure_network(_network);
-    auto parameter_storage = ensure_parameters(_parameters);
-    return {entity, *parameter_storage, parameter};
-}
-
-ValueFormula& Formulas::add_value_formula(Entity entity, double value) {
-    auto formula = std::make_shared<ValueFormula>(entity);
-    formula->set_value(value);
-    add_formula(formula);
-    return *formula;
-}
-
-ValueFormula& Formulas::add_value_formula(std::string_view entity,
-                                          double value) {
-    return add_value_formula(resolve_entity(entity), value);
-}
-
-ParameterFormula& Formulas::add_parameter_formula(
-    Entity entity, const std::string& expression) {
-    auto formula = std::make_shared<ParameterFormula>(
-        entity, *ensure_parameters(_parameters), expression);
-    add_formula(formula);
-    return *formula;
-}
-
-ParameterFormula& Formulas::add_parameter_formula(
-    std::string_view entity, const std::string& expression) {
-    return add_parameter_formula(resolve_entity(entity), expression);
-}
-
-ExpressionFormula& Formulas::add_expression_formula(
-    Entity entity, const std::string& expression) {
-    auto formula = std::make_shared<ExpressionFormula>(
-        entity, *ensure_parameters(_parameters), expression, _network.get());
-    add_formula(formula);
-    return *formula;
-}
-
-ExpressionFormula& Formulas::add_expression_formula(
-    std::string_view entity, const std::string& expression) {
-    return add_expression_formula(resolve_entity(entity), expression);
-}
-
 Formula& Formulas::add_formula(const Entity& entity, double value) {
-    return add_value_formula(entity, value);
+    auto formula = std::make_shared<ExpressionFormula>(entity, value);
+    add_formula(formula);
+    return *formula;
 }
 
 Formula& Formulas::add_formula(std::string_view entity, double value) {
-    return add_value_formula(entity, value);
+    return add_formula(resolve_entity(entity), value);
 }
 
 Formula& Formulas::add_formula(const Entity& entity,
@@ -272,6 +214,19 @@ Formula& Formulas::add_formula(const Entity& entity,
 Formula& Formulas::add_formula(std::string_view entity,
                                const std::string& formula_string) {
     return add_formula(resolve_entity(entity), formula_string);
+}
+
+CallableFormula& Formulas::add_callable_formula(
+    const Entity& entity, CallableFormula::Function function) {
+    auto formula =
+        std::make_shared<CallableFormula>(entity, std::move(function));
+    add_formula(formula);
+    return *formula;
+}
+
+CallableFormula& Formulas::add_callable_formula(
+    std::string_view entity, CallableFormula::Function function) {
+    return add_callable_formula(resolve_entity(entity), std::move(function));
 }
 
 void Formulas::add_formula(const Formula& formula) {
@@ -458,7 +413,9 @@ void Formulas::apply_compiled_formulas() {
 void Formulas::calculate_derivatives() {
     compact();
     for (const auto& formula : _formulas) {
-        formula->calculate_derivatives();
+        if (formula->kind() == FormulaKind::Parameters) {
+            formula->calculate_derivatives();
+        }
     }
 }
 

@@ -35,11 +35,11 @@ TEST_CASE("Parameter formulas propagate parameter values", "[formulas]") {
     const pycanha::Entity conductive = pycanha::Entity::gl(*network, 1, 2);
 
     formulas.add_formula(
-        pycanha::ParameterFormula(heat_load, *parameters, "P1"));
+        pycanha::ExpressionFormula(heat_load, *parameters, "P1"));
     formulas.add_formula(
-        pycanha::ParameterFormula(temperature, *parameters, "P2"));
+        pycanha::ExpressionFormula(temperature, *parameters, "P2"));
     formulas.add_formula(
-        pycanha::ParameterFormula(conductive, *parameters, "P3"));
+        pycanha::ExpressionFormula(conductive, *parameters, "P3"));
 
     formulas.apply_formulas();
 
@@ -71,32 +71,31 @@ TEST_CASE("Parameter formulas propagate parameter values", "[formulas]") {
     // NOLINTEND(bugprone-chained-comparison)
 }
 
-TEST_CASE("Value formulas capture static snapshots", "[formulas]") {
+TEST_CASE("Constant formulas write their value in both modes", "[formulas]") {
     auto network = std::make_shared<pycanha::ThermalNetwork>();
     pycanha::Node node1(1);
     network->add_node(node1);
 
-    network->nodes().set_T(1, 42.0);
-
     const pycanha::Entity temperature = pycanha::Entity::t(*network, 1);
-    pycanha::ValueFormula snapshot(temperature);
+    pycanha::ExpressionFormula constant(temperature, 42.0);
 
-    snapshot.compile_formula();
+    constant.compile_formula();
     network->nodes().set_T(1, -5.0);
-    snapshot.apply_compiled_formula();
+    constant.apply_compiled_formula();
 
     // NOLINTBEGIN(bugprone-chained-comparison)
     REQUIRE(network->nodes().get_T(1) == Catch::Approx(42.0));
 
-    snapshot.set_value(77.0);
-    snapshot.apply_formula();
+    network->nodes().set_T(1, 77.0);
+    constant.apply_formula();
 
-    REQUIRE(network->nodes().get_T(1) == Catch::Approx(77.0));
+    REQUIRE(network->nodes().get_T(1) == Catch::Approx(42.0));
     // NOLINTEND(bugprone-chained-comparison)
 }
 
 TEST_CASE(
-    "ParameterFormula keeps slot binding across rename in interpreted mode",
+    "Parameter-only formulas keep slot binding across rename in interpreted "
+    "mode",
     "[formulas]") {
     auto network = std::make_shared<pycanha::ThermalNetwork>();
     pycanha::Node node1(1);
@@ -107,7 +106,7 @@ TEST_CASE(
     parameters.add_parameter("P1", 10.0);
 
     const pycanha::Entity heat_load = pycanha::Entity::qi(*network, 1);
-    pycanha::ParameterFormula formula(heat_load, parameters, "P1");
+    pycanha::ExpressionFormula formula(heat_load, parameters, "P1");
 
     parameters.rename_parameter("P1", "P1_renamed");
     parameters.set_parameter("P1_renamed", 14.0);
@@ -130,7 +129,7 @@ TEST_CASE("Formulas validate, compile and lock parameters explicitly",
     parameters->add_parameter("P1", 10.0);
     const pycanha::Entity heat_load = pycanha::Entity::qi(*network, 1);
     formulas.add_formula(
-        pycanha::ParameterFormula(heat_load, *parameters, "P1"));
+        pycanha::ExpressionFormula(heat_load, *parameters, "P1"));
 
     REQUIRE_FALSE(formulas.is_validation_current());
 
@@ -163,7 +162,7 @@ TEST_CASE("Formulas require fresh validation before locking", "[formulas]") {
     parameters->add_parameter("P1", 10.0);
     const pycanha::Entity heat_load = pycanha::Entity::qi(*network, 1);
     formulas.add_formula(
-        pycanha::ParameterFormula(heat_load, *parameters, "P1"));
+        pycanha::ExpressionFormula(heat_load, *parameters, "P1"));
 
     formulas.validate_for_execution();
     parameters->add_parameter("P2", 5.0);
@@ -204,7 +203,7 @@ TEST_CASE("Formulas validate registry and removal edge cases", "[formulas]") {
 
     const pycanha::Entity heat_load = pycanha::Entity::qi(*network, 1);
     formulas.add_formula(
-        pycanha::ParameterFormula(heat_load, *parameters, "P1"));
+        pycanha::ExpressionFormula(heat_load, *parameters, "P1"));
     formulas.validate_for_execution();
     formulas.compile_formulas();
     parameters->add_parameter("P2", 2.0);
@@ -218,7 +217,7 @@ TEST_CASE("ThermalMathematicalModel uses compiled formulas while locked",
     model->nodes().set_qi(1, 0.0);
 
     model->parameters().add_parameter("P1", 10.0);
-    model->formulas().add_formula(pycanha::ParameterFormula(
+    model->formulas().add_formula(pycanha::ExpressionFormula(
         model->entity("QI1"), model->parameters(), "P1"));
 
     model->formulas().validate_for_execution();

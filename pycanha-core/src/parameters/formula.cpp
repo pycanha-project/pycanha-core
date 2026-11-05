@@ -14,6 +14,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <exception>
+#include <format>
 #include <iterator>
 #include <map>
 #include <memory>
@@ -143,231 +144,18 @@ ParsedExpression parse_expression(const std::string& expression) {
 
 }  // namespace detail
 
-ParameterFormula::ParameterFormula(const Entity& entity, Parameters& parameters,
-                                   std::string expression)
-    : Formula(entity),
-      _parameters(&parameters),
-      _expression(std::move(expression)) {
-    initialize_expression(detail::parse_expression(_expression));
+FormulaKind Formula::kind() const noexcept {
+    if (!_entity_dependencies.empty()) {
+        return FormulaKind::Entities;
+    }
+    if (!_dependencies.empty()) {
+        return FormulaKind::Parameters;
+    }
+    return FormulaKind::Constant;
 }
 
-ParameterFormula::ParameterFormula(const Entity& entity, Parameters& parameters,
-                                   std::string expression,
-                                   detail::ParsedExpression parsed)
-    : Formula(entity),
-      _parameters(&parameters),
-      _expression(std::move(expression)) {
-    initialize_expression(std::move(parsed));
-}
-
-void ParameterFormula::initialize_expression(detail::ParsedExpression parsed) {
-    if (parsed.symbols.empty()) {
-        throw std::invalid_argument(
-            "ParameterFormula requires at least one parameter or time symbol");
-    }
-
-    _parameter_indices.clear();
-    _parameter_indices.reserve(parsed.symbols.size());
-    Formula::DependencyList dependencies;
-    dependencies.reserve(parsed.symbols.size());
-
-    for (const auto& symbol : parsed.symbols) {
-        const auto& symbol_name = symbol->get_name();
-        const auto parameter_idx = _parameters->get_idx(symbol_name);
-        if (!parameter_idx.has_value()) {
-            throw std::invalid_argument(
-                "ParameterFormula references unknown parameter '" +
-                symbol_name + "'");
-        }
-        const auto parameter_name =
-            _parameters->get_parameter_name(*parameter_idx);
-        if (!parameter_name.has_value()) {
-            throw std::invalid_argument(
-                "ParameterFormula references unknown parameter '" +
-                symbol_name + "'");
-        }
-        if (_parameters->get_double_ptr(*parameter_idx) == nullptr) {
-            throw std::invalid_argument("ParameterFormula expects parameter '" +
-                                        symbol_name + "' to store a double");
-        }
-
-        _parameter_indices.push_back(*parameter_idx);
-        dependencies.push_back(*parameter_name);
-    }
-
-    set_parameter_dependencies(std::move(dependencies));
-    _parsed_expr = parsed.tree;
-    _symbols = std::move(parsed.symbols);
-
-    _derivative_exprs.clear();
-    _derivatives.clear();
-    _parameter_ptrs.clear();
-    _compiled_derivs.clear();
-    _compiled_derivs_ready.clear();
-    _compiled = false;
-}
-
-SymEngine::vec_basic ParameterFormula::lambda_inputs() const {
-    SymEngine::vec_basic inputs;
-    inputs.reserve(_symbols.size());
-    std::ranges::copy(_symbols, std::back_inserter(inputs));
-    return inputs;
-}
-
-double ParameterFormula::evaluate_expression(
-    const SymEngine::RCP<const SymEngine::Basic>& expr) const {
-    SymEngine::map_basic_basic substitutions;
-    for (std::size_t index = 0U; index < _symbols.size(); ++index) {
-        const auto* parameter_value =
-            _parameters->get_double_ptr(_parameter_indices[index]);
-        if (parameter_value == nullptr) {
-            throw std::runtime_error("ParameterFormula lost parameter '" +
-                                     parameter_dependencies()[index] + "'");
-        }
-        substitutions.emplace(_symbols[index],
-                              SymEngine::number(*parameter_value));
-    }
-
-    return SymEngine::eval_double(*expr->subs(substitutions));
-}
-
-void ParameterFormula::compile_formula() {
-    auto* entity_ptr = entity().get_value_ref();
-    if (entity_ptr == nullptr) {
-        throw std::runtime_error(
-            "ParameterFormula could not obtain entity pointer");
-    }
-    set_entity_data_ptr(entity_ptr);
-
-    _parameter_ptrs.clear();
-    _parameter_ptrs.reserve(_parameter_indices.size());
-    for (const auto parameter_idx : _parameter_indices) {
-        auto* parameter_ptr = _parameters->get_double_ptr(parameter_idx);
-        if (parameter_ptr == nullptr) {
-            throw std::runtime_error(
-                "ParameterFormula could not obtain parameter pointer");
-        }
-        _parameter_ptrs.push_back(parameter_ptr);
-    }
-
-    try {
-        _compiled_eval = SymEngine::LambdaRealDoubleVisitor();
-        _compiled_eval.init(lambda_inputs(), *_parsed_expr, true);
-    } catch (const std::exception& exception) {
-        throw std::runtime_error(
-            "ParameterFormula could not compile expression '" + _expression +
-            "': " + exception.what());
-    }
-
-    // Compiled again on the next calculate_derivatives() call.
-    _compiled_derivs.clear();
-    _compiled_derivs_ready.clear();
-
-    _compiled_structure_version = _parameters->get_structure_version();
-    _compiled = true;
-}
-
-void ParameterFormula::apply_formula() {
-    _cached_value = evaluate_expression(_parsed_expr);
-    if (!entity().set_value(_cached_value)) {
-        throw std::runtime_error(
-            "ParameterFormula could not assign entity value");
-    }
-}
-
-void ParameterFormula::apply_compiled_formula() {
-    if (!_compiled || (entity_data_ptr() == nullptr)) {
-        throw std::runtime_error(
-            "ParameterFormula needs to be compiled before applying");
-    }
-    if (_parameters->get_structure_version() != _compiled_structure_version) {
-        throw std::runtime_error(
-            "ParameterFormula compiled state is stale after structural "
-            "parameter changes");
-    }
-
-    std::vector<double> inputs(_parameter_ptrs.size(), 0.0);
-    for (std::size_t index = 0U; index < _parameter_ptrs.size(); ++index) {
-        if (_parameter_ptrs[index] == nullptr) {
-            throw std::runtime_error(
-                "ParameterFormula has an invalid compiled parameter pointer");
-        }
-        inputs[index] = *_parameter_ptrs[index];
-    }
-
-    _compiled_eval.call(&_cached_value,
-                        inputs.empty() ? nullptr : inputs.data());
-    *entity_data_ptr() = _cached_value;
-}
-
-void ParameterFormula::calculate_derivatives() {
-    if (_derivative_exprs.size() != _symbols.size()) {
-        _derivative_exprs = differentiate(_expression, _symbols);
-    }
-    _derivatives.assign(_derivative_exprs.size(), 0.0);
-
-    if (!_compiled) {
-        for (std::size_t index = 0U; index < _derivative_exprs.size();
-             ++index) {
-            _derivatives[index] = evaluate_expression(_derivative_exprs[index]);
-        }
-        return;
-    }
-
-    if (_parameters->get_structure_version() != _compiled_structure_version) {
-        throw std::runtime_error(
-            "ParameterFormula compiled derivatives are stale after structural "
-            "parameter changes");
-    }
-
-    if (_compiled_derivs.size() != _derivative_exprs.size()) {
-        compile_derivatives(lambda_inputs(), _derivative_exprs,
-                            _compiled_derivs, _compiled_derivs_ready);
-    }
-
-    std::vector<double> inputs(_parameter_ptrs.size(), 0.0);
-    for (std::size_t index = 0U; index < _parameter_ptrs.size(); ++index) {
-        if (_parameter_ptrs[index] == nullptr) {
-            throw std::runtime_error(
-                "ParameterFormula has an invalid compiled parameter pointer");
-        }
-        inputs[index] = *_parameter_ptrs[index];
-    }
-
-    for (std::size_t index = 0U; index < _derivative_exprs.size(); ++index) {
-        if (_compiled_derivs_ready[index]) {
-            _compiled_derivs[index].call(
-                &_derivatives[index], inputs.empty() ? nullptr : inputs.data());
-            continue;
-        }
-
-        _derivatives[index] = evaluate_expression(_derivative_exprs[index]);
-    }
-}
-
-double ParameterFormula::get_value() const {
-    return evaluate_expression(_parsed_expr);
-}
-
-std::vector<double>* ParameterFormula::get_derivative_values() {
-    return &_derivatives;
-}
-
-std::unique_ptr<Formula> ParameterFormula::clone() const {
-    auto clone = std::make_unique<ParameterFormula>(
-        entity(), *_parameters, _expression,
-        detail::ParsedExpression{.tree = _parsed_expr, .symbols = _symbols});
-    clone->_cached_value = _cached_value;
-    clone->_derivatives = _derivatives;
-    if (_compiled) {
-        clone->compile_formula();
-    }
-    return clone;
-}
-
-const std::string& ParameterFormula::expression() const noexcept {
-    return _expression;
-}
+ExpressionFormula::ExpressionFormula(const Entity& entity, double value)
+    : Formula(entity), _expression(std::format("{}", value)), _value(value) {}
 
 ExpressionFormula::ExpressionFormula(const Entity& entity,
                                      Parameters& parameters,
@@ -452,17 +240,20 @@ void ExpressionFormula::initialize_expression(detail::ParsedExpression parsed) {
         }
     }
 
-    _has_entity_dependencies = !entity_inputs.empty();
     set_parameter_dependencies(std::move(dependencies));
     set_entity_dependencies(std::move(entity_inputs));
-    _parsed_expr = parsed.tree;
-    _symbols = std::move(parsed.symbols);
 
-    _derivative_exprs.clear();
-    _derivatives.clear();
-    _param_ptrs.clear();
-    _compiled_derivs.clear();
-    _compiled_derivs_ready.clear();
+    if (parsed.symbols.empty()) {
+        // A constant: its value is all that needs keeping.
+        _value = SymEngine::eval_double(*parsed.tree);
+    } else {
+        _parsed_expr = parsed.tree;
+        _symbols = std::move(parsed.symbols);
+    }
+
+    _derivatives.reset();
+    _input_ptrs.clear();
+    _compiled_eval.reset();
     _compiled = false;
 }
 
@@ -520,10 +311,6 @@ double* ExpressionFormula::resolve_symbol_ptr(
 
 double ExpressionFormula::evaluate_expression(
     const SymEngine::RCP<const SymEngine::Basic>& expr) const {
-    if (_symbols.empty()) {
-        return SymEngine::eval_double(*expr);
-    }
-
     SymEngine::map_basic_basic substitutions;
     for (std::size_t index = 0U; index < _symbols.size(); ++index) {
         substitutions.emplace(
@@ -535,6 +322,7 @@ double ExpressionFormula::evaluate_expression(
 }
 
 void ExpressionFormula::compile_formula() {
+    _compiled = false;
     auto* entity_ptr = entity().get_value_ref();
     if (entity_ptr == nullptr) {
         throw std::runtime_error(
@@ -542,15 +330,20 @@ void ExpressionFormula::compile_formula() {
     }
     set_entity_data_ptr(entity_ptr);
 
-    _param_ptrs.clear();
-    _param_ptrs.reserve(_bindings.size());
+    if (_symbols.empty()) {
+        _compiled = true;
+        return;
+    }
+
+    _input_ptrs.clear();
+    _input_ptrs.reserve(_bindings.size());
     std::ranges::transform(
-        _bindings, std::back_inserter(_param_ptrs),
+        _bindings, std::back_inserter(_input_ptrs),
         [this](const auto& binding) { return resolve_symbol_ptr(binding); });
 
     try {
-        _compiled_eval = SymEngine::LambdaRealDoubleVisitor();
-        _compiled_eval.init(lambda_inputs(), *_parsed_expr, true);
+        _compiled_eval = std::make_unique<SymEngine::LambdaRealDoubleVisitor>();
+        _compiled_eval->init(lambda_inputs(), *_parsed_expr, true);
     } catch (const std::exception& exception) {
         throw std::runtime_error(
             "ExpressionFormula could not compile expression '" + _expression +
@@ -558,22 +351,16 @@ void ExpressionFormula::compile_formula() {
     }
 
     // Compiled again on the next calculate_derivatives() call.
-    _compiled_derivs.clear();
-    _compiled_derivs_ready.clear();
+    if (_derivatives != nullptr) {
+        _derivatives->compiled.clear();
+        _derivatives->compiled_ready.clear();
+    }
 
     _compiled_structure_version = _parameters->get_structure_version();
     _compiled = true;
 }
 
-void ExpressionFormula::apply_formula() {
-    _cached_value = evaluate_expression(_parsed_expr);
-    if (!entity().set_value(_cached_value)) {
-        throw std::runtime_error(
-            "ExpressionFormula could not assign entity value");
-    }
-}
-
-void ExpressionFormula::apply_compiled_formula() {
+void ExpressionFormula::check_compiled() const {
     if (!_compiled || (entity_data_ptr() == nullptr)) {
         throw std::runtime_error(
             "ExpressionFormula needs to be compiled before applying");
@@ -583,37 +370,71 @@ void ExpressionFormula::apply_compiled_formula() {
             "ExpressionFormula compiled state is stale after structural "
             "parameter changes");
     }
+}
 
-    std::vector<double> inputs(_param_ptrs.size(), 0.0);
-    for (std::size_t index = 0U; index < _param_ptrs.size(); ++index) {
-        if (_param_ptrs[index] == nullptr) {
+std::vector<double> ExpressionFormula::compiled_inputs() const {
+    std::vector<double> inputs(_input_ptrs.size(), 0.0);
+    for (std::size_t index = 0U; index < _input_ptrs.size(); ++index) {
+        if (_input_ptrs[index] == nullptr) {
             throw std::runtime_error(
-                "ExpressionFormula has an invalid compiled parameter pointer");
+                "ExpressionFormula has an invalid compiled input pointer");
         }
-        inputs[index] = *_param_ptrs[index];
+        inputs[index] = *_input_ptrs[index];
+    }
+    return inputs;
+}
+
+void ExpressionFormula::apply_formula() {
+    if (!_symbols.empty()) {
+        _value = evaluate_expression(_parsed_expr);
+    }
+    if (!entity().set_value(_value)) {
+        throw std::runtime_error(
+            "ExpressionFormula could not assign entity value");
+    }
+}
+
+void ExpressionFormula::apply_compiled_formula() {
+    if (_symbols.empty()) {
+        if (!_compiled || (entity_data_ptr() == nullptr)) {
+            throw std::runtime_error(
+                "ExpressionFormula needs to be compiled before applying");
+        }
+        *entity_data_ptr() = _value;
+        return;
     }
 
-    _compiled_eval.call(&_cached_value,
-                        inputs.empty() ? nullptr : inputs.data());
-    *entity_data_ptr() = _cached_value;
+    check_compiled();
+    const auto inputs = compiled_inputs();
+    _compiled_eval->call(&_value, inputs.data());
+    *entity_data_ptr() = _value;
 }
 
 void ExpressionFormula::calculate_derivatives() {
-    if (_has_entity_dependencies) {
+    if (kind() == FormulaKind::Entities) {
         throw std::runtime_error(
             "ExpressionFormula derivatives are not available for "
             "entity-dependent expressions");
     }
 
-    if (_derivative_exprs.size() != _symbols.size()) {
-        _derivative_exprs = differentiate(_expression, _symbols);
+    if (_derivatives == nullptr) {
+        _derivatives = std::make_unique<DerivativeState>();
     }
-    _derivatives.assign(_derivative_exprs.size(), 0.0);
+    auto& state = *_derivatives;
+    if (_symbols.empty()) {
+        state.values.clear();
+        return;
+    }
+
+    if (state.expressions.size() != _symbols.size()) {
+        state.expressions = differentiate(_expression, _symbols);
+    }
+    state.values.assign(state.expressions.size(), 0.0);
 
     if (!_compiled) {
-        for (std::size_t index = 0U; index < _derivative_exprs.size();
+        for (std::size_t index = 0U; index < state.expressions.size();
              ++index) {
-            _derivatives[index] = evaluate_expression(_derivative_exprs[index]);
+            state.values[index] = evaluate_expression(state.expressions[index]);
         }
         return;
     }
@@ -624,46 +445,54 @@ void ExpressionFormula::calculate_derivatives() {
             "parameter changes");
     }
 
-    if (_compiled_derivs.size() != _derivative_exprs.size()) {
-        compile_derivatives(lambda_inputs(), _derivative_exprs,
-                            _compiled_derivs, _compiled_derivs_ready);
+    if (state.compiled.size() != state.expressions.size()) {
+        compile_derivatives(lambda_inputs(), state.expressions, state.compiled,
+                            state.compiled_ready);
     }
 
-    std::vector<double> inputs(_param_ptrs.size(), 0.0);
-    for (std::size_t index = 0U; index < _param_ptrs.size(); ++index) {
-        if (_param_ptrs[index] == nullptr) {
-            throw std::runtime_error(
-                "ExpressionFormula has an invalid compiled parameter pointer");
-        }
-        inputs[index] = *_param_ptrs[index];
-    }
-
-    for (std::size_t index = 0U; index < _derivative_exprs.size(); ++index) {
-        if (_compiled_derivs_ready[index]) {
-            _compiled_derivs[index].call(
-                &_derivatives[index], inputs.empty() ? nullptr : inputs.data());
+    const auto inputs = compiled_inputs();
+    for (std::size_t index = 0U; index < state.expressions.size(); ++index) {
+        if (state.compiled_ready[index]) {
+            state.compiled[index].call(&state.values[index], inputs.data());
             continue;
         }
 
-        _derivatives[index] = evaluate_expression(_derivative_exprs[index]);
+        state.values[index] = evaluate_expression(state.expressions[index]);
     }
 }
 
 double ExpressionFormula::get_value() const {
+    if (_symbols.empty()) {
+        return _value;
+    }
     return evaluate_expression(_parsed_expr);
 }
 
 std::vector<double>* ExpressionFormula::get_derivative_values() {
-    return &_derivatives;
+    if (_derivatives == nullptr) {
+        _derivatives = std::make_unique<DerivativeState>();
+    }
+    return &_derivatives->values;
 }
 
 std::unique_ptr<Formula> ExpressionFormula::clone() const {
-    auto clone = std::make_unique<ExpressionFormula>(
-        entity(), *_parameters, _expression,
-        detail::ParsedExpression{.tree = _parsed_expr, .symbols = _symbols},
-        _network);
-    clone->_cached_value = _cached_value;
-    clone->_derivatives = _derivatives;
+    std::unique_ptr<ExpressionFormula> clone;
+    if (_symbols.empty()) {
+        clone = std::make_unique<ExpressionFormula>(entity(), _value);
+        clone->_parameters = _parameters;
+        clone->_network = _network;
+        clone->_expression = _expression;
+    } else {
+        clone = std::make_unique<ExpressionFormula>(
+            entity(), *_parameters, _expression,
+            detail::ParsedExpression{.tree = _parsed_expr, .symbols = _symbols},
+            _network);
+        clone->_value = _value;
+    }
+    if (_derivatives != nullptr) {
+        clone->_derivatives = std::make_unique<DerivativeState>();
+        clone->_derivatives->values = _derivatives->values;
+    }
     if (_compiled) {
         clone->compile_formula();
     }
@@ -672,6 +501,60 @@ std::unique_ptr<Formula> ExpressionFormula::clone() const {
 
 const std::string& ExpressionFormula::expression() const noexcept {
     return _expression;
+}
+
+CallableFormula::CallableFormula(const Entity& entity, Function function)
+    : Formula(entity), _function(std::move(function)) {
+    if (!_function) {
+        throw std::invalid_argument("CallableFormula for '" +
+                                    this->entity().string_representation() +
+                                    "' needs a function");
+    }
+}
+
+void CallableFormula::compile_formula() {
+    auto* entity_ptr = entity().get_value_ref();
+    if (entity_ptr == nullptr) {
+        throw std::runtime_error(
+            "CallableFormula could not obtain entity pointer");
+    }
+    set_entity_data_ptr(entity_ptr);
+}
+
+void CallableFormula::apply_formula() {
+    _value = _function();
+    if (!entity().set_value(_value)) {
+        throw std::runtime_error(
+            "CallableFormula could not assign entity value");
+    }
+}
+
+void CallableFormula::apply_compiled_formula() {
+    if (entity_data_ptr() == nullptr) {
+        throw std::runtime_error(
+            "CallableFormula needs to be compiled before applying");
+    }
+    _value = _function();
+    *entity_data_ptr() = _value;
+}
+
+std::unique_ptr<Formula> CallableFormula::clone() const {
+    auto clone = std::make_unique<CallableFormula>(entity(), _function);
+    clone->_value = _value;
+    if (entity_data_ptr() != nullptr) {
+        clone->compile_formula();
+    }
+    return clone;
+}
+
+double CallableFormula::get_value() const { return _value; }
+
+std::vector<double>* CallableFormula::get_derivative_values() {
+    return nullptr;
+}
+
+const CallableFormula::Function& CallableFormula::function() const noexcept {
+    return _function;
 }
 
 }  // namespace pycanha

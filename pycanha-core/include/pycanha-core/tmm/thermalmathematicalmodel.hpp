@@ -165,7 +165,6 @@ class ThermalMathematicalModel {
     bool internal_callbacks_active = true;
     bool c_callbacks_active = false;
     bool python_callbacks_active = false;
-    bool python_formulas_active = true;
 
     void callback_solver_loop();
     void callback_transient_time_change();
@@ -185,7 +184,6 @@ class ThermalMathematicalModel {
     void internal_callback_solver_loop();
     void internal_callback_transient_time_change();
     void internal_callback_transient_after_timestep();
-    std::function<void()> python_apply_formulas = []() {};
 
     void (*c_extern_callback_solver_loop)(ThermalMathematicalModel*) =
         [](ThermalMathematicalModel*) {};

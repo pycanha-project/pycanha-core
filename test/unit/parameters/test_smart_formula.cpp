@@ -17,7 +17,8 @@
 
 using namespace pycanha;  // NOLINT(build/namespaces)
 
-TEST_CASE("Formulas create smart formula types", "[formulas][factory]") {
+TEST_CASE("Formulas compute the kind of each formula from its inputs",
+          "[formulas][factory]") {
     auto network = std::make_shared<ThermalNetwork>();
     auto parameters = std::make_shared<Parameters>();
     Formulas formulas(network, parameters);
@@ -31,22 +32,47 @@ TEST_CASE("Formulas create smart formula types", "[formulas][factory]") {
 
     const auto entity = Entity::qi(*network, 1);
 
-    const auto value_formula = formulas.create_formula(entity, "42.0");
-    REQUIRE(dynamic_cast<ValueFormula*>(value_formula.get()) != nullptr);
-
-    const auto parameter_formula = formulas.create_formula(entity, "gain");
-    REQUIRE(dynamic_cast<ParameterFormula*>(parameter_formula.get()) !=
-            nullptr);
+    REQUIRE(formulas.create_formula(entity, "42.0")->kind() ==
+            FormulaKind::Constant);
+    REQUIRE(formulas.create_formula(entity, "6 * 7")->get_value() ==
+            Catch::Approx(42.0));
+    REQUIRE(formulas.create_formula(entity, "gain")->kind() ==
+            FormulaKind::Parameters);
+    REQUIRE(formulas.create_formula(entity, "gain * T1")->kind() ==
+            FormulaKind::Entities);
 
     const auto parameter_expression_formula =
         formulas.create_formula(entity, "gain + offset");
-    REQUIRE(dynamic_cast<ParameterFormula*>(
-                parameter_expression_formula.get()) != nullptr);
+    REQUIRE(parameter_expression_formula->kind() == FormulaKind::Parameters);
 
     formulas.add_formula(parameter_expression_formula);
 
     formulas.apply_formulas();
     REQUIRE(network->nodes().get_qi(1) == Catch::Approx(5.0));
+}
+
+TEST_CASE("Constant formulas keep their value and expression",
+          "[formulas][factory]") {
+    auto network = std::make_shared<ThermalNetwork>();
+    auto parameters = std::make_shared<Parameters>();
+    Formulas formulas(network, parameters);
+    Node node1(1);
+    network->add_node(node1);
+
+    const auto& number = formulas.add_formula("QI1", 0.25);
+    const auto& text = formulas.add_formula("QS1", "2 * 0.5");
+    REQUIRE(number.kind() == FormulaKind::Constant);
+    REQUIRE(dynamic_cast<const ExpressionFormula&>(number).expression() ==
+            "0.25");
+    REQUIRE(dynamic_cast<const ExpressionFormula&>(text).expression() ==
+            "2 * 0.5");
+    REQUIRE(number.parameter_dependencies().empty());
+    REQUIRE(number.entity_dependencies().empty());
+
+    formulas.compile_formulas();
+    formulas.apply_compiled_formulas();
+    REQUIRE(network->nodes().get_qi(1) == 0.25);
+    REQUIRE(network->nodes().get_qs(1) == 1.0);
 }
 
 TEST_CASE("ExpressionFormula resolves entity symbols on the right-hand side",
@@ -117,31 +143,28 @@ TEST_CASE("Formulas overloads and association guards stay explicit",
     Formulas detached;
     REQUIRE_THROWS_AS(detached.create_formula(heat, "gain"),
                       std::runtime_error);
-    REQUIRE_THROWS_AS(detached.create_parameter_formula(heat, "gain"),
-                      std::runtime_error);
-    REQUIRE_THROWS_AS(detached.add_expression_formula(heat, "gain"),
-                      std::runtime_error);
+    REQUIRE_THROWS_AS(detached.add_formula("QI1", "gain"), std::runtime_error);
 
     Formulas formulas(network, parameters);
 
-    auto& static_formula = formulas.add_formula(heat, 4.0);
-    REQUIRE(dynamic_cast<ValueFormula*>(&static_formula) != nullptr);
+    const auto& static_formula = formulas.add_formula(heat, 4.0);
+    REQUIRE(static_formula.kind() == FormulaKind::Constant);
     formulas.apply_formulas();
     REQUIRE(network->nodes().get_qi(1) == Catch::Approx(4.0));
 
     REQUIRE(formulas.remove_formula(heat));
     REQUIRE_FALSE(formulas.dependencies().parameters.contains("gain"));
 
-    auto& parameter_formula = formulas.add_parameter_formula("QI1", "gain");
-    auto& auto_selected_formula = formulas.add_formula("T2", "gain + offset");
-    auto& expression_formula =
-        formulas.add_expression_formula("QR1", "QI1 * 2.0");
-    REQUIRE(dynamic_cast<ParameterFormula*>(&parameter_formula) != nullptr);
-    REQUIRE(dynamic_cast<ParameterFormula*>(&auto_selected_formula) != nullptr);
-    REQUIRE(dynamic_cast<ExpressionFormula*>(&expression_formula) != nullptr);
+    const auto& parameter_formula = formulas.add_formula("QI1", "gain");
+    const auto& two_parameter_formula =
+        formulas.add_formula("T2", "gain + offset");
+    const auto& entity_formula = formulas.add_formula("QR1", "QI1 * 2.0");
+    REQUIRE(parameter_formula.kind() == FormulaKind::Parameters);
+    REQUIRE(two_parameter_formula.kind() == FormulaKind::Parameters);
+    REQUIRE(entity_formula.kind() == FormulaKind::Entities);
 
     auto self_formula = formulas.create_formula(heat, "QI1");
-    REQUIRE(dynamic_cast<ExpressionFormula*>(self_formula.get()) != nullptr);
+    REQUIRE(self_formula->kind() == FormulaKind::Entities);
 
     formulas.apply_formulas();
     REQUIRE(network->nodes().get_qi(1) == Catch::Approx(3.0));
@@ -171,14 +194,9 @@ TEST_CASE("Sparse formula targets materialize storage on registration",
     REQUIRE(network->nodes().qs_vector.empty());
     REQUIRE(network->nodes().qr_vector.empty());
 
-    auto& parameter_formula = formulas.add_parameter_formula("QI1", "gain");
-    auto& auto_selected_formula = formulas.add_formula("QS1", "gain + offset");
-    auto& expression_formula =
-        formulas.add_expression_formula("QR1", "QI1 * 2.0");
-
-    REQUIRE(dynamic_cast<ParameterFormula*>(&parameter_formula) != nullptr);
-    REQUIRE(dynamic_cast<ParameterFormula*>(&auto_selected_formula) != nullptr);
-    REQUIRE(dynamic_cast<ExpressionFormula*>(&expression_formula) != nullptr);
+    static_cast<void>(formulas.add_formula("QI1", "gain"));
+    static_cast<void>(formulas.add_formula("QS1", "gain + offset"));
+    static_cast<void>(formulas.add_formula("QR1", "QI1 * 2.0"));
 
     REQUIRE(network->nodes().qi_vector.size() == 1U);
     REQUIRE(network->nodes().qs_vector.size() == 1U);
@@ -316,7 +334,8 @@ TEST_CASE("Formula derivatives are built on first use",
     parameters.add_parameter("p1", 2.0);
     parameters.add_parameter("p2", 5.0);
 
-    ParameterFormula formula(Entity::qi(*network, 1), parameters, "p1**2 * p2");
+    ExpressionFormula formula(Entity::qi(*network, 1), parameters,
+                              "p1**2 * p2");
     REQUIRE(formula.get_derivative_values()->empty());
 
     formula.compile_formula();

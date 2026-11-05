@@ -87,27 +87,23 @@ class Formulas {
 
     bool debug_formulas{false};
 
-    ParameterFormula create_parameter_formula(const Entity& entity,
-                                              const std::string& parameter);
+    // Parses the expression and builds its formula, without adding it.
     [[nodiscard]] std::shared_ptr<Formula> create_formula(
         Entity entity, const std::string& formula_string);
-    [[nodiscard]] ValueFormula& add_value_formula(Entity entity, double value);
-    [[nodiscard]] ValueFormula& add_value_formula(std::string_view entity,
-                                                  double value);
-    [[nodiscard]] ParameterFormula& add_parameter_formula(
-        Entity entity, const std::string& expression);
-    [[nodiscard]] ParameterFormula& add_parameter_formula(
-        std::string_view entity, const std::string& expression);
-    [[nodiscard]] ExpressionFormula& add_expression_formula(
-        Entity entity, const std::string& expression);
-    [[nodiscard]] ExpressionFormula& add_expression_formula(
-        std::string_view entity, const std::string& expression);
     [[nodiscard]] Formula& add_formula(const Entity& entity, double value);
     [[nodiscard]] Formula& add_formula(std::string_view entity, double value);
     [[nodiscard]] Formula& add_formula(const Entity& entity,
                                        const std::string& formula_string);
     [[nodiscard]] Formula& add_formula(std::string_view entity,
                                        const std::string& formula_string);
+    // Adds a formula that runs `function` at its position in the insertion
+    // order and writes the returned value to the target. It counts as
+    // reading every entity, so every formula added after it may depend on
+    // it.
+    [[nodiscard]] CallableFormula& add_callable_formula(
+        const Entity& entity, CallableFormula::Function function);
+    [[nodiscard]] CallableFormula& add_callable_formula(
+        std::string_view entity, CallableFormula::Function function);
     void set_temperature_variable_names(
         const std::unordered_set<std::string>* names) noexcept;
 
@@ -120,6 +116,8 @@ class Formulas {
     void compile_formulas();
     void apply_formulas();
     void apply_compiled_formulas();
+    // Derivatives of the formulas that read only parameters; the others have
+    // none.
     void calculate_derivatives();
     void lock_parameters_for_execution();
     void unlock_parameters() noexcept;

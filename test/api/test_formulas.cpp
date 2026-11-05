@@ -36,21 +36,19 @@ TEST_CASE("Smart formulas read like a high-level API lesson",
 
     auto& formulas = tm.formulas();
 
-    SECTION("add_formula picks the right formula subtype") {
-        // These overloads are meant to be the friendly surface: the library
-        // chooses the concrete formula type based on what the right-hand side
-        // refers to.
+    SECTION("add_formula reports what each formula reads") {
+        // These overloads are meant to be the friendly surface: any
+        // expression goes through add_formula, and the formula's kind follows
+        // from what the right-hand side refers to.
         auto& fixed_heat = formulas.add_formula("QI1", 20.0);
         auto& fixed_string = formulas.add_formula("QS1", "42 + 3");
         auto& parameter_formula = formulas.add_formula("C1", "gain + offset");
         auto& expression_formula = formulas.add_formula("QR1", "GL(1,2) + T2");
 
-        REQUIRE(dynamic_cast<pycanha::ValueFormula*>(&fixed_heat) != nullptr);
-        REQUIRE(dynamic_cast<pycanha::ValueFormula*>(&fixed_string) != nullptr);
-        REQUIRE(dynamic_cast<pycanha::ParameterFormula*>(&parameter_formula) !=
-                nullptr);
-        REQUIRE(dynamic_cast<pycanha::ExpressionFormula*>(
-                    &expression_formula) != nullptr);
+        REQUIRE(fixed_heat.kind() == pycanha::FormulaKind::Constant);
+        REQUIRE(fixed_string.kind() == pycanha::FormulaKind::Constant);
+        REQUIRE(parameter_formula.kind() == pycanha::FormulaKind::Parameters);
+        REQUIRE(expression_formula.kind() == pycanha::FormulaKind::Entities);
 
         REQUIRE_FALSE(formulas.remove_formula("QE1"));
         REQUIRE_THROWS_AS(formulas.add_formula("QI1", "gain"),
@@ -64,9 +62,8 @@ TEST_CASE("Smart formulas read like a high-level API lesson",
     }
 
     SECTION("Compiled formulas and derivative ordering stay predictable") {
-        static_cast<void>(
-            formulas.add_parameter_formula("QI1", "gain + offset"));
-        static_cast<void>(formulas.add_parameter_formula("GL(1,2)", "gain"));
+        static_cast<void>(formulas.add_formula("QI1", "gain + offset"));
+        static_cast<void>(formulas.add_formula("GL(1,2)", "gain"));
 
         formulas.apply_formulas();
         REQUIRE(tm.tmm().nodes().get_qi(1) == Catch::Approx(5.0));
