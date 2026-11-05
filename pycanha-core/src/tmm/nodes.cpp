@@ -341,6 +341,49 @@ double* Nodes::resolve_get_sparse_attr_ref(
     return &storage.coeffRef(index);
 }
 
+void Nodes::make_dense(std::vector<double>& load) const {
+    if (load.empty()) {
+        load.assign(T_vector.size(), 0.0);
+    }
+}
+
+std::array<std::vector<double>*, 5> Nodes::loads() noexcept {
+    return {&qs_vector, &qa_vector, &qe_vector, &qi_vector, &qr_vector};
+}
+
+double Nodes::resolve_get_load_attr(NodeNum node_num,
+                                    const std::vector<double>& storage) const {
+    Index index = 0;
+    if (!find_node_index(node_num, index, "Get")) {
+        return std::nan("");
+    }
+    return storage.empty() ? 0.0 : storage[to_sizet(index)];
+}
+
+bool Nodes::resolve_set_load_attr(NodeNum node_num,
+                                  std::vector<double>& storage, double value) {
+    Index index = 0;
+    if (!find_node_index(node_num, index, "Set")) {
+        return false;
+    }
+    if (storage.empty() && value == 0.0) {
+        return true;  // an empty load already reads zero everywhere
+    }
+    make_dense(storage);
+    storage[to_sizet(index)] = value;
+    return true;
+}
+
+double* Nodes::resolve_get_load_attr_ref(NodeNum node_num,
+                                         std::vector<double>& storage) {
+    Index index = 0;
+    if (!find_node_index(node_num, index, "Get")) {
+        return nullptr;
+    }
+    make_dense(storage);
+    return &storage[to_sizet(index)];
+}
+
 std::string Nodes::resolve_get_literal_attr(
     NodeNum node_num, const Eigen::SparseVector<LiteralString>& storage) const {
     Index index = 0;
@@ -434,23 +477,23 @@ double* Nodes::get_C_value_ref(int node_num) {
 }
 
 double Nodes::get_qs(int node_num) {
-    return resolve_get_sparse_attr(node_num, qs_vector);
+    return resolve_get_load_attr(node_num, qs_vector);
 }
 
 double Nodes::get_qa(int node_num) {
-    return resolve_get_sparse_attr(node_num, qa_vector);
+    return resolve_get_load_attr(node_num, qa_vector);
 }
 
 double Nodes::get_qe(int node_num) {
-    return resolve_get_sparse_attr(node_num, qe_vector);
+    return resolve_get_load_attr(node_num, qe_vector);
 }
 
 double Nodes::get_qi(int node_num) {
-    return resolve_get_sparse_attr(node_num, qi_vector);
+    return resolve_get_load_attr(node_num, qi_vector);
 }
 
 double Nodes::get_qr(int node_num) {
-    return resolve_get_sparse_attr(node_num, qr_vector);
+    return resolve_get_load_attr(node_num, qr_vector);
 }
 
 double Nodes::get_a(int node_num) {
@@ -478,23 +521,23 @@ double Nodes::get_aph(int node_num) {
 }
 
 bool Nodes::set_qs(int node_num, double value) {
-    return resolve_set_sparse_attr(node_num, qs_vector, value);
+    return resolve_set_load_attr(node_num, qs_vector, value);
 }
 
 bool Nodes::set_qa(int node_num, double value) {
-    return resolve_set_sparse_attr(node_num, qa_vector, value);
+    return resolve_set_load_attr(node_num, qa_vector, value);
 }
 
 bool Nodes::set_qe(int node_num, double value) {
-    return resolve_set_sparse_attr(node_num, qe_vector, value);
+    return resolve_set_load_attr(node_num, qe_vector, value);
 }
 
 bool Nodes::set_qi(int node_num, double value) {
-    return resolve_set_sparse_attr(node_num, qi_vector, value);
+    return resolve_set_load_attr(node_num, qi_vector, value);
 }
 
 bool Nodes::set_qr(int node_num, double value) {
-    return resolve_set_sparse_attr(node_num, qr_vector, value);
+    return resolve_set_load_attr(node_num, qr_vector, value);
 }
 
 bool Nodes::set_a(int node_num, double value) {
@@ -522,23 +565,23 @@ bool Nodes::set_aph(int node_num, double value) {
 }
 
 double* Nodes::get_qs_value_ref(int node_num) {
-    return resolve_get_sparse_attr_ref(node_num, qs_vector);
+    return resolve_get_load_attr_ref(node_num, qs_vector);
 }
 
 double* Nodes::get_qa_value_ref(int node_num) {
-    return resolve_get_sparse_attr_ref(node_num, qa_vector);
+    return resolve_get_load_attr_ref(node_num, qa_vector);
 }
 
 double* Nodes::get_qe_value_ref(int node_num) {
-    return resolve_get_sparse_attr_ref(node_num, qe_vector);
+    return resolve_get_load_attr_ref(node_num, qe_vector);
 }
 
 double* Nodes::get_qi_value_ref(int node_num) {
-    return resolve_get_sparse_attr_ref(node_num, qi_vector);
+    return resolve_get_load_attr_ref(node_num, qi_vector);
 }
 
 double* Nodes::get_qr_value_ref(int node_num) {
-    return resolve_get_sparse_attr_ref(node_num, qr_vector);
+    return resolve_get_load_attr_ref(node_num, qr_vector);
 }
 
 double* Nodes::get_a_value_ref(int node_num) {
@@ -870,6 +913,23 @@ bool Nodes::set_literal_C(NodeNum node_num, const std::string& str) {
     return resolve_set_literal_attr(node_num, literals_C, str);
 }
 
+namespace {
+
+// Inserts one node's value into a load that holds `old_size` values when
+// dense. An empty load stays empty for a zero value.
+void insert_load(std::vector<double>& load, std::size_t old_size, Index index,
+                 double value) {
+    if (load.empty()) {
+        if (value == 0.0) {
+            return;
+        }
+        load.assign(old_size, 0.0);
+    }
+    load.insert(load.begin() + index, value);
+}
+
+}  // namespace
+
 void Nodes::remove_node(NodeNum node_num) {
     auto idx = get_idx_from_node_num(node_num);
 
@@ -888,11 +948,11 @@ void Nodes::remove_node(NodeNum node_num) {
     T_vector.erase(T_vector.begin() + *idx);
     C_vector.erase(C_vector.begin() + *idx);
 
-    delete_displace(qs_vector, *idx);
-    delete_displace(qa_vector, *idx);
-    delete_displace(qe_vector, *idx);
-    delete_displace(qi_vector, *idx);
-    delete_displace(qr_vector, *idx);
+    for (auto* load : loads()) {
+        if (!load->empty()) {
+            load->erase(load->begin() + *idx);
+        }
+    }
     delete_displace(a_vector, *idx);
     delete_displace(fx_vector, *idx);
     delete_displace(fy_vector, *idx);
@@ -960,12 +1020,12 @@ void Nodes::add_node_insert_idx(Node& node, Index insert_idx) {
     auto it_c = C_vector.begin() + insert_idx;
     C_vector.insert(it_c, node.get_C());
 
-    // FILL_VECTOR_ATTR(aph)
-    insert_displace(qs_vector, insert_idx, node.get_qs());
-    insert_displace(qa_vector, insert_idx, node.get_qa());
-    insert_displace(qe_vector, insert_idx, node.get_qe());
-    insert_displace(qi_vector, insert_idx, node.get_qi());
-    insert_displace(qr_vector, insert_idx, node.get_qr());
+    const std::size_t old_size = C_vector.size() - 1U;
+    insert_load(qs_vector, old_size, insert_idx, node.get_qs());
+    insert_load(qa_vector, old_size, insert_idx, node.get_qa());
+    insert_load(qe_vector, old_size, insert_idx, node.get_qe());
+    insert_load(qi_vector, old_size, insert_idx, node.get_qi());
+    insert_load(qr_vector, old_size, insert_idx, node.get_qr());
     insert_displace(a_vector, insert_idx, node.get_a());
     insert_displace(fx_vector, insert_idx, node.get_fx());
     insert_displace(fy_vector, insert_idx, node.get_fy());
@@ -1008,6 +1068,11 @@ void Nodes::reserve(Index num_nodes) {
     const auto size = to_sizet(std::max(num_nodes, Index{0}));
     T_vector.reserve(size);
     C_vector.reserve(size);
+    for (auto* load : loads()) {
+        if (!load->empty()) {
+            load->reserve(size);
+        }
+    }
     _diff_node_num_vector.reserve(size);
 }
 
@@ -1181,9 +1246,13 @@ void Nodes::reorder_storage(std::span<const NodeNum> numbers,
 
     reorder_dense(T_vector, new_to_old);
     reorder_dense(C_vector, new_to_old);
-    for (auto* sparse :
-         {&qs_vector, &qa_vector, &qe_vector, &qi_vector, &qr_vector, &a_vector,
-          &fx_vector, &fy_vector, &fz_vector, &eps_vector, &aph_vector}) {
+    for (auto* load : loads()) {
+        if (!load->empty()) {
+            reorder_dense(*load, new_to_old);
+        }
+    }
+    for (auto* sparse : {&a_vector, &fx_vector, &fy_vector, &fz_vector,
+                         &eps_vector, &aph_vector}) {
         reorder_sparse(*sparse, new_to_old);
     }
     for (auto* literals :
@@ -1325,6 +1394,21 @@ void place_dense(std::vector<double>& storage, const BatchPlacement& placement,
         storage[to_sizet(placement.block_start + placement.new_local(j))] =
             value_of(j);
     }
+}
+
+// Same for a load, which stays empty when the batch has no non-zero value
+// for it.
+void place_load(std::vector<double>& load, const BatchPlacement& placement,
+                std::span<const double> column) {
+    if (load.empty()) {
+        const bool has_value = std::ranges::any_of(
+            column, [](double value) { return value != 0.0; });
+        if (!has_value) {
+            return;
+        }
+        load.assign(to_sizet(placement.num_nodes_before), 0.0);
+    }
+    place_dense(load, placement, column);
 }
 
 // Same for the numbers of the block itself.
@@ -1564,15 +1648,14 @@ BulkReport Nodes::add_nodes(const NodeBatch& batch) {
         place_numbers(block, placement, batch.numbers);
         place_dense(T_vector, placement, batch.temperature);
         place_dense(C_vector, placement, batch.capacity);
+        place_load(qs_vector, placement, batch.qs);
+        place_load(qa_vector, placement, batch.qa);
+        place_load(qe_vector, placement, batch.qe);
+        place_load(qi_vector, placement, batch.qi);
+        place_load(qr_vector, placement, batch.qr);
         const std::array<
-            std::pair<std::span<const double>, Eigen::SparseVector<double>*>,
-            11>
-            sparse_columns{{{batch.qs, &qs_vector},
-                            {batch.qa, &qa_vector},
-                            {batch.qe, &qe_vector},
-                            {batch.qi, &qi_vector},
-                            {batch.qr, &qr_vector},
-                            {batch.a, &a_vector},
+            std::pair<std::span<const double>, Eigen::SparseVector<double>*>, 6>
+            sparse_columns{{{batch.a, &a_vector},
                             {batch.fx, &fx_vector},
                             {batch.fy, &fy_vector},
                             {batch.fz, &fz_vector},
@@ -1625,8 +1708,8 @@ template <typename NodesType>
 }
 
 template <typename NodesType>
-[[nodiscard]] auto* sparse_storage_of(NodesType& nodes,
-                                      NodeAttribute attribute) noexcept {
+[[nodiscard]] auto* load_storage_of(NodesType& nodes,
+                                    NodeAttribute attribute) noexcept {
     decltype(&nodes.qs_vector) storage = nullptr;
     switch (attribute) {
         case NodeAttribute::QS:
@@ -1644,6 +1727,24 @@ template <typename NodesType>
         case NodeAttribute::QR:
             storage = &nodes.qr_vector;
             break;
+        case NodeAttribute::T:
+        case NodeAttribute::C:
+        case NodeAttribute::A:
+        case NodeAttribute::FX:
+        case NodeAttribute::FY:
+        case NodeAttribute::FZ:
+        case NodeAttribute::EPS:
+        case NodeAttribute::APH:
+            break;
+    }
+    return storage;
+}
+
+template <typename NodesType>
+[[nodiscard]] auto* sparse_storage_of(NodesType& nodes,
+                                      NodeAttribute attribute) noexcept {
+    decltype(&nodes.a_vector) storage = nullptr;
+    switch (attribute) {
         case NodeAttribute::A:
             storage = &nodes.a_vector;
             break;
@@ -1664,6 +1765,11 @@ template <typename NodesType>
             break;
         case NodeAttribute::T:
         case NodeAttribute::C:
+        case NodeAttribute::QS:
+        case NodeAttribute::QA:
+        case NodeAttribute::QE:
+        case NodeAttribute::QI:
+        case NodeAttribute::QR:
             break;
     }
     return storage;
@@ -1678,6 +1784,20 @@ std::vector<double>* Nodes::dense_storage(NodeAttribute attribute) noexcept {
 const std::vector<double>* Nodes::dense_storage(
     NodeAttribute attribute) const noexcept {
     return dense_storage_of(*this, attribute);
+}
+
+std::vector<double>* Nodes::load_storage(NodeAttribute attribute) noexcept {
+    return load_storage_of(*this, attribute);
+}
+
+const std::vector<double>* Nodes::load_storage(
+    NodeAttribute attribute) const noexcept {
+    return load_storage_of(*this, attribute);
+}
+
+bool Nodes::is_load_dense(NodeAttribute attribute) const noexcept {
+    const auto* load = load_storage(attribute);
+    return load != nullptr && !load->empty();
 }
 
 Eigen::SparseVector<double>* Nodes::sparse_storage(
@@ -1770,6 +1890,17 @@ BulkReport Nodes::set_values(NodeAttribute attribute,
         for (const auto& [index, entry] : targets) {
             (*dense)[to_sizet(index)] = values[entry];
         }
+    } else if (auto* load = load_storage(attribute); load != nullptr) {
+        const bool has_value =
+            std::ranges::any_of(targets, [&values](const auto& target) {
+                return values[target.second] != 0.0;
+            });
+        if (!load->empty() || has_value) {
+            make_dense(*load);
+            for (const auto& [index, entry] : targets) {
+                (*load)[to_sizet(index)] = values[entry];
+            }
+        }
     } else if (auto* sparse = sparse_storage(attribute); sparse != nullptr) {
         std::ranges::stable_sort(
             targets, {}, [](const auto& target) { return target.first; });
@@ -1801,6 +1932,9 @@ BulkReport Nodes::get_values(NodeAttribute attribute,
 
     ensure_node_map();
     const auto* dense = dense_storage(attribute);
+    if (dense == nullptr) {
+        dense = load_storage(attribute);
+    }
     const auto* sparse = sparse_storage(attribute);
     for (std::size_t entry = 0; entry < node_nums.size(); ++entry) {
         const std::optional<Index> index = lookup_node_index(node_nums[entry]);
@@ -1810,8 +1944,11 @@ BulkReport Nodes::get_values(NodeAttribute attribute,
                           " does not exist");
             continue;
         }
-        values[entry] = dense != nullptr ? (*dense)[to_sizet(*index)]
-                                         : sparse->coeff(*index);
+        if (dense != nullptr) {
+            values[entry] = dense->empty() ? 0.0 : (*dense)[to_sizet(*index)];
+        } else {
+            values[entry] = sparse->coeff(*index);
+        }
         ++report.accepted;
     }
 
@@ -1827,6 +1964,10 @@ BulkReport Nodes::get_values(NodeAttribute attribute,
 std::vector<double> Nodes::get_values(NodeAttribute attribute) const {
     if (const auto* dense = dense_storage(attribute); dense != nullptr) {
         return *dense;
+    }
+    if (const auto* load = load_storage(attribute); load != nullptr) {
+        return load->empty() ? std::vector<double>(T_vector.size(), 0.0)
+                             : *load;
     }
     std::vector<double> values(T_vector.size(), 0.0);
     const auto* sparse = sparse_storage(attribute);

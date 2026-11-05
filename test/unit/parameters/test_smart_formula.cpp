@@ -164,9 +164,9 @@ TEST_CASE("Sparse formula targets materialize storage on registration",
     parameters->add_parameter("gain", 3.0);
     parameters->add_parameter("offset", 2.0);
 
-    REQUIRE(network->nodes().qi_vector.nonZeros() == 0);
-    REQUIRE(network->nodes().qs_vector.nonZeros() == 0);
-    REQUIRE(network->nodes().qr_vector.nonZeros() == 0);
+    REQUIRE(network->nodes().qi_vector.empty());
+    REQUIRE(network->nodes().qs_vector.empty());
+    REQUIRE(network->nodes().qr_vector.empty());
 
     auto& parameter_formula = formulas.add_parameter_formula("QI1", "gain");
     auto& auto_selected_formula = formulas.add_formula("QS1", "gain + offset");
@@ -177,9 +177,9 @@ TEST_CASE("Sparse formula targets materialize storage on registration",
     REQUIRE(dynamic_cast<ParameterFormula*>(&auto_selected_formula) != nullptr);
     REQUIRE(dynamic_cast<ExpressionFormula*>(&expression_formula) != nullptr);
 
-    REQUIRE(network->nodes().qi_vector.nonZeros() == 1);
-    REQUIRE(network->nodes().qs_vector.nonZeros() == 1);
-    REQUIRE(network->nodes().qr_vector.nonZeros() == 1);
+    REQUIRE(network->nodes().qi_vector.size() == 1U);
+    REQUIRE(network->nodes().qs_vector.size() == 1U);
+    REQUIRE(network->nodes().qr_vector.size() == 1U);
     REQUIRE(network->nodes().get_qi_value_ref(1) != nullptr);
     REQUIRE(network->nodes().get_qs_value_ref(1) != nullptr);
     REQUIRE(network->nodes().get_qr_value_ref(1) != nullptr);

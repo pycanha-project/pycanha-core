@@ -7,6 +7,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <format>
+#include <initializer_list>
 #include <iterator>
 #include <limits>
 #include <memory>
@@ -145,11 +146,11 @@ Solver::Solver(std::shared_ptr<ThermalMathematicalModel> tmm_shptr,
       C(nullptr, Index{0}),
       Cd(nullptr, Index{0}),
       Cb(nullptr, Index{0}),
-      QI_sp(tmm.nodes().qi_vector),
-      QS_sp(tmm.nodes().qs_vector),
-      QA_sp(tmm.nodes().qa_vector),
-      QE_sp(tmm.nodes().qe_vector),
-      QR_sp(tmm.nodes().qr_vector),
+      QI_load(tmm.nodes().qi_vector),
+      QS_load(tmm.nodes().qs_vector),
+      QA_load(tmm.nodes().qa_vector),
+      QE_load(tmm.nodes().qe_vector),
+      QR_load(tmm.nodes().qr_vector),
       _solver_type(type) {
     _settings.solver_type = type;
 }
@@ -304,6 +305,32 @@ void Solver::release_formulas_after_execution() noexcept {
 std::int64_t Solver::common_bytes() const noexcept {
     return detail::bytes_of(dTd) + detail::bytes_of(Td_solver) +
            detail::bytes_of(Q);
+}
+
+void Solver::sum_loads() {
+    // Q keeps its storage (Qd and Qb map into it): it is sized N once, and
+    // every assignment below has that size. The first dense load is copied
+    // rather than added to zeros, so one dense load costs one pass over the
+    // nodes, as zeroing Q alone does.
+    Q.resize(N);
+    bool written = false;
+    for (const auto* load :
+         {&QI_load, &QS_load, &QA_load, &QE_load, &QR_load}) {
+        // A load is either empty or holds one value per node.
+        if (!std::cmp_equal(load->size(), N)) {
+            continue;
+        }
+        const Eigen::Map<const VectorXd> values(load->data(), N);
+        if (written) {
+            Q += values;
+        } else {
+            Q = values;
+            written = true;
+        }
+    }
+    if (!written) {
+        Q.setZero();
+    }
 }
 
 void Solver::mark_prepared() {

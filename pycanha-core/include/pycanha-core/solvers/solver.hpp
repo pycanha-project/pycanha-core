@@ -19,7 +19,6 @@
 namespace pycanha::solvers {
 
 using SpMatRow = Eigen::SparseMatrix<double, Eigen::RowMajor>;
-using SpVec = Eigen::SparseVector<double>;
 using VectorXd = Eigen::VectorXd;
 using WrappVectorXd = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>;
 
@@ -193,11 +192,14 @@ class Solver {
     WrappVectorXd Cd;
     WrappVectorXd Cb;
 
-    const SpVec& QI_sp;
-    const SpVec& QS_sp;
-    const SpVec& QA_sp;
-    const SpVec& QE_sp;
-    const SpVec& QR_sp;
+    // The node loads, each empty or one value per node. Held by reference
+    // and checked on every sum_loads(), so a load that becomes dense during
+    // a solve is picked up.
+    const std::vector<double>& QI_load;
+    const std::vector<double>& QS_load;
+    const std::vector<double>& QA_load;
+    const std::vector<double>& QE_load;
+    const std::vector<double>& QR_load;
 
     VectorXd Q;
 
@@ -232,6 +234,9 @@ class Solver {
     [[nodiscard]] virtual SolverMemory memory_now() const = 0;
     /// Bytes of the vectors every solver sizes in initialize_common().
     [[nodiscard]] std::int64_t common_bytes() const noexcept;
+
+    /// Q = QI + QS + QA + QE + QR over every node, skipping the empty loads.
+    void sum_loads();
     void mark_prepared();
     /// The last prepare() was not followed by initialize() and still matches
     /// the settings and the model structure.

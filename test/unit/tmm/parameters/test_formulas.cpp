@@ -232,3 +232,31 @@ TEST_CASE("ThermalMathematicalModel uses compiled formulas while locked",
 
     model->formulas().unlock_parameters();
 }
+
+TEST_CASE("Compiled formulas write loads read and set by other formulas",
+          "[formulas][loads]") {
+    auto network = std::make_shared<pycanha::ThermalNetwork>();
+    auto parameters = std::make_shared<pycanha::Parameters>();
+    pycanha::Formulas formulas(network, parameters);
+    for (int number = 1; number <= 10; ++number) {
+        pycanha::Node node(number);
+        node.set_T(300.0);
+        network->nodes().add_node(node);
+    }
+
+    // QI3 is read but never set: taking a pointer to it must not move the
+    // values the targets QI5 and QI9 point to.
+    static_cast<void>(formulas.add_formula("QI5", "1.0 + 0*T1"));
+    static_cast<void>(formulas.add_formula("QI9", "2.0 + QI3"));
+    REQUIRE(network->nodes().qi_vector.size() == 10U);
+
+    formulas.validate_for_execution();
+    formulas.compile_formulas();
+    formulas.lock_parameters_for_execution();
+    formulas.apply_compiled_formulas();
+    formulas.unlock_parameters();
+
+    REQUIRE(network->nodes().get_qi(5) == Catch::Approx(1.0));
+    REQUIRE(network->nodes().get_qi(9) == Catch::Approx(2.0));
+    REQUIRE(network->nodes().get_qi(3) == 0.0);
+}

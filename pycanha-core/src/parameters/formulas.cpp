@@ -109,6 +109,12 @@ bool DerivativeParameterRegistry::contains(
 
 namespace {
 
+[[nodiscard]] bool is_load(EntityType type) noexcept {
+    return type == EntityType::qs || type == EntityType::qa ||
+           type == EntityType::qe || type == EntityType::qi ||
+           type == EntityType::qr;
+}
+
 [[nodiscard]] std::shared_ptr<ThermalNetwork> ensure_network(
     const std::shared_ptr<ThermalNetwork>& network) {
     if (network == nullptr) {
@@ -361,10 +367,24 @@ void Formulas::add_formula(const std::shared_ptr<Formula>& formula) {
                                     "' already exists");
     }
 
-    // Materialize writable target storage immediately so sparse node
-    // attributes become formula-managed as soon as the formula is registered.
+    // Allocate the storage of the target, and of every load the formula
+    // reads, now: a load is empty until a value pointer into it is taken, so
+    // allocating here keeps that allocation out of a later solve.
     if (formula->entity().exists() && formula->entity().writable()) {
         static_cast<void>(formula->entity().get_value_ref());
+    }
+    if (_network != nullptr) {
+        for (const auto& dependency : formula->parameter_dependencies()) {
+            if (_parameters != nullptr && _parameters->contains(dependency)) {
+                continue;
+            }
+            const auto input =
+                Entity::from_internal_symbol(*_network, dependency);
+            if (input.has_value() && is_load(input->type()) &&
+                input->exists()) {
+                static_cast<void>(input->get_value_ref());
+            }
+        }
     }
 
     _formulas.push_back(formula);

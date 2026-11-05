@@ -76,9 +76,10 @@ Eigen::VectorXd densify_sparse_vector(const Eigen::SparseVector<double>& sparse,
     return dense;
 }
 
-// The node attribute stored as a sparse vector, null for T and C.
-const Eigen::SparseVector<double>* sparse_attribute(
-    const Nodes& nodes, DataModelAttribute attribute) {
+// The node load behind the attribute (empty or one value per node), null for
+// any other attribute.
+const std::vector<double>* load_attribute(const Nodes& nodes,
+                                          DataModelAttribute attribute) {
     switch (attribute) {
         case DataModelAttribute::QS:
             return &nodes.qs_vector;
@@ -90,6 +91,15 @@ const Eigen::SparseVector<double>* sparse_attribute(
             return &nodes.qi_vector;
         case DataModelAttribute::QR:
             return &nodes.qr_vector;
+        default:
+            return nullptr;
+    }
+}
+
+// The node attribute stored as a sparse vector, null for T, C and the loads.
+const Eigen::SparseVector<double>* sparse_attribute(
+    const Nodes& nodes, DataModelAttribute attribute) {
+    switch (attribute) {
         case DataModelAttribute::A:
             return &nodes.a_vector;
         case DataModelAttribute::APH:
@@ -390,6 +400,16 @@ void CrankNicolson::save_output_data() {
             set_dense_output(model, attribute, idata_out, time, T);
         } else if (attribute == DataModelAttribute::C) {
             set_dense_output(model, attribute, idata_out, time, C);
+        } else if (const auto* load = load_attribute(tmm.nodes(), attribute);
+                   load != nullptr) {
+            if (std::cmp_equal(load->size(), N)) {
+                set_dense_output(
+                    model, attribute, idata_out, time,
+                    Eigen::Map<const Eigen::VectorXd>(load->data(), N));
+            } else {
+                set_dense_output(model, attribute, idata_out, time,
+                                 Eigen::VectorXd::Zero(N));
+            }
         } else {
             set_dense_output(model, attribute, idata_out, time,
                              densify_sparse_vector(
@@ -530,7 +550,7 @@ void CrankNicolson::build_conductance_matrix() {
 
 void CrankNicolson::build_heat_flux() {
     PYCANHA_PROFILE_SCOPE("Build Q");
-    Q = QI_sp + QS_sp + QA_sp + QE_sp + QR_sp;
+    sum_loads();
     new (&Qd) WrappVectorXd(Q.data(), nd);
     Qd += _radiation_linear_term + KLdb * Tb + KRdb * _t4_boundary;
 }

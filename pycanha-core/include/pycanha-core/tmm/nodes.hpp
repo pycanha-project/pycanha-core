@@ -6,8 +6,9 @@
  * that the nodes are always ordered in the same way according to their user
  * node number and their type.
  *
- * There are two type of storage for the properties of the nodes:
+ * There are three types of storage for the properties of the nodes:
  * - Dense (std::vector<Type>)
+ * - Load (std::vector<double>, either empty or dense)
  * - Sparse (Eigen::SparseVector<Type>)
  *
  * The dense storage is reserved for node attributes that are always defined, as
@@ -16,8 +17,16 @@
  * contiguous and ordered according to the internal numbering scheme explained
  * below.
  *
+ * The loads qs, qa, qe, qi and qr are each either empty (no storage, every
+ * value reads as zero) or dense (one value per node, in internal order). An
+ * empty load becomes dense the first time a non-zero value is set or a
+ * pointer to one of its values is requested, and then stays dense. So no
+ * pointer into a load ever exists while it is empty, and a load only ever
+ * allocates when it goes from empty to dense: setting a value never moves the
+ * values that pointers already refer to.
+ *
  * The sparse storage is used for node attributes that are tipically zero,
- * including the qs, qa, qe, qi, qr, a, fx, fy, fz, eps and aph. This type of
+ * including the a, fx, fy, fz, eps and aph. This type of
  * storage is also used for the literals. Tipically the attributes are just
  * numbers, but some of them might be defined by formula. The formula in these
  * cases is saved as a string in a sparse vector. The order of these vector is
@@ -43,6 +52,7 @@
 
 #pragma once
 #include <Eigen/Sparse>
+#include <array>
 #include <cstdint>
 #include <memory>
 #include <optional>
@@ -103,22 +113,15 @@ class Nodes {
                                    ///< internal node number.
     // NOLINTEND(readability-identifier-naming)
 
+    // Load storage: empty (all zero) or one value per node, ordered by
+    // internal node number.
+    std::vector<double> qs_vector;  ///< Solar load [W].
+    std::vector<double> qa_vector;  ///< Albedo load [W].
+    std::vector<double> qe_vector;  ///< Earth IR load [W].
+    std::vector<double> qi_vector;  ///< Internal load [W].
+    std::vector<double> qr_vector;  ///< Other load [W].
+
     // Sparse storage for attributes that are typically 0
-    Eigen::SparseVector<double>
-        qs_vector;  ///< Solar load [W] sparse vector ordered by internal node
-                    ///< number.
-    Eigen::SparseVector<double>
-        qa_vector;  ///< Albedo load [W] sparse vector ordered by internal node
-                    ///< number.
-    Eigen::SparseVector<double>
-        qe_vector;  ///< Earth IR load [W] sparse vector ordered by internal
-                    ///< node number.
-    Eigen::SparseVector<double>
-        qi_vector;  ///< Internal load [W] sparse vector ordered by internal
-                    ///< node number.
-    Eigen::SparseVector<double>
-        qr_vector;  ///< Other load [W] sparse vector ordered by internal node
-                    ///< number.
     Eigen::SparseVector<double> a_vector;  ///< Area [m^2] sparse vector ordered
                                            ///< by internal node number.
     Eigen::SparseVector<double>
@@ -374,31 +377,13 @@ class Nodes {
     double* get_C_value_ref(
         NodeNum node_num);  ///< Pointer where the capacity value is stored.
     // NOLINTEND(readability-identifier-naming)
-    double* get_qs_value_ref(
-        NodeNum node_num);  ///< Solar load [W] pointer to the value. Note:
-                            ///< Values are store in sparse vectors. Calling
-                            ///< this function will create a zero value in the
-                            ///< matrix if not exist.
-    double* get_qa_value_ref(
-        NodeNum node_num);  ///< Albedo load [W] pointer to the value. Note:
-                            ///< Values are store in sparse vectors. Calling
-                            ///< this function will create a zero value in the
-                            ///< matrix if not exist.
-    double* get_qe_value_ref(
-        NodeNum node_num);  ///< Earth IR load [W] pointer to the value. Note:
-                            ///< Values are store in sparse vectors. Calling
-                            ///< this function will create a zero value in the
-                            ///< matrix if not exist.
-    double* get_qi_value_ref(
-        NodeNum node_num);  ///< Internal load [W] pointer to the value. Note:
-                            ///< Values are store in sparse vectors. Calling
-                            ///< this function will create a zero value in the
-                            ///< matrix if not exist.
-    double* get_qr_value_ref(
-        NodeNum node_num);  ///< Other load [W] pointer to the value. Note:
-                            ///< Values are store in sparse vectors. Calling
-                            ///< this function will create a zero value in the
-                            ///< matrix if not exist.
+    // Pointers to a load value. An empty load becomes dense first, so the
+    // pointer stays valid until a node is added or removed.
+    double* get_qs_value_ref(NodeNum node_num);  ///< Solar load [W].
+    double* get_qa_value_ref(NodeNum node_num);  ///< Albedo load [W].
+    double* get_qe_value_ref(NodeNum node_num);  ///< Earth IR load [W].
+    double* get_qi_value_ref(NodeNum node_num);  ///< Internal load [W].
+    double* get_qr_value_ref(NodeNum node_num);  ///< Other load [W].
     double* get_a_value_ref(
         NodeNum node_num);  ///< Area [m^2] pointer to the value. Note: Values
                             ///< are store in sparse vectors. Calling this
@@ -457,9 +442,15 @@ class Nodes {
     /// User numbers of every node, in internal order.
     [[nodiscard]] std::vector<NodeNum> node_numbers() const;
 
+    /// True when the load (QS, QA, QE, QI or QR) stores one value per node,
+    /// false when it is empty and every value reads as zero. False for any
+    /// other attribute.
+    [[nodiscard]] bool is_load_dense(NodeAttribute attribute) const noexcept;
+
     /// Sets one attribute of many nodes. Unknown nodes are skipped and
-    /// reported; for a node given twice the last value wins. A sparse
-    /// attribute is rebuilt once, dropping values at or below ZERO_THR_ATTR.
+    /// reported; for a node given twice the last value wins. An empty load
+    /// stays empty when every value is zero. A sparse attribute is rebuilt
+    /// once, dropping values at or below ZERO_THR_ATTR.
     BulkReport set_values(NodeAttribute attribute,
                           std::span<const NodeNum> node_nums,
                           std::span<const double> values);
@@ -513,6 +504,10 @@ class Nodes {
         NodeAttribute attribute) noexcept;
     [[nodiscard]] const std::vector<double>* dense_storage(
         NodeAttribute attribute) const noexcept;
+    [[nodiscard]] std::vector<double>* load_storage(
+        NodeAttribute attribute) noexcept;
+    [[nodiscard]] const std::vector<double>* load_storage(
+        NodeAttribute attribute) const noexcept;
     [[nodiscard]] Eigen::SparseVector<double>* sparse_storage(
         NodeAttribute attribute) noexcept;
     [[nodiscard]] const Eigen::SparseVector<double>* sparse_storage(
@@ -532,6 +527,16 @@ class Nodes {
                                  double value);
     double* resolve_get_sparse_attr_ref(NodeNum node_num,
                                         Eigen::SparseVector<double>& storage);
+    double resolve_get_load_attr(NodeNum node_num,
+                                 const std::vector<double>& storage) const;
+    bool resolve_set_load_attr(NodeNum node_num, std::vector<double>& storage,
+                               double value);
+    double* resolve_get_load_attr_ref(NodeNum node_num,
+                                      std::vector<double>& storage);
+    // An empty load gets one zero per node.
+    void make_dense(std::vector<double>& load) const;
+    // The five loads, in the order QS, QA, QE, QI, QR.
+    [[nodiscard]] std::array<std::vector<double>*, 5> loads() noexcept;
     std::string resolve_get_literal_attr(
         NodeNum node_num,
         const Eigen::SparseVector<LiteralString>& storage) const;
