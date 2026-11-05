@@ -424,9 +424,9 @@ TEST_CASE(
 
     REQUIRE(network->nodes().get_qi(1) == Catch::Approx(12.0));
     REQUIRE(network->nodes().get_T(2) == Catch::Approx(3.0));
-    REQUIRE(formulas.parameter_dependencies().at("load").size() == 1);
-    REQUIRE(formulas.parameter_dependencies().at("offset").size() == 1);
-    REQUIRE(formulas.parameter_dependencies().at("temp").size() == 1);
+    REQUIRE(formulas.dependencies().parameters.at("load").size() == 1);
+    REQUIRE(formulas.dependencies().parameters.at("offset").size() == 1);
+    REQUIRE(formulas.dependencies().parameters.at("temp").size() == 1);
 
     const auto load_derivatives = derivatives_by_dependency(*load_formula);
     REQUIRE(load_derivatives.at("load") == Catch::Approx(1.0));

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <optional>
@@ -10,6 +11,7 @@
 #include <utility>
 #include <vector>
 
+#include "pycanha-core/parameters/entity.hpp"
 #include "pycanha-core/parameters/formula.hpp"
 #include "pycanha-core/parameters/parameters.hpp"
 #include "pycanha-core/tmm/thermalnetwork.hpp"
@@ -39,6 +41,17 @@ class DerivativeParameterRegistry {
   private:
     std::shared_ptr<Parameters> _parameters;
     std::vector<std::string> _parameter_names;
+};
+
+// The formulas grouped by what they read, as built by
+// Formulas::dependencies(). Each list keeps insertion order and names a
+// formula once.
+struct FormulaDependencies {
+    std::unordered_map<std::string, std::vector<std::shared_ptr<Formula>>>
+        parameters;
+    std::unordered_map<Entity, std::vector<std::shared_ptr<Formula>>,
+                       Entity::Hash>
+        entities;
 };
 
 class Formulas {
@@ -113,26 +126,30 @@ class Formulas {
     [[nodiscard]] bool is_validation_current() const noexcept;
     [[nodiscard]] bool is_compiled_current() const noexcept;
 
+    // The formulas in insertion order.
     [[nodiscard]] const std::vector<std::shared_ptr<Formula>>& formulas()
-        const noexcept {
+        const {
+        compact();
         return _formulas;
     }
 
-    [[nodiscard]] const std::unordered_map<
-        std::string, std::vector<std::shared_ptr<Formula>>>&
-    parameter_dependencies() const noexcept {
-        return _parameter_dependencies;
-    }
+    // Built on each call by one pass over the formulas.
+    [[nodiscard]] FormulaDependencies dependencies() const;
 
   private:
     [[nodiscard]] Entity resolve_entity(std::string_view entity) const;
+    void compact() const;
 
     std::shared_ptr<ThermalNetwork> _network;
     std::shared_ptr<Parameters> _parameters;
     DerivativeParameterRegistry _parameters_with_derivatives;
-    std::vector<std::shared_ptr<Formula>> _formulas;
-    std::unordered_map<std::string, std::vector<std::shared_ptr<Formula>>>
-        _parameter_dependencies;
+    // Formulas in insertion order. A removal leaves a null hole, so it costs
+    // O(1); compact() drops the holes in one pass before the list is read,
+    // validated, compiled or applied. Mutable so that a const read can do it.
+    mutable std::vector<std::shared_ptr<Formula>> _formulas;
+    // Target entity -> position in _formulas.
+    mutable std::unordered_map<Entity, std::size_t, Entity::Hash> _positions;
+    mutable std::size_t _holes{0U};
     const std::unordered_set<std::string>* _temperature_variable_names{nullptr};
     std::optional<std::uint64_t> _validated_structure_version;
     std::optional<std::uint64_t> _compiled_structure_version;

@@ -4,20 +4,15 @@
 #include <spdlog/spdlog.h>
 #include <symengine/basic.h>
 #include <symengine/eval_double.h>
-#include <symengine/parser.h>
 #include <symengine/symbol.h>
-#include <symengine/symengine_rcp.h>
 
 #include <algorithm>
 #include <cstddef>
-#include <exception>
-#include <iterator>
-#include <map>
 #include <memory>
-#include <ranges>
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <unordered_map>
 #include <unordered_set>
 #include <utility>
 #include <vector>
@@ -131,46 +126,12 @@ namespace {
     return parameters;
 }
 
-using ExpressionNode = SymEngine::RCP<const SymEngine::Basic>;
-using SymbolMap =
-    std::map<std::string, SymEngine::RCP<const SymEngine::Symbol>>;
-
-[[nodiscard]] std::string replace_python_power(std::string expression) {
-    std::size_t position = 0U;
-    while ((position = expression.find("**", position)) != std::string::npos) {
-        expression.replace(position, 2U, "^");
-        position += 1U;
-    }
-    return expression;
-}
-
-[[nodiscard]] std::string preprocess_expression(const std::string& expression) {
-    if ((expression.contains('[')) || (expression.contains(']'))) {
-        throw std::invalid_argument(
-            "ExpressionFormula does not support matrix or array access yet");
-    }
-
-    return replace_python_power(expression);
-}
-
-void collect_symbols(const ExpressionNode& expr, SymbolMap& symbols) {
-    std::vector<ExpressionNode> pending{expr};
-
-    while (!pending.empty()) {
-        const ExpressionNode current = pending.back();
-        pending.pop_back();
-
-        if (const auto* symbol =
-                dynamic_cast<const SymEngine::Symbol*>(current.get());
-            symbol != nullptr) {
-            symbols.emplace(symbol->get_name(),
-                            SymEngine::symbol(symbol->get_name()));
-            continue;
-        }
-
-        const auto arguments = current->get_args();
-        std::ranges::copy(std::views::reverse(arguments),
-                          std::back_inserter(pending));
+// Appends `formula` to `list` unless it is already its last entry: one
+// formula may read the same input under two spellings (GL(1,2) and GL(2,1)).
+void append_once(std::vector<std::shared_ptr<Formula>>& list,
+                 const std::shared_ptr<Formula>& formula) {
+    if (list.empty() || list.back() != formula) {
+        list.push_back(formula);
     }
 }
 
@@ -206,74 +167,41 @@ Entity Formulas::resolve_entity(std::string_view entity) const {
 
 std::shared_ptr<Formula> Formulas::create_formula(
     Entity entity, const std::string& formula_string) {
-    [[maybe_unused]] auto validated_network = ensure_network(_network);
+    const auto associated_network = ensure_network(_network);
     auto parameter_storage = ensure_parameters(_parameters);
 
-    const auto normalized = preprocess_expression(
-        detail::preprocess_formula_symbols(formula_string));
-
-    ExpressionNode parsed_expression;
-    try {
-        parsed_expression = SymEngine::parse(normalized);
-    } catch (const std::exception& exception) {
-        throw std::invalid_argument("Formula could not parse '" +
-                                    formula_string + "': " + exception.what());
-    }
-
-    SymbolMap symbols;
-    collect_symbols(parsed_expression, symbols);
-    if (symbols.empty()) {
+    // Parsed once here; the formula is built from this parse. Symbols that
+    // are not parameters are resolved to entities by ExpressionFormula.
+    auto parsed = detail::parse_expression(formula_string);
+    if (parsed.symbols.empty()) {
         auto formula = std::make_shared<ValueFormula>(entity);
-        formula->set_value(SymEngine::eval_double(*parsed_expression));
+        formula->set_value(SymEngine::eval_double(*parsed.tree));
         return formula;
     }
 
-    bool has_entity_symbols = false;
     bool all_parameter_symbols = true;
-
-    for (const auto& [symbol_name, symbol] : symbols) {
-        (void)symbol;
-
+    for (const auto& symbol : parsed.symbols) {
+        const auto& symbol_name = symbol->get_name();
         if (parameter_storage->contains(symbol_name)) {
             continue;
         }
 
         all_parameter_symbols = false;
-
         if ((_temperature_variable_names != nullptr) &&
             _temperature_variable_names->contains(symbol_name)) {
             throw std::invalid_argument("TemperatureVariable '" + symbol_name +
                                         "' in formulas is not implemented yet");
         }
-
-        const auto referenced_entity =
-            Entity::from_internal_symbol(*_network, symbol_name);
-        if (!referenced_entity.has_value() || !referenced_entity->exists()) {
-            throw std::invalid_argument("Unknown symbol '" + symbol_name +
-                                        "' in formula");
-        }
-
-        has_entity_symbols = true;
-        if (referenced_entity->is_same_as(entity)) {
-            SPDLOG_LOGGER_WARN(get_logger(),
-                               "Formula for '{}' references itself on the "
-                               "right-hand side",
-                               entity.string_representation());
-        }
     }
 
     if (all_parameter_symbols) {
-        return std::make_shared<ParameterFormula>(entity, *parameter_storage,
-                                                  formula_string);
+        return std::make_shared<ParameterFormula>(
+            entity, *parameter_storage, formula_string, std::move(parsed));
     }
 
-    if (has_entity_symbols) {
-        return std::make_shared<ExpressionFormula>(
-            entity, *parameter_storage, formula_string, _network.get());
-    }
-
-    return std::make_shared<ExpressionFormula>(entity, *parameter_storage,
-                                               formula_string);
+    return std::make_shared<ExpressionFormula>(
+        entity, *parameter_storage, formula_string, std::move(parsed),
+        associated_network.get());
 }
 
 void Formulas::set_temperature_variable_names(
@@ -357,50 +285,39 @@ void Formulas::add_formula(const std::shared_ptr<Formula>& formula) {
         throw std::invalid_argument("Cannot add a null formula");
     }
 
-    const auto duplicate =
-        std::ranges::find_if(_formulas, [&formula](const auto& existing) {
-            return existing->entity().is_same_as(formula->entity());
-        });
-    if (duplicate != _formulas.end()) {
+    const auto& target = formula->entity();
+    if (_positions.contains(target)) {
         throw std::invalid_argument("A formula for entity '" +
-                                    formula->entity().string_representation() +
+                                    target.string_representation() +
                                     "' already exists");
     }
 
     // Allocate the storage of the target, and of every load the formula
     // reads, now: a load is empty until a value pointer into it is taken, so
     // allocating here keeps that allocation out of a later solve.
-    if (formula->entity().exists() && formula->entity().writable()) {
-        static_cast<void>(formula->entity().get_value_ref());
+    if (target.exists() && target.writable()) {
+        static_cast<void>(target.get_value_ref());
     }
-    if (_network != nullptr) {
-        for (const auto& dependency : formula->parameter_dependencies()) {
-            if (_parameters != nullptr && _parameters->contains(dependency)) {
-                continue;
-            }
-            const auto input =
-                Entity::from_internal_symbol(*_network, dependency);
-            if (input.has_value() && is_load(input->type()) &&
-                input->exists()) {
-                static_cast<void>(input->get_value_ref());
-            }
+    for (const auto& input : formula->entity_dependencies()) {
+        if (is_load(input.type()) && input.exists()) {
+            static_cast<void>(input.get_value_ref());
         }
     }
 
-    _formulas.push_back(formula);
+    const auto position = _positions.emplace(target, _formulas.size()).first;
+    try {
+        _formulas.push_back(formula);
+    } catch (...) {
+        _positions.erase(position);
+        throw;
+    }
     _validated_structure_version.reset();
     _compiled_structure_version.reset();
-    for (const auto& dependency : formula->parameter_dependencies()) {
-        _parameter_dependencies[dependency].push_back(formula);
-    }
 }
 
 bool Formulas::remove_formula(const Entity& entity) noexcept {
-    const auto iterator =
-        std::ranges::find_if(_formulas, [&entity](const auto& formula) {
-            return formula->entity().is_same_as(entity);
-        });
-    if (iterator == _formulas.end()) {
+    const auto position = _positions.find(entity);
+    if (position == _positions.end()) {
         // noexcept function: compose without std::format and use the
         // non-formatting log path (see pycanha::log_noexcept).
         log_noexcept(spdlog::level::info, "Formula '" +
@@ -409,16 +326,47 @@ bool Formulas::remove_formula(const Entity& entity) noexcept {
         return false;
     }
 
-    _formulas.erase(iterator);
-    _parameter_dependencies.clear();
-    for (const auto& formula : _formulas) {
-        for (const auto& dependency : formula->parameter_dependencies()) {
-            _parameter_dependencies[dependency].push_back(formula);
-        }
-    }
+    _formulas[position->second].reset();
+    _positions.erase(position);
+    ++_holes;
     _validated_structure_version.reset();
     _compiled_structure_version.reset();
     return true;
+}
+
+void Formulas::compact() const {
+    if (_holes == 0U) {
+        return;
+    }
+
+    std::size_t kept = 0U;
+    for (std::size_t position = 0U; position < _formulas.size(); ++position) {
+        if (_formulas[position] == nullptr) {
+            continue;
+        }
+        if (position != kept) {
+            _formulas[kept] = std::move(_formulas[position]);
+            _positions.at(_formulas[kept]->entity()) = kept;
+        }
+        ++kept;
+    }
+    _formulas.resize(kept);
+    _holes = 0U;
+}
+
+FormulaDependencies Formulas::dependencies() const {
+    compact();
+
+    FormulaDependencies dependencies;
+    for (const auto& formula : _formulas) {
+        for (const auto& name : formula->parameter_dependencies()) {
+            append_once(dependencies.parameters[name], formula);
+        }
+        for (const auto& input : formula->entity_dependencies()) {
+            append_once(dependencies.entities[input], formula);
+        }
+    }
+    return dependencies;
 }
 
 bool Formulas::remove_formula(std::string_view entity) noexcept {
@@ -441,6 +389,7 @@ bool Formulas::remove_formula(std::string_view entity) noexcept {
 
 void Formulas::validate_for_execution() {
     auto parameter_storage = ensure_parameters(_parameters);
+    compact();
 
     for (const auto& formula : _formulas) {
         static_cast<void>(formula->get_value());
@@ -454,6 +403,7 @@ void Formulas::compile_formulas() {
     if (!is_validation_current()) {
         validate_for_execution();
     }
+    compact();
 
     for (const auto& formula : _formulas) {
         formula->compile_formula();
@@ -463,6 +413,7 @@ void Formulas::compile_formulas() {
 }
 
 void Formulas::apply_formulas() {
+    compact();
     if (!debug_formulas) {
         for (const auto& formula : _formulas) {
             formula->apply_formula();
@@ -505,6 +456,7 @@ void Formulas::apply_compiled_formulas() {
 }
 
 void Formulas::calculate_derivatives() {
+    compact();
     for (const auto& formula : _formulas) {
         formula->calculate_derivatives();
     }

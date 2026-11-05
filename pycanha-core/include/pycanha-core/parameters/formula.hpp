@@ -4,6 +4,7 @@
 #include <symengine/lambda_double.h>
 #include <symengine/symbol.h>
 
+#include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <stdexcept>
@@ -15,6 +16,23 @@
 #include "pycanha-core/parameters/parameters.hpp"
 
 namespace pycanha {
+
+namespace detail {
+
+// A formula expression after parsing: the expression tree and its free
+// symbols, unique and sorted by name. That order is the order of a formula's
+// inputs and of its derivative values.
+struct ParsedExpression {
+    SymEngine::RCP<const SymEngine::Basic> tree;
+    std::vector<SymEngine::RCP<const SymEngine::Symbol>> symbols;
+};
+
+// Parses a formula expression. Python's `**` is accepted for powers and
+// GL(i,j) / GR(i,j) for couplings. Throws std::invalid_argument when the text
+// does not parse or uses array access.
+[[nodiscard]] ParsedExpression parse_expression(const std::string& expression);
+
+}  // namespace detail
 
 class Formula {
   public:
@@ -41,9 +59,16 @@ class Formula {
     [[nodiscard]] Entity& entity() noexcept { return _entity; }
     [[nodiscard]] const Entity& entity() const noexcept { return _entity; }
 
+    // Names of the parameters the formula reads, in input order.
     [[nodiscard]] const DependencyList& parameter_dependencies()
         const noexcept {
         return _dependencies;
+    }
+
+    // Entities (temperatures, capacities, loads, couplings) the formula reads.
+    [[nodiscard]] const std::vector<Entity>& entity_dependencies()
+        const noexcept {
+        return _entity_dependencies;
     }
 
     void add_parameter_dependency(std::string dependency) {
@@ -69,19 +94,30 @@ class Formula {
   protected:
     DependencyList& mutable_dependencies() noexcept { return _dependencies; }
 
+    void set_entity_dependencies(std::vector<Entity> dependencies) {
+        _entity_dependencies = std::move(dependencies);
+    }
+
     [[nodiscard]] double* entity_data_ptr() noexcept { return _entity_data; }
     void set_entity_data_ptr(double* ptr) noexcept { _entity_data = ptr; }
 
   private:
     Entity _entity;
     DependencyList _dependencies;
+    std::vector<Entity> _entity_dependencies;
     double* _entity_data{nullptr};
 };
 
+// Only sensitivity solves need the derivatives with respect to the inputs, so
+// they are built on the first calculate_derivatives() call, from the
+// expression text.
 class ParameterFormula final : public Formula {
   public:
     ParameterFormula(const Entity& entity, Parameters& parameters,
                      std::string expression);
+    // Same, from an expression already parsed from `expression`.
+    ParameterFormula(const Entity& entity, Parameters& parameters,
+                     std::string expression, detail::ParsedExpression parsed);
 
     void compile_formula() override;
     void apply_formula() override;
@@ -94,14 +130,13 @@ class ParameterFormula final : public Formula {
     [[nodiscard]] const std::string& expression() const noexcept;
 
   private:
-    void initialize_expression();
+    void initialize_expression(detail::ParsedExpression parsed);
     [[nodiscard]] SymEngine::vec_basic lambda_inputs() const;
     [[nodiscard]] double evaluate_expression(
         const SymEngine::RCP<const SymEngine::Basic>& expr) const;
 
     Parameters* _parameters;
     std::string _expression;
-    std::string _normalized_expression;
     std::vector<Index> _parameter_indices;
     std::vector<SymEngine::RCP<const SymEngine::Symbol>> _symbols;
     SymEngine::RCP<const SymEngine::Basic> _parsed_expr;
@@ -174,10 +209,17 @@ class ValueFormula final : public Formula {
     std::vector<double> _derivatives;
 };
 
+// Reads parameters and, when given a network, entities. Derivatives exist
+// only for expressions without entity inputs, and are built on the first
+// calculate_derivatives() call, from the expression text.
 class ExpressionFormula final : public Formula {
   public:
     ExpressionFormula(const Entity& entity, Parameters& parameters,
                       std::string expression,
+                      ThermalNetwork* network = nullptr);
+    // Same, from an expression already parsed from `expression`.
+    ExpressionFormula(const Entity& entity, Parameters& parameters,
+                      std::string expression, detail::ParsedExpression parsed,
                       ThermalNetwork* network = nullptr);
 
     void compile_formula() override;
@@ -193,14 +235,14 @@ class ExpressionFormula final : public Formula {
   private:
     enum class BindingKind : std::uint8_t { Parameter, Entity };
 
+    // One input, in symbol order. `slot` indexes parameter_dependencies()
+    // and _parameter_indices, or entity_dependencies().
     struct SymbolBinding {
-        std::string symbol_name;
         BindingKind kind{BindingKind::Parameter};
-        Index parameter_idx{-1};
-        Entity entity;
+        std::size_t slot{0U};
     };
 
-    void initialize_expression();
+    void initialize_expression(detail::ParsedExpression parsed);
 
     [[nodiscard]] SymEngine::vec_basic lambda_inputs() const;
     [[nodiscard]] double evaluate_expression(
@@ -209,13 +251,14 @@ class ExpressionFormula final : public Formula {
         const SymbolBinding& binding) const;
     [[nodiscard]] double* resolve_symbol_ptr(
         const SymbolBinding& binding) const;
+    [[nodiscard]] std::string binding_name(const SymbolBinding& binding) const;
 
     Parameters* _parameters;
     ThermalNetwork* _network{nullptr};
     std::string _expression;
-    std::string _normalized_expression;
     double _cached_value{0.0};
     std::vector<double> _derivatives;
+    std::vector<Index> _parameter_indices;
     std::vector<SymbolBinding> _bindings;
 
     SymEngine::RCP<const SymEngine::Basic> _parsed_expr;
