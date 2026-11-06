@@ -298,6 +298,8 @@ class Nodes {
 
     /// Reserves storage for @p num_nodes nodes in total, so that adding them
     /// one by one or in several batches never reallocates the dense vectors.
+    /// Growing the storage moves the values and invalidates the pointers into
+    /// them, so it changes structure_version().
     void reserve(Index num_nodes);
 
     /// Method to delete a node of the model.

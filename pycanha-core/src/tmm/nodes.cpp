@@ -1066,6 +1066,20 @@ std::vector<NodeNum> Nodes::node_numbers() const {
 
 void Nodes::reserve(Index num_nodes) {
     const auto size = to_sizet(std::max(num_nodes, Index{0}));
+    // Growing a vector moves its values, so value pointers taken before (by
+    // compiled formulas, by an initialized solver) would dangle: count it as
+    // a structure change.
+    const auto grows = [size](const std::vector<double>& values) {
+        return !values.empty() && size > values.capacity();
+    };
+    const bool moves =
+        grows(T_vector) || grows(C_vector) ||
+        std::ranges::any_of(loads(), [&grows](const std::vector<double>* load) {
+            return grows(*load);
+        });
+    if (moves) {
+        ++_structure_version;
+    }
     T_vector.reserve(size);
     C_vector.reserve(size);
     for (auto* load : loads()) {

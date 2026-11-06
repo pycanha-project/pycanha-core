@@ -10,6 +10,7 @@
 #include <limits>
 #include <memory>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -50,6 +51,26 @@ enum class FormulaKind : std::uint8_t {
     Callable,
 };
 
+// Who wrote a formula. A generator owns the formulas of its origin: a
+// regeneration removes them all, then writes them again. A formula added
+// one at a time is always a user formula.
+enum class FormulaOrigin : std::uint8_t {
+    user,
+    // The conduction builder that turns the geometry into the network.
+    conduction_builder,
+    // The reader of geometry models in the .erg / .etms format.
+    etms_reader,
+    // The reader of thermal model input files (.d).
+    esatan_tmm_reader,
+    // The reader of geometry models in the STEP-TAS format.
+    steptas_gmm_reader,
+};
+
+// The enumerator name, e.g. "conduction_builder".
+[[nodiscard]] std::string_view to_string(FormulaOrigin origin) noexcept;
+
+class Formulas;
+
 // A formula sets one target entity. Formulas run in insertion order, so a
 // formula may read what an earlier one set.
 class Formula {
@@ -78,6 +99,11 @@ class Formula {
     [[nodiscard]] const Entity& entity() const noexcept { return _entity; }
 
     [[nodiscard]] virtual FormulaKind kind() const noexcept;
+
+    // Set by the Formulas collection when the formula is added. Each
+    // subclass stores it where its layout has room: one more member here
+    // would grow every formula and slow the apply loop.
+    [[nodiscard]] virtual FormulaOrigin origin() const noexcept = 0;
 
     // Names of the parameters the formula reads, in input order.
     [[nodiscard]] const DependencyList& parameter_dependencies()
@@ -117,6 +143,10 @@ class Formula {
     void set_entity_data_ptr(double* ptr) noexcept { _entity_data = ptr; }
 
   private:
+    friend class Formulas;
+
+    virtual void set_origin(FormulaOrigin origin) noexcept = 0;
+
     Entity _entity;
     DependencyList _dependencies;
     std::vector<Entity> _entity_dependencies;
@@ -148,8 +178,15 @@ class ExpressionFormula final : public Formula {
     [[nodiscard]] double get_value() const override;
     [[nodiscard]] std::vector<double>* get_derivative_values() override;
     [[nodiscard]] const std::string& expression() const noexcept;
+    [[nodiscard]] FormulaOrigin origin() const noexcept override {
+        return _origin;
+    }
 
   private:
+    void set_origin(FormulaOrigin origin) noexcept override {
+        _origin = origin;
+    }
+
     enum class BindingKind : std::uint8_t { Parameter, Entity };
 
     // One input, in symbol order. `slot` indexes parameter_dependencies()
@@ -198,6 +235,8 @@ class ExpressionFormula final : public Formula {
     std::vector<double*> _input_ptrs;
     std::unique_ptr<DerivativeState> _derivatives;
     bool _compiled{false};
+    // In the padding after _compiled, so it costs no memory.
+    FormulaOrigin _origin{FormulaOrigin::user};
     std::uint64_t _compiled_structure_version{0U};
 };
 
@@ -227,10 +266,18 @@ class CallableFormula final : public Formula {
     [[nodiscard]] double get_value() const override;
     [[nodiscard]] std::vector<double>* get_derivative_values() override;
     [[nodiscard]] const Function& function() const noexcept;
+    [[nodiscard]] FormulaOrigin origin() const noexcept override {
+        return _origin;
+    }
 
   private:
+    void set_origin(FormulaOrigin origin) noexcept override {
+        _origin = origin;
+    }
+
     Function _function;
     double _value{std::numeric_limits<double>::quiet_NaN()};
+    FormulaOrigin _origin{FormulaOrigin::user};
 };
 
 }  // namespace pycanha

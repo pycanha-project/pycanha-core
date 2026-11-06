@@ -84,6 +84,13 @@ class CouplingMatrices {
     Eigen::SparseMatrix<double, Eigen::RowMajor> sparse_db_copy();
     Eigen::SparseMatrix<double, Eigen::RowMajor> sparse_bb_copy();
 
+    /// Puts the three blocks in compressed storage. Compressing moves the
+    /// stored values, so a value pointer taken before it is lost, while one
+    /// taken after it stays valid until structure_version() changes: only an
+    /// insertion leaves a block uncompressed again. Does nothing to a block
+    /// already compressed.
+    void compress();
+
     /// Changes whenever a coupling is inserted or removed, or the stored
     /// couplings move for a new node order; a bulk call changes it once. A
     /// new value for an existing coupling leaves it unchanged. Solvers compare

@@ -44,3 +44,31 @@ What a callable reads cannot be known, so a callable formula counts as reading e
 - `get_value()` returns the last value written, without calling the function, and NaN before the first apply.
 
 Add callable formulas after the expression formulas that do not need their result: an early callable makes everything after it depend on it.
+
+## Origins and generated formulas
+
+Every formula records who wrote it, `Formula::origin()`:
+
+| Origin | Writer |
+|---|---|
+| `user` | `add_formula`, `add_callable_formula` |
+| `conduction_builder` | the conduction builder |
+| `etms_reader` | the `.erg` / `.etms` geometry reader |
+| `esatan_tmm_reader` | the thermal model input (`.d`) reader |
+| `steptas_gmm_reader` | the STEP-TAS geometry reader |
+
+A formula added one at a time is always a `user` formula, also when it is a copy of a generated one. Generators add their formulas in batches with `add_generated_formulas(origin, formulas)`, which returns a `GenerationReport`. On a target that already has a formula:
+
+- a `user` formula stays, and the generated one is dropped (`kept_user`);
+- a generated formula, of any origin, is removed and the new one goes to the end of the list (`replaced`);
+- an expression that does not parse is skipped (`failed`, with the message), and a formula already on the target stays.
+
+One WARN per call sums up the collisions and failures, with the first few targets; DEBUG lists each one. A generator that writes its formulas again first removes all of its own with `remove_formulas(origin)`, so formulas it no longer produces are gone. `add_formula` still throws on a target that has a formula: remove it first.
+
+`contains(target)` and `find(target)` look a formula up by target in constant time.
+
+## Compilation and model changes
+
+`compile_formulas()` takes the value pointer of every target and input. A solve compiles the formulas only when something they point into changed since the last compile: a formula added or removed, a parameter added or removed, a node added or removed, or a coupling added. Values can change freely. On an unchanged model a solve does no formula work beyond comparing these counters, and `compile_formulas()` can be called ahead of a solve to pay the cost earlier.
+
+Removing a node is never refused, even when formulas use it. The next validation (`validate_for_execution()`, called by `compile_formulas()` and by a solve) checks every formula's target and inputs and throws `std::runtime_error` with the number of formulas that cannot run and the first few, so a solve never starts on a broken formula. Remove or fix them, then solve again.

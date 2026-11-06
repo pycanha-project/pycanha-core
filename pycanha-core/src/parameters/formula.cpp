@@ -21,6 +21,7 @@
 #include <ranges>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -143,6 +144,22 @@ ParsedExpression parse_expression(const std::string& expression) {
 }
 
 }  // namespace detail
+
+std::string_view to_string(FormulaOrigin origin) noexcept {
+    switch (origin) {
+        case FormulaOrigin::user:
+            return "user";
+        case FormulaOrigin::conduction_builder:
+            return "conduction_builder";
+        case FormulaOrigin::etms_reader:
+            return "etms_reader";
+        case FormulaOrigin::esatan_tmm_reader:
+            return "esatan_tmm_reader";
+        case FormulaOrigin::steptas_gmm_reader:
+            return "steptas_gmm_reader";
+    }
+    return "unknown";
+}
 
 FormulaKind Formula::kind() const noexcept {
     if (!_entity_dependencies.empty()) {

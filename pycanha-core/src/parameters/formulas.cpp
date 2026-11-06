@@ -7,7 +7,10 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <exception>
 #include <memory>
+#include <optional>
+#include <span>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -125,6 +128,46 @@ namespace {
     return parameters;
 }
 
+// Why `formula` cannot run, e.g. a node it reads was removed; nothing when it
+// can.
+[[nodiscard]] std::optional<std::string> formula_problem(
+    const Formula& formula) {
+    if (!formula.entity().exists()) {
+        return "its target does not exist";
+    }
+    try {
+        static_cast<void>(formula.get_value());
+    } catch (const std::exception& exception) {
+        return exception.what();
+    }
+    return std::nullopt;
+}
+
+// The generated formulas that met an existing formula or were refused: each
+// one is logged at DEBUG, and the first few are kept for one summary WARN.
+class CollisionLog {
+  public:
+    void note(const Entity& target, const std::string& what) {
+        // get_logger() stays inside the macro: a build with DEBUG compiled
+        // away must not leave an unused local behind.
+        SPDLOG_LOGGER_DEBUG(get_logger(), "Generated formula for '{}': {}",
+                            target.string_representation(), what);
+        ++_count;
+        if (_count <= listed) {
+            _first += _first.empty() ? "" : "; ";
+            _first += target.string_representation() + " (" + what + ")";
+        }
+    }
+
+    [[nodiscard]] bool empty() const noexcept { return _count == 0U; }
+    [[nodiscard]] const std::string& first() const noexcept { return _first; }
+
+  private:
+    static constexpr std::size_t listed = 5U;
+    std::size_t _count{0U};
+    std::string _first;
+};
+
 // Appends `formula` to `list` unless it is already its last entry: one
 // formula may read the same input under two spellings (GL(1,2) and GL(2,1)).
 void append_once(std::vector<std::shared_ptr<Formula>>& list,
@@ -149,8 +192,8 @@ void Formulas::associate(std::shared_ptr<ThermalNetwork> network,
     _network = std::move(network);
     _parameters = std::move(parameters);
     _parameters_with_derivatives.associate(_parameters);
-    _validated_structure_version.reset();
-    _compiled_structure_version.reset();
+    _validated.reset();
+    _compiled.reset();
 }
 
 Entity Formulas::resolve_entity(std::string_view entity) const {
@@ -162,6 +205,14 @@ Entity Formulas::resolve_entity(std::string_view entity) const {
     }
 
     return *resolved;
+}
+
+std::optional<Entity> Formulas::try_resolve_entity(
+    std::string_view entity) const {
+    if (_network == nullptr) {
+        return std::nullopt;
+    }
+    return Entity::from_string(*_network, entity);
 }
 
 std::shared_ptr<Formula> Formulas::create_formula(
@@ -236,6 +287,11 @@ void Formulas::add_formula(const Formula& formula) {
 }
 
 void Formulas::add_formula(const std::shared_ptr<Formula>& formula) {
+    insert(formula, FormulaOrigin::user);
+}
+
+void Formulas::insert(const std::shared_ptr<Formula>& formula,
+                      FormulaOrigin origin) {
     if (formula == nullptr) {
         throw std::invalid_argument("Cannot add a null formula");
     }
@@ -266,8 +322,108 @@ void Formulas::add_formula(const std::shared_ptr<Formula>& formula) {
         _positions.erase(position);
         throw;
     }
-    _validated_structure_version.reset();
-    _compiled_structure_version.reset();
+    formula->set_origin(origin);
+    ++_formulas_version;
+}
+
+GenerationReport Formulas::add_generated_formulas(
+    FormulaOrigin origin, std::span<const GeneratedFormula> formulas) {
+    if (origin == FormulaOrigin::user) {
+        throw std::invalid_argument(
+            "Generated formulas need a generator origin; add user formulas "
+            "with add_formula");
+    }
+
+    GenerationReport report;
+    CollisionLog collisions;
+    for (const auto& generated : formulas) {
+        const auto& target = generated.target;
+        const auto existing = find(target);
+        if (existing != nullptr && existing->origin() == FormulaOrigin::user) {
+            ++report.kept_user;
+            collisions.note(target, "the user formula stays");
+            continue;
+        }
+
+        std::shared_ptr<Formula> formula;
+        try {
+            formula = create_formula(target, generated.expression);
+        } catch (const std::exception& exception) {
+            report.failed.push_back(
+                FailedFormula{.target = target, .message = exception.what()});
+            collisions.note(target, exception.what());
+            continue;
+        }
+
+        if (existing == nullptr) {
+            ++report.added;
+        } else {
+            ++report.replaced;
+            collisions.note(target,
+                            "replaces a " +
+                                std::string(to_string(existing->origin())) +
+                                " formula");
+            static_cast<void>(remove_formula(target));
+        }
+        insert(formula, origin);
+    }
+
+    if (collisions.empty()) {
+        SPDLOG_LOGGER_INFO(get_logger(), "Added {} generated formulas ({})",
+                           report.added, to_string(origin));
+        return report;
+    }
+    SPDLOG_LOGGER_WARN(get_logger(),
+                       "Generated formulas ({}): {} added, {} replaced a "
+                       "generated formula, {} dropped for a user formula, {} "
+                       "refused. First: {}",
+                       to_string(origin), report.added, report.replaced,
+                       report.kept_user, report.failed.size(),
+                       collisions.first());
+    return report;
+}
+
+std::size_t Formulas::remove_formulas(FormulaOrigin origin) {
+    std::size_t removed = 0U;
+    for (auto& formula : _formulas) {
+        if (formula == nullptr || formula->origin() != origin) {
+            continue;
+        }
+        _positions.erase(formula->entity());
+        formula.reset();
+        ++removed;
+    }
+
+    if (removed > 0U) {
+        _holes += removed;
+        ++_formulas_version;
+        compact();
+    }
+    SPDLOG_LOGGER_DEBUG(get_logger(), "Removed {} formulas of origin {}",
+                        removed, to_string(origin));
+    return removed;
+}
+
+bool Formulas::contains(const Entity& entity) const noexcept {
+    return _positions.contains(entity);
+}
+
+bool Formulas::contains(std::string_view entity) const {
+    const auto resolved = try_resolve_entity(entity);
+    return resolved.has_value() && contains(*resolved);
+}
+
+std::shared_ptr<Formula> Formulas::find(const Entity& entity) const {
+    const auto position = _positions.find(entity);
+    if (position == _positions.end()) {
+        return nullptr;
+    }
+    return _formulas[position->second];
+}
+
+std::shared_ptr<Formula> Formulas::find(std::string_view entity) const {
+    const auto resolved = try_resolve_entity(entity);
+    return resolved.has_value() ? find(*resolved) : nullptr;
 }
 
 bool Formulas::remove_formula(const Entity& entity) noexcept {
@@ -284,8 +440,7 @@ bool Formulas::remove_formula(const Entity& entity) noexcept {
     _formulas[position->second].reset();
     _positions.erase(position);
     ++_holes;
-    _validated_structure_version.reset();
-    _compiled_structure_version.reset();
+    ++_formulas_version;
     return true;
 }
 
@@ -342,29 +497,76 @@ bool Formulas::remove_formula(std::string_view entity) noexcept {
     return remove_formula(*resolved);
 }
 
+void Formulas::settle_network_storage() {
+    if (_network == nullptr) {
+        return;
+    }
+    // Size the coupling matrices to the nodes and compress them before any
+    // value pointer is taken: after that, their values only move when a
+    // structure version changes, which makes the compiled state stale.
+    _network->synchronize_structure();
+    _network->conductive_matrices().compress();
+    _network->radiative_matrices().compress();
+}
+
+Formulas::Stamp Formulas::current_stamp() const noexcept {
+    Stamp stamp;
+    stamp.formulas = _formulas_version;
+    if (_parameters != nullptr) {
+        stamp.parameters = _parameters->get_structure_version();
+    }
+    if (_network != nullptr) {
+        stamp.network = _network->structure_versions();
+    }
+    return stamp;
+}
+
 void Formulas::validate_for_execution() {
-    auto parameter_storage = ensure_parameters(_parameters);
+    static_cast<void>(ensure_parameters(_parameters));
+    settle_network_storage();
+    if (is_validation_current()) {
+        return;
+    }
     compact();
 
+    // Every broken formula is counted, so one error covers them all.
+    constexpr std::size_t listed_formulas = 5U;
+    std::size_t broken = 0U;
+    std::string listing;
     for (const auto& formula : _formulas) {
-        static_cast<void>(formula->get_value());
+        const auto problem = formula_problem(*formula);
+        if (!problem.has_value()) {
+            continue;
+        }
+        ++broken;
+        if (broken <= listed_formulas) {
+            listing += "\n  " + formula->entity().string_representation() +
+                       ": " + *problem;
+        }
+    }
+    if (broken > 0U) {
+        throw std::runtime_error(std::to_string(broken) + " of " +
+                                 std::to_string(_formulas.size()) +
+                                 " formulas cannot run; remove or fix them. "
+                                 "First:" +
+                                 listing);
     }
 
-    _validated_structure_version = parameter_storage->get_structure_version();
-    _compiled_structure_version.reset();
+    _validated = current_stamp();
+    _compiled.reset();
 }
 
 void Formulas::compile_formulas() {
-    if (!is_validation_current()) {
-        validate_for_execution();
+    validate_for_execution();
+    if (is_compiled_current()) {
+        return;
     }
-    compact();
 
     for (const auto& formula : _formulas) {
         formula->compile_formula();
     }
 
-    _compiled_structure_version = _parameters->get_structure_version();
+    _compiled = current_stamp();
 }
 
 void Formulas::apply_formulas() {
@@ -439,17 +641,13 @@ void Formulas::unlock_parameters() noexcept {
 }
 
 bool Formulas::is_validation_current() const noexcept {
-    return (_parameters != nullptr) &&
-           _validated_structure_version.has_value() &&
-           (_parameters->get_structure_version() ==
-            *_validated_structure_version);
+    return (_parameters != nullptr) && _validated.has_value() &&
+           (*_validated == current_stamp());
 }
 
 bool Formulas::is_compiled_current() const noexcept {
-    return (_parameters != nullptr) &&
-           _compiled_structure_version.has_value() &&
-           (_parameters->get_structure_version() ==
-            *_compiled_structure_version);
+    return (_parameters != nullptr) && _compiled.has_value() &&
+           (*_compiled == current_stamp());
 }
 
 }  // namespace pycanha
