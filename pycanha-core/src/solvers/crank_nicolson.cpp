@@ -341,20 +341,68 @@ std::int64_t CrankNicolson::output_bytes() const {
 
 void CrankNicolson::compute_output_schedule() {
     const double total_sim_time = _resolved.end_time - _resolved.start_time;
-    num_time_steps = static_cast<int>(
-        std::ceil((total_sim_time - eps_time) / _resolved.time_step));
-    num_time_steps = std::max(num_time_steps, 1);
+    const double time_step = _resolved.time_step;
+    const double whole_steps = std::round(total_sim_time / time_step);
+    if (std::abs(total_sim_time - (whole_steps * time_step)) <= eps_time) {
+        num_time_steps = std::max(static_cast<int>(whole_steps), 1);
+        _full_steps = num_time_steps;
+        _end_step = time_step;
+    } else {
+        // Full steps while at least two remain, then the rest (between one
+        // and two steps, or less than one for a short run) in one step, or
+        // in two equal ones when it is longer than a step: ESATAN's end.
+        _full_steps = std::max(
+            static_cast<int>(std::floor(total_sim_time / time_step)) - 1, 0);
+        const double rest =
+            total_sim_time - (static_cast<double>(_full_steps) * time_step);
+        const int end_steps = rest > (time_step + eps_time) ? 2 : 1;
+        _end_step = rest / static_cast<double>(end_steps);
+        num_time_steps = _full_steps + end_steps;
+    }
 
     if (_resolved.output_interval <= 0.0) {
         wait_n_dtimes = num_time_steps;
     } else {
-        wait_n_dtimes = static_cast<int>(std::ceil(
-            (_resolved.output_interval - eps_time) / _resolved.time_step));
+        wait_n_dtimes = static_cast<int>(
+            std::ceil((_resolved.output_interval - eps_time) / time_step));
         wait_n_dtimes = std::max(wait_n_dtimes, 1);
     }
 
-    num_outputs = ((num_time_steps - 1) / wait_n_dtimes) + 2;
+    // Outputs along the full steps (output_due()), and the first and last.
+    num_outputs =
+        (std::min(_full_steps, num_time_steps - 1) / wait_n_dtimes) + 2;
     num_outputs = std::max(num_outputs, 2);
+}
+
+double CrankNicolson::step_length(int iter) const noexcept {
+    return iter < _full_steps ? _resolved.time_step : _end_step;
+}
+
+bool CrankNicolson::output_due() const noexcept {
+    // The last step always ends at an output; the others when they close an
+    // output interval along the full steps.
+    return (time_iter == num_time_steps - 1) ||
+           ((time_iter < _full_steps) &&
+            (((time_iter + 1) % wait_n_dtimes) == 0));
+}
+
+void CrankNicolson::begin_step() {
+    const double step = step_length(time_iter);
+    if (step != _step) {
+        // 2C/dt changes with the step: a network with fixed_couplings reads
+        // its couplings and diagonal again at the next linearize().
+        _network->begin_solve();
+    }
+    _step = step;
+}
+
+void CrankNicolson::advance_time() {
+    if (time_iter == num_time_steps - 1 && _full_steps < num_time_steps) {
+        time = _resolved.end_time;  // the shortened end, without round-off
+    } else {
+        time += _step;
+    }
+    tmm.time = time;
 }
 
 void CrankNicolson::create_output_model() {
@@ -420,7 +468,7 @@ void CrankNicolson::outputs_first_last() {
 
 void CrankNicolson::outputs() {
     PYCANHA_PROFILE_SCOPE("Outputs");
-    if (((time_iter + 1) % wait_n_dtimes) == 0) {
+    if (output_due()) {
         ++idata_out;
         save_output_data();
     }
@@ -439,6 +487,7 @@ void CrankNicolson::restart_solve() {
 
     time_iter = -1;
     idata_out = 0;
+    _step = step_length(0);
 
     SPDLOG_LOGGER_DEBUG(pycanha::get_logger(), "(Re)starting solve...");
 }
@@ -460,13 +509,13 @@ void CrankNicolson::solve() {
     outputs_first_last();
 
     for (time_iter = 0; time_iter < num_time_steps; ++time_iter) {
+        begin_step();
         callback_solver_loop();
         build_conductance_matrix();
         build_heat_flux();
         store_heat_flux_at_n0();
 
-        time += _resolved.time_step;
-        tmm.time = time;
+        advance_time();
         callback_transient_time_change();
 
         int iterations = 0;
@@ -514,7 +563,7 @@ void CrankNicolson::build_capacities() {
     _capacities = Cd;
     _capacities.array() += _resolved.capacity_delta;
     _capacities_inverse = _capacities.cwiseInverse();
-    _capacity_diagonal = (2.0 / _resolved.time_step) * _capacities;
+    _capacity_diagonal = (2.0 / _step) * _capacities;
 }
 
 // -K + 2C/dt at the current temperatures, couplings and capacities.
@@ -540,8 +589,7 @@ void CrankNicolson::store_heat_flux_at_n0() {
     // K Td + Qd, with K = -A: the network holds A + 2C/dt.
     _network->multiply(Td, _kt_q_n0);
     _kt_q_n0 = Qd - _kt_q_n0 + _capacity_diagonal.cwiseProduct(Td);
-    _heat_flux_n0 =
-        _kt_q_n0 + (2.0 / _resolved.time_step) * _capacities.cwiseProduct(Td);
+    _heat_flux_n0 = _kt_q_n0 + (2.0 / _step) * _capacities.cwiseProduct(Td);
 }
 
 void CrankNicolson::solve_step() {
