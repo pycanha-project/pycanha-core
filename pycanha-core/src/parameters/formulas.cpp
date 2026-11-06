@@ -2,29 +2,28 @@
 
 #include <spdlog/common.h>
 #include <spdlog/spdlog.h>
-#include <symengine/basic.h>
-#include <symengine/eval_double.h>
-#include <symengine/parser.h>
-#include <symengine/symbol.h>
-#include <symengine/symengine_rcp.h>
 
 #include <algorithm>
 #include <cstddef>
+#include <cstdint>
 #include <exception>
 #include <iterator>
-#include <map>
 #include <memory>
-#include <ranges>
+#include <optional>
+#include <span>
 #include <stdexcept>
 #include <string>
 #include <string_view>
-#include <unordered_set>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
 #include "pycanha-core/parameters/entity.hpp"
 #include "pycanha-core/parameters/formula.hpp"
+#include "pycanha-core/parameters/formula_program.hpp"
+#include "pycanha-core/parameters/origin.hpp"
 #include "pycanha-core/parameters/parameters.hpp"
+#include "pycanha-core/parameters/table.hpp"
 #include "pycanha-core/tmm/thermalnetwork.hpp"
 #include "pycanha-core/utils/logger.hpp"
 
@@ -57,8 +56,8 @@ void DerivativeParameterRegistry::add_parameter(
         return;
     }
 
-    // TODO: validate that derivative-selected parameters are used only by
-    // ParameterFormula entries once the formula taxonomy migration is complete.
+    // TODO(formulas): validate that derivative-selected parameters are read
+    // only by formulas that read parameters alone.
     _parameter_names.push_back(*resolved_name);
 }
 
@@ -109,6 +108,12 @@ bool DerivativeParameterRegistry::contains(
 
 namespace {
 
+[[nodiscard]] bool is_load(EntityType type) noexcept {
+    return type == EntityType::qs || type == EntityType::qa ||
+           type == EntityType::qe || type == EntityType::qi ||
+           type == EntityType::qr;
+}
+
 [[nodiscard]] std::shared_ptr<ThermalNetwork> ensure_network(
     const std::shared_ptr<ThermalNetwork>& network) {
     if (network == nullptr) {
@@ -125,46 +130,37 @@ namespace {
     return parameters;
 }
 
-using ExpressionNode = SymEngine::RCP<const SymEngine::Basic>;
-using SymbolMap =
-    std::map<std::string, SymEngine::RCP<const SymEngine::Symbol>>;
-
-[[nodiscard]] std::string replace_python_power(std::string expression) {
-    std::size_t position = 0U;
-    while ((position = expression.find("**", position)) != std::string::npos) {
-        expression.replace(position, 2U, "^");
-        position += 1U;
-    }
-    return expression;
-}
-
-[[nodiscard]] std::string preprocess_expression(const std::string& expression) {
-    if ((expression.contains('[')) || (expression.contains(']'))) {
-        throw std::invalid_argument(
-            "ExpressionFormula does not support matrix or array access yet");
-    }
-
-    return replace_python_power(expression);
-}
-
-void collect_symbols(const ExpressionNode& expr, SymbolMap& symbols) {
-    std::vector<ExpressionNode> pending{expr};
-
-    while (!pending.empty()) {
-        const ExpressionNode current = pending.back();
-        pending.pop_back();
-
-        if (const auto* symbol =
-                dynamic_cast<const SymEngine::Symbol*>(current.get());
-            symbol != nullptr) {
-            symbols.emplace(symbol->get_name(),
-                            SymEngine::symbol(symbol->get_name()));
-            continue;
+// The generated formulas that met an existing formula or were refused: each
+// one is logged at DEBUG, and the first few are kept for one summary WARN.
+class CollisionLog {
+  public:
+    void note(const Entity& target, const std::string& what) {
+        // get_logger() stays inside the macro: a build with DEBUG compiled
+        // away must not leave an unused local behind.
+        SPDLOG_LOGGER_DEBUG(get_logger(), "Generated formula for '{}': {}",
+                            target.string_representation(), what);
+        ++_count;
+        if (_count <= listed) {
+            _first += _first.empty() ? "" : "; ";
+            _first += target.string_representation() + " (" + what + ")";
         }
+    }
 
-        const auto arguments = current->get_args();
-        std::ranges::copy(std::views::reverse(arguments),
-                          std::back_inserter(pending));
+    [[nodiscard]] bool empty() const noexcept { return _count == 0U; }
+    [[nodiscard]] const std::string& first() const noexcept { return _first; }
+
+  private:
+    static constexpr std::size_t listed = 5U;
+    std::size_t _count{0U};
+    std::string _first;
+};
+
+// Appends `formula` to `list` unless it is already its last entry: one
+// formula may read the same input under two spellings (GL(1,2) and GL(2,1)).
+void append_once(std::vector<std::shared_ptr<Formula>>& list,
+                 const std::shared_ptr<Formula>& formula) {
+    if (list.empty() || list.back() != formula) {
+        list.push_back(formula);
     }
 }
 
@@ -183,8 +179,8 @@ void Formulas::associate(std::shared_ptr<ThermalNetwork> network,
     _network = std::move(network);
     _parameters = std::move(parameters);
     _parameters_with_derivatives.associate(_parameters);
-    _validated_structure_version.reset();
-    _compiled_structure_version.reset();
+    _validated.reset();
+    _compiled.reset();
 }
 
 Entity Formulas::resolve_entity(std::string_view entity) const {
@@ -198,134 +194,35 @@ Entity Formulas::resolve_entity(std::string_view entity) const {
     return *resolved;
 }
 
+std::optional<Entity> Formulas::try_resolve_entity(
+    std::string_view entity) const {
+    if (_network == nullptr) {
+        return std::nullopt;
+    }
+    return Entity::from_string(*_network, entity);
+}
+
 std::shared_ptr<Formula> Formulas::create_formula(
     Entity entity, const std::string& formula_string) {
-    [[maybe_unused]] auto validated_network = ensure_network(_network);
+    const auto associated_network = ensure_network(_network);
     auto parameter_storage = ensure_parameters(_parameters);
 
-    const auto normalized = preprocess_expression(
-        detail::preprocess_formula_symbols(formula_string));
-
-    ExpressionNode parsed_expression;
-    try {
-        parsed_expression = SymEngine::parse(normalized);
-    } catch (const std::exception& exception) {
-        throw std::invalid_argument("Formula could not parse '" +
-                                    formula_string + "': " + exception.what());
-    }
-
-    SymbolMap symbols;
-    collect_symbols(parsed_expression, symbols);
-    if (symbols.empty()) {
-        auto formula = std::make_shared<ValueFormula>(entity);
-        formula->set_value(SymEngine::eval_double(*parsed_expression));
-        return formula;
-    }
-
-    bool has_entity_symbols = false;
-    bool all_parameter_symbols = true;
-
-    for (const auto& [symbol_name, symbol] : symbols) {
-        (void)symbol;
-
-        if (parameter_storage->contains(symbol_name)) {
-            continue;
-        }
-
-        all_parameter_symbols = false;
-
-        if ((_temperature_variable_names != nullptr) &&
-            _temperature_variable_names->contains(symbol_name)) {
-            throw std::invalid_argument("TemperatureVariable '" + symbol_name +
-                                        "' in formulas is not implemented yet");
-        }
-
-        const auto referenced_entity =
-            Entity::from_internal_symbol(*_network, symbol_name);
-        if (!referenced_entity.has_value() || !referenced_entity->exists()) {
-            throw std::invalid_argument("Unknown symbol '" + symbol_name +
-                                        "' in formula");
-        }
-
-        has_entity_symbols = true;
-        if (referenced_entity->is_same_as(entity)) {
-            SPDLOG_LOGGER_WARN(get_logger(),
-                               "Formula for '{}' references itself on the "
-                               "right-hand side",
-                               entity.string_representation());
-        }
-    }
-
-    if (all_parameter_symbols) {
-        return std::make_shared<ParameterFormula>(entity, *parameter_storage,
-                                                  formula_string);
-    }
-
-    if (has_entity_symbols) {
-        return std::make_shared<ExpressionFormula>(
-            entity, *parameter_storage, formula_string, _network.get());
-    }
-
-    return std::make_shared<ExpressionFormula>(entity, *parameter_storage,
-                                               formula_string);
-}
-
-void Formulas::set_temperature_variable_names(
-    const std::unordered_set<std::string>* names) noexcept {
-    _temperature_variable_names = names;
-}
-
-ParameterFormula Formulas::create_parameter_formula(
-    const Entity& entity, const std::string& parameter) {
-    [[maybe_unused]] auto validated_network = ensure_network(_network);
-    auto parameter_storage = ensure_parameters(_parameters);
-    return {entity, *parameter_storage, parameter};
-}
-
-ValueFormula& Formulas::add_value_formula(Entity entity, double value) {
-    auto formula = std::make_shared<ValueFormula>(entity);
-    formula->set_value(value);
-    add_formula(formula);
-    return *formula;
-}
-
-ValueFormula& Formulas::add_value_formula(std::string_view entity,
-                                          double value) {
-    return add_value_formula(resolve_entity(entity), value);
-}
-
-ParameterFormula& Formulas::add_parameter_formula(
-    Entity entity, const std::string& expression) {
-    auto formula = std::make_shared<ParameterFormula>(
-        entity, *ensure_parameters(_parameters), expression);
-    add_formula(formula);
-    return *formula;
-}
-
-ParameterFormula& Formulas::add_parameter_formula(
-    std::string_view entity, const std::string& expression) {
-    return add_parameter_formula(resolve_entity(entity), expression);
-}
-
-ExpressionFormula& Formulas::add_expression_formula(
-    Entity entity, const std::string& expression) {
-    auto formula = std::make_shared<ExpressionFormula>(
-        entity, *ensure_parameters(_parameters), expression, _network.get());
-    add_formula(formula);
-    return *formula;
-}
-
-ExpressionFormula& Formulas::add_expression_formula(
-    std::string_view entity, const std::string& expression) {
-    return add_expression_formula(resolve_entity(entity), expression);
+    // Parsed once here and lowered by ExpressionFormula. Symbols that are not
+    // parameters are resolved to entities, calls to tables.
+    auto parsed = detail::parse_expression(formula_string);
+    return std::make_shared<ExpressionFormula>(
+        entity, *parameter_storage, formula_string, std::move(parsed),
+        associated_network.get());
 }
 
 Formula& Formulas::add_formula(const Entity& entity, double value) {
-    return add_value_formula(entity, value);
+    auto formula = std::make_shared<ExpressionFormula>(entity, value);
+    add_formula(formula);
+    return *formula;
 }
 
 Formula& Formulas::add_formula(std::string_view entity, double value) {
-    return add_value_formula(entity, value);
+    return add_formula(resolve_entity(entity), value);
 }
 
 Formula& Formulas::add_formula(const Entity& entity,
@@ -340,6 +237,19 @@ Formula& Formulas::add_formula(std::string_view entity,
     return add_formula(resolve_entity(entity), formula_string);
 }
 
+CallableFormula& Formulas::add_callable_formula(
+    const Entity& entity, CallableFormula::Function function) {
+    auto formula =
+        std::make_shared<CallableFormula>(entity, std::move(function));
+    add_formula(formula);
+    return *formula;
+}
+
+CallableFormula& Formulas::add_callable_formula(
+    std::string_view entity, CallableFormula::Function function) {
+    return add_callable_formula(resolve_entity(entity), std::move(function));
+}
+
 void Formulas::add_formula(const Formula& formula) {
     auto clone = formula.clone();
     auto shared = std::shared_ptr<Formula>(std::move(clone));
@@ -347,40 +257,147 @@ void Formulas::add_formula(const Formula& formula) {
 }
 
 void Formulas::add_formula(const std::shared_ptr<Formula>& formula) {
+    insert(formula, Origin::user);
+}
+
+void Formulas::insert(const std::shared_ptr<Formula>& formula, Origin origin) {
     if (formula == nullptr) {
         throw std::invalid_argument("Cannot add a null formula");
     }
 
-    const auto duplicate =
-        std::ranges::find_if(_formulas, [&formula](const auto& existing) {
-            return existing->entity().is_same_as(formula->entity());
-        });
-    if (duplicate != _formulas.end()) {
+    const auto& target = formula->entity();
+    if (_positions.contains(target)) {
         throw std::invalid_argument("A formula for entity '" +
-                                    formula->entity().string_representation() +
+                                    target.string_representation() +
                                     "' already exists");
     }
 
-    // Materialize writable target storage immediately so sparse node
-    // attributes become formula-managed as soon as the formula is registered.
-    if (formula->entity().exists() && formula->entity().writable()) {
-        static_cast<void>(formula->entity().get_value_ref());
+    // Allocate the storage of the target, and of every load the formula
+    // reads, now: a load is empty until a value pointer into it is taken, so
+    // allocating here keeps that allocation out of a later solve.
+    if (target.exists() && target.writable()) {
+        static_cast<void>(target.get_value_ref());
+    }
+    for (const auto& input : formula->entity_dependencies()) {
+        if (is_load(input.type()) && input.exists()) {
+            static_cast<void>(input.get_value_ref());
+        }
     }
 
-    _formulas.push_back(formula);
-    _validated_structure_version.reset();
-    _compiled_structure_version.reset();
-    for (const auto& dependency : formula->parameter_dependencies()) {
-        _parameter_dependencies[dependency].push_back(formula);
+    const auto position = _positions.emplace(target, _formulas.size()).first;
+    try {
+        _formulas.push_back(formula);
+    } catch (...) {
+        _positions.erase(position);
+        throw;
     }
+    formula->set_origin(origin);
+    ++_formulas_version;
+}
+
+GenerationReport Formulas::add_generated_formulas(
+    Origin origin, std::span<const GeneratedFormula> formulas) {
+    if (origin == Origin::user) {
+        throw std::invalid_argument(
+            "Generated formulas need a generator origin; add user formulas "
+            "with add_formula");
+    }
+
+    GenerationReport report;
+    CollisionLog collisions;
+    for (const auto& generated : formulas) {
+        const auto& target = generated.target;
+        const auto existing = find(target);
+        if (existing != nullptr && existing->origin() == Origin::user) {
+            ++report.kept_user;
+            collisions.note(target, "the user formula stays");
+            continue;
+        }
+
+        std::shared_ptr<Formula> formula;
+        try {
+            formula = create_formula(target, generated.expression);
+        } catch (const std::exception& exception) {
+            report.failed.push_back(
+                FailedFormula{.target = target, .message = exception.what()});
+            collisions.note(target, exception.what());
+            continue;
+        }
+
+        if (existing == nullptr) {
+            ++report.added;
+        } else {
+            ++report.replaced;
+            collisions.note(target,
+                            "replaces a " +
+                                std::string(to_string(existing->origin())) +
+                                " formula");
+            static_cast<void>(remove_formula(target));
+        }
+        insert(formula, origin);
+    }
+
+    if (collisions.empty()) {
+        SPDLOG_LOGGER_INFO(get_logger(), "Added {} generated formulas ({})",
+                           report.added, to_string(origin));
+        return report;
+    }
+    SPDLOG_LOGGER_WARN(get_logger(),
+                       "Generated formulas ({}): {} added, {} replaced a "
+                       "generated formula, {} dropped for a user formula, {} "
+                       "refused. First: {}",
+                       to_string(origin), report.added, report.replaced,
+                       report.kept_user, report.failed.size(),
+                       collisions.first());
+    return report;
+}
+
+std::size_t Formulas::remove_formulas(Origin origin) {
+    std::size_t removed = 0U;
+    for (auto& formula : _formulas) {
+        if (formula == nullptr || formula->origin() != origin) {
+            continue;
+        }
+        _positions.erase(formula->entity());
+        formula.reset();
+        ++removed;
+    }
+
+    if (removed > 0U) {
+        _holes += removed;
+        ++_formulas_version;
+        compact();
+    }
+    SPDLOG_LOGGER_DEBUG(get_logger(), "Removed {} formulas of origin {}",
+                        removed, to_string(origin));
+    return removed;
+}
+
+bool Formulas::contains(const Entity& entity) const noexcept {
+    return _positions.contains(entity);
+}
+
+bool Formulas::contains(std::string_view entity) const {
+    const auto resolved = try_resolve_entity(entity);
+    return resolved.has_value() && contains(*resolved);
+}
+
+std::shared_ptr<Formula> Formulas::find(const Entity& entity) const {
+    const auto position = _positions.find(entity);
+    if (position == _positions.end()) {
+        return nullptr;
+    }
+    return _formulas[position->second];
+}
+
+std::shared_ptr<Formula> Formulas::find(std::string_view entity) const {
+    const auto resolved = try_resolve_entity(entity);
+    return resolved.has_value() ? find(*resolved) : nullptr;
 }
 
 bool Formulas::remove_formula(const Entity& entity) noexcept {
-    const auto iterator =
-        std::ranges::find_if(_formulas, [&entity](const auto& formula) {
-            return formula->entity().is_same_as(entity);
-        });
-    if (iterator == _formulas.end()) {
+    const auto position = _positions.find(entity);
+    if (position == _positions.end()) {
         // noexcept function: compose without std::format and use the
         // non-formatting log path (see pycanha::log_noexcept).
         log_noexcept(spdlog::level::info, "Formula '" +
@@ -389,16 +406,49 @@ bool Formulas::remove_formula(const Entity& entity) noexcept {
         return false;
     }
 
-    _formulas.erase(iterator);
-    _parameter_dependencies.clear();
+    _formulas[position->second].reset();
+    _positions.erase(position);
+    ++_holes;
+    ++_formulas_version;
+    return true;
+}
+
+void Formulas::compact() const {
+    if (_holes == 0U) {
+        return;
+    }
+
+    std::size_t kept = 0U;
+    for (std::size_t position = 0U; position < _formulas.size(); ++position) {
+        if (_formulas[position] == nullptr) {
+            continue;
+        }
+        if (position != kept) {
+            _formulas[kept] = std::move(_formulas[position]);
+            _positions.at(_formulas[kept]->entity()) = kept;
+        }
+        ++kept;
+    }
+    _formulas.resize(kept);
+    _holes = 0U;
+}
+
+FormulaDependencies Formulas::dependencies() const {
+    compact();
+
+    FormulaDependencies dependencies;
     for (const auto& formula : _formulas) {
-        for (const auto& dependency : formula->parameter_dependencies()) {
-            _parameter_dependencies[dependency].push_back(formula);
+        for (const auto& name : formula->parameter_dependencies()) {
+            append_once(dependencies.parameters[name], formula);
+        }
+        for (const auto& input : formula->entity_dependencies()) {
+            append_once(dependencies.entities[input], formula);
+        }
+        for (const auto& name : formula->table_dependencies()) {
+            append_once(dependencies.tables[name], formula);
         }
     }
-    _validated_structure_version.reset();
-    _compiled_structure_version.reset();
-    return true;
+    return dependencies;
 }
 
 bool Formulas::remove_formula(std::string_view entity) noexcept {
@@ -419,74 +469,207 @@ bool Formulas::remove_formula(std::string_view entity) noexcept {
     return remove_formula(*resolved);
 }
 
-void Formulas::validate_for_execution() {
-    auto parameter_storage = ensure_parameters(_parameters);
+void Formulas::settle_network_storage() {
+    if (_network == nullptr) {
+        return;
+    }
+    // Size the coupling matrices to the nodes and compress them before any
+    // value pointer is taken: after that, their values only move when a
+    // structure version changes, which makes the compiled state stale.
+    _network->synchronize_structure();
+    _network->conductive_matrices().compress();
+    _network->radiative_matrices().compress();
+}
 
+Formulas::Stamp Formulas::current_stamp() const noexcept {
+    Stamp stamp;
+    stamp.formulas = _formulas_version;
+    if (_parameters != nullptr) {
+        stamp.parameters = _parameters->get_structure_version();
+    }
+    if (_network != nullptr) {
+        stamp.network = _network->structure_versions();
+    }
+    return stamp;
+}
+
+void Formulas::validate_for_execution() {
+    static_cast<void>(ensure_parameters(_parameters));
+    settle_network_storage();
+    if (is_validation_current()) {
+        return;
+    }
+    compact();
+
+    // Every broken formula is counted, so one error covers them all.
+    constexpr std::size_t listed_formulas = 5U;
+    std::size_t broken = 0U;
+    std::string listing;
     for (const auto& formula : _formulas) {
-        static_cast<void>(formula->get_value());
+        const auto problem = formula->problem();
+        if (!problem.has_value()) {
+            continue;
+        }
+        ++broken;
+        if (broken <= listed_formulas) {
+            listing += "\n  " + formula->entity().string_representation() +
+                       ": " + *problem;
+        }
+    }
+    if (broken > 0U) {
+        throw std::runtime_error(std::to_string(broken) + " of " +
+                                 std::to_string(_formulas.size()) +
+                                 " formulas cannot run; remove or fix them. "
+                                 "First:" +
+                                 listing);
     }
 
-    _validated_structure_version = parameter_storage->get_structure_version();
-    _compiled_structure_version.reset();
+    _validated = current_stamp();
+    _compiled.reset();
 }
 
 void Formulas::compile_formulas() {
-    if (!is_validation_current()) {
-        validate_for_execution();
+    validate_for_execution();
+    if (is_compiled_current()) {
+        return;
     }
 
-    for (const auto& formula : _formulas) {
-        formula->compile_formula();
-    }
+    build_program();
+    _compiled = current_stamp();
+}
 
-    _compiled_structure_version = _parameters->get_structure_version();
+detail::FormulaPointers Formulas::collect_pointers() const {
+    const std::size_t count = _formulas.size();
+    detail::FormulaPointers pointers;
+    pointers.targets.resize(count, nullptr);
+    pointers.first_input.resize(count + 1U, 0U);
+    pointers.first_callable = count;
+    for (std::size_t index = 0U; index < count; ++index) {
+        const auto& formula = *_formulas[index];
+        pointers.targets[index] = formula.entity().get_value_ref();
+        pointers.first_input[index] = pointers.inputs.size();
+        if (formula.kind() == FormulaKind::Callable) {
+            pointers.first_callable = std::min(pointers.first_callable, index);
+            continue;
+        }
+        const auto& expression =
+            dynamic_cast<const ExpressionFormula&>(formula);
+        const auto inputs = expression.input_pointers();
+        for (std::size_t input = 0U; input < inputs.size(); ++input) {
+            if (expression.reads_entity(input)) {
+                pointers.entity_reads.emplace_back(inputs[input], index);
+            }
+        }
+        pointers.inputs.insert(pointers.inputs.end(), inputs.begin(),
+                               inputs.end());
+    }
+    pointers.first_input[count] = pointers.inputs.size();
+    return pointers;
+}
+
+void Formulas::build_program() {
+    const auto pointers = collect_pointers();
+    detail::FormulaProgram program;
+    program.reserve(_formulas.size(), pointers.inputs.size());
+    const double* time = _parameters->time_ptr();
+    std::vector<detail::TableView> tables;
+
+    for (const std::size_t index : detail::execution_order(pointers)) {
+        auto& formula = *_formulas[index];
+        double* target = pointers.targets[index];
+        if (formula.kind() == FormulaKind::Callable) {
+            program.add_callable(dynamic_cast<CallableFormula&>(formula),
+                                 target);
+            continue;
+        }
+        const auto& expression =
+            dynamic_cast<const ExpressionFormula&>(formula);
+        const auto* lowered = expression.lowered();
+        if (lowered == nullptr) {
+            program.add_constant(formula, target, expression._value);
+            continue;
+        }
+        tables.clear();
+        std::ranges::transform(lowered->tables, std::back_inserter(tables),
+                               [this, time](const std::string& name) {
+                                   return _parameters->table(name).view(time);
+                               });
+        program.add_expression(formula, target, *lowered,
+                               std::span(pointers.inputs)
+                                   .subspan(pointers.first_input[index],
+                                            pointers.first_input[index + 1U] -
+                                                pointers.first_input[index]),
+                               tables);
+    }
+    program.finish();
+    _program = std::move(program);
 }
 
 void Formulas::apply_formulas() {
-    if (!debug_formulas) {
-        for (const auto& formula : _formulas) {
-            formula->apply_formula();
+    if (_parameters == nullptr) {
+        if (!_formulas.empty()) {
+            throw std::runtime_error("Formulas requires parameters");
         }
         return;
     }
 
-    // get_logger() is called inside the macro rather than hoisted into a local
-    // so that a build with debug records compiled away leaves no unused local
-    // behind.
-    for (const auto& formula : _formulas) {
-        formula->apply_formula();
-        SPDLOG_LOGGER_DEBUG(get_logger(), "{} = {}",
-                            formula->entity().string_representation(),
-                            formula->get_value());
+    _parameters->update_evaluated_tables();
+    if (!is_compiled_current()) {
+        compile_formulas();
+    }
+    if (debug_formulas) {
+        run_program_logged();
+        return;
+    }
+    run_program();
+}
+
+void Formulas::run_program() {
+    const auto program = _program.view();
+    for (const auto& run : _program.runs()) {
+        if (run.callable != nullptr) {
+            *program.targets[run.target] = run.callable->call();
+            continue;
+        }
+        static_cast<void>(detail::run_ops(program, run.op_begin, run.op_end));
     }
 }
 
-void Formulas::apply_compiled_formulas() {
-    if (!is_compiled_current()) {
-        throw std::runtime_error(
-            "Compiled formulas are stale or unavailable for execution");
-    }
-
-    if (!debug_formulas) {
-        for (const auto& formula : _formulas) {
-            formula->apply_compiled_formula();
+void Formulas::run_program_logged() {
+    const auto program = _program.view();
+    const auto log = [this](std::uint32_t target) {
+        SPDLOG_LOGGER_INFO(
+            get_logger(), "{} = {}",
+            _program.formula_of(target).entity().string_representation(),
+            _program.value_of(target));
+    };
+    const auto ops = _program.ops();
+    for (const auto& run : _program.runs()) {
+        if (run.callable != nullptr) {
+            *program.targets[run.target] = run.callable->call();
+            log(run.target);
+            continue;
         }
-        return;
-    }
-
-    // As in apply_formulas(): keep the logger lookup inside the macro so a
-    // build with debug records compiled away leaves no unused local behind.
-    for (const auto& formula : _formulas) {
-        formula->apply_compiled_formula();
-        SPDLOG_LOGGER_DEBUG(get_logger(), "{} = {}",
-                            formula->entity().string_representation(),
-                            formula->get_value());
+        // One formula at a time: each ends with the STORE to its target.
+        std::size_t begin = run.op_begin;
+        for (std::size_t position = run.op_begin; position < run.op_end;
+             ++position) {
+            if (ops[position].code == detail::OpCode::STORE) {
+                static_cast<void>(
+                    detail::run_ops(program, begin, position + 1U));
+                log(ops[position].arg);
+                begin = position + 1U;
+            }
+        }
     }
 }
 
 void Formulas::calculate_derivatives() {
+    compact();
     for (const auto& formula : _formulas) {
-        formula->calculate_derivatives();
+        if (formula->kind() == FormulaKind::Parameters) {
+            formula->calculate_derivatives();
+        }
     }
 }
 
@@ -510,17 +693,13 @@ void Formulas::unlock_parameters() noexcept {
 }
 
 bool Formulas::is_validation_current() const noexcept {
-    return (_parameters != nullptr) &&
-           _validated_structure_version.has_value() &&
-           (_parameters->get_structure_version() ==
-            *_validated_structure_version);
+    return (_parameters != nullptr) && _validated.has_value() &&
+           (*_validated == current_stamp());
 }
 
 bool Formulas::is_compiled_current() const noexcept {
-    return (_parameters != nullptr) &&
-           _compiled_structure_version.has_value() &&
-           (_parameters->get_structure_version() ==
-            *_compiled_structure_version);
+    return (_parameters != nullptr) && _compiled.has_value() &&
+           (*_compiled == current_stamp());
 }
 
 }  // namespace pycanha

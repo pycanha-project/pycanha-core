@@ -1,5 +1,8 @@
 #include "pycanha-core/thermaldata/lookup_table.hpp"
 
+#include <algorithm>
+#include <functional>
+#include <span>
 #include <stdexcept>
 #include <utility>
 
@@ -200,6 +203,26 @@ void LookupTable1D::set_data(Eigen::VectorXd x, Eigen::VectorXd y) {
     validate_x_data(x);
     _x = std::move(x);
     _y = std::move(y);
+}
+
+void LookupTable1D::assign_x(std::span<const double> x) {
+    if (std::cmp_not_equal(x.size(), _x.size())) {
+        throw std::invalid_argument(
+            "Lookup table x must keep its size when assigned in place");
+    }
+    if (std::ranges::adjacent_find(x, std::greater_equal<>()) != x.end()) {
+        throw std::invalid_argument(
+            "Lookup table x data must be strictly increasing");
+    }
+    std::ranges::copy(x, _x.begin());
+}
+
+void LookupTable1D::assign_y(std::span<const double> y) {
+    if (std::cmp_not_equal(y.size(), _y.size())) {
+        throw std::invalid_argument(
+            "Lookup table y must keep its size when assigned in place");
+    }
+    std::ranges::copy(y, _y.begin());
 }
 
 LookupTableVec1D::LookupTableVec1D(Eigen::VectorXd x, MatrixType y,

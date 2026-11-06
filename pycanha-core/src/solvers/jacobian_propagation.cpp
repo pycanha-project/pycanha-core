@@ -134,13 +134,11 @@ void JacobianPropagation::initialize() {
     }
 
     for (const auto& formula : tmm.formulas().formulas()) {
-        auto* parameter_formula =
-            dynamic_cast<ParameterFormula*>(formula.get());
-        if (parameter_formula == nullptr) {
+        if (formula->kind() != FormulaKind::Parameters) {
             continue;
         }
 
-        parameter_formula->calculate_derivatives();
+        formula->calculate_derivatives();
         const auto* derivatives = formula->get_derivative_values();
         if ((derivatives == nullptr) || derivatives->empty()) {
             continue;
@@ -173,7 +171,7 @@ void JacobianPropagation::collect_parameter_names() {
 
     std::unordered_set<std::string> seen_parameters;
     for (const auto& formula : tmm.formulas().formulas()) {
-        if (dynamic_cast<ParameterFormula*>(formula.get()) == nullptr) {
+        if (formula->kind() != FormulaKind::Parameters) {
             continue;
         }
 
@@ -192,7 +190,7 @@ void JacobianPropagation::collect_parameter_names() {
         if (found == _parameter_names.end()) {
             throw std::invalid_argument(
                 "Derivative parameter '" + parameter_name +
-                "' is not produced by any ParameterFormula");
+                "' is not read by any formula that reads only parameters");
         }
         _derivative_parameter_names.push_back(parameter_name);
     }

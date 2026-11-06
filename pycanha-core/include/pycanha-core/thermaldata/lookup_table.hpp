@@ -2,6 +2,7 @@
 
 #include <Eigen/Core>
 #include <cstdint>
+#include <span>
 
 #include "pycanha-core/globals.hpp"
 
@@ -42,6 +43,11 @@ class LookupTable1D {
     void set_extrapolation_method(ExtrapolationMethod method) noexcept;
 
     void set_data(Eigen::VectorXd x, Eigen::VectorXd y);
+    // Overwrite the values in the existing storage, so pointers into the
+    // data stay valid. The size must not change and x must stay strictly
+    // increasing; nothing is written when a check fails.
+    void assign_x(std::span<const double> x);
+    void assign_y(std::span<const double> y);
 
   private:
     Eigen::VectorXd _x;

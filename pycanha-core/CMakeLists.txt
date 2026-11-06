@@ -129,9 +129,10 @@ add_library(${LIB_NAME} STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/thermaldata/sparse_time_series.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/parameters/formula.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/parameters/formula_program.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/parameters/parameters.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/parameters/formulas.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/parameters/variable.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/parameters/table.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/tmm/coupling.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/tmm/couplings.cpp

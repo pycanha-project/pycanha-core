@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "pycanha-core/globals.hpp"
+#include "pycanha-core/tmm/bulk.hpp"
 #include "pycanha-core/tmm/node.hpp"
 #include "pycanha-core/tmm/nodes.hpp"
 
@@ -73,6 +74,17 @@ void assert_trivial_zeros(const std::vector<Index>& non_zero_nodes,
     }
 }
 
+// A load is either empty or zero at every blank node.
+void assert_trivial_zeros(const std::vector<Index>& blank_nodes,
+                          const std::vector<double>& load) {
+    if (load.empty()) {
+        return;
+    }
+    for (const Index index : blank_nodes) {
+        REQUIRE(load[to_sizet(index)] == 0.0);
+    }
+}
+
 void assert_trivial_zeros(const std::vector<Index>& non_zero_nodes,
                           Eigen::SparseVector<LiteralString>& attr_sp_vector) {
     for (Index i = 0; i < attr_sp_vector.nonZeros(); i++) {
@@ -97,11 +109,11 @@ void assert_blank_nodes_attributes_are_trivial_zeros(
             non_blank_internal_number.push_back(i);
         }
     }
-    assert_trivial_zeros(non_blank_internal_number, tns.qs_vector);
-    assert_trivial_zeros(non_blank_internal_number, tns.qa_vector);
-    assert_trivial_zeros(non_blank_internal_number, tns.qe_vector);
-    assert_trivial_zeros(non_blank_internal_number, tns.qi_vector);
-    assert_trivial_zeros(non_blank_internal_number, tns.qr_vector);
+    assert_trivial_zeros(blank_internal_number, tns.qs_vector);
+    assert_trivial_zeros(blank_internal_number, tns.qa_vector);
+    assert_trivial_zeros(blank_internal_number, tns.qe_vector);
+    assert_trivial_zeros(blank_internal_number, tns.qi_vector);
+    assert_trivial_zeros(blank_internal_number, tns.qr_vector);
     assert_trivial_zeros(non_blank_internal_number, tns.a_vector);
     assert_trivial_zeros(non_blank_internal_number, tns.fx_vector);
     assert_trivial_zeros(non_blank_internal_number, tns.fy_vector);
@@ -410,6 +422,90 @@ TEST_CASE("Nodes Testing", "[nodes]") {
     REQUIRE(tns.get_type(4) == 'B');
 
     // Additional tests can be added here...
+}
+
+TEST_CASE("A load is empty until a non-zero value or a pointer",
+          "[nodes][loads]") {
+    Nodes tns;
+    for (const NodeNum number : {10, 20, 30}) {
+        Node node(number);
+        tns.add_node(node);
+    }
+
+    // Zeros never allocate.
+    REQUIRE(tns.set_qi(20, 0.0));
+    REQUIRE(tns.qi_vector.empty());
+    REQUIRE_FALSE(tns.is_load_dense(NodeAttribute::QI));
+    REQUIRE(tns.get_qi(20) == 0.0);
+    REQUIRE_FALSE(tns.set_qi(99, 0.0));
+
+    // A non-zero value makes the load dense: one value per node.
+    REQUIRE(tns.set_qi(20, 4.0));
+    REQUIRE(tns.qi_vector == std::vector<double>{0.0, 4.0, 0.0});
+    REQUIRE(tns.is_load_dense(NodeAttribute::QI));
+
+    // So does a pointer, and setting other values never moves it.
+    REQUIRE(tns.qs_vector.empty());
+    double* solar = tns.get_qs_value_ref(30);
+    REQUIRE(solar != nullptr);
+    REQUIRE(tns.qs_vector.size() == 3U);
+    REQUIRE(tns.set_qs(10, 1.0));
+    REQUIRE(tns.set_qs(20, 2.0));
+    *solar = 3.0;
+    REQUIRE(tns.get_qs(30) == 3.0);
+    REQUIRE(solar == tns.get_qs_value_ref(30));
+
+    // The other loads stay empty.
+    REQUIRE(tns.qa_vector.empty());
+    REQUIRE(tns.qe_vector.empty());
+    REQUIRE(tns.qr_vector.empty());
+}
+
+TEST_CASE("Dense loads follow the nodes", "[nodes][loads]") {
+    Nodes tns;
+    for (const NodeNum number : {10, 30}) {
+        Node node(number);
+        tns.add_node(node);
+    }
+
+    // A node with a load, inserted in the middle, makes the load dense.
+    Node middle(20);
+    middle.set_qe(2.0);
+    tns.add_node(middle);
+    REQUIRE(tns.qe_vector == std::vector<double>{0.0, 2.0, 0.0});
+    REQUIRE(tns.qa_vector.empty());
+
+    // A node without a load keeps the empty loads empty.
+    Node last(40);
+    tns.add_node(last);
+    REQUIRE(tns.qe_vector == std::vector<double>{0.0, 2.0, 0.0, 0.0});
+    REQUIRE(tns.qa_vector.empty());
+
+    // A batch: zero columns leave a load empty.
+    const std::vector<NodeNum> numbers{5, 50};
+    const std::vector<double> zeros{0.0, 0.0};
+    const std::vector<double> solar{7.0, 8.0};
+    const BulkReport report = tns.add_nodes(
+        {.type = 'D', .numbers = numbers, .qs = solar, .qa = zeros});
+    REQUIRE(report.accepted == 2U);
+    REQUIRE(tns.qa_vector.empty());
+    REQUIRE(tns.get_qs(5) == 7.0);
+    REQUIRE(tns.get_qs(50) == 8.0);
+    REQUIRE(tns.get_qs(20) == 0.0);
+    REQUIRE(tns.get_qe(20) == 2.0);
+    REQUIRE(tns.qe_vector.size() == 6U);
+
+    // Moving a node to the other block reorders the dense loads.
+    REQUIRE(tns.set_type(20, 'B'));
+    REQUIRE(tns.get_qe(20) == 2.0);
+    REQUIRE(tns.qe_vector.back() == 2.0);
+
+    // Removing a node erases its value; an empty load stays empty.
+    tns.remove_node(5);
+    REQUIRE(tns.qs_vector.size() == 5U);
+    REQUIRE(tns.qa_vector.empty());
+    REQUIRE(tns.get_qs(50) == 8.0);
+    REQUIRE(tns.get_values(NodeAttribute::QA) == std::vector<double>(5U, 0.0));
 }
 
 // NOLINTEND(readability-function-cognitive-complexity,

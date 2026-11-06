@@ -174,6 +174,12 @@ CouplingMatrices::sparse_bb_copy() {
     return sparse_bb;
 }
 
+void CouplingMatrices::compress() {
+    sparse_dd.makeCompressed();
+    sparse_db.makeCompressed();
+    sparse_bb.makeCompressed();
+}
+
 Index CouplingMatrices::get_num_diff_diff_couplings() const {
     return sparse_dd.nonZeros();
 }
