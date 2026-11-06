@@ -12,6 +12,7 @@
 #include "pycanha-core/parameters/formulas.hpp"
 #include "pycanha-core/parameters/parameters.hpp"
 #include "pycanha-core/solvers/solver_registry.hpp"
+#include "pycanha-core/thermaldata/lookup_table.hpp"
 #include "pycanha-core/thermaldata/thermaldata.hpp"
 #include "pycanha-core/tmm/conductivecouplings.hpp"
 #include "pycanha-core/tmm/coupling.hpp"
@@ -170,66 +171,32 @@ TEST_CASE("ThermalMathematicalModel keeps the reserved time parameter synced",
             Catch::Approx(9.0));
 }
 
-TEST_CASE("ThermalMathematicalModel variable helpers enforce conflicts",
+TEST_CASE("ThermalMathematicalModel publishes tables evaluated at the time",
           "[thermalmathematicalmodel]") {
-    ThermalMathematicalModel model("variable-helpers");
+    ThermalMathematicalModel model("time-tables");
     model.parameters().add_parameter("existing", 1.0);
+    model.parameters().add_table(
+        "load",
+        LookupTable1D(Eigen::Vector2d(0.0, 1.0), Eigen::Vector2d(10.0, 20.0)),
+        "time");
+    REQUIRE(model.parameters().has_table("load"));
+    REQUIRE(model.parameters().is_internal_parameter("load"));
 
-    model.add_time_variable("load", (Eigen::Vector2d{} << 0.0, 1.0).finished(),
-                            (Eigen::Vector2d{} << 10.0, 20.0).finished());
-    REQUIRE(model.has_time_variable("load"));
-    REQUIRE(model.get_time_variable("load").name() == "load");
-    REQUIRE_THROWS_AS(model.get_time_variable("missing"), std::out_of_range);
+    model.time = 0.5;
+    model.callback_solver_loop();
+    REQUIRE(std::get<double>(model.parameters().get_parameter("load")) ==
+            Catch::Approx(15.0));
 
-    model.add_temperature_variable(
-        "kappa", (Eigen::Vector2d{} << 200.0, 300.0).finished(),
-        (Eigen::Vector2d{} << 1.0, 2.0).finished());
-    REQUIRE(model.has_temperature_variable("kappa"));
-    REQUIRE(model.get_temperature_variable("kappa").name() == "kappa");
-    REQUIRE_THROWS_AS(model.get_temperature_variable("missing"),
-                      std::out_of_range);
-
-    REQUIRE_THROWS_AS(model.add_time_variable(
-                          "kappa", (Eigen::Vector2d{} << 0.0, 1.0).finished(),
-                          (Eigen::Vector2d{} << 1.0, 2.0).finished()),
+    const LookupTable1D other(Eigen::Vector2d(0.0, 1.0),
+                              Eigen::Vector2d(1.0, 2.0));
+    REQUIRE_THROWS_AS(model.parameters().add_table("existing", other),
                       std::invalid_argument);
-    REQUIRE_THROWS_AS(
-        model.add_temperature_variable(
-            "existing", (Eigen::Vector2d{} << 0.0, 1.0).finished(),
-            (Eigen::Vector2d{} << 1.0, 2.0).finished()),
-        std::invalid_argument);
-    REQUIRE_THROWS_AS(model.add_temperature_variable(
-                          "load", (Eigen::Vector2d{} << 0.0, 1.0).finished(),
-                          (Eigen::Vector2d{} << 1.0, 2.0).finished()),
+    REQUIRE_THROWS_AS(model.parameters().add_table("load", other),
                       std::invalid_argument);
 
-    model.remove_time_variable("load");
-    model.remove_temperature_variable("kappa");
-    REQUIRE_FALSE(model.has_time_variable("load"));
-    REQUIRE_FALSE(model.has_temperature_variable("kappa"));
-}
-
-TEST_CASE("ThermalMathematicalModel rejects duplicate variable names",
-          "[thermalmathematicalmodel]") {
-    ThermalMathematicalModel model("duplicate-variables");
-
-    model.add_time_variable("schedule",
-                            (Eigen::Vector2d{} << 0.0, 1.0).finished(),
-                            (Eigen::Vector2d{} << 10.0, 20.0).finished());
-    REQUIRE_THROWS_AS(
-        model.add_time_variable("schedule",
-                                (Eigen::Vector2d{} << 0.0, 1.0).finished(),
-                                (Eigen::Vector2d{} << 30.0, 40.0).finished()),
-        std::invalid_argument);
-
-    model.add_temperature_variable(
-        "ambient", (Eigen::Vector2d{} << 250.0, 300.0).finished(),
-        (Eigen::Vector2d{} << 1.0, 2.0).finished());
-    REQUIRE_THROWS_AS(
-        model.add_temperature_variable(
-            "ambient", (Eigen::Vector2d{} << 260.0, 310.0).finished(),
-            (Eigen::Vector2d{} << 2.0, 3.0).finished()),
-        std::invalid_argument);
+    REQUIRE(model.parameters().remove_table("load"));
+    REQUIRE_FALSE(model.parameters().has_table("load"));
+    REQUIRE_FALSE(model.parameters().contains("load"));
 }
 
 TEST_CASE(

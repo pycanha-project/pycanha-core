@@ -1,3 +1,4 @@
+#include <Eigen/Core>
 #include <algorithm>
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
@@ -5,13 +6,13 @@
 #include <memory>
 #include <stdexcept>
 #include <string>
-#include <unordered_set>
 #include <vector>
 
 #include "pycanha-core/parameters/entity.hpp"
 #include "pycanha-core/parameters/formula.hpp"
 #include "pycanha-core/parameters/formulas.hpp"
 #include "pycanha-core/parameters/parameters.hpp"
+#include "pycanha-core/thermaldata/lookup_table.hpp"
 #include "pycanha-core/tmm/node.hpp"
 #include "pycanha-core/tmm/thermalnetwork.hpp"
 
@@ -70,7 +71,7 @@ TEST_CASE("Constant formulas keep their value and expression",
     REQUIRE(number.entity_dependencies().empty());
 
     formulas.compile_formulas();
-    formulas.apply_compiled_formulas();
+    formulas.apply_formulas();
     REQUIRE(network->nodes().get_qi(1) == 0.25);
     REQUIRE(network->nodes().get_qs(1) == 1.0);
 }
@@ -94,30 +95,35 @@ TEST_CASE("ExpressionFormula resolves entity symbols on the right-hand side",
     auto* expression = dynamic_cast<ExpressionFormula*>(formula.get());
 
     REQUIRE(expression != nullptr);
-    expression->apply_formula();
-    REQUIRE(network->nodes().get_qi(1) == Catch::Approx(18.0));
+    REQUIRE(expression->get_value() == Catch::Approx(18.0));
 
-    expression->compile_formula();
+    formulas.add_formula(formula);
     network->nodes().set_T(2, 9.0);
-    expression->apply_compiled_formula();
+    formulas.apply_formulas();
     REQUIRE(network->nodes().get_qi(1) == Catch::Approx(20.0));
     REQUIRE_THROWS_AS(expression->calculate_derivatives(), std::runtime_error);
 }
 
-TEST_CASE("Smart formula factory rejects temperature variables for now",
-          "[formulas][factory][temperature-variable]") {
+TEST_CASE("Formulas call tables and refuse unknown functions",
+          "[formulas][factory][tables]") {
     auto network = std::make_shared<ThermalNetwork>();
     auto parameters = std::make_shared<Parameters>();
     Formulas formulas(network, parameters);
-
-    const std::unordered_set<std::string> temperature_variable_names{"kappa"};
-    formulas.set_temperature_variable_names(&temperature_variable_names);
+    parameters->add_table("kappa", LookupTable1D(Eigen::Vector2d(0.0, 10.0),
+                                                 Eigen::Vector2d(1.0, 2.0)));
 
     Node node1(1);
     network->add_node(node1);
-    network->nodes().set_qi(1, 0.0);
+    network->nodes().set_T(1, 5.0);
+    const auto target = Entity::qi(*network, 1);
 
-    REQUIRE_THROWS_AS(formulas.create_formula(Entity::qi(*network, 1), "kappa"),
+    REQUIRE(formulas.create_formula(target, "kappa(T1)")->get_value() ==
+            Catch::Approx(1.5));
+    REQUIRE_THROWS_AS(formulas.create_formula(target, "kappa"),
+                      std::invalid_argument);
+    REQUIRE_THROWS_AS(formulas.create_formula(target, "kappa(T1, T1)"),
+                      std::invalid_argument);
+    REQUIRE_THROWS_AS(formulas.create_formula(target, "unknown(T1)"),
                       std::invalid_argument);
 }
 
@@ -279,7 +285,7 @@ TEST_CASE("Formulas apply correctly around removal holes",
     model.formulas.compile_formulas();
     model.formulas.lock_parameters_for_execution();
     model.parameters->set_parameter("gain", 3.0);
-    model.formulas.apply_compiled_formulas();
+    model.formulas.apply_formulas();
     model.formulas.unlock_parameters();
 
     REQUIRE(model.network->nodes().get_qi(1) == 0.0);
@@ -338,14 +344,11 @@ TEST_CASE("Formula derivatives are built on first use",
                               "p1**2 * p2");
     REQUIRE(formula.get_derivative_values()->empty());
 
-    formula.compile_formula();
     formula.calculate_derivatives();
     REQUIRE(*formula.get_derivative_values() == std::vector<double>{20.0, 4.0});
 
-    // A compile drops the compiled derivatives; the next call rebuilds them
-    // for the new parameter values.
+    // Each call evaluates the derivatives at the current parameter values.
     parameters.set_parameter("p1", 3.0);
-    formula.compile_formula();
     formula.calculate_derivatives();
     REQUIRE(*formula.get_derivative_values() == std::vector<double>{30.0, 9.0});
 }

@@ -71,32 +71,21 @@ TEST_CASE("Parameter formulas propagate parameter values", "[formulas]") {
     // NOLINTEND(bugprone-chained-comparison)
 }
 
-TEST_CASE("Constant formulas write their value in both modes", "[formulas]") {
+TEST_CASE("Constant formulas keep their value", "[formulas]") {
     auto network = std::make_shared<pycanha::ThermalNetwork>();
     pycanha::Node node1(1);
     network->add_node(node1);
 
     const pycanha::Entity temperature = pycanha::Entity::t(*network, 1);
-    pycanha::ExpressionFormula constant(temperature, 42.0);
+    const pycanha::ExpressionFormula constant(temperature, 42.0);
 
-    constant.compile_formula();
+    REQUIRE(constant.kind() == pycanha::FormulaKind::Constant);
     network->nodes().set_T(1, -5.0);
-    constant.apply_compiled_formula();
-
-    // NOLINTBEGIN(bugprone-chained-comparison)
-    REQUIRE(network->nodes().get_T(1) == Catch::Approx(42.0));
-
-    network->nodes().set_T(1, 77.0);
-    constant.apply_formula();
-
-    REQUIRE(network->nodes().get_T(1) == Catch::Approx(42.0));
-    // NOLINTEND(bugprone-chained-comparison)
+    REQUIRE(constant.get_value() == Catch::Approx(42.0));
 }
 
-TEST_CASE(
-    "Parameter-only formulas keep slot binding across rename in interpreted "
-    "mode",
-    "[formulas]") {
+TEST_CASE("Parameter-only formulas keep slot binding across rename",
+          "[formulas]") {
     auto network = std::make_shared<pycanha::ThermalNetwork>();
     pycanha::Node node1(1);
     network->add_node(node1);
@@ -106,14 +95,12 @@ TEST_CASE(
     parameters.add_parameter("P1", 10.0);
 
     const pycanha::Entity heat_load = pycanha::Entity::qi(*network, 1);
-    pycanha::ExpressionFormula formula(heat_load, parameters, "P1");
+    const pycanha::ExpressionFormula formula(heat_load, parameters, "P1");
 
     parameters.rename_parameter("P1", "P1_renamed");
     parameters.set_parameter("P1_renamed", 14.0);
 
-    formula.apply_formula();
-
-    REQUIRE(network->nodes().get_qi(1) == Catch::Approx(14.0));
+    REQUIRE(formula.get_value() == Catch::Approx(14.0));
 }
 
 TEST_CASE("Formulas validate, compile and lock parameters explicitly",
@@ -141,7 +128,7 @@ TEST_CASE("Formulas validate, compile and lock parameters explicitly",
     REQUIRE(parameters->is_structure_locked());
 
     parameters->set_parameter("P1", 18.0);
-    formulas.apply_compiled_formulas();
+    formulas.apply_formulas();
     REQUIRE(network->nodes().get_qi(1) == Catch::Approx(18.0));
 
     parameters->add_parameter("P2", 2.0);
@@ -207,7 +194,7 @@ TEST_CASE("Formulas validate registry and removal edge cases", "[formulas]") {
     formulas.validate_for_execution();
     formulas.compile_formulas();
     parameters->add_parameter("P2", 2.0);
-    REQUIRE_THROWS_AS(formulas.apply_compiled_formulas(), std::runtime_error);
+    REQUIRE_FALSE(formulas.is_compiled_current());
 }
 
 TEST_CASE("ThermalMathematicalModel uses compiled formulas while locked",
@@ -252,7 +239,7 @@ TEST_CASE("Compiled formulas write loads read and set by other formulas",
     formulas.validate_for_execution();
     formulas.compile_formulas();
     formulas.lock_parameters_for_execution();
-    formulas.apply_compiled_formulas();
+    formulas.apply_formulas();
     formulas.unlock_parameters();
 
     REQUIRE(network->nodes().get_qi(5) == Catch::Approx(1.0));

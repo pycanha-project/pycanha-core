@@ -73,7 +73,7 @@ TEST_CASE("Smart formulas read like a high-level API lesson",
         formulas.compile_formulas();
         tm.parameters().set_parameter("gain", 5.0);
         tm.parameters().set_parameter("offset", 1.0);
-        formulas.apply_compiled_formulas();
+        formulas.apply_formulas();
         REQUIRE(tm.tmm().nodes().get_qi(1) == Catch::Approx(6.0));
         REQUIRE(tm.tmm().conductive_couplings().get_coupling_value(1, 2) ==
                 Catch::Approx(5.0));

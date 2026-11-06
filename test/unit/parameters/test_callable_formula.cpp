@@ -58,7 +58,7 @@ TEST_CASE("Callable formulas run at their insertion position",
     model.formulas.compile_formulas();
     model.formulas.lock_parameters_for_execution();
     model.parameters->set_parameter("gain", 4.0);
-    model.formulas.apply_compiled_formulas();
+    model.formulas.apply_formulas();
     model.formulas.unlock_parameters();
     REQUIRE(model.qi(2) == Catch::Approx(40.0));
     REQUIRE(model.qi(3) == Catch::Approx(41.0));
@@ -93,8 +93,9 @@ TEST_CASE("Callable formulas need a function and share it with their clones",
     const auto clone = model.formulas.formulas().at(1)->clone();
     REQUIRE(clone->get_value() == Catch::Approx(30.0));
     model.network->nodes().set_qi(1, 5.0);
-    clone->apply_formula();
-    REQUIRE(model.qi(2) == Catch::Approx(50.0));
+    const auto& function =
+        dynamic_cast<const CallableFormula&>(*clone).function();
+    REQUIRE(function() == Catch::Approx(50.0));
     REQUIRE(*model.calls == 2);
 }
 

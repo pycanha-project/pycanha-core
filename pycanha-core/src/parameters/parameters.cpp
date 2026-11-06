@@ -9,17 +9,25 @@
 #include <cstdint>
 #include <deque>
 #include <iostream>
+#include <iterator>
 #include <limits>
 #include <memory>
 #include <optional>
+#include <span>
+#include <stdexcept>
 #include <string>
 #include <string_view>
 #include <type_traits>
+#include <unordered_set>
 #include <utility>
 #include <variant>
+#include <vector>
 
 #include "pycanha-core/globals.hpp"
 #include "pycanha-core/parameters/entity.hpp"
+#include "pycanha-core/parameters/origin.hpp"
+#include "pycanha-core/parameters/table.hpp"
+#include "pycanha-core/thermaldata/lookup_table.hpp"
 #include "pycanha-core/tmm/thermalnetwork.hpp"
 #include "pycanha-core/utils/logger.hpp"
 
@@ -70,6 +78,45 @@ constexpr bool is_matrix_type_v = IsMatrixType<T>::value;
     }
 
     return !is_entity_like_parameter_name(name);
+}
+
+// Lower-case names a table cannot take: the entity tokens, and every
+// function and constant the expression parser knows, since `name(x)` would
+// call the built-in rather than the table.
+[[nodiscard]] bool is_reserved_table_name(const std::string& canonical_name) {
+    static const std::unordered_set<std::string> reserved = {
+        "t", "c", "qs", "qa", "qe", "qi", "qr", "gl", "gr", "time",
+        // Functions of one argument.
+        "sin", "cos", "tan", "cot", "csc", "sec", "asin", "arcsin", "acos",
+        "arccos", "atan", "arctan", "asec", "arcsec", "acsc", "arccsc", "acot",
+        "arccot", "sinh", "cosh", "tanh", "coth", "sech", "csch", "asinh",
+        "arcsinh", "acosh", "arccosh", "atanh", "arctanh", "asech", "arcsech",
+        "acoth", "arccoth", "acsch", "arccsch", "gamma", "sqrt", "abs", "sign",
+        "exp", "erf", "erfc", "loggamma", "lambertw", "dirichlet_eta", "floor",
+        "ceiling", "truncate", "ln", "log", "zeta", "primepi", "primorial",
+        // Functions of two or more arguments.
+        "pow", "beta", "lowergamma", "uppergamma", "polygamma",
+        "kronecker_delta", "atan2", "max", "min", "levi_civita",
+        // Relations and logic.
+        "eq", "equality", "ne", "unequality", "ge", "greaterthan", "gt",
+        "strictgreaterthan", "le", "lessthan", "lt", "strictlessthan", "not",
+        "xor", "xnor", "and", "or", "nand", "nor",
+        // Constants.
+        "e", "eulergamma", "catalan", "goldenratio", "pi", "i", "oo", "inf",
+        "zoo", "nan", "true", "false"};
+    return reserved.contains(canonical_name);
+}
+
+// A name the expression parser reads as one identifier.
+[[nodiscard]] bool is_identifier(std::string_view name) noexcept {
+    if (name.empty() ||
+        (std::isdigit(static_cast<unsigned char>(name.front())) != 0)) {
+        return false;
+    }
+    return std::ranges::all_of(name, [](const char ch) {
+        return (std::isalnum(static_cast<unsigned char>(ch)) != 0) ||
+               (ch == '_');
+    });
 }
 
 }  // namespace
@@ -265,45 +312,49 @@ void Parameters::add_parameter(std::string name, ThermalValue value) {
         return;
     }
 
-    const auto canonical_name = canonicalize_parameter_key(name);
-
-    if (_name_to_slot.contains(canonical_name)) {
+    if (_name_to_slot.contains(canonicalize_parameter_key(name)) ||
+        is_table_name(name)) {
         SPDLOG_LOGGER_WARN(pycanha::get_logger(),
                            "Parameter '{}' already exists", name);
         return;
     }
 
-    _name_to_slot.emplace(canonical_name, _slots.size());
-    _slots.push_back(ParameterSlot{.name = std::move(name),
-                                   .value = std::move(value),
-                                   .active = true,
-                                   .is_internal = false});
-    ++_active_size;
-    mark_structural_change();
-
+    insert_slot(std::move(name), std::move(value), /*is_internal=*/false);
     SPDLOG_LOGGER_DEBUG(pycanha::get_logger(), "Parameter '{}' added",
                         _slots.back().name);
 }
 
 void Parameters::add_internal_parameter(std::string name, ThermalValue value) {
-    const auto canonical_name = canonicalize_parameter_key(name);
-
-    if (_name_to_slot.contains(canonical_name)) {
+    if (_name_to_slot.contains(canonicalize_parameter_key(name)) ||
+        is_table_name(name)) {
         SPDLOG_LOGGER_WARN(pycanha::get_logger(),
                            "Internal parameter '{}' already exists", name);
         return;
     }
 
-    _name_to_slot.emplace(canonical_name, _slots.size());
+    insert_slot(std::move(name), std::move(value), /*is_internal=*/true);
+    SPDLOG_LOGGER_DEBUG(pycanha::get_logger(), "Internal parameter '{}' added",
+                        _slots.back().name);
+}
+
+void Parameters::insert_slot(std::string name, ThermalValue value,
+                             bool is_internal) {
+    _name_to_slot.emplace(canonicalize_parameter_key(name), _slots.size());
     _slots.push_back(ParameterSlot{.name = std::move(name),
                                    .value = std::move(value),
                                    .active = true,
-                                   .is_internal = true});
+                                   .is_internal = is_internal});
     ++_active_size;
     mark_structural_change();
+}
 
-    SPDLOG_LOGGER_DEBUG(pycanha::get_logger(), "Internal parameter '{}' added",
-                        _slots.back().name);
+void Parameters::deactivate_slot(ParameterSlot& slot) {
+    _name_to_slot.erase(canonicalize_parameter_key(slot.name));
+    slot.active = false;
+    slot.value = missing_parameter_value();
+    slot.is_internal = false;
+    --_active_size;
+    mark_structural_change();
 }
 
 void Parameters::remove_parameter(const std::string& name) {
@@ -330,12 +381,7 @@ void Parameters::remove_parameter(const std::string& name) {
         return;
     }
 
-    _name_to_slot.erase(canonicalize_parameter_key(slot->name));
-    slot->active = false;
-    slot->value = missing_parameter_value();
-    --_active_size;
-    mark_structural_change();
-
+    deactivate_slot(*slot);
     SPDLOG_LOGGER_DEBUG(pycanha::get_logger(), "Parameter '{}' removed", name);
 }
 
@@ -361,13 +407,15 @@ void Parameters::remove_internal_parameter(const std::string& name) {
         return;
     }
 
-    _name_to_slot.erase(canonicalize_parameter_key(slot->name));
-    slot->active = false;
-    slot->value = missing_parameter_value();
-    slot->is_internal = false;
-    --_active_size;
-    mark_structural_change();
+    if (is_table_name(name)) {
+        SPDLOG_LOGGER_WARN(pycanha::get_logger(),
+                           "Parameter '{}' is the value of a table; remove "
+                           "the table instead",
+                           name);
+        return;
+    }
 
+    deactivate_slot(*slot);
     SPDLOG_LOGGER_DEBUG(pycanha::get_logger(),
                         "Internal parameter '{}' removed", name);
 }
@@ -408,7 +456,8 @@ void Parameters::rename_parameter(const std::string& current_name,
     const auto new_canonical_name = canonicalize_parameter_key(new_name);
 
     if ((new_canonical_name != current_canonical_name) &&
-        _name_to_slot.contains(new_canonical_name)) {
+        (_name_to_slot.contains(new_canonical_name) ||
+         is_table_name(new_name))) {
         SPDLOG_LOGGER_WARN(pycanha::get_logger(),
                            "Parameter '{}' already exists", new_name);
         return;
@@ -749,6 +798,230 @@ const Parameters::ParametersDict& Parameters::data() const {
     }
 
     return _data_cache;
+}
+
+bool Parameters::is_table_name(std::string_view name) const {
+    return _tables.contains(canonicalize_parameter_key(name));
+}
+
+void Parameters::check_table_change(std::string_view name) const {
+    if (_structure_locked) {
+        throw std::runtime_error("Table '" + std::string(name) +
+                                 "' cannot be added, removed or replaced "
+                                 "while parameters are structurally locked");
+    }
+}
+
+Table& Parameters::existing_table(const std::string& name) {
+    const auto iterator = _tables.find(canonicalize_parameter_key(name));
+    if (iterator == _tables.end()) {
+        throw std::out_of_range("Table '" + name + "' does not exist");
+    }
+    return iterator->second;
+}
+
+void Parameters::publish_table(Table& table) {
+    if (table._evaluated_at.empty()) {
+        return;
+    }
+    const auto argument_idx = find_idx(table._evaluated_at);
+    if (!argument_idx.has_value() ||
+        (get_double_ptr(*argument_idx) == nullptr)) {
+        throw std::invalid_argument("Table '" + table._name +
+                                    "' is evaluated at '" +
+                                    table._evaluated_at +
+                                    "', which is not a parameter storing a "
+                                    "double");
+    }
+    table._argument_idx = *argument_idx;
+    const double value = table.evaluate(*get_double_ptr(*argument_idx));
+    insert_slot(table._name, value, /*is_internal=*/true);
+    table._published_idx = to_idx(_slots.size() - 1U);
+}
+
+void Parameters::unpublish_table(Table& table) {
+    auto* slot = find_slot(table._published_idx);
+    if (slot != nullptr) {
+        deactivate_slot(*slot);
+    }
+    table._argument_idx = -1;
+    table._published_idx = -1;
+}
+
+void Parameters::add_table(std::string name, LookupTable1D lookup_table,
+                           std::string evaluated_at) {
+    check_table_change(name);
+    if (!is_identifier(name)) {
+        throw std::invalid_argument("Table name '" + name +
+                                    "' is not an identifier");
+    }
+    const auto canonical_name = canonicalize_parameter_key(name);
+    if (is_reserved_table_name(canonical_name) ||
+        is_entity_like_parameter_name(name)) {
+        throw std::invalid_argument(
+            "Table name '" + name +
+            "' is reserved: it is an entity token, a built-in function or "
+            "a constant");
+    }
+    if (_tables.contains(canonical_name)) {
+        throw std::invalid_argument("Table '" + name + "' already exists");
+    }
+    if (_name_to_slot.contains(canonical_name)) {
+        throw std::invalid_argument("Table name '" + name +
+                                    "' is already a parameter");
+    }
+
+    Table added(std::move(name), std::move(lookup_table), Origin::user,
+                std::move(evaluated_at));
+    publish_table(added);
+    _tables.emplace(canonical_name, std::move(added));
+    mark_structural_change();
+}
+
+TableGeneration Parameters::add_generated_table(Origin origin, std::string name,
+                                                LookupTable1D lookup_table,
+                                                std::string evaluated_at) {
+    if (origin == Origin::user) {
+        throw std::invalid_argument(
+            "Generated tables need a generator origin; add user tables with "
+            "add_table");
+    }
+    const auto canonical_name = canonicalize_parameter_key(name);
+    const auto iterator = _tables.find(canonical_name);
+    if (iterator == _tables.end()) {
+        add_table(std::move(name), std::move(lookup_table),
+                  std::move(evaluated_at));
+        _tables.at(canonical_name)._origin = origin;
+        return TableGeneration::added;
+    }
+
+    auto& existing = iterator->second;
+    if (existing._origin == Origin::user) {
+        SPDLOG_LOGGER_WARN(get_logger(),
+                           "Generated table '{}' ({}) not written: a user "
+                           "table with that name stays",
+                           name, to_string(origin));
+        return TableGeneration::kept_user;
+    }
+
+    check_table_change(name);
+    if (existing._origin != origin) {
+        SPDLOG_LOGGER_WARN(
+            get_logger(), "Generated table '{}' ({}) replaces a {} table", name,
+            to_string(origin), to_string(existing._origin));
+    }
+    Table replacement(existing._name, std::move(lookup_table), origin,
+                      std::move(evaluated_at));
+    unpublish_table(existing);
+    try {
+        publish_table(replacement);
+    } catch (...) {
+        // A refused `evaluated_at` leaves the existing table as it was.
+        publish_table(existing);
+        throw;
+    }
+    existing = std::move(replacement);
+    mark_structural_change();
+    return TableGeneration::overwritten;
+}
+
+bool Parameters::remove_table(const std::string& name) {
+    const auto iterator = _tables.find(canonicalize_parameter_key(name));
+    if (iterator == _tables.end()) {
+        SPDLOG_LOGGER_INFO(get_logger(), "Table '{}' does not exist", name);
+        return false;
+    }
+    check_table_change(name);
+    unpublish_table(iterator->second);
+    _tables.erase(iterator);
+    mark_structural_change();
+    return true;
+}
+
+bool Parameters::has_table(const std::string& name) const {
+    return find_table(name) != nullptr;
+}
+
+const Table* Parameters::find_table(const std::string& name) const {
+    const auto iterator = _tables.find(canonicalize_parameter_key(name));
+    return iterator == _tables.end() ? nullptr : &iterator->second;
+}
+
+const Table& Parameters::table(const std::string& name) const {
+    const auto* found = find_table(name);
+    if (found == nullptr) {
+        throw std::out_of_range("Table '" + name + "' does not exist");
+    }
+    return *found;
+}
+
+std::vector<std::string> Parameters::table_names() const {
+    std::vector<std::string> names;
+    names.reserve(_tables.size());
+    std::ranges::transform(
+        _tables, std::back_inserter(names),
+        [](const auto& entry) { return entry.second.name(); });
+    std::ranges::sort(names);
+    return names;
+}
+
+void Parameters::set_table_values(const std::string& name,
+                                  std::span<const double> values) {
+    existing_table(name)._lookup_table.assign_y(values);
+}
+
+void Parameters::set_table_x(const std::string& name,
+                             std::span<const double> x) {
+    existing_table(name)._lookup_table.assign_x(x);
+}
+
+void Parameters::update_evaluated_tables() {
+    for (const auto& entry : _tables) {
+        const auto& evaluated = entry.second;
+        if (evaluated._evaluated_at.empty()) {
+            continue;
+        }
+        const double* argument = get_double_ptr(evaluated._argument_idx);
+        double* published = get_double_ptr(evaluated._published_idx);
+        if ((argument == nullptr) || (published == nullptr)) {
+            throw std::runtime_error(
+                "Table '" + evaluated._name + "' is evaluated at '" +
+                evaluated._evaluated_at + "', which no longer exists");
+        }
+        *published = detail::table_value(evaluated.view(time_ptr()), *argument);
+    }
+}
+
+std::vector<TableRange> Parameters::table_ranges() const {
+    std::vector<TableRange> ranges;
+    for (const auto& entry : _tables) {
+        const auto& queried = entry.second;
+        const auto& range = queried._range;
+        if (!range.out_of_range) {
+            continue;
+        }
+        const auto& x = queried.lookup_table().x();
+        ranges.push_back(TableRange{.table = queried.name(),
+                                    .first_time = range.first_time,
+                                    .first_argument = range.first_argument,
+                                    .min_argument = range.min_argument,
+                                    .max_argument = range.max_argument,
+                                    .x_min = x(0),
+                                    .x_max = x(x.size() - 1)});
+    }
+    std::ranges::sort(ranges, {}, &TableRange::table);
+    return ranges;
+}
+
+void Parameters::reset_table_ranges() const noexcept {
+    for (const auto& entry : _tables) {
+        entry.second._range.reset();
+    }
+}
+
+const double* Parameters::time_ptr() const {
+    const auto index = find_idx("time");
+    return index.has_value() ? get_double_ptr(*index) : nullptr;
 }
 
 }  // namespace pycanha

@@ -1,11 +1,13 @@
 #include "pycanha-core/solvers/solver.hpp"
 
+#include <spdlog/common.h>
 #include <spdlog/spdlog.h>
 
 #include <algorithm>
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
+#include <exception>
 #include <format>
 #include <initializer_list>
 #include <iterator>
@@ -293,6 +295,7 @@ void Solver::callback_transient_after_timestep() {
 }
 
 void Solver::prepare_formulas_for_execution() {
+    tmm.parameters().reset_table_ranges();
     tmm.formulas().validate_for_execution();
     tmm.formulas().compile_formulas();
     tmm.formulas().lock_parameters_for_execution();
@@ -300,6 +303,32 @@ void Solver::prepare_formulas_for_execution() {
 
 void Solver::release_formulas_after_execution() noexcept {
     tmm.formulas().unlock_parameters();
+    try {
+        report_table_ranges();
+    } catch (const std::exception& exception) {
+        log_noexcept(spdlog::level::err,
+                     std::string("Out-of-range tables not reported: ") +
+                         exception.what());
+    }
+}
+
+// One WARN per solve for every table queried outside its range and held at
+// its end value; extrapolating tables never report.
+void Solver::report_table_ranges() {
+    const auto ranges = tmm.parameters().table_ranges();
+    if (ranges.empty()) {
+        return;
+    }
+    std::string message = "tables queried outside their range, end value held:";
+    for (const auto& range : ranges) {
+        message += std::format(
+            " {} first at time {} with argument {}, arguments {} to {} "
+            "(table range {} to {});",
+            range.table, range.first_time, range.first_argument,
+            range.min_argument, range.max_argument, range.x_min, range.x_max);
+    }
+    message.pop_back();
+    warn(message);
 }
 
 std::int64_t Solver::common_bytes() const noexcept {

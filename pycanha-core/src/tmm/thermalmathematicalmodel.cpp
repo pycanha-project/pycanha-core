@@ -15,9 +15,7 @@
 #include "pycanha-core/parameters/entity.hpp"
 #include "pycanha-core/parameters/formulas.hpp"
 #include "pycanha-core/parameters/parameters.hpp"
-#include "pycanha-core/parameters/variable.hpp"
 #include "pycanha-core/solvers/solver_registry.hpp"
-#include "pycanha-core/thermaldata/lookup_table.hpp"
 #include "pycanha-core/thermaldata/thermaldata.hpp"
 #include "pycanha-core/tmm/bulk.hpp"
 #include "pycanha-core/tmm/conductivecouplings.hpp"
@@ -285,91 +283,6 @@ double ThermalMathematicalModel::flow_radiative(
     return network().flow_radiative(node_nums_1, node_nums_2);
 }
 
-void ThermalMathematicalModel::add_time_variable(const std::string& var_name,
-                                                 Eigen::VectorXd x_data,
-                                                 Eigen::VectorXd y_data,
-                                                 InterpolationMethod interp,
-                                                 ExtrapolationMethod extrap) {
-    if (_temperature_variable_names.contains(var_name)) {
-        throw std::invalid_argument("Variable name '" + var_name +
-                                    "' is already used by a "
-                                    "TemperatureVariable");
-    }
-
-    const auto [iterator, inserted] = _time_variables.try_emplace(
-        var_name, var_name,
-        LookupTable1D(std::move(x_data), std::move(y_data), interp, extrap),
-        parameters(), std::addressof(time));
-    if (!inserted) {
-        throw std::invalid_argument("TimeVariable '" + var_name +
-                                    "' already exists");
-    }
-
-    (void)iterator;
-}
-
-void ThermalMathematicalModel::remove_time_variable(
-    const std::string& var_name) {
-    _time_variables.erase(var_name);
-}
-
-bool ThermalMathematicalModel::has_time_variable(
-    const std::string& var_name) const noexcept {
-    return _time_variables.contains(var_name);
-}
-
-const TimeVariable& ThermalMathematicalModel::get_time_variable(
-    const std::string& var_name) const {
-    const auto iterator = _time_variables.find(var_name);
-    if (iterator == _time_variables.end()) {
-        throw std::out_of_range("TimeVariable '" + var_name +
-                                "' does not exist");
-    }
-
-    return iterator->second;
-}
-
-void ThermalMathematicalModel::add_temperature_variable(
-    const std::string& var_name, Eigen::VectorXd x_data, Eigen::VectorXd y_data,
-    InterpolationMethod interp, ExtrapolationMethod extrap) {
-    if (parameters().contains(var_name) || _time_variables.contains(var_name)) {
-        throw std::invalid_argument("Variable name '" + var_name +
-                                    "' is already in use");
-    }
-
-    const auto [iterator, inserted] = _temperature_variables.try_emplace(
-        var_name, var_name,
-        LookupTable1D(std::move(x_data), std::move(y_data), interp, extrap));
-    if (!inserted) {
-        throw std::invalid_argument("TemperatureVariable '" + var_name +
-                                    "' already exists");
-    }
-
-    _temperature_variable_names.insert(iterator->first);
-}
-
-void ThermalMathematicalModel::remove_temperature_variable(
-    const std::string& var_name) {
-    _temperature_variables.erase(var_name);
-    _temperature_variable_names.erase(var_name);
-}
-
-bool ThermalMathematicalModel::has_temperature_variable(
-    const std::string& var_name) const noexcept {
-    return _temperature_variables.contains(var_name);
-}
-
-const TemperatureVariable& ThermalMathematicalModel::get_temperature_variable(
-    const std::string& var_name) const {
-    const auto iterator = _temperature_variables.find(var_name);
-    if (iterator == _temperature_variables.end()) {
-        throw std::out_of_range("TemperatureVariable '" + var_name +
-                                "' does not exist");
-    }
-
-    return iterator->second;
-}
-
 void ThermalMathematicalModel::callback_solver_loop() {
     const auto logger = get_logger();
     SPDLOG_LOGGER_DEBUG(logger,
@@ -491,17 +404,7 @@ void ThermalMathematicalModel::internal_callback_common() {
         *_time_parameter_ptr = time;
     }
 
-    for (auto& [var_name, variable] : _time_variables) {
-        (void)var_name;
-        variable.update();
-    }
-
-    if (parameters().is_structure_locked() &&
-        formulas().is_compiled_current()) {
-        formulas().apply_compiled_formulas();
-    } else {
-        formulas().apply_formulas();
-    }
+    formulas().apply_formulas();
 }
 
 void ThermalMathematicalModel::internal_callback_solver_loop() {
@@ -526,8 +429,6 @@ void ThermalMathematicalModel::internal_callback_transient_after_timestep() {
 
 void ThermalMathematicalModel::associate_resources() {
     _formulas_shptr->associate(_network, _parameters_shptr);
-    _formulas_shptr->set_temperature_variable_names(
-        std::addressof(_temperature_variable_names));
     _thermal_data_shptr->associate(_network);
 }
 

@@ -8,13 +8,15 @@
 #include <string>
 #include <string_view>
 #include <unordered_map>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 
 #include "pycanha-core/parameters/entity.hpp"
 #include "pycanha-core/parameters/formula.hpp"
+#include "pycanha-core/parameters/formula_program.hpp"
+#include "pycanha-core/parameters/origin.hpp"
 #include "pycanha-core/parameters/parameters.hpp"
+#include "pycanha-core/parameters/table.hpp"
 #include "pycanha-core/tmm/thermalnetwork.hpp"
 
 namespace pycanha {
@@ -53,6 +55,9 @@ struct FormulaDependencies {
     std::unordered_map<Entity, std::vector<std::shared_ptr<Formula>>,
                        Entity::Hash>
         entities;
+    // By table name as written in the formulas.
+    std::unordered_map<std::string, std::vector<std::shared_ptr<Formula>>>
+        tables;
 };
 
 // One formula a generator writes: the target and the expression text.
@@ -112,6 +117,9 @@ class Formulas {
         return _parameters_with_derivatives;
     }
 
+    // Logs every formula's target and value at INFO as it is applied.
+    // Opt-in tracing: INFO so that it also works in builds where DEBUG
+    // records are compiled away. Applying formulas one at a time is slower.
     bool debug_formulas{false};
 
     // Parses the expression and builds its formula, without adding it.
@@ -131,8 +139,6 @@ class Formulas {
         const Entity& entity, CallableFormula::Function function);
     [[nodiscard]] CallableFormula& add_callable_formula(
         std::string_view entity, CallableFormula::Function function);
-    void set_temperature_variable_names(
-        const std::unordered_set<std::string>* names) noexcept;
 
     // Both add a user formula; a clone or formula of another origin added
     // here becomes a user formula.
@@ -150,10 +156,10 @@ class Formulas {
     // An expression that does not parse is skipped and reported. One WARN
     // per call sums up the collisions and failures.
     GenerationReport add_generated_formulas(
-        FormulaOrigin origin, std::span<const GeneratedFormula> formulas);
+        Origin origin, std::span<const GeneratedFormula> formulas);
     // Removes every formula of `origin` in one pass and returns how many.
     // A regeneration calls it before writing its formulas again.
-    std::size_t remove_formulas(FormulaOrigin origin);
+    std::size_t remove_formulas(Origin origin);
 
     // Whether `entity` is the target of a formula. O(1).
     [[nodiscard]] bool contains(const Entity& entity) const noexcept;
@@ -162,17 +168,22 @@ class Formulas {
     [[nodiscard]] std::shared_ptr<Formula> find(const Entity& entity) const;
     [[nodiscard]] std::shared_ptr<Formula> find(std::string_view entity) const;
 
-    // Checks every formula: its target and inputs must exist and it must
-    // evaluate. Throws std::runtime_error naming the broken formulas. Does
-    // nothing while the validation is current (see is_validation_current).
+    // Checks every formula: its target, inputs and called tables must exist.
+    // Throws std::runtime_error naming the broken formulas. Does nothing
+    // while the validation is current (see is_validation_current).
     void validate_for_execution();
-    // Takes the value pointers of every target and input. Validates first
-    // when needed, and does nothing while the compiled state is current, so a
-    // solve on an unchanged model compiles nothing. Call it ahead of a solve
-    // to pay the compile cost earlier.
+    // Builds the program that evaluates every formula: their operations in
+    // one array, with the value pointers of every target and input. Formulas
+    // that read no formula target, and whose target no earlier formula
+    // reads, run first; the rest keep insertion order. That gives the same
+    // results as insertion order. Validates first when needed, and does
+    // nothing while the compiled state is current, so a solve on an
+    // unchanged model compiles nothing. Call it ahead of a solve to pay the
+    // compile cost earlier.
     void compile_formulas();
+    // Publishes the tables evaluated at a parameter, compiles if anything
+    // changed since the last compile, and runs the program.
     void apply_formulas();
-    void apply_compiled_formulas();
     // Derivatives of the formulas that read only parameters; the others have
     // none.
     void calculate_derivatives();
@@ -210,9 +221,13 @@ class Formulas {
     [[nodiscard]] std::optional<Entity> try_resolve_entity(
         std::string_view entity) const;
     [[nodiscard]] Stamp current_stamp() const noexcept;
-    void insert(const std::shared_ptr<Formula>& formula, FormulaOrigin origin);
+    void insert(const std::shared_ptr<Formula>& formula, Origin origin);
     void settle_network_storage();
     void compact() const;
+    [[nodiscard]] detail::FormulaPointers collect_pointers() const;
+    void build_program();
+    void run_program();
+    void run_program_logged();
 
     std::shared_ptr<ThermalNetwork> _network;
     std::shared_ptr<Parameters> _parameters;
@@ -226,9 +241,9 @@ class Formulas {
     mutable std::size_t _holes{0U};
     // Bumped by every add and removal.
     std::uint64_t _formulas_version{0U};
-    const std::unordered_set<std::string>* _temperature_variable_names{nullptr};
     std::optional<Stamp> _validated;
     std::optional<Stamp> _compiled;
+    detail::FormulaProgram _program;
 };
 
 }  // namespace pycanha

@@ -1,18 +1,14 @@
 #pragma once
 
-#include <Eigen/Core>
 #include <functional>
 #include <memory>
 #include <optional>
 #include <span>
 #include <string>
 #include <string_view>
-#include <unordered_map>
-#include <unordered_set>
 #include <vector>
 
 #include "pycanha-core/globals.hpp"
-#include "pycanha-core/parameters/variable.hpp"
 #include "pycanha-core/tmm/bulk.hpp"
 #include "pycanha-core/tmm/thermalnetwork.hpp"
 
@@ -140,27 +136,6 @@ class ThermalMathematicalModel {
     [[nodiscard]] double flow_radiative(Index node_num_1, Index node_num_2);
     [[nodiscard]] double flow_radiative(const std::vector<Index>& node_nums_1,
                                         const std::vector<Index>& node_nums_2);
-    void add_time_variable(
-        const std::string& var_name, Eigen::VectorXd x_data,
-        Eigen::VectorXd y_data,
-        InterpolationMethod interp = InterpolationMethod::Linear,
-        ExtrapolationMethod extrap = ExtrapolationMethod::Constant);
-    void remove_time_variable(const std::string& var_name);
-    [[nodiscard]] bool has_time_variable(
-        const std::string& var_name) const noexcept;
-    [[nodiscard]] const TimeVariable& get_time_variable(
-        const std::string& var_name) const;
-    void add_temperature_variable(
-        const std::string& var_name, Eigen::VectorXd x_data,
-        Eigen::VectorXd y_data,
-        InterpolationMethod interp = InterpolationMethod::Linear,
-        ExtrapolationMethod extrap = ExtrapolationMethod::Constant);
-    void remove_temperature_variable(const std::string& var_name);
-    [[nodiscard]] bool has_temperature_variable(
-        const std::string& var_name) const noexcept;
-    [[nodiscard]] const TemperatureVariable& get_temperature_variable(
-        const std::string& var_name) const;
-
     bool callbacks_active = true;
     bool internal_callbacks_active = true;
     bool c_callbacks_active = false;
@@ -207,9 +182,6 @@ class ThermalMathematicalModel {
     solvers::Solver* _current_callback_solver{nullptr};
     EntitiesHelper _entities{*this};
     double* _time_parameter_ptr{nullptr};
-    std::unordered_map<std::string, TimeVariable> _time_variables;
-    std::unordered_map<std::string, TemperatureVariable> _temperature_variables;
-    std::unordered_set<std::string> _temperature_variable_names;
 
     void associate_resources();
     void initialize_internal_time_parameter();

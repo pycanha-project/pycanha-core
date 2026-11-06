@@ -2,12 +2,12 @@
 
 #include <spdlog/common.h>
 #include <spdlog/spdlog.h>
-#include <symengine/basic.h>
-#include <symengine/symbol.h>
 
 #include <algorithm>
 #include <cstddef>
+#include <cstdint>
 #include <exception>
+#include <iterator>
 #include <memory>
 #include <optional>
 #include <span>
@@ -15,13 +15,15 @@
 #include <string>
 #include <string_view>
 #include <unordered_map>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 
 #include "pycanha-core/parameters/entity.hpp"
 #include "pycanha-core/parameters/formula.hpp"
+#include "pycanha-core/parameters/formula_program.hpp"
+#include "pycanha-core/parameters/origin.hpp"
 #include "pycanha-core/parameters/parameters.hpp"
+#include "pycanha-core/parameters/table.hpp"
 #include "pycanha-core/tmm/thermalnetwork.hpp"
 #include "pycanha-core/utils/logger.hpp"
 
@@ -128,21 +130,6 @@ namespace {
     return parameters;
 }
 
-// Why `formula` cannot run, e.g. a node it reads was removed; nothing when it
-// can.
-[[nodiscard]] std::optional<std::string> formula_problem(
-    const Formula& formula) {
-    if (!formula.entity().exists()) {
-        return "its target does not exist";
-    }
-    try {
-        static_cast<void>(formula.get_value());
-    } catch (const std::exception& exception) {
-        return exception.what();
-    }
-    return std::nullopt;
-}
-
 // The generated formulas that met an existing formula or were refused: each
 // one is logged at DEBUG, and the first few are kept for one summary WARN.
 class CollisionLog {
@@ -220,29 +207,12 @@ std::shared_ptr<Formula> Formulas::create_formula(
     const auto associated_network = ensure_network(_network);
     auto parameter_storage = ensure_parameters(_parameters);
 
-    // Parsed once here; the formula is built from this parse. Symbols that
-    // are not parameters are resolved to entities by ExpressionFormula.
+    // Parsed once here and lowered by ExpressionFormula. Symbols that are not
+    // parameters are resolved to entities, calls to tables.
     auto parsed = detail::parse_expression(formula_string);
-    if (_temperature_variable_names != nullptr) {
-        for (const auto& symbol : parsed.symbols) {
-            const auto& symbol_name = symbol->get_name();
-            if (!parameter_storage->contains(symbol_name) &&
-                _temperature_variable_names->contains(symbol_name)) {
-                throw std::invalid_argument(
-                    "TemperatureVariable '" + symbol_name +
-                    "' in formulas is not implemented yet");
-            }
-        }
-    }
-
     return std::make_shared<ExpressionFormula>(
         entity, *parameter_storage, formula_string, std::move(parsed),
         associated_network.get());
-}
-
-void Formulas::set_temperature_variable_names(
-    const std::unordered_set<std::string>* names) noexcept {
-    _temperature_variable_names = names;
 }
 
 Formula& Formulas::add_formula(const Entity& entity, double value) {
@@ -287,11 +257,10 @@ void Formulas::add_formula(const Formula& formula) {
 }
 
 void Formulas::add_formula(const std::shared_ptr<Formula>& formula) {
-    insert(formula, FormulaOrigin::user);
+    insert(formula, Origin::user);
 }
 
-void Formulas::insert(const std::shared_ptr<Formula>& formula,
-                      FormulaOrigin origin) {
+void Formulas::insert(const std::shared_ptr<Formula>& formula, Origin origin) {
     if (formula == nullptr) {
         throw std::invalid_argument("Cannot add a null formula");
     }
@@ -327,8 +296,8 @@ void Formulas::insert(const std::shared_ptr<Formula>& formula,
 }
 
 GenerationReport Formulas::add_generated_formulas(
-    FormulaOrigin origin, std::span<const GeneratedFormula> formulas) {
-    if (origin == FormulaOrigin::user) {
+    Origin origin, std::span<const GeneratedFormula> formulas) {
+    if (origin == Origin::user) {
         throw std::invalid_argument(
             "Generated formulas need a generator origin; add user formulas "
             "with add_formula");
@@ -339,7 +308,7 @@ GenerationReport Formulas::add_generated_formulas(
     for (const auto& generated : formulas) {
         const auto& target = generated.target;
         const auto existing = find(target);
-        if (existing != nullptr && existing->origin() == FormulaOrigin::user) {
+        if (existing != nullptr && existing->origin() == Origin::user) {
             ++report.kept_user;
             collisions.note(target, "the user formula stays");
             continue;
@@ -383,7 +352,7 @@ GenerationReport Formulas::add_generated_formulas(
     return report;
 }
 
-std::size_t Formulas::remove_formulas(FormulaOrigin origin) {
+std::size_t Formulas::remove_formulas(Origin origin) {
     std::size_t removed = 0U;
     for (auto& formula : _formulas) {
         if (formula == nullptr || formula->origin() != origin) {
@@ -475,6 +444,9 @@ FormulaDependencies Formulas::dependencies() const {
         for (const auto& input : formula->entity_dependencies()) {
             append_once(dependencies.entities[input], formula);
         }
+        for (const auto& name : formula->table_dependencies()) {
+            append_once(dependencies.tables[name], formula);
+        }
     }
     return dependencies;
 }
@@ -534,7 +506,7 @@ void Formulas::validate_for_execution() {
     std::size_t broken = 0U;
     std::string listing;
     for (const auto& formula : _formulas) {
-        const auto problem = formula_problem(*formula);
+        const auto problem = formula->problem();
         if (!problem.has_value()) {
             continue;
         }
@@ -562,53 +534,133 @@ void Formulas::compile_formulas() {
         return;
     }
 
-    for (const auto& formula : _formulas) {
-        formula->compile_formula();
-    }
-
+    build_program();
     _compiled = current_stamp();
 }
 
+detail::FormulaPointers Formulas::collect_pointers() const {
+    const std::size_t count = _formulas.size();
+    detail::FormulaPointers pointers;
+    pointers.targets.resize(count, nullptr);
+    pointers.first_input.resize(count + 1U, 0U);
+    pointers.first_callable = count;
+    for (std::size_t index = 0U; index < count; ++index) {
+        const auto& formula = *_formulas[index];
+        pointers.targets[index] = formula.entity().get_value_ref();
+        pointers.first_input[index] = pointers.inputs.size();
+        if (formula.kind() == FormulaKind::Callable) {
+            pointers.first_callable = std::min(pointers.first_callable, index);
+            continue;
+        }
+        const auto& expression =
+            dynamic_cast<const ExpressionFormula&>(formula);
+        const auto inputs = expression.input_pointers();
+        for (std::size_t input = 0U; input < inputs.size(); ++input) {
+            if (expression.reads_entity(input)) {
+                pointers.entity_reads.emplace_back(inputs[input], index);
+            }
+        }
+        pointers.inputs.insert(pointers.inputs.end(), inputs.begin(),
+                               inputs.end());
+    }
+    pointers.first_input[count] = pointers.inputs.size();
+    return pointers;
+}
+
+void Formulas::build_program() {
+    const auto pointers = collect_pointers();
+    detail::FormulaProgram program;
+    program.reserve(_formulas.size(), pointers.inputs.size());
+    const double* time = _parameters->time_ptr();
+    std::vector<detail::TableView> tables;
+
+    for (const std::size_t index : detail::execution_order(pointers)) {
+        auto& formula = *_formulas[index];
+        double* target = pointers.targets[index];
+        if (formula.kind() == FormulaKind::Callable) {
+            program.add_callable(dynamic_cast<CallableFormula&>(formula),
+                                 target);
+            continue;
+        }
+        const auto& expression =
+            dynamic_cast<const ExpressionFormula&>(formula);
+        const auto* lowered = expression.lowered();
+        if (lowered == nullptr) {
+            program.add_constant(formula, target, expression._value);
+            continue;
+        }
+        tables.clear();
+        std::ranges::transform(lowered->tables, std::back_inserter(tables),
+                               [this, time](const std::string& name) {
+                                   return _parameters->table(name).view(time);
+                               });
+        program.add_expression(formula, target, *lowered,
+                               std::span(pointers.inputs)
+                                   .subspan(pointers.first_input[index],
+                                            pointers.first_input[index + 1U] -
+                                                pointers.first_input[index]),
+                               tables);
+    }
+    program.finish();
+    _program = std::move(program);
+}
+
 void Formulas::apply_formulas() {
-    compact();
-    if (!debug_formulas) {
-        for (const auto& formula : _formulas) {
-            formula->apply_formula();
+    if (_parameters == nullptr) {
+        if (!_formulas.empty()) {
+            throw std::runtime_error("Formulas requires parameters");
         }
         return;
     }
 
-    // get_logger() is called inside the macro rather than hoisted into a local
-    // so that a build with debug records compiled away leaves no unused local
-    // behind.
-    for (const auto& formula : _formulas) {
-        formula->apply_formula();
-        SPDLOG_LOGGER_DEBUG(get_logger(), "{} = {}",
-                            formula->entity().string_representation(),
-                            formula->get_value());
+    _parameters->update_evaluated_tables();
+    if (!is_compiled_current()) {
+        compile_formulas();
+    }
+    if (debug_formulas) {
+        run_program_logged();
+        return;
+    }
+    run_program();
+}
+
+void Formulas::run_program() {
+    const auto program = _program.view();
+    for (const auto& run : _program.runs()) {
+        if (run.callable != nullptr) {
+            *program.targets[run.target] = run.callable->call();
+            continue;
+        }
+        static_cast<void>(detail::run_ops(program, run.op_begin, run.op_end));
     }
 }
 
-void Formulas::apply_compiled_formulas() {
-    if (!is_compiled_current()) {
-        throw std::runtime_error(
-            "Compiled formulas are stale or unavailable for execution");
-    }
-
-    if (!debug_formulas) {
-        for (const auto& formula : _formulas) {
-            formula->apply_compiled_formula();
+void Formulas::run_program_logged() {
+    const auto program = _program.view();
+    const auto log = [this](std::uint32_t target) {
+        SPDLOG_LOGGER_INFO(
+            get_logger(), "{} = {}",
+            _program.formula_of(target).entity().string_representation(),
+            _program.value_of(target));
+    };
+    const auto ops = _program.ops();
+    for (const auto& run : _program.runs()) {
+        if (run.callable != nullptr) {
+            *program.targets[run.target] = run.callable->call();
+            log(run.target);
+            continue;
         }
-        return;
-    }
-
-    // As in apply_formulas(): keep the logger lookup inside the macro so a
-    // build with debug records compiled away leaves no unused local behind.
-    for (const auto& formula : _formulas) {
-        formula->apply_compiled_formula();
-        SPDLOG_LOGGER_DEBUG(get_logger(), "{} = {}",
-                            formula->entity().string_representation(),
-                            formula->get_value());
+        // One formula at a time: each ends with the STORE to its target.
+        std::size_t begin = run.op_begin;
+        for (std::size_t position = run.op_begin; position < run.op_end;
+             ++position) {
+            if (ops[position].code == detail::OpCode::STORE) {
+                static_cast<void>(
+                    detail::run_ops(program, begin, position + 1U));
+                log(ops[position].arg);
+                begin = position + 1U;
+            }
+        }
     }
 }
 

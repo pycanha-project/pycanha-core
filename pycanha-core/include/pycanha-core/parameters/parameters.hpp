@@ -6,11 +6,17 @@
 #include <deque>
 #include <optional>
 #include <pycanha-core/config.hpp>
+#include <span>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 #include <variant>
+#include <vector>
 
 #include "pycanha-core/globals.hpp"
+#include "pycanha-core/parameters/origin.hpp"
+#include "pycanha-core/parameters/table.hpp"
+#include "pycanha-core/thermaldata/lookup_table.hpp"
 
 namespace pycanha {
 
@@ -103,6 +109,53 @@ class Parameters {
     [[nodiscard]] std::size_t size() const noexcept;
     [[nodiscard]] const ParametersDict& data() const;
 
+    // Tables share the parameters' name space (case-insensitive) and
+    // structure version: adding, removing or resizing a table is a
+    // structural change, refused while the structure is locked. A table
+    // name cannot be an entity token (T, C, QS, QA, QE, QI, QR, GL, GR),
+    // "time" or a built-in function or constant of the expressions.
+    //
+    // With a non-empty `evaluated_at`, the table is looked up at that
+    // parameter on every update_evaluated_tables() call and the value is
+    // published as an internal parameter with the table's name.
+    // Throws std::invalid_argument for a refused name or argument and
+    // std::runtime_error while the structure is locked.
+    void add_table(std::string name, LookupTable1D lookup_table,
+                   std::string evaluated_at = {});
+    // A generator writes a table with its origin (anything but user, which
+    // throws std::invalid_argument). A user table of the same name stays and
+    // the call logs a WARN; a generated table of the same name, of any
+    // origin, has its data and origin replaced, with a WARN when the origin
+    // differs. Every write is a structural change.
+    TableGeneration add_generated_table(Origin origin, std::string name,
+                                        LookupTable1D lookup_table,
+                                        std::string evaluated_at = {});
+    // Removing a table that formulas call is allowed: the next formula
+    // validation lists them. Returns false when there is no such table.
+    bool remove_table(const std::string& name);
+    [[nodiscard]] bool has_table(const std::string& name) const;
+    // Null when there is no such table.
+    [[nodiscard]] const Table* find_table(const std::string& name) const;
+    // Throws std::out_of_range when there is no such table.
+    [[nodiscard]] const Table& table(const std::string& name) const;
+    [[nodiscard]] std::vector<std::string> table_names() const;
+    // Overwrite the y or x values in place. The size must not change and x
+    // must stay strictly increasing; nothing is written when a check fails.
+    // Not a structural change, so they are safe in a callback during a
+    // solve: the next lookup reads the new values.
+    void set_table_values(const std::string& name,
+                          std::span<const double> values);
+    void set_table_x(const std::string& name, std::span<const double> x);
+
+    // Looks up every table evaluated at a parameter and publishes its value.
+    void update_evaluated_tables();
+    // The tables queried outside their range since the last reset, by name.
+    [[nodiscard]] std::vector<TableRange> table_ranges() const;
+    void reset_table_ranges() const noexcept;
+    // The value of the "time" parameter, or null without one. Out-of-range
+    // records take the time from here.
+    [[nodiscard]] const double* time_ptr() const;
+
   private:
     struct ParameterSlot {
         std::string name;
@@ -125,8 +178,18 @@ class Parameters {
     [[nodiscard]] const ParameterSlot* find_slot(Index idx) const noexcept;
     void invalidate_data_cache() const noexcept;
     void mark_structural_change() noexcept;
+    void insert_slot(std::string name, ThermalValue value, bool is_internal);
+    void deactivate_slot(ParameterSlot& slot);
+    [[nodiscard]] bool is_table_name(std::string_view name) const;
+    void check_table_change(std::string_view name) const;
+    void publish_table(Table& table);
+    void unpublish_table(Table& table);
+    [[nodiscard]] Table& existing_table(const std::string& name);
 
     std::unordered_map<std::string, std::size_t> _name_to_slot;
+    // Tables by lower-case name. Node-based, so a compiled formula's view
+    // of one table survives adding and removing others.
+    std::unordered_map<std::string, Table> _tables;
     std::deque<ParameterSlot> _slots;
     std::size_t _active_size{0U};
     mutable ParametersDict _data_cache;

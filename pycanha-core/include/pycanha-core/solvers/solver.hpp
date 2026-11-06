@@ -288,6 +288,7 @@ class Solver {
   private:
     void prepare_formulas_for_execution();
     void release_formulas_after_execution() noexcept;
+    void report_table_ranges();
     void record_nonconverged(int step, double time, int iterations);
     void record_reuse_error() noexcept;
     [[nodiscard]] SolverMemory estimate_memory_quietly();

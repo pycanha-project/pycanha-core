@@ -11,6 +11,7 @@
 #include "pycanha-core/parameters/entity.hpp"
 #include "pycanha-core/parameters/formula.hpp"
 #include "pycanha-core/parameters/formulas.hpp"
+#include "pycanha-core/parameters/origin.hpp"
 #include "pycanha-core/parameters/parameters.hpp"
 #include "pycanha-core/tmm/node.hpp"
 #include "pycanha-core/tmm/thermalnetwork.hpp"
@@ -39,7 +40,7 @@ struct GeneratedModel {
 
     // One generated formula per (node, expression) pair, all on QI.
     [[nodiscard]] GenerationReport generate(
-        FormulaOrigin origin,
+        Origin origin,
         const std::vector<std::pair<NodeNum, std::string>>& entries) {
         std::vector<GeneratedFormula> generated;
         generated.reserve(entries.size());
@@ -50,7 +51,7 @@ struct GeneratedModel {
         return formulas.add_generated_formulas(origin, generated);
     }
 
-    [[nodiscard]] FormulaOrigin origin_of(NodeNum node) const {
+    [[nodiscard]] Origin origin_of(NodeNum node) const {
         return formulas.find(qi(node))->origin();
     }
 
@@ -75,34 +76,33 @@ TEST_CASE("Formulas added one at a time are user formulas",
     static_cast<void>(
         model.formulas.add_callable_formula("QI3", [] { return 3.0; }));
 
-    REQUIRE(model.origin_of(1) == FormulaOrigin::user);
-    REQUIRE(model.origin_of(2) == FormulaOrigin::user);
-    REQUIRE(model.origin_of(3) == FormulaOrigin::user);
-    REQUIRE(to_string(FormulaOrigin::conduction_builder) ==
-            "conduction_builder");
+    REQUIRE(model.origin_of(1) == Origin::user);
+    REQUIRE(model.origin_of(2) == Origin::user);
+    REQUIRE(model.origin_of(3) == Origin::user);
+    REQUIRE(to_string(Origin::conduction_builder) == "conduction_builder");
 }
 
 TEST_CASE("A generated formula added again one at a time is a user formula",
           "[formulas][origin]") {
     GeneratedModel model;
-    static_cast<void>(model.generate(FormulaOrigin::etms_reader, {{1, "5.0"}}));
+    static_cast<void>(model.generate(Origin::etms_reader, {{1, "5.0"}}));
     const auto generated = model.formulas.find("QI1");
-    REQUIRE(generated->origin() == FormulaOrigin::etms_reader);
+    REQUIRE(generated->origin() == Origin::etms_reader);
 
     const auto copy = generated->clone();
     REQUIRE(model.formulas.remove_formula("QI1"));
     model.formulas.add_formula(*copy);
-    REQUIRE(model.origin_of(1) == FormulaOrigin::user);
+    REQUIRE(model.origin_of(1) == Origin::user);
 }
 
 TEST_CASE("Generated formulas keep their origin and are found by target",
           "[formulas][origin]") {
     GeneratedModel model;
-    const auto report = model.generate(FormulaOrigin::conduction_builder,
+    const auto report = model.generate(Origin::conduction_builder,
                                        {{1, "1.0"}, {2, "2 * QI1"}});
 
     REQUIRE(report.added == 2U);
-    REQUIRE(model.origin_of(2) == FormulaOrigin::conduction_builder);
+    REQUIRE(model.origin_of(2) == Origin::conduction_builder);
     REQUIRE(model.formulas.contains(model.qi(1)));
     REQUIRE(model.formulas.contains("QI2"));
     REQUIRE_FALSE(model.formulas.contains("QI3"));
@@ -114,11 +114,11 @@ TEST_CASE("A generated formula never replaces a user formula",
     GeneratedModel model;
     static_cast<void>(model.formulas.add_formula("QI1", "5.0"));
     const auto report =
-        model.generate(FormulaOrigin::etms_reader, {{1, "7.0"}, {2, "1.0"}});
+        model.generate(Origin::etms_reader, {{1, "7.0"}, {2, "1.0"}});
 
     REQUIRE(report.kept_user == 1U);
     REQUIRE(report.added == 1U);
-    REQUIRE(model.origin_of(1) == FormulaOrigin::user);
+    REQUIRE(model.origin_of(1) == Origin::user);
     model.formulas.apply_formulas();
     REQUIRE(model.network->nodes().get_qi(1) == Catch::Approx(5.0));
 }
@@ -127,21 +127,21 @@ TEST_CASE("A generated formula replaces another generated one, at the end",
           "[formulas][origin]") {
     GeneratedModel model;
     static_cast<void>(
-        model.generate(FormulaOrigin::etms_reader, {{1, "1.0"}, {2, "2.0"}}));
+        model.generate(Origin::etms_reader, {{1, "1.0"}, {2, "2.0"}}));
     const auto report =
-        model.generate(FormulaOrigin::conduction_builder, {{1, "3.0"}});
+        model.generate(Origin::conduction_builder, {{1, "3.0"}});
 
     REQUIRE(report.replaced == 1U);
     REQUIRE(report.added == 0U);
-    REQUIRE(model.origin_of(1) == FormulaOrigin::conduction_builder);
+    REQUIRE(model.origin_of(1) == Origin::conduction_builder);
     REQUIRE(model.order() == std::vector<std::string>{"QI2", "QI1"});
 }
 
 TEST_CASE("A generator replaces its own formula on a repeated target",
           "[formulas][origin]") {
     GeneratedModel model;
-    const auto report = model.generate(FormulaOrigin::conduction_builder,
-                                       {{1, "1.0"}, {1, "2.0"}});
+    const auto report =
+        model.generate(Origin::conduction_builder, {{1, "1.0"}, {1, "2.0"}});
 
     REQUIRE(report.added == 1U);
     REQUIRE(report.replaced == 1U);
@@ -153,22 +153,21 @@ TEST_CASE("A generator replaces its own formula on a repeated target",
 TEST_CASE("A refused generated expression is reported and changes nothing",
           "[formulas][origin]") {
     GeneratedModel model;
-    static_cast<void>(
-        model.generate(FormulaOrigin::conduction_builder, {{1, "1.0"}}));
-    const auto report = model.generate(FormulaOrigin::etms_reader,
+    static_cast<void>(model.generate(Origin::conduction_builder, {{1, "1.0"}}));
+    const auto report = model.generate(Origin::etms_reader,
                                        {{1, "1 +"}, {2, "QX7"}, {3, "3.0"}});
 
     REQUIRE(report.failed.size() == 2U);
     REQUIRE(report.failed.front().target.is_same_as(model.qi(1)));
     REQUIRE_FALSE(report.failed.back().message.empty());
     REQUIRE(report.added == 1U);
-    REQUIRE(model.origin_of(1) == FormulaOrigin::conduction_builder);
+    REQUIRE(model.origin_of(1) == Origin::conduction_builder);
     REQUIRE_FALSE(model.formulas.contains("QI2"));
 }
 
 TEST_CASE("Generated formulas need a generator origin", "[formulas][origin]") {
     GeneratedModel model;
-    REQUIRE_THROWS_AS(model.generate(FormulaOrigin::user, {{1, "1.0"}}),
+    REQUIRE_THROWS_AS(model.generate(Origin::user, {{1, "1.0"}}),
                       std::invalid_argument);
     REQUIRE(model.formulas.formulas().empty());
 }
@@ -177,31 +176,27 @@ TEST_CASE("Removing an origin removes only its formulas",
           "[formulas][origin]") {
     GeneratedModel model;
     static_cast<void>(model.formulas.add_formula("QI1", "1.0"));
-    static_cast<void>(
-        model.generate(FormulaOrigin::conduction_builder, {{2, "2.0"}}));
-    static_cast<void>(model.generate(FormulaOrigin::etms_reader, {{3, "3.0"}}));
-    static_cast<void>(
-        model.generate(FormulaOrigin::conduction_builder, {{4, "4.0"}}));
+    static_cast<void>(model.generate(Origin::conduction_builder, {{2, "2.0"}}));
+    static_cast<void>(model.generate(Origin::etms_reader, {{3, "3.0"}}));
+    static_cast<void>(model.generate(Origin::conduction_builder, {{4, "4.0"}}));
 
-    REQUIRE(model.formulas.remove_formulas(FormulaOrigin::conduction_builder) ==
-            2U);
+    REQUIRE(model.formulas.remove_formulas(Origin::conduction_builder) == 2U);
     REQUIRE(model.order() == std::vector<std::string>{"QI1", "QI3"});
     REQUIRE_FALSE(model.formulas.contains("QI4"));
-    REQUIRE(model.formulas.remove_formulas(FormulaOrigin::conduction_builder) ==
-            0U);
+    REQUIRE(model.formulas.remove_formulas(Origin::conduction_builder) == 0U);
 }
 
 TEST_CASE("A regeneration after its wipe writes its formulas again",
           "[formulas][origin]") {
     GeneratedModel model;
-    static_cast<void>(model.generate(FormulaOrigin::conduction_builder,
-                                     {{1, "1.0"}, {2, "2.0"}}));
+    static_cast<void>(
+        model.generate(Origin::conduction_builder, {{1, "1.0"}, {2, "2.0"}}));
     static_cast<void>(model.formulas.add_formula("QI3", "QI1 + QI2"));
 
     static_cast<void>(
-        model.formulas.remove_formulas(FormulaOrigin::conduction_builder));
-    const auto report = model.generate(FormulaOrigin::conduction_builder,
-                                       {{1, "10.0"}, {2, "20.0"}});
+        model.formulas.remove_formulas(Origin::conduction_builder));
+    const auto report =
+        model.generate(Origin::conduction_builder, {{1, "10.0"}, {2, "20.0"}});
 
     REQUIRE(report.added == 2U);
     REQUIRE(model.order() == std::vector<std::string>{"QI3", "QI1", "QI2"});

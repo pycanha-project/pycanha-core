@@ -132,42 +132,29 @@ TEST_CASE("ExpressionFormula parses scalar expressions",
     parameters.add_parameter("p1", 12.5);
 
     const pycanha::Entity heat_load = pycanha::Entity::qi(*network, 1);
-    pycanha::ExpressionFormula formula(heat_load, parameters, "p1");
+    const pycanha::ExpressionFormula formula(heat_load, parameters, "p1");
 
     REQUIRE(formula.expression() == "p1");
     REQUIRE(formula.parameter_dependencies().size() == 1);
     REQUIRE(formula.parameter_dependencies().at(0) == "p1");
-
-    formula.apply_formula();
-
-    REQUIRE(network->nodes().get_qi(1) == Catch::Approx(12.5));
     REQUIRE(formula.get_value() == Catch::Approx(12.5));
 }
 
-TEST_CASE(
-    "ExpressionFormula evaluates compound expressions in interpreted and "
-    "compiled mode",
-    "[formulas][expression]") {
+TEST_CASE("ExpressionFormula evaluates compound expressions",
+          "[formulas][expression]") {
     auto network = make_single_node_network();
     pycanha::Parameters parameters;
     parameters.add_parameter("p1", 6.0);
     parameters.add_parameter("p2", 4.0);
 
     const pycanha::Entity heat_load = pycanha::Entity::qi(*network, 1);
-    pycanha::ExpressionFormula formula(heat_load, parameters,
-                                       "p1*p2/123.0+0.01");
+    const pycanha::ExpressionFormula formula(heat_load, parameters,
+                                             "p1*p2/123.0+0.01");
+    REQUIRE(formula.get_value() == Catch::Approx((6.0 * 4.0 / 123.0) + 0.01));
 
-    formula.apply_formula();
-    REQUIRE(network->nodes().get_qi(1) ==
-            Catch::Approx((6.0 * 4.0 / 123.0) + 0.01));
-
-    formula.compile_formula();
     parameters.set_parameter("p1", 8.0);
     parameters.set_parameter("p2", 3.0);
-    formula.apply_compiled_formula();
-
-    REQUIRE(network->nodes().get_qi(1) ==
-            Catch::Approx((8.0 * 3.0 / 123.0) + 0.01));
+    REQUIRE(formula.get_value() == Catch::Approx((8.0 * 3.0 / 123.0) + 0.01));
 }
 
 TEST_CASE("ExpressionFormula calculates analytical derivatives",
@@ -180,7 +167,6 @@ TEST_CASE("ExpressionFormula calculates analytical derivatives",
     const pycanha::Entity heat_load = pycanha::Entity::qi(*network, 1);
     pycanha::ExpressionFormula formula(heat_load, parameters, "p1*p2");
 
-    formula.compile_formula();
     formula.calculate_derivatives();
 
     const auto lookup = derivatives_by_dependency(formula);
@@ -197,11 +183,10 @@ TEST_CASE("ExpressionFormula accepts Python-style power syntax",
     const pycanha::Entity heat_load = pycanha::Entity::qi(*network, 1);
     pycanha::ExpressionFormula formula(heat_load, parameters, "p1**2");
 
-    formula.apply_formula();
     formula.calculate_derivatives();
     const auto lookup = derivatives_by_dependency(formula);
 
-    REQUIRE(network->nodes().get_qi(1) == Catch::Approx(9.0));
+    REQUIRE(formula.get_value() == Catch::Approx(9.0));
     REQUIRE(lookup.at("p1") == Catch::Approx(6.0));
 }
 
@@ -213,19 +198,15 @@ TEST_CASE("ExpressionFormula supports common math functions",
     parameters.add_parameter("p2", 1.25);
 
     const pycanha::Entity heat_load = pycanha::Entity::qi(*network, 1);
-    pycanha::ExpressionFormula formula(heat_load, parameters,
-                                       "sin(p1) + exp(p2)");
+    const pycanha::ExpressionFormula formula(heat_load, parameters,
+                                             "sin(p1) + exp(p2)");
 
-    formula.apply_formula();
-
-    REQUIRE(network->nodes().get_qi(1) ==
+    REQUIRE(formula.get_value() ==
             Catch::Approx(std::sin(0.5) + std::exp(1.25)));
 }
 
-TEST_CASE(
-    "Parameter-only expressions validate symbols and support compiled "
-    "execution",
-    "[formulas][parameter]") {
+TEST_CASE("Parameter-only expressions list their inputs and follow values",
+          "[formulas][parameter]") {
     auto network = make_single_node_network();
     pycanha::Parameters parameters;
     parameters.add_parameter("p1", 2.0);
@@ -246,65 +227,31 @@ TEST_CASE(
     REQUIRE(derivative_lookup.at("p1") == Catch::Approx(1.0));
     REQUIRE(derivative_lookup.at("p2") == Catch::Approx(2.0));
 
-    formula.compile_formula();
     parameters.set_parameter("p1", 4.0);
     parameters.set_parameter("p2", 1.5);
-    formula.apply_compiled_formula();
+    REQUIRE(formula.get_value() == Catch::Approx(7.0));
 
-    REQUIRE(network->nodes().get_qi(1) == Catch::Approx(7.0));
-
-    formula.calculate_derivatives();
-    derivative_lookup = derivatives_by_dependency(formula);
-    REQUIRE(derivative_lookup.at("p1") == Catch::Approx(1.0));
-    REQUIRE(derivative_lookup.at("p2") == Catch::Approx(2.0));
-
-    auto clone = formula.clone();
-    auto* parameter_clone =
-        dynamic_cast<pycanha::ExpressionFormula*>(clone.get());
-    REQUIRE(parameter_clone != nullptr);
+    const auto clone = formula.clone();
     parameters.set_parameter("p1", 1.0);
     parameters.set_parameter("p2", 3.0);
-    parameter_clone->apply_compiled_formula();
-    REQUIRE(network->nodes().get_qi(1) == Catch::Approx(7.0));
+    REQUIRE(clone->get_value() == Catch::Approx(7.0));
 
+    // Adding a parameter changes nothing the formula reads.
     parameters.add_parameter("p3", 9.0);
-    REQUIRE_THROWS_AS(formula.apply_compiled_formula(), std::runtime_error);
-    REQUIRE_THROWS_AS(formula.calculate_derivatives(), std::runtime_error);
+    REQUIRE(formula.get_value() == Catch::Approx(7.0));
 }
 
-TEST_CASE(
-    "Parameter-only expressions report invalidated parameter and entity "
-    "bindings",
-    "[formulas][parameter]") {
-    SECTION("removed parameters invalidate interpreted and compiled access") {
-        auto network = make_single_node_network();
-        pycanha::Parameters parameters;
-        parameters.add_parameter("p1", 2.0);
+TEST_CASE("Parameter-only expressions report a removed parameter",
+          "[formulas][parameter]") {
+    auto network = make_single_node_network();
+    pycanha::Parameters parameters;
+    parameters.add_parameter("p1", 2.0);
 
-        const pycanha::Entity heat_load = pycanha::Entity::qi(*network, 1);
-        pycanha::ExpressionFormula formula(heat_load, parameters, "p1");
+    const pycanha::Entity heat_load = pycanha::Entity::qi(*network, 1);
+    const pycanha::ExpressionFormula formula(heat_load, parameters, "p1");
 
-        REQUIRE_THROWS_AS(formula.apply_compiled_formula(), std::runtime_error);
-
-        parameters.remove_parameter("p1");
-
-        REQUIRE_THROWS_AS(formula.apply_formula(), std::runtime_error);
-        REQUIRE_THROWS_AS(formula.compile_formula(), std::runtime_error);
-    }
-
-    SECTION("removed entities invalidate assignment and compilation") {
-        auto network = make_single_node_network();
-        pycanha::Parameters parameters;
-        parameters.add_parameter("p1", 2.0);
-
-        const pycanha::Entity heat_load = pycanha::Entity::qi(*network, 1);
-        pycanha::ExpressionFormula formula(heat_load, parameters, "p1");
-
-        network->remove_node(1);
-
-        REQUIRE_THROWS_AS(formula.apply_formula(), std::runtime_error);
-        REQUIRE_THROWS_AS(formula.compile_formula(), std::runtime_error);
-    }
+    parameters.remove_parameter("p1");
+    REQUIRE_THROWS_AS(formula.get_value(), std::runtime_error);
 }
 
 TEST_CASE("Expressions without a network reject non-double and unknown inputs",
@@ -326,37 +273,19 @@ TEST_CASE("Expressions without a network reject non-double and unknown inputs",
         std::invalid_argument);
 }
 
-TEST_CASE(
-    "ExpressionFormula keeps slot binding across rename in interpreted mode",
-    "[formulas][expression]") {
+TEST_CASE("ExpressionFormula keeps its parameter across a rename",
+          "[formulas][expression]") {
     auto network = make_single_node_network();
     pycanha::Parameters parameters;
     parameters.add_parameter("p1", 3.0);
 
     const pycanha::Entity heat_load = pycanha::Entity::qi(*network, 1);
-    pycanha::ExpressionFormula formula(heat_load, parameters, "p1");
+    const pycanha::ExpressionFormula formula(heat_load, parameters, "p1");
 
     parameters.rename_parameter("p1", "renamed_p1");
     parameters.set_parameter("renamed_p1", 7.0);
 
-    formula.apply_formula();
-
-    REQUIRE(network->nodes().get_qi(1) == Catch::Approx(7.0));
-}
-
-TEST_CASE("ExpressionFormula compiled mode invalidates on structural changes",
-          "[formulas][expression]") {
-    auto network = make_single_node_network();
-    pycanha::Parameters parameters;
-    parameters.add_parameter("p1", 6.0);
-
-    const pycanha::Entity heat_load = pycanha::Entity::qi(*network, 1);
-    pycanha::ExpressionFormula formula(heat_load, parameters, "p1");
-
-    formula.compile_formula();
-    parameters.add_parameter("p2", 4.0);
-
-    REQUIRE_THROWS_AS(formula.apply_compiled_formula(), std::runtime_error);
+    REQUIRE(formula.get_value() == Catch::Approx(7.0));
 }
 
 TEST_CASE("ExpressionFormula rejects matrix and array syntax for now",

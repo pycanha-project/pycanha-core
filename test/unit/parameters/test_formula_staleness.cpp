@@ -48,7 +48,7 @@ TEST_CASE("Compiling formulas of an unchanged model does no work",
     model.nodes().set_T(1, 5.0);
     model.formulas.compile_formulas();
     REQUIRE(model.formulas.is_compiled_current());
-    model.formulas.apply_compiled_formulas();
+    model.formulas.apply_formulas();
     REQUIRE(model.nodes().get_qi(2) == Catch::Approx(10.0));
 }
 
@@ -60,11 +60,15 @@ TEST_CASE("Adding a formula makes the compiled formulas stale",
 
     static_cast<void>(model.formulas.add_formula("QI1", "1.0"));
     REQUIRE_FALSE(model.formulas.is_validation_current());
-    REQUIRE_THROWS_AS(model.formulas.apply_compiled_formulas(),
-                      std::runtime_error);
+    REQUIRE_FALSE(model.formulas.is_compiled_current());
+
+    // Applying compiles again first.
+    model.formulas.apply_formulas();
+    REQUIRE(model.formulas.is_compiled_current());
+    REQUIRE(model.nodes().get_qi(1) == Catch::Approx(1.0));
 }
 
-TEST_CASE("Adding nodes makes compiled formulas stale until recompiled",
+TEST_CASE("Adding nodes makes compiled formulas stale until applied again",
           "[formulas][staleness]") {
     StalenessModel model(2);
     static_cast<void>(model.formulas.add_formula("QI2", "2 * T1"));
@@ -73,12 +77,10 @@ TEST_CASE("Adding nodes makes compiled formulas stale until recompiled",
     // Enough nodes to move the node storage the compiled pointers point into.
     model.add_nodes(3, 2000);
     REQUIRE_FALSE(model.formulas.is_compiled_current());
-    REQUIRE_THROWS_AS(model.formulas.apply_compiled_formulas(),
-                      std::runtime_error);
 
-    model.formulas.compile_formulas();
     model.nodes().set_T(1, 7.0);
-    model.formulas.apply_compiled_formulas();
+    model.formulas.apply_formulas();
+    REQUIRE(model.formulas.is_compiled_current());
     REQUIRE(model.nodes().get_qi(2) == Catch::Approx(14.0));
 }
 
@@ -127,7 +129,7 @@ TEST_CASE("Removing the broken formulas lets the formulas compile again",
 
     REQUIRE(model.formulas.remove_formula("QI1"));
     model.formulas.compile_formulas();
-    model.formulas.apply_compiled_formulas();
+    model.formulas.apply_formulas();
     REQUIRE(model.nodes().get_qi(2) == Catch::Approx(600.0));
 }
 
@@ -146,6 +148,6 @@ TEST_CASE("Compiled coupling formulas survive a later matrix compression",
     // A solver initialization compresses the matrices the same way.
     model.network->conductive_matrices().compress();
     REQUIRE(model.formulas.is_compiled_current());
-    model.formulas.apply_compiled_formulas();
+    model.formulas.apply_formulas();
     REQUIRE(couplings.get_coupling_value(4, 5) == Catch::Approx(0.25));
 }
