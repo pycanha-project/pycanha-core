@@ -71,10 +71,9 @@ struct GeneratedModel {
 TEST_CASE("Formulas added one at a time are user formulas",
           "[formulas][origin]") {
     GeneratedModel model;
-    static_cast<void>(model.formulas.add_formula("QI1", 1.0));
-    static_cast<void>(model.formulas.add_formula("QI2", "2 * QI1"));
-    static_cast<void>(
-        model.formulas.add_callable_formula("QI3", [] { return 3.0; }));
+    model.formulas.add_formula("QI1", 1.0);
+    model.formulas.add_formula("QI2", "2 * QI1");
+    model.formulas.add_callable_formula("QI3", [] { return 3.0; });
 
     REQUIRE(model.origin_of(1) == Origin::user);
     REQUIRE(model.origin_of(2) == Origin::user);
@@ -112,7 +111,7 @@ TEST_CASE("Generated formulas keep their origin and are found by target",
 TEST_CASE("A generated formula never replaces a user formula",
           "[formulas][origin]") {
     GeneratedModel model;
-    static_cast<void>(model.formulas.add_formula("QI1", "5.0"));
+    model.formulas.add_formula("QI1", "5.0");
     const auto report =
         model.generate(Origin::etms_reader, {{1, "7.0"}, {2, "1.0"}});
 
@@ -175,7 +174,7 @@ TEST_CASE("Generated formulas need a generator origin", "[formulas][origin]") {
 TEST_CASE("Removing an origin removes only its formulas",
           "[formulas][origin]") {
     GeneratedModel model;
-    static_cast<void>(model.formulas.add_formula("QI1", "1.0"));
+    model.formulas.add_formula("QI1", "1.0");
     static_cast<void>(model.generate(Origin::conduction_builder, {{2, "2.0"}}));
     static_cast<void>(model.generate(Origin::etms_reader, {{3, "3.0"}}));
     static_cast<void>(model.generate(Origin::conduction_builder, {{4, "4.0"}}));
@@ -191,7 +190,7 @@ TEST_CASE("A regeneration after its wipe writes its formulas again",
     GeneratedModel model;
     static_cast<void>(
         model.generate(Origin::conduction_builder, {{1, "1.0"}, {2, "2.0"}}));
-    static_cast<void>(model.formulas.add_formula("QI3", "QI1 + QI2"));
+    model.formulas.add_formula("QI3", "QI1 + QI2");
 
     static_cast<void>(
         model.formulas.remove_formulas(Origin::conduction_builder));

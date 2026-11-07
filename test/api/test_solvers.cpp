@@ -40,8 +40,8 @@ void populate_parameterized_steady_model(pycanha::ThermalModel& tm) {
 
     tm.parameters().add_parameter("heater_power", 50.0);
     tm.parameters().add_parameter("conductance", 5.0);
-    static_cast<void>(tm.formulas().add_formula("QI1", "heater_power"));
-    static_cast<void>(tm.formulas().add_formula("GL(1,2)", "conductance"));
+    tm.formulas().add_formula("QI1", "heater_power");
+    tm.formulas().add_formula("GL(1,2)", "conductance");
     tm.formulas().apply_formulas();
 }
 
@@ -76,8 +76,8 @@ void populate_jacobian_model(pycanha::ThermalModel& tm) {
 
     tm.parameters().add_parameter("k", 1.0);
     tm.parameters().add_parameter("C", 1.0);
-    static_cast<void>(tm.formulas().add_formula("GL(1,2)", "k"));
-    static_cast<void>(tm.formulas().add_formula("C1", "C"));
+    tm.formulas().add_formula("GL(1,2)", "k");
+    tm.formulas().add_formula("C1", "C");
     tm.formulas().apply_formulas();
 }
 

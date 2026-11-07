@@ -24,6 +24,7 @@
 #include <iterator>
 #include <limits>
 #include <memory>
+#include <optional>
 #include <span>
 #include <stdexcept>
 #include <string>
@@ -31,7 +32,6 @@
 #include <utility>
 #include <vector>
 
-#include "pycanha-core/parameters/formula.hpp"
 #include "pycanha-core/parameters/parameters.hpp"
 #include "pycanha-core/parameters/table.hpp"
 
@@ -210,14 +210,23 @@ struct Action {
     return false;
 }
 
+[[nodiscard]] Op coefficient_op(double coefficient, std::uint32_t number) {
+    return coefficient == -1.0 ? make_op(OpCode::NEGATE)
+                               : make_op(OpCode::MULTIPLY_NUMBER, number);
+}
+
 class Lowering {
   public:
     Lowering(const std::vector<SymEngine::RCP<const SymEngine::Symbol>>& inputs,
-             const Parameters& parameters)
-        : _parameters(&parameters) {
-        std::uint32_t slot = 0U;
+             std::span<const std::string> slots, const Parameters* parameters)
+        : _parameters(parameters) {
+        std::uint32_t index = 0U;
         for (const auto& input : inputs) {
-            _slots.emplace(input->get_name(), slot++);
+            _inputs.emplace(input->get_name(), index++);
+        }
+        index = 0U;
+        for (const auto& slot : slots) {
+            _numbers.emplace(slot, index++);
         }
     }
 
@@ -253,6 +262,32 @@ class Lowering {
     [[nodiscard]] Action with_number(OpCode code, double value) {
         _result.numbers.push_back(value);
         return emit(make_op(code, to_u32(_result.numbers.size() - 1U)));
+    }
+
+    // Multiplies the top by `coefficient`, if it is not 1.
+    void scale(double coefficient, std::vector<Action>& out) {
+        if (coefficient == 1.0) {
+            return;
+        }
+        if (coefficient != -1.0) {
+            _result.numbers.push_back(coefficient);
+        }
+        out.push_back(emit(
+            coefficient_op(coefficient, to_u32(_result.numbers.size() - 1U))));
+    }
+
+    // The slot of a symbol that is one of the formula's numbers.
+    [[nodiscard]] std::optional<std::uint32_t> slot_of(
+        const Basic& node) const {
+        if (node.get_type_code() != SymEngine::SYMENGINE_SYMBOL) {
+            return std::nullopt;
+        }
+        const auto found = _numbers.find(
+            SymEngine::down_cast<const SymEngine::Symbol&>(node).get_name());
+        if (found == _numbers.end()) {
+            return std::nullopt;
+        }
+        return found->second;
     }
 
     [[nodiscard]] std::uint32_t table_slot(const std::string& name) {
@@ -317,39 +352,62 @@ class Lowering {
     }
 
     [[nodiscard]] Action load(const Basic& symbol) const {
+        if (const auto slot = slot_of(symbol); slot.has_value()) {
+            return emit(make_op(OpCode::SLOT, *slot));
+        }
         const auto& name =
             SymEngine::down_cast<const SymEngine::Symbol&>(symbol).get_name();
-        const auto slot = _slots.find(name);
-        if (slot == _slots.end()) {
+        const auto input = _inputs.find(name);
+        if (input == _inputs.end()) {
             throw std::invalid_argument("Unknown symbol '" + name + "'");
         }
-        return emit(make_op(OpCode::LOAD, slot->second));
+        return emit(make_op(OpCode::LOAD, input->second));
     }
 
-    // c + k1 * t1 + k2 * t2 + ..., with k = 1 and k = -1 folded into ADD and
-    // SUBTRACT.
+    // One term k * t of a sum: the first one starts the sum, the others are
+    // added, with k = 1 and k = -1 folded into ADD and SUBTRACT.
+    void append_term(const Basic& term, double factor, bool first,
+                     std::vector<Action>& out) {
+        out.push_back(visit(term));
+        if (first) {
+            scale(factor, out);
+            return;
+        }
+        if (factor == -1.0) {
+            out.push_back(emit(make_op(OpCode::SUBTRACT)));
+            return;
+        }
+        scale(factor, out);
+        out.push_back(emit(make_op(OpCode::ADD)));
+    }
+
+    // c + k1 * t1 + k2 * t2 + .... Terms that are numbers of the formula
+    // (k = +-1) come last, as ADD_SLOT / SUBTRACT_SLOT.
     void expand_add(const SymEngine::Add& add, std::vector<Action>& out) {
+        std::vector<Op> slot_terms;
         bool first = true;
         for (const auto& [term, coefficient] : add.get_dict()) {
             const double factor = SymEngine::eval_double(*coefficient);
-            out.push_back(visit(*term));
+            const auto slot = slot_of(*term);
+            if (slot.has_value() && (std::abs(factor) == 1.0)) {
+                slot_terms.push_back(make_op(
+                    factor > 0.0 ? OpCode::ADD_SLOT : OpCode::SUBTRACT_SLOT,
+                    *slot));
+                continue;
+            }
+            append_term(*term, factor, first, out);
+            first = false;
+        }
+        for (const auto& op : slot_terms) {
             if (first) {
                 first = false;
-                if (factor == -1.0) {
+                out.push_back(emit(make_op(OpCode::SLOT, op.arg)));
+                if (op.code == OpCode::SUBTRACT_SLOT) {
                     out.push_back(emit(make_op(OpCode::NEGATE)));
-                } else if (factor != 1.0) {
-                    out.push_back(with_number(OpCode::MULTIPLY_NUMBER, factor));
                 }
                 continue;
             }
-            if (factor == -1.0) {
-                out.push_back(emit(make_op(OpCode::SUBTRACT)));
-                continue;
-            }
-            if (factor != 1.0) {
-                out.push_back(with_number(OpCode::MULTIPLY_NUMBER, factor));
-            }
-            out.push_back(emit(make_op(OpCode::ADD)));
+            out.push_back(emit(op));
         }
         const double constant = SymEngine::eval_double(*add.get_coef());
         if (constant != 0.0) {
@@ -357,15 +415,47 @@ class Lowering {
         }
     }
 
+    // The value of c * (numerator factors): the factors, or the first
+    // multiplying number of the formula when there are none, then c.
+    void append_numerator(
+        const std::vector<std::pair<const Basic*, const Basic*>>& numerator,
+        double coefficient, std::vector<Op>& slot_factors,
+        std::vector<Action>& out) {
+        if (!numerator.empty()) {
+            append_product(numerator, out);
+            scale(coefficient, out);
+            return;
+        }
+        const auto first_slot =
+            std::ranges::find(slot_factors, OpCode::MULTIPLY_SLOT, &Op::code);
+        if (first_slot == slot_factors.end()) {
+            out.push_back(number(coefficient));
+            return;
+        }
+        out.push_back(emit(make_op(OpCode::SLOT, first_slot->arg)));
+        slot_factors.erase(first_slot);
+        scale(coefficient, out);
+    }
+
     // c * (numerator factors) / (denominator factors): factors with a
     // negative number exponent are divided once at the end instead of each
-    // being inverted.
+    // being inverted. Numbers of the formula (exponent +-1) are applied
+    // with MULTIPLY_SLOT / DIVIDE_SLOT.
     void expand_mul(const SymEngine::Mul& mul, std::vector<Action>& out) {
         std::vector<std::pair<const Basic*, const Basic*>> numerator;
         std::vector<std::pair<const Basic*, const Basic*>> denominator;
+        std::vector<Op> slot_factors;
         for (const auto& [base, exponent] : mul.get_dict()) {
-            if (SymEngine::is_a_Number(*exponent) &&
-                (SymEngine::eval_double(*exponent) < 0.0)) {
+            const bool number_exponent = SymEngine::is_a_Number(*exponent);
+            const double value =
+                number_exponent ? SymEngine::eval_double(*exponent) : 0.0;
+            if (const auto slot = slot_of(*base); slot.has_value() &&
+                                                  number_exponent &&
+                                                  (std::abs(value) == 1.0)) {
+                slot_factors.push_back(make_op(
+                    value > 0.0 ? OpCode::MULTIPLY_SLOT : OpCode::DIVIDE_SLOT,
+                    *slot));
+            } else if (number_exponent && (value < 0.0)) {
                 _kept.push_back(SymEngine::neg(exponent));
                 denominator.emplace_back(base.get(), _kept.back().get());
             } else {
@@ -373,18 +463,9 @@ class Lowering {
             }
         }
 
-        const double coefficient = SymEngine::eval_double(*mul.get_coef());
-        if (numerator.empty()) {
-            out.push_back(number(coefficient));
-        } else {
-            append_product(numerator, out);
-            if (coefficient == -1.0) {
-                out.push_back(emit(make_op(OpCode::NEGATE)));
-            } else if (coefficient != 1.0) {
-                out.push_back(
-                    with_number(OpCode::MULTIPLY_NUMBER, coefficient));
-            }
-        }
+        append_numerator(numerator, SymEngine::eval_double(*mul.get_coef()),
+                         slot_factors, out);
+        std::ranges::transform(slot_factors, std::back_inserter(out), emit);
         if (!denominator.empty()) {
             append_product(denominator, out);
             out.push_back(emit(make_op(OpCode::DIVIDE)));
@@ -466,7 +547,7 @@ class Lowering {
         const auto& name =
             SymEngine::down_cast<const SymEngine::FunctionSymbol&>(call)
                 .get_name();
-        if (!_parameters->has_table(name)) {
+        if ((_parameters == nullptr) || !_parameters->has_table(name)) {
             throw std::invalid_argument("Unknown function '" + name +
                                         "': no table has that name");
         }
@@ -533,14 +614,19 @@ class Lowering {
         LoweredEscape lowered;
         SymEngine::vec_basic symbols;
         for (const auto& symbol : SymEngine::free_symbols(node)) {
+            if (const auto slot = slot_of(*symbol); slot.has_value()) {
+                lowered.inputs.push_back(escape_slot_flag | *slot);
+                symbols.push_back(symbol);
+                continue;
+            }
             const auto& name =
                 SymEngine::down_cast<const SymEngine::Symbol&>(*symbol)
                     .get_name();
-            const auto slot = _slots.find(name);
-            if (slot == _slots.end()) {
+            const auto input = _inputs.find(name);
+            if (input == _inputs.end()) {
                 throw std::invalid_argument("Unknown symbol '" + name + "'");
             }
-            lowered.inputs.push_back(slot->second);
+            lowered.inputs.push_back(input->second);
             symbols.push_back(symbol);
         }
         lowered.visitor =
@@ -563,6 +649,7 @@ class Lowering {
             switch (op.code) {
                 case OpCode::NUMBER:
                 case OpCode::LOAD:
+                case OpCode::SLOT:
                 case OpCode::ESCAPE:
                     ++depth;
                     break;
@@ -586,7 +673,9 @@ class Lowering {
     }
 
     const Parameters* _parameters;
-    std::unordered_map<std::string, std::uint32_t> _slots;
+    // Input symbols by name -> LOAD index; number symbols -> slot.
+    std::unordered_map<std::string, std::uint32_t> _inputs;
+    std::unordered_map<std::string, std::uint32_t> _numbers;
     // Negated exponents built while lowering, kept alive until it ends.
     std::vector<SymEngine::RCP<const Basic>> _kept;
     LoweredExpression _result;
@@ -679,10 +768,14 @@ class Lowering {
 }
 
 void run_escape(const ProgramView& program, const EscapeView& escape,
-                double* out) {
+                std::size_t input_base, std::size_t slot_base, double* out) {
     for (std::uint32_t index = 0U; index < escape.input_count; ++index) {
+        const std::uint32_t entry =
+            program.escape_inputs[escape.first_input + index];
         program.scratch[index] =
-            *program.inputs[program.escape_inputs[escape.first_input + index]];
+            (entry & escape_slot_flag) != 0U
+                ? program.slots[slot_base + (entry & ~escape_slot_flag)]
+                : *program.inputs[input_base + entry];
     }
     escape.visitor->call(out, program.scratch.data());
 }
@@ -692,24 +785,41 @@ void run_escape(const ProgramView& program, const EscapeView& escape,
 LoweredExpression lower_expression(
     const Basic& tree,
     const std::vector<SymEngine::RCP<const SymEngine::Symbol>>& inputs,
-    const Parameters& parameters) {
-    return Lowering(inputs, parameters).run(tree);
+    std::span<const std::string> slots, const Parameters* parameters) {
+    return Lowering(inputs, slots, parameters).run(tree);
 }
 
-double run_ops(const ProgramView& program, std::size_t begin, std::size_t end) {
-    const auto ops = program.ops;
+double run_formulas(const ProgramView& program, const ProgramRun& run) {
+    const auto ops =
+        program.ops.subspan(run.op_begin, run.op_end - run.op_begin);
     const auto numbers = program.numbers;
     const auto inputs = program.inputs;
+    const auto slots = program.slots;
     const auto stack = program.stack;
+    const auto targets = program.targets;
+    const auto tables = program.tables;
+    // Locals, so the calls inside the loop do not make them reloaded.
+    const std::size_t input_stride = run.input_stride;
+    const std::size_t slot_stride = run.slot_stride;
+    std::size_t input_base = run.input_begin;
+    std::size_t slot_base = run.slot_begin;
+    std::size_t formula = run.first;
+    const std::size_t end = std::size_t{run.first} + run.count;
     std::size_t top = 0U;
-    for (std::size_t position = begin; position < end; ++position) {
-        const Op op = ops[position];
+    // One dispatch loop for the whole run: STORE moves on to the next
+    // formula and starts the operations again.
+    std::size_t position = 0U;
+    while (position < ops.size()) {
+        const Op op = ops[position++];
         switch (op.code) {
             case OpCode::NUMBER:
                 stack[top++] = numbers[op.arg];
                 break;
             case OpCode::LOAD:
-                stack[top++] = *inputs[op.arg];
+                stack[top++] = *inputs[input_base + op.arg];
+                break;
+            case OpCode::SLOT:
+                stack[top++] = slots[slot_base + op.arg];
                 break;
             case OpCode::ADD:
                 --top;
@@ -740,24 +850,41 @@ double run_ops(const ProgramView& program, std::size_t begin, std::size_t end) {
             case OpCode::MULTIPLY_NUMBER:
                 stack[top - 1U] *= numbers[op.arg];
                 break;
+            case OpCode::ADD_SLOT:
+                stack[top - 1U] += slots[slot_base + op.arg];
+                break;
+            case OpCode::SUBTRACT_SLOT:
+                stack[top - 1U] -= slots[slot_base + op.arg];
+                break;
+            case OpCode::MULTIPLY_SLOT:
+                stack[top - 1U] *= slots[slot_base + op.arg];
+                break;
+            case OpCode::DIVIDE_SLOT:
+                stack[top - 1U] /= slots[slot_base + op.arg];
+                break;
             case OpCode::POWER_INT:
                 stack[top - 1U] = power_int(
                     stack[top - 1U], std::bit_cast<std::int32_t>(op.arg));
                 break;
             case OpCode::TABLE:
-                stack[top - 1U] =
-                    table_value(program.tables[op.arg], stack[top - 1U]);
+                stack[top - 1U] = table_value(tables[op.arg], stack[top - 1U]);
                 break;
             case OpCode::TABLE_SLOPE:
-                stack[top - 1U] =
-                    table_slope(program.tables[op.arg], stack[top - 1U]);
+                stack[top - 1U] = table_slope(tables[op.arg], stack[top - 1U]);
                 break;
             case OpCode::ESCAPE:
-                run_escape(program, program.escapes[op.arg], &stack[top]);
+                run_escape(program, program.escapes[op.arg], input_base,
+                           slot_base, &stack[top]);
                 ++top;
                 break;
             case OpCode::STORE:
-                *program.targets[op.arg] = stack[--top];
+                *targets[formula] = stack[--top];
+                ++formula;
+                input_base += input_stride;
+                slot_base += slot_stride;
+                if (formula < end) {
+                    position = 0U;
+                }
                 break;
             default:
                 stack[top - 1U] = unary(op.code, stack[top - 1U]);
@@ -769,6 +896,7 @@ double run_ops(const ProgramView& program, std::size_t begin, std::size_t end) {
 
 double evaluate_lowered(const LoweredExpression& lowered,
                         std::span<const double> input_values,
+                        std::span<const double> slot_values,
                         std::span<const TableView> tables) {
     std::vector<double> values(input_values.begin(), input_values.end());
     std::vector<double*> inputs(values.size());
@@ -792,16 +920,26 @@ double evaluate_lowered(const LoweredExpression& lowered,
     const ProgramView program{.ops = lowered.ops,
                               .numbers = lowered.numbers,
                               .inputs = inputs,
+                              .slots = slot_values,
                               .targets = {},
                               .tables = tables,
                               .escapes = escapes,
                               .escape_inputs = escape_inputs,
                               .stack = stack,
                               .scratch = scratch};
-    return run_ops(program, 0U, lowered.ops.size());
+    const ProgramRun run{.op_begin = 0U,
+                         .op_end = to_u32(lowered.ops.size()),
+                         .first = 0U,
+                         .count = 1U,
+                         .input_begin = 0U,
+                         .input_stride = 0U,
+                         .slot_begin = 0U,
+                         .slot_stride = 0U,
+                         .callable = nullptr};
+    return run_formulas(program, run);
 }
 
-std::vector<std::size_t> execution_order(const FormulaPointers& pointers) {
+ExecutionOrder execution_order(const FormulaPointers& pointers) {
     const std::size_t count = pointers.targets.size();
     std::vector<const double*> sorted_targets(pointers.targets.begin(),
                                               pointers.targets.end());
@@ -828,56 +966,25 @@ std::vector<std::size_t> execution_order(const FormulaPointers& pointers) {
                (reader->second < index);
     };
 
-    std::vector<std::size_t> order;
-    order.reserve(count);
+    ExecutionOrder result;
+    result.order.reserve(count);
     std::vector<std::size_t> dependent;
     for (std::size_t index = 0U; index < count; ++index) {
         const bool independent = (index < pointers.first_callable) &&
                                  !reads_a_target(index) && !read_earlier(index);
-        (independent ? order : dependent).push_back(index);
+        (independent ? result.order : dependent).push_back(index);
     }
-    order.insert(order.end(), dependent.begin(), dependent.end());
-    return order;
+    result.independent = result.order.size();
+    result.order.insert(result.order.end(), dependent.begin(), dependent.end());
+    return result;
 }
 
-void FormulaProgram::reserve(std::size_t formulas, std::size_t inputs) {
+void FormulaProgram::reserve(std::size_t formulas, std::size_t inputs,
+                             std::size_t slots) {
     _targets.reserve(formulas);
-    _target_formulas.reserve(formulas);
+    _formulas.reserve(formulas);
     _inputs.reserve(inputs);
-}
-
-std::uint32_t FormulaProgram::add_target(const Formula& formula,
-                                         double* target) {
-    _targets.push_back(target);
-    _target_formulas.push_back(&formula);
-    return to_u32(_targets.size() - 1U);
-}
-
-void FormulaProgram::open_run() {
-    if (_runs.empty() || (_runs.back().callable != nullptr)) {
-        _runs.push_back(ProgramRun{.op_begin = to_u32(_ops.size()),
-                                   .op_end = to_u32(_ops.size()),
-                                   .callable = nullptr,
-                                   .target = 0U});
-    }
-}
-
-void FormulaProgram::add_constant(const Formula& formula, double* target,
-                                  double value) {
-    const auto slot = add_target(formula, target);
-    open_run();
-    _numbers.push_back(value);
-    _ops.push_back(make_op(OpCode::NUMBER, to_u32(_numbers.size() - 1U)));
-    _ops.push_back(make_op(OpCode::STORE, slot));
-    _runs.back().op_end = to_u32(_ops.size());
-}
-
-void FormulaProgram::add_callable(CallableFormula& formula, double* target) {
-    const auto slot = add_target(formula, target);
-    _runs.push_back(ProgramRun{.op_begin = to_u32(_ops.size()),
-                               .op_end = to_u32(_ops.size()),
-                               .callable = &formula,
-                               .target = slot});
+    _slots.reserve(slots);
 }
 
 std::uint32_t FormulaProgram::table_slot(const TableView& table) {
@@ -891,19 +998,79 @@ std::uint32_t FormulaProgram::table_slot(const TableView& table) {
     return to_u32(_tables.size() - 1U);
 }
 
-void FormulaProgram::add_expression(const Formula& formula, double* target,
-                                    const LoweredExpression& lowered,
-                                    std::span<double* const> inputs,
-                                    std::span<const TableView> tables) {
-    const auto slot = add_target(formula, target);
-    open_run();
-    const auto input_base = to_u32(_inputs.size());
+Op FormulaProgram::fold_slot(Op op,
+                             std::span<const std::optional<double>> shared,
+                             std::span<const std::int64_t> stored_index) {
+    const auto stored = stored_index[op.arg];
+    const auto& shared_value = shared[op.arg];
+    if ((stored >= 0) || !shared_value.has_value()) {
+        op.arg = static_cast<std::uint32_t>(stored);
+        return op;
+    }
+    const double value = *shared_value;
+    const auto number = [this](double folded) {
+        _numbers.push_back(folded);
+        return to_u32(_numbers.size() - 1U);
+    };
+    switch (op.code) {
+        case OpCode::SLOT:
+            return make_op(OpCode::NUMBER, number(value));
+        case OpCode::ADD_SLOT:
+            return make_op(OpCode::ADD_NUMBER, number(value));
+        case OpCode::SUBTRACT_SLOT:
+            return make_op(OpCode::ADD_NUMBER, number(-value));
+        case OpCode::MULTIPLY_SLOT:
+            return make_op(OpCode::MULTIPLY_NUMBER, number(value));
+        default:
+            return make_op(OpCode::MULTIPLY_NUMBER, number(1.0 / value));
+    }
+}
+
+void FormulaProgram::push_op(Op op, std::uint32_t run_begin) {
+    // Folded numbers often leave two multiplications (or additions) by a
+    // number in a row, e.g. 0.01 * (Ti + Tj) / 2: they become one.
+    if ((_ops.size() > run_begin) &&
+        ((op.code == OpCode::MULTIPLY_NUMBER) ||
+         (op.code == OpCode::ADD_NUMBER)) &&
+        (_ops.back().code == op.code)) {
+        const double previous = _numbers[_ops.back().arg];
+        _numbers.push_back(op.code == OpCode::MULTIPLY_NUMBER
+                               ? previous * _numbers[op.arg]
+                               : previous + _numbers[op.arg]);
+        _ops.back().arg = to_u32(_numbers.size() - 1U);
+        return;
+    }
+    _ops.push_back(op);
+}
+
+void FormulaProgram::open_run(const LoweredExpression& lowered,
+                              std::uint32_t input_count,
+                              std::span<const std::optional<double>> shared,
+                              std::span<const TableView> tables) {
+    // An escape reads its numbers from the formula's own, so those stay
+    // stored even when shared.
+    std::vector<bool> escaped(shared.size(), false);
+    for (const auto& escape : lowered.escapes) {
+        for (const auto input : escape.inputs) {
+            if ((input & escape_slot_flag) != 0U) {
+                escaped[input & ~escape_slot_flag] = true;
+            }
+        }
+    }
+    std::vector<std::int64_t> stored_index(shared.size(), -1);
+    _stored_slots.clear();
+    for (std::size_t slot = 0U; slot < shared.size(); ++slot) {
+        if (!shared[slot].has_value() || escaped[slot]) {
+            stored_index[slot] =
+                static_cast<std::int64_t>(_stored_slots.size());
+            _stored_slots.push_back(to_u32(slot));
+        }
+    }
+
     const auto number_base = to_u32(_numbers.size());
     const auto escape_base = to_u32(_escapes.size());
-    _inputs.insert(_inputs.end(), inputs.begin(), inputs.end());
     _numbers.insert(_numbers.end(), lowered.numbers.begin(),
                     lowered.numbers.end());
-
     std::vector<std::uint32_t> table_slots(tables.size());
     std::ranges::transform(
         tables, table_slots.begin(),
@@ -914,30 +1081,39 @@ void FormulaProgram::add_expression(const Formula& formula, double* target,
                             .input_count = to_u32(escape.inputs.size())});
         std::ranges::transform(
             escape.inputs, std::back_inserter(_escape_inputs),
-            [input_base](std::uint32_t input) { return input_base + input; });
+            [&stored_index](std::uint32_t input) {
+                if ((input & escape_slot_flag) == 0U) {
+                    return input;
+                }
+                return escape_slot_flag |
+                       static_cast<std::uint32_t>(
+                           stored_index[input & ~escape_slot_flag]);
+            });
         _widest = std::max(_widest, escape.inputs.size());
     }
 
-    append_lowered_ops(lowered, input_base, number_base, escape_base,
-                       table_slots);
-    _depth = std::max<std::size_t>(_depth, lowered.stack_depth);
-    _ops.push_back(make_op(OpCode::STORE, slot));
-    _runs.back().op_end = to_u32(_ops.size());
-}
-
-void FormulaProgram::append_lowered_ops(
-    const LoweredExpression& lowered, std::uint32_t input_base,
-    std::uint32_t number_base, std::uint32_t escape_base,
-    std::span<const std::uint32_t> table_slots) {
+    ProgramRun run{.op_begin = to_u32(_ops.size()),
+                   .op_end = 0U,
+                   .first = to_u32(_targets.size()),
+                   .count = 0U,
+                   .input_begin = to_u32(_inputs.size()),
+                   .input_stride = input_count,
+                   .slot_begin = to_u32(_slots.size()),
+                   .slot_stride = to_u32(_stored_slots.size()),
+                   .callable = nullptr};
     for (auto op : lowered.ops) {
         switch (op.code) {
-            case OpCode::LOAD:
-                op.arg += input_base;
-                break;
             case OpCode::NUMBER:
             case OpCode::ADD_NUMBER:
             case OpCode::MULTIPLY_NUMBER:
                 op.arg += number_base;
+                break;
+            case OpCode::SLOT:
+            case OpCode::ADD_SLOT:
+            case OpCode::SUBTRACT_SLOT:
+            case OpCode::MULTIPLY_SLOT:
+            case OpCode::DIVIDE_SLOT:
+                op = fold_slot(op, shared, stored_index);
                 break;
             case OpCode::TABLE:
             case OpCode::TABLE_SLOPE:
@@ -949,8 +1125,38 @@ void FormulaProgram::append_lowered_ops(
             default:
                 break;
         }
-        _ops.push_back(op);
+        push_op(op, run.op_begin);
     }
+    _ops.push_back(make_op(OpCode::STORE));
+    run.op_end = to_u32(_ops.size());
+    _runs.push_back(run);
+    _depth = std::max<std::size_t>(_depth, lowered.stack_depth);
+}
+
+void FormulaProgram::add_formula(FormulaRef formula, double* target,
+                                 std::span<double* const> inputs,
+                                 std::span<const double> slots) {
+    _targets.push_back(target);
+    _formulas.push_back(formula);
+    _inputs.insert(_inputs.end(), inputs.begin(), inputs.end());
+    std::ranges::transform(_stored_slots, std::back_inserter(_slots),
+                           [slots](std::uint32_t slot) { return slots[slot]; });
+    ++_runs.back().count;
+}
+
+void FormulaProgram::add_callable(CallableFormula& callable, FormulaRef formula,
+                                  double* target) {
+    _runs.push_back(ProgramRun{.op_begin = to_u32(_ops.size()),
+                               .op_end = to_u32(_ops.size()),
+                               .first = to_u32(_targets.size()),
+                               .count = 1U,
+                               .input_begin = to_u32(_inputs.size()),
+                               .input_stride = 0U,
+                               .slot_begin = to_u32(_slots.size()),
+                               .slot_stride = 0U,
+                               .callable = &callable});
+    _targets.push_back(target);
+    _formulas.push_back(formula);
 }
 
 void FormulaProgram::finish() {
@@ -962,6 +1168,7 @@ ProgramView FormulaProgram::view() {
     return {.ops = _ops,
             .numbers = _numbers,
             .inputs = _inputs,
+            .slots = _slots,
             .targets = _targets,
             .tables = _tables,
             .escapes = _escapes,

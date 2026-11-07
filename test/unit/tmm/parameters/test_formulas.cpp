@@ -232,8 +232,8 @@ TEST_CASE("Compiled formulas write loads read and set by other formulas",
 
     // QI3 is read but never set: taking a pointer to it must not move the
     // values the targets QI5 and QI9 point to.
-    static_cast<void>(formulas.add_formula("QI5", "1.0 + 0*T1"));
-    static_cast<void>(formulas.add_formula("QI9", "2.0 + QI3"));
+    formulas.add_formula("QI5", "1.0 + 0*T1");
+    formulas.add_formula("QI9", "2.0 + QI3");
     REQUIRE(network->nodes().qi_vector.size() == 10U);
 
     formulas.validate_for_execution();

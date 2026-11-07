@@ -72,8 +72,8 @@ std::shared_ptr<pycanha::ThermalMathematicalModel> make_jacobian_model() {
     model->parameters().add_parameter("k", 1.0);
     model->parameters().add_parameter("C", 1.0);
 
-    static_cast<void>(model->formulas().add_formula("GL(1,2)", "k"));
-    static_cast<void>(model->formulas().add_formula("C1", "C"));
+    model->formulas().add_formula("GL(1,2)", "k");
+    model->formulas().add_formula("C1", "C");
     model->formulas().apply_formulas();
     model->formulas().parameters_with_derivatives().add_parameter("k");
     model->formulas().parameters_with_derivatives().add_parameter("C");
@@ -361,6 +361,9 @@ TEST_CASE(
     REQUIRE(formulas.dependencies().parameters.at("offset").size() == 1);
     REQUIRE(formulas.dependencies().parameters.at("temp").size() == 1);
 
+    // The collection stores its own copy; derivative values live on the
+    // formula object they are calculated on.
+    load_formula->calculate_derivatives();
     const auto load_derivatives = derivatives_by_dependency(*load_formula);
     REQUIRE(load_derivatives.at("load") == Catch::Approx(1.0));
     REQUIRE(load_derivatives.at("offset") == Catch::Approx(1.0));

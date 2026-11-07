@@ -31,13 +31,13 @@ struct CallableModel {
             network->add_node(node);
         }
         parameters->add_parameter("gain", 3.0);
-        static_cast<void>(formulas.add_formula("QI1", "gain"));
-        static_cast<void>(formulas.add_callable_formula(
+        formulas.add_formula("QI1", "gain");
+        formulas.add_callable_formula(
             "QI2", [nodes_network = network, counter = calls] {
                 ++*counter;
                 return 10.0 * nodes_network->nodes().get_qi(1);
-            }));
-        static_cast<void>(formulas.add_formula("QI3", "QI2 + 1"));
+            });
+        formulas.add_formula("QI3", "QI2 + 1");
     }
 
     [[nodiscard]] double qi(int node) const {
@@ -68,16 +68,15 @@ TEST_CASE("Callable formulas run at their insertion position",
 TEST_CASE("Callable formulas list no inputs and have no derivatives",
           "[formulas][callable]") {
     CallableModel model;
-    const auto& callable = *model.formulas.formulas().at(1);
-    REQUIRE(callable.kind() == FormulaKind::Callable);
-    REQUIRE(callable.parameter_dependencies().empty());
-    REQUIRE(callable.entity_dependencies().empty());
-    REQUIRE(std::isnan(callable.get_value()));
+    const auto callable = model.formulas.find("QI2");
+    REQUIRE(callable->kind() == FormulaKind::Callable);
+    REQUIRE(callable->parameter_dependencies().empty());
+    REQUIRE(callable->entity_dependencies().empty());
+    REQUIRE(std::isnan(callable->get_value()));
 
     // Only QI1 reads parameters; the callable and QI3 are skipped.
     model.formulas.calculate_derivatives();
-    REQUIRE(model.formulas.formulas().at(1)->get_derivative_values() ==
-            nullptr);
+    REQUIRE(callable->get_derivative_values() == nullptr);
     REQUIRE(model.formulas.dependencies().entities.size() == 1U);
 }
 
@@ -90,7 +89,7 @@ TEST_CASE("Callable formulas need a function and share it with their clones",
     REQUIRE_FALSE(model.network->nodes().is_load_dense(NodeAttribute::QR));
 
     model.formulas.apply_formulas();
-    const auto clone = model.formulas.formulas().at(1)->clone();
+    const auto clone = model.formulas.find("QI2")->clone();
     REQUIRE(clone->get_value() == Catch::Approx(30.0));
     model.network->nodes().set_qi(1, 5.0);
     const auto& function =
@@ -103,9 +102,8 @@ TEST_CASE("Callable formulas run before the model's user callbacks",
           "[formulas][callable]") {
     ThermalMathematicalModel model("callable");
     model.add_node(1);
-    static_cast<void>(
-        model.formulas().add_callable_formula("QI1", [] { return 7.0; }));
-    static_cast<void>(model.formulas().add_formula("QS1", "2 * QI1"));
+    model.formulas().add_callable_formula("QI1", [] { return 7.0; });
+    model.formulas().add_formula("QS1", "2 * QI1");
 
     model.c_extern_callback_solver_loop = [](ThermalMathematicalModel* tmm) {
         tmm->nodes().set_qr(1, tmm->nodes().get_qs(1) + 1.0);

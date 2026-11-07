@@ -326,9 +326,8 @@ TEST_CASE("Tables queried outside their range are reported once per solve",
         "extrapolated",
         pycanha::LookupTable1D(x, y, pycanha::InterpolationMethod::Linear,
                                pycanha::ExtrapolationMethod::Linear));
-    static_cast<void>(model->formulas().add_formula("QI1", "held(T1)"));
-    static_cast<void>(
-        model->formulas().add_formula("QI2", "0 * extrapolated(T2) + 2"));
+    model->formulas().add_formula("QI1", "held(T1)");
+    model->formulas().add_formula("QI2", "0 * extrapolated(T2) + 2");
 
     SteadyState solver(model);
     solver.initialize();

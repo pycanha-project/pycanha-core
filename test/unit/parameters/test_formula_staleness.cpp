@@ -40,7 +40,7 @@ struct StalenessModel {
 TEST_CASE("Compiling formulas of an unchanged model does no work",
           "[formulas][staleness]") {
     StalenessModel model(2);
-    static_cast<void>(model.formulas.add_formula("QI2", "2 * T1"));
+    model.formulas.add_formula("QI2", "2 * T1");
     model.formulas.compile_formulas();
     REQUIRE(model.formulas.is_compiled_current());
 
@@ -55,10 +55,10 @@ TEST_CASE("Compiling formulas of an unchanged model does no work",
 TEST_CASE("Adding a formula makes the compiled formulas stale",
           "[formulas][staleness]") {
     StalenessModel model(2);
-    static_cast<void>(model.formulas.add_formula("QI2", "2 * T1"));
+    model.formulas.add_formula("QI2", "2 * T1");
     model.formulas.compile_formulas();
 
-    static_cast<void>(model.formulas.add_formula("QI1", "1.0"));
+    model.formulas.add_formula("QI1", "1.0");
     REQUIRE_FALSE(model.formulas.is_validation_current());
     REQUIRE_FALSE(model.formulas.is_compiled_current());
 
@@ -71,7 +71,7 @@ TEST_CASE("Adding a formula makes the compiled formulas stale",
 TEST_CASE("Adding nodes makes compiled formulas stale until applied again",
           "[formulas][staleness]") {
     StalenessModel model(2);
-    static_cast<void>(model.formulas.add_formula("QI2", "2 * T1"));
+    model.formulas.add_formula("QI2", "2 * T1");
     model.formulas.compile_formulas();
 
     // Enough nodes to move the node storage the compiled pointers point into.
@@ -87,7 +87,7 @@ TEST_CASE("Adding nodes makes compiled formulas stale until applied again",
 TEST_CASE("Reserving node storage that moves the values is a structure change",
           "[formulas][staleness]") {
     StalenessModel model(2);
-    static_cast<void>(model.formulas.add_formula("QI2", "2 * T1"));
+    model.formulas.add_formula("QI2", "2 * T1");
     model.formulas.compile_formulas();
     const std::uint64_t before = model.nodes().structure_version();
 
@@ -104,10 +104,10 @@ TEST_CASE("A node used by formulas can be removed; compiling names them",
           "[formulas][staleness]") {
     StalenessModel model(4);
     model.network->conductive_couplings().add_coupling(2, 3, 0.1);
-    static_cast<void>(model.formulas.add_formula("QI1", "T3"));
-    static_cast<void>(model.formulas.add_formula("QI3", "1.0"));
-    static_cast<void>(model.formulas.add_formula("GL(2,3)", "0.5"));
-    static_cast<void>(model.formulas.add_formula("QI2", "2.0"));
+    model.formulas.add_formula("QI1", "T3");
+    model.formulas.add_formula("QI3", "1.0");
+    model.formulas.add_formula("GL(2,3)", "0.5");
+    model.formulas.add_formula("QI2", "2.0");
     model.formulas.compile_formulas();
 
     model.network->remove_node(3);
@@ -121,8 +121,8 @@ TEST_CASE("A node used by formulas can be removed; compiling names them",
 TEST_CASE("Removing the broken formulas lets the formulas compile again",
           "[formulas][staleness]") {
     StalenessModel model(3);
-    static_cast<void>(model.formulas.add_formula("QI1", "T3"));
-    static_cast<void>(model.formulas.add_formula("QI2", "2 * T1"));
+    model.formulas.add_formula("QI1", "T3");
+    model.formulas.add_formula("QI2", "2 * T1");
     model.network->remove_node(3);
     REQUIRE_THROWS_AS(model.formulas.validate_for_execution(),
                       std::runtime_error);
@@ -142,7 +142,7 @@ TEST_CASE("Compiled coupling formulas survive a later matrix compression",
     couplings.add_coupling(1, 2, 0.1);
     couplings.add_coupling(3, 4, 0.1);
     couplings.add_coupling(1, 3, 0.1);
-    static_cast<void>(model.formulas.add_formula("GL(4,5)", "0.25"));
+    model.formulas.add_formula("GL(4,5)", "0.25");
     model.formulas.compile_formulas();
 
     // A solver initialization compresses the matrices the same way.

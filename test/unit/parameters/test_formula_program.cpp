@@ -54,10 +54,10 @@ struct ProgramModel {
         INFO(expression);
         const auto target = Entity::qi(*network, 1);
         static_cast<void>(formulas.remove_formula(target));
-        const auto& formula = formulas.add_formula(target, expression);
+        formulas.add_formula(target, expression);
         formulas.apply_formulas();
         REQUIRE(qi(1) == Catch::Approx(expected));
-        REQUIRE(formula.get_value() == Catch::Approx(expected));
+        REQUIRE(formulas.find(target)->get_value() == Catch::Approx(expected));
     }
 };
 
@@ -126,9 +126,10 @@ TEST_CASE("Formulas call tables with any argument", "[formulas][program]") {
     model.check("cp(T2 + a) * cp(T4)", 123.0 * 140.0);
 
     // A call with a constant argument still reads the table.
-    const auto& constant = model.formulas.add_formula("QI2", "cp(5)");
-    REQUIRE(constant.kind() == FormulaKind::Parameters);
-    REQUIRE(constant.table_dependencies() == std::vector<std::string>{"cp"});
+    model.formulas.add_formula("QI2", "cp(5)");
+    const auto constant = model.formulas.find("QI2");
+    REQUIRE(constant->kind() == FormulaKind::Parameters);
+    REQUIRE(constant->table_dependencies() == std::vector<std::string>{"cp"});
     REQUIRE(model.formulas.dependencies().tables.at("cp").size() == 2U);
 }
 
@@ -153,10 +154,10 @@ TEST_CASE("Independent formulas run first without changing the results",
           "[formulas][program]") {
     ProgramModel model;
     // QI3 reads QI2 before QI2 is set, so QI2 must not run first.
-    static_cast<void>(model.formulas.add_formula("QI3", "QI2 + 1"));
-    static_cast<void>(model.formulas.add_formula("QI2", "5.0"));
-    static_cast<void>(model.formulas.add_formula("QI4", "QI2 * 2"));
-    static_cast<void>(model.formulas.add_formula("QI1", "T1 * 7"));
+    model.formulas.add_formula("QI3", "QI2 + 1");
+    model.formulas.add_formula("QI2", "5.0");
+    model.formulas.add_formula("QI4", "QI2 * 2");
+    model.formulas.add_formula("QI1", "T1 * 7");
 
     model.formulas.apply_formulas();
     REQUIRE(model.qi(3) == Catch::Approx(1.0));
@@ -171,10 +172,10 @@ TEST_CASE("Independent formulas run first without changing the results",
 TEST_CASE("A callable formula runs in order between compiled ones",
           "[formulas][program]") {
     ProgramModel model;
-    static_cast<void>(model.formulas.add_formula("QI1", "T1 * 2"));
-    static_cast<void>(model.formulas.add_callable_formula(
-        "QI2", [&model] { return model.qi(1) + 1.0; }));
-    static_cast<void>(model.formulas.add_formula("QI3", "T3"));
+    model.formulas.add_formula("QI1", "T1 * 2");
+    model.formulas.add_callable_formula("QI2",
+                                        [&model] { return model.qi(1) + 1.0; });
+    model.formulas.add_formula("QI3", "T3");
 
     model.formulas.apply_formulas();
     REQUIRE(model.qi(2) == Catch::Approx(3.0));
@@ -190,7 +191,7 @@ TEST_CASE("Edited table values reach compiled formulas without a recompile",
           "[formulas][program]") {
     ProgramModel model;
     model.parameters->add_table("cp", cp_table());
-    static_cast<void>(model.formulas.add_formula("QI1", "cp(T2)"));
+    model.formulas.add_formula("QI1", "cp(T2)");
     model.formulas.apply_formulas();
     REQUIRE(model.qi(1) == Catch::Approx(120.0));
 
@@ -207,7 +208,7 @@ TEST_CASE("Replacing a table's data recompiles the formulas that call it",
     REQUIRE(model.parameters->add_generated_table(Origin::conduction_builder,
                                                   "k", cp_table()) ==
             TableGeneration::added);
-    static_cast<void>(model.formulas.add_formula("QI1", "k(T3)"));
+    model.formulas.add_formula("QI1", "k(T3)");
     model.formulas.apply_formulas();
 
     // More points move the data the compiled formula points into.
@@ -224,8 +225,8 @@ TEST_CASE("Removing a called table is allowed; compiling names the formulas",
           "[formulas][program]") {
     ProgramModel model;
     model.parameters->add_table("cp", cp_table());
-    static_cast<void>(model.formulas.add_formula("QI1", "cp(T1)"));
-    static_cast<void>(model.formulas.add_formula("QI2", "T2"));
+    model.formulas.add_formula("QI1", "cp(T1)");
+    model.formulas.add_formula("QI2", "T2");
     model.formulas.apply_formulas();
 
     REQUIRE(model.parameters->remove_table("cp"));
@@ -238,7 +239,7 @@ TEST_CASE("Out-of-range table calls are recorded with the model time",
           "[formulas][program]") {
     ProgramModel model;
     model.parameters->add_table("cp", cp_table());
-    static_cast<void>(model.formulas.add_formula("QI1", "cp(T3 * 10)"));
+    model.formulas.add_formula("QI1", "cp(T3 * 10)");
     model.formulas.apply_formulas();
     REQUIRE(model.qi(1) == Catch::Approx(200.0));
 
@@ -252,13 +253,13 @@ TEST_CASE("Derivatives go through table slopes", "[formulas][program]") {
     ProgramModel model;
     model.parameters->add_table("cp", cp_table());
     model.parameters->add_parameter("t_ref", 4.0);
-    const auto& formula =
-        model.formulas.add_formula("QI1", "a * cp(2 * t_ref)");
-    REQUIRE(formula.kind() == FormulaKind::Parameters);
+    model.formulas.add_formula("QI1", "a * cp(2 * t_ref)");
+    const auto formula = model.formulas.find("QI1");
+    REQUIRE(formula->kind() == FormulaKind::Parameters);
 
     model.formulas.calculate_derivatives();
-    const auto* derivatives =
-        model.formulas.find("QI1")->get_derivative_values();
+    formula->calculate_derivatives();
+    const auto* derivatives = formula->get_derivative_values();
     REQUIRE(derivatives != nullptr);
     // Inputs in name order: a, t_ref. d/da = cp(8); d/dt_ref = a * 2 * 10.
     REQUIRE(derivatives->size() == 2U);
@@ -266,9 +267,9 @@ TEST_CASE("Derivatives go through table slopes", "[formulas][program]") {
     REQUIRE(derivatives->at(1) == Catch::Approx(0.3 * 2.0 * 10.0));
 
     model.parameters->add_parameter("u", 3.0);
-    const auto& direct = model.formulas.add_formula("QI2", "cp(u)");
-    model.formulas.calculate_derivatives();
-    REQUIRE(model.formulas.find("QI2")->get_derivative_values()->at(0) ==
-            Catch::Approx(10.0));
-    REQUIRE(direct.get_value() == Catch::Approx(130.0));
+    model.formulas.add_formula("QI2", "cp(u)");
+    const auto direct = model.formulas.find("QI2");
+    direct->calculate_derivatives();
+    REQUIRE(direct->get_derivative_values()->at(0) == Catch::Approx(10.0));
+    REQUIRE(direct->get_value() == Catch::Approx(130.0));
 }

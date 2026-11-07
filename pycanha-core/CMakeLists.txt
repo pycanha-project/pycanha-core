@@ -130,6 +130,7 @@ add_library(${LIB_NAME} STATIC
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/parameters/formula.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/parameters/formula_program.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/parameters/formula_shape.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/parameters/parameters.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/parameters/formulas.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/parameters/table.cpp

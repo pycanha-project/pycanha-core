@@ -60,15 +60,18 @@ TEST_CASE("Constant formulas keep their value and expression",
     Node node1(1);
     network->add_node(node1);
 
-    const auto& number = formulas.add_formula("QI1", 0.25);
-    const auto& text = formulas.add_formula("QS1", "2 * 0.5");
-    REQUIRE(number.kind() == FormulaKind::Constant);
-    REQUIRE(dynamic_cast<const ExpressionFormula&>(number).expression() ==
+    formulas.add_formula("QI1", 0.25);
+    formulas.add_formula("QS1", "2 * 0.5");
+    const auto number = formulas.find("QI1");
+    const auto text = formulas.find("QS1");
+    REQUIRE(number->kind() == FormulaKind::Constant);
+    REQUIRE(text->kind() == FormulaKind::Constant);
+    REQUIRE(dynamic_cast<const ExpressionFormula&>(*number).expression() ==
             "0.25");
-    REQUIRE(dynamic_cast<const ExpressionFormula&>(text).expression() ==
+    REQUIRE(dynamic_cast<const ExpressionFormula&>(*text).expression() ==
             "2 * 0.5");
-    REQUIRE(number.parameter_dependencies().empty());
-    REQUIRE(number.entity_dependencies().empty());
+    REQUIRE(number->parameter_dependencies().empty());
+    REQUIRE(number->entity_dependencies().empty());
 
     formulas.compile_formulas();
     formulas.apply_formulas();
@@ -153,21 +156,20 @@ TEST_CASE("Formulas overloads and association guards stay explicit",
 
     Formulas formulas(network, parameters);
 
-    const auto& static_formula = formulas.add_formula(heat, 4.0);
-    REQUIRE(static_formula.kind() == FormulaKind::Constant);
+    formulas.add_formula(heat, 4.0);
+    REQUIRE(formulas.find(heat)->kind() == FormulaKind::Constant);
     formulas.apply_formulas();
     REQUIRE(network->nodes().get_qi(1) == Catch::Approx(4.0));
 
     REQUIRE(formulas.remove_formula(heat));
     REQUIRE_FALSE(formulas.dependencies().parameters.contains("gain"));
 
-    const auto& parameter_formula = formulas.add_formula("QI1", "gain");
-    const auto& two_parameter_formula =
-        formulas.add_formula("T2", "gain + offset");
-    const auto& entity_formula = formulas.add_formula("QR1", "QI1 * 2.0");
-    REQUIRE(parameter_formula.kind() == FormulaKind::Parameters);
-    REQUIRE(two_parameter_formula.kind() == FormulaKind::Parameters);
-    REQUIRE(entity_formula.kind() == FormulaKind::Entities);
+    formulas.add_formula("QI1", "gain");
+    formulas.add_formula("T2", "gain + offset");
+    formulas.add_formula("QR1", "QI1 * 2.0");
+    REQUIRE(formulas.find("QI1")->kind() == FormulaKind::Parameters);
+    REQUIRE(formulas.find("T2")->kind() == FormulaKind::Parameters);
+    REQUIRE(formulas.find("QR1")->kind() == FormulaKind::Entities);
 
     auto self_formula = formulas.create_formula(heat, "QI1");
     REQUIRE(self_formula->kind() == FormulaKind::Entities);
@@ -200,9 +202,9 @@ TEST_CASE("Sparse formula targets materialize storage on registration",
     REQUIRE(network->nodes().qs_vector.empty());
     REQUIRE(network->nodes().qr_vector.empty());
 
-    static_cast<void>(formulas.add_formula("QI1", "gain"));
-    static_cast<void>(formulas.add_formula("QS1", "gain + offset"));
-    static_cast<void>(formulas.add_formula("QR1", "QI1 * 2.0"));
+    formulas.add_formula("QI1", "gain");
+    formulas.add_formula("QS1", "gain + offset");
+    formulas.add_formula("QR1", "QI1 * 2.0");
 
     REQUIRE(network->nodes().qi_vector.size() == 1U);
     REQUIRE(network->nodes().qs_vector.size() == 1U);
@@ -228,9 +230,8 @@ struct IndexedModel {
         }
         parameters->add_parameter("gain", 2.0);
         for (int number = 1; number <= 3; ++number) {
-            static_cast<void>(
-                formulas.add_formula("QI" + std::to_string(number),
-                                     std::to_string(number) + " * gain"));
+            formulas.add_formula("QI" + std::to_string(number),
+                                 std::to_string(number) + " * gain");
         }
     }
 
@@ -267,7 +268,7 @@ TEST_CASE("Removed formulas leave the insertion order of the others",
 
     // A target added back goes to the end, and the index still finds the
     // formulas the compaction moved.
-    static_cast<void>(model.formulas.add_formula("QI2", "5 * gain"));
+    model.formulas.add_formula("QI2", "5 * gain");
     REQUIRE(model.formulas.remove_formula("QI3"));
     REQUIRE(model.targets() == std::vector<std::string>{"QI1", "QI2"});
     REQUIRE_THROWS_AS(model.formulas.add_formula("QI1", "gain"),
@@ -279,7 +280,7 @@ TEST_CASE("Formulas apply correctly around removal holes",
     IndexedModel model;
     REQUIRE(model.formulas.remove_formula("QI1"));
     REQUIRE(model.formulas.remove_formula("QI3"));
-    static_cast<void>(model.formulas.add_formula("QI3", "7 * gain"));
+    model.formulas.add_formula("QI3", "7 * gain");
 
     model.formulas.validate_for_execution();
     model.formulas.compile_formulas();
@@ -306,21 +307,22 @@ TEST_CASE("Formula inputs are split into parameters and entities",
     parameters->add_parameter("gain", 3.0);
 
     // GL(2,1) is GL(1,2) spelled the other way round.
-    const auto& formula =
-        formulas.add_formula("QI1", "gain * T2 + GL(1,2) - GL(2,1) / 2");
-    REQUIRE(formula.parameter_dependencies() ==
+    formulas.add_formula("QI1", "gain * T2 + GL(1,2) - GL(2,1) / 2");
+    const auto formula = formulas.find("QI1");
+    REQUIRE(formula->parameter_dependencies() ==
             Formula::DependencyList{"gain"});
     const auto coupling = Entity::gl(*network, 1, 2);
     const auto temperature = Entity::t(*network, 2);
-    REQUIRE(formula.entity_dependencies() ==
-            std::vector<Entity>{coupling, coupling, temperature});
+    // In the order they are first written.
+    REQUIRE(formula->entity_dependencies() ==
+            std::vector<Entity>{temperature, coupling, coupling});
     REQUIRE(formulas.dependencies().entities.at(coupling).size() == 1U);
 }
 
 TEST_CASE("Formulas dependencies are built on request",
           "[formulas][dependencies]") {
     IndexedModel model;
-    static_cast<void>(model.formulas.add_formula("QR1", "QI1 + QI1 * gain"));
+    model.formulas.add_formula("QR1", "QI1 + QI1 * gain");
 
     const auto dependencies = model.formulas.dependencies();
     REQUIRE(dependencies.parameters.at("gain").size() == 4U);
@@ -328,7 +330,7 @@ TEST_CASE("Formulas dependencies are built on request",
     const auto& readers =
         dependencies.entities.at(Entity::qi(*model.network, 1));
     REQUIRE(readers.size() == 1U);
-    REQUIRE(readers.front()->entity().string_representation() == "QR1");
+    REQUIRE(readers.front().string_representation() == "QR1");
 }
 
 TEST_CASE("Formula derivatives are built on first use",

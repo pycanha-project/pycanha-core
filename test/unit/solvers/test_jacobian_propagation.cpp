@@ -86,8 +86,8 @@ std::shared_ptr<pycanha::ThermalMathematicalModel> make_python_example_model() {
 
     // This is the C++ equivalent of the Python formulas GL(1,2)=k and C1=C.
     // The derivative with respect to the corresponding parameter is 1.
-    static_cast<void>(model->formulas().add_formula("GL(1,2)", "k"));
-    static_cast<void>(model->formulas().add_formula("C1", "C"));
+    model->formulas().add_formula("GL(1,2)", "k");
+    model->formulas().add_formula("C1", "C");
     model->formulas().apply_formulas();
     model->formulas().parameters_with_derivatives().add_parameter("k");
     model->formulas().parameters_with_derivatives().add_parameter("C");

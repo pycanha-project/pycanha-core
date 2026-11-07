@@ -76,7 +76,7 @@ std::vector<Kind> solver_kinds() {
 Model make_model() {
     auto model = models::make_plate(3, /*radiation=*/true);
     model->parameters().add_parameter("k", 0.5);
-    static_cast<void>(model->formulas().add_formula("GL(1,2)", "k"));
+    model->formulas().add_formula("GL(1,2)", "k");
     model->formulas().apply_formulas();
     model->formulas().parameters_with_derivatives().add_parameter("k");
     return model;

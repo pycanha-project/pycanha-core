@@ -1,58 +1,22 @@
 #pragma once
 
-#include <symengine/basic.h>
-#include <symengine/symbol.h>
-
 #include <cstddef>
-#include <cstdint>
 #include <functional>
 #include <limits>
 #include <memory>
-#include <optional>
-#include <span>
 #include <string>
 #include <utility>
 #include <vector>
 
 #include "pycanha-core/parameters/entity.hpp"
-#include "pycanha-core/parameters/formula_program.hpp"
+#include "pycanha-core/parameters/formula_kind.hpp"  // IWYU pragma: export
+#include "pycanha-core/parameters/formula_shape.hpp"
 #include "pycanha-core/parameters/origin.hpp"
 #include "pycanha-core/parameters/parameters.hpp"
+#include "pycanha-core/parameters/table.hpp"
+#include "pycanha-core/tmm/thermalnetwork.hpp"
 
 namespace pycanha {
-
-namespace detail {
-
-// A formula expression after parsing: the expression tree and its free
-// symbols, unique and sorted by name. That order is the order of a formula's
-// inputs and of its derivative values.
-struct ParsedExpression {
-    SymEngine::RCP<const SymEngine::Basic> tree;
-    std::vector<SymEngine::RCP<const SymEngine::Symbol>> symbols;
-};
-
-// Parses a formula expression. Python's `**` is accepted for powers and
-// GL(i,j) / GR(i,j) for couplings. Throws std::invalid_argument when the text
-// does not parse or uses array access.
-[[nodiscard]] ParsedExpression parse_expression(const std::string& expression);
-
-}  // namespace detail
-
-// What a formula reads. It follows from the formula's inputs and decides how
-// the formula is evaluated and whether it has derivatives.
-enum class FormulaKind : std::uint8_t {
-    // Reads nothing: the value is computed once, when the formula is created.
-    Constant,
-    // Reads parameters only (including the time, the values of tables
-    // evaluated at a parameter, and table calls). These are the formulas
-    // with derivatives.
-    Parameters,
-    // Reads at least one entity (temperature, capacity, load or coupling).
-    Entities,
-    // Runs a C++ callable, which may read anything: it counts as reading
-    // every entity.
-    Callable,
-};
 
 class Formulas;
 
@@ -84,23 +48,18 @@ class Formula {
     // The target. Read-only: the collection indexes formulas by target.
     [[nodiscard]] const Entity& entity() const noexcept { return _entity; }
 
-    [[nodiscard]] virtual FormulaKind kind() const noexcept;
+    [[nodiscard]] virtual FormulaKind kind() const noexcept = 0;
 
-    // Set by the Formulas collection when the formula is added. Each
-    // subclass stores it where its layout has room.
+    // Set by the Formulas collection when the formula is added.
     [[nodiscard]] virtual Origin origin() const noexcept = 0;
 
     // Names of the parameters the formula reads, in input order.
-    [[nodiscard]] const DependencyList& parameter_dependencies()
-        const noexcept {
-        return _dependencies;
-    }
+    [[nodiscard]] virtual const DependencyList& parameter_dependencies()
+        const noexcept;
 
     // Entities (temperatures, capacities, loads, couplings) the formula reads.
-    [[nodiscard]] const std::vector<Entity>& entity_dependencies()
-        const noexcept {
-        return _entity_dependencies;
-    }
+    [[nodiscard]] virtual const std::vector<Entity>& entity_dependencies()
+        const noexcept;
 
     // Names of the tables the formula calls.
     [[nodiscard]] virtual const std::vector<std::string>& table_dependencies()
@@ -115,48 +74,49 @@ class Formula {
     // Null for a formula without derivatives.
     [[nodiscard]] virtual std::vector<double>* get_derivative_values() = 0;
 
-  protected:
-    // Why the formula cannot run on the current model, if it cannot.
-    [[nodiscard]] virtual std::optional<std::string> problem() const;
-
-    void set_parameter_dependencies(DependencyList dependencies) {
-        _dependencies = std::move(dependencies);
-    }
-
-    void set_entity_dependencies(std::vector<Entity> dependencies) {
-        _entity_dependencies = std::move(dependencies);
-    }
-
   private:
     friend class Formulas;
 
     virtual void set_origin(Origin origin) noexcept = 0;
 
     Entity _entity;
-    DependencyList _dependencies;
-    std::vector<Entity> _entity_dependencies;
 };
 
 // Any expression of numbers, parameters, table calls and, when given a
-// network, entities. It is lowered to evaluator operations once, when it is
-// created; the expression text is kept for printing and for derivatives. A
-// constant expression is evaluated once and keeps only its value.
-// Derivatives exist for formulas that read only parameters; they are built
-// on the first calculate_derivatives() call, from the expression text.
+// network, entities. Formulas written the same way apart from their numbers
+// and node numbers share one shape, parsed and lowered to evaluator
+// operations once; a formula keeps only its own numbers and node numbers.
+// Its expression is printed from them on request. Derivatives exist for
+// formulas that read only parameters; they are built on the first
+// calculate_derivatives() call of any formula of the shape.
 class ExpressionFormula final : public Formula {
+    // Restricts the shape constructor to the Formulas collection.
+    class Key {
+        Key() = default;
+        friend class ExpressionFormula;
+        friend class Formulas;
+    };
+
   public:
     // A constant value.
     ExpressionFormula(const Entity& entity, double value);
+    // Throws std::invalid_argument for an expression that does not parse,
+    // reads an unknown name or calls an unknown function.
     ExpressionFormula(const Entity& entity, Parameters& parameters,
-                      std::string expression,
+                      const std::string& expression,
                       ThermalNetwork* network = nullptr);
-    // Same, from an expression already parsed from `expression`.
-    ExpressionFormula(const Entity& entity, Parameters& parameters,
-                      std::string expression,
-                      const detail::ParsedExpression& parsed,
-                      ThermalNetwork* network = nullptr);
+    // A formula of an existing shape, as the Formulas collection hands it
+    // out.
+    ExpressionFormula(Key /*key*/, const Entity& entity,
+                      std::shared_ptr<const detail::FormulaShape> shape,
+                      detail::ShapeValues values, Parameters* parameters,
+                      ThermalNetwork* network, Origin origin);
 
     [[nodiscard]] FormulaKind kind() const noexcept override;
+    [[nodiscard]] const DependencyList& parameter_dependencies()
+        const noexcept override;
+    [[nodiscard]] const std::vector<Entity>& entity_dependencies()
+        const noexcept override;
     [[nodiscard]] const std::vector<std::string>& table_dependencies()
         const noexcept override;
 
@@ -165,65 +125,29 @@ class ExpressionFormula final : public Formula {
     [[nodiscard]] std::unique_ptr<Formula> clone() const override;
     [[nodiscard]] double get_value() const override;
     [[nodiscard]] std::vector<double>* get_derivative_values() override;
-    [[nodiscard]] const std::string& expression() const noexcept;
+    // Printed from the shape and the formula's numbers on the first call.
+    [[nodiscard]] const std::string& expression() const;
     [[nodiscard]] Origin origin() const noexcept override { return _origin; }
 
   private:
     friend class Formulas;
 
     void set_origin(Origin origin) noexcept override { _origin = origin; }
-    [[nodiscard]] std::optional<std::string> problem() const override;
-
-    enum class BindingKind : std::uint8_t { Parameter, Entity };
-
-    // One input, in symbol order. `slot` indexes parameter_dependencies()
-    // or entity_dependencies().
-    struct SymbolBinding {
-        BindingKind kind{BindingKind::Parameter};
-        std::size_t slot{0U};
-    };
-
-    // Only sensitivity solves use derivatives, so this is allocated on the
-    // first calculate_derivatives() call.
-    struct DerivativeState {
-        std::vector<detail::LoweredExpression> lowered;
-        std::vector<double> values;
-    };
-
-    void initialize_expression(const detail::ParsedExpression& parsed);
+    void resolve_inputs();
+    // Throws std::invalid_argument when an entity read does not exist.
+    void check_inputs() const;
+    [[nodiscard]] std::vector<double> input_values() const;
     [[nodiscard]] std::vector<detail::TableView> table_views(
         const std::vector<std::string>& tables) const;
-    [[nodiscard]] std::vector<double> input_values() const;
-    [[nodiscard]] double evaluate_symbol_value(
-        const SymbolBinding& binding) const;
-    [[nodiscard]] std::string binding_name(const SymbolBinding& binding) const;
-    // Value pointers of the inputs, in input order; null for an input that
-    // no longer exists. Used by the compile, which allocates load storage.
-    [[nodiscard]] std::vector<double*> input_pointers() const;
-    [[nodiscard]] bool reads_entity(std::size_t input) const noexcept;
-    // Null for a constant.
-    [[nodiscard]] const detail::LoweredExpression* lowered() const noexcept {
-        return _lowered == nullptr ? nullptr : &_lowered->expression;
-    }
-    // Empty for a constant.
-    [[nodiscard]] std::span<const SymbolBinding> bindings() const noexcept;
 
     Parameters* _parameters{nullptr};
     ThermalNetwork* _network{nullptr};
-    std::string _expression;
-    // The constant's value.
-    double _value{0.0};
-    // What a formula with inputs needs to run. It depends only on the
-    // expression, so copies of the formula share it, and a constant, which
-    // keeps only its value, has none.
-    struct Lowered {
-        detail::LoweredExpression expression;
-        // Parameter inputs by slot, which follows a parameter rename.
-        std::vector<Index> parameter_indices;
-        std::vector<SymbolBinding> bindings;
-    };
-    std::shared_ptr<const Lowered> _lowered;
-    std::unique_ptr<DerivativeState> _derivatives;
+    std::shared_ptr<const detail::FormulaShape> _shape;
+    detail::ShapeValues _values;
+    // The entities read, in the order of the shape's entity inputs.
+    std::vector<Entity> _inputs;
+    mutable std::string _expression;
+    std::unique_ptr<std::vector<double>> _derivatives;
     Origin _origin{Origin::user};
 };
 
