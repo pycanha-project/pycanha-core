@@ -34,6 +34,7 @@
 #include "pycanha-core/tmm/thermalnetwork.hpp"
 #include "pycanha-core/utils/logger.hpp"
 #include "pycanha-core/utils/profiling.hpp"
+#include "pycanha-core/utils/thread_pool.hpp"
 
 namespace pycanha::solvers {
 
@@ -268,6 +269,9 @@ void Solver::callback_transient_time_change() {
     PYCANHA_PROFILE_SCOPE("Callback Time Change");
     {
         const ScopeTimer timer(_report.callback_time);
+        // Formulas applied here use the solver's thread count.
+        const pycanha::detail::ThreadCountScope formula_threads(
+            _resolved.threads);
         const ActiveSolverCallbackScope active_solver_scope(tmm, *this);
         _tmm_shptr->callback_transient_time_change();
     }
@@ -278,6 +282,9 @@ void Solver::callback_solver_loop() {
     PYCANHA_PROFILE_SCOPE("Callback Solver Loop");
     {
         const ScopeTimer timer(_report.callback_time);
+        // Formulas applied here use the solver's thread count.
+        const pycanha::detail::ThreadCountScope formula_threads(
+            _resolved.threads);
         const ActiveSolverCallbackScope active_solver_scope(tmm, *this);
         _tmm_shptr->callback_solver_loop();
     }
@@ -288,6 +295,9 @@ void Solver::callback_transient_after_timestep() {
     PYCANHA_PROFILE_SCOPE("Callback Timestep");
     {
         const ScopeTimer timer(_report.callback_time);
+        // Formulas applied here use the solver's thread count.
+        const pycanha::detail::ThreadCountScope formula_threads(
+            _resolved.threads);
         const ActiveSolverCallbackScope active_solver_scope(tmm, *this);
         _tmm_shptr->callback_transient_after_timestep();
     }

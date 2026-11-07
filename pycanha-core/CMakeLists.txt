@@ -147,6 +147,8 @@ add_library(${LIB_NAME} STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/tmm/thermalmodel.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/utils/logger.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/utils/threads.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/utils/thread_pool.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/utils/SparseUtils.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/callback_registry.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/solvers/solver.cpp

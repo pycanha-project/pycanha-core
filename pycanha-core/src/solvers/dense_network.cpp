@@ -167,7 +167,7 @@ class LapackLu final : public LapackFactors {
         const auto size = static_cast<MKL_INT>(_factors.rows());
         MKL_INT info = 0;
         {
-            const ThreadScope threads(_threads);
+            const ThreadScope thread_scope(_threads);
             dgetrf(&size, &size, _factors.data(), &size, _pivots.data(), &info);
         }
         return info == 0 &&
@@ -197,7 +197,7 @@ class LapackLu final : public LapackFactors {
         const auto size = static_cast<MKL_INT>(_factors.rows());
         const char no_transpose = 'N';
         MKL_INT info = 0;
-        const ThreadScope threads(_threads);
+        const ThreadScope thread_scope(_threads);
         dgetrs(&no_transpose, &size, &columns, _factors.data(), &size,
                _pivots.data(), x, &size, &info);
     }
@@ -214,7 +214,7 @@ class LapackCholesky final : public LapackFactors {
         const auto size = static_cast<MKL_INT>(_factors.rows());
         MKL_INT info = 0;
         {
-            const ThreadScope threads(_threads);
+            const ThreadScope thread_scope(_threads);
             dpotrf(&lower, &size, _factors.data(), &size, &info);
         }
         return info == 0 &&
@@ -244,7 +244,7 @@ class LapackCholesky final : public LapackFactors {
     void solve_in_place(double* x, MKL_INT columns) const {
         const auto size = static_cast<MKL_INT>(_factors.rows());
         MKL_INT info = 0;
-        const ThreadScope threads(_threads);
+        const ThreadScope thread_scope(_threads);
         dpotrs(&lower, &size, &columns, _factors.data(), &size, x, &size,
                &info);
     }
@@ -427,14 +427,14 @@ class DenseNetwork final : public LinearizedNetwork {
 
     void multiply(const Eigen::VectorXd& x, Eigen::VectorXd& y) const override {
 #if PYCANHA_USE_MKL
-        const ThreadScope threads(_threads);
+        const ThreadScope thread_scope(_threads);
 #endif
         y.noalias() = _matrix * x;
     }
 
     void multiply(const Eigen::MatrixXd& x, Eigen::MatrixXd& y) const override {
 #if PYCANHA_USE_MKL
-        const ThreadScope threads(_threads);
+        const ThreadScope thread_scope(_threads);
 #endif
         y.noalias() = _matrix * x;
     }

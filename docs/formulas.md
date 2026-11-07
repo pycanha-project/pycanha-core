@@ -19,6 +19,11 @@ Formulas are stored by target. `find(target)` and `contains(target)` look one up
 
 Formulas run in insertion order, so a formula may read what an earlier one set. During a solve the model applies all formulas at every callback, after updating `time` and the tables evaluated at a parameter, and before the C and Python user callbacks. A removed formula leaves the order of the others unchanged; a formula added again goes to the end.
 
+Two switches turn parts of this off, independently and at any time:
+
+- `formulas().active = false` stops applying the formulas: their targets keep their values. `time` and the tables evaluated at a parameter are still updated, and a solve still validates and compiles the formulas, so turning them back on during a solve works.
+- `callbacks_active = false` on the model turns off the C and Python user callbacks only; `time` and the formulas are still updated.
+
 The compiled program runs some formulas earlier than their position, with exactly the results of insertion order. A formula is *independent* when it reads no formula target and no earlier formula reads its target; independent formulas run first, in any order, then the others in insertion order. A callable formula counts as reading everything, so no formula after one is independent.
 
 `move_formula(target, before)` moves a formula to just before another one, and `move_formula_to_end(target)` to the end. Both return `false` when a target has no formula. The new position counts as the formula's insertion position. A move goes through the whole list once; it is meant for occasional changes, not for building a model.
@@ -165,5 +170,17 @@ A removed formula of a template leaves a hole that costs one byte until more tha
 `compile_formulas()` builds one program for all formulas. Formulas of the same shape that run one after another share one run of operations, with their own value pointers and numbers; independent formulas are grouped by shape, so a template compiles to one run. `apply_formulas()` runs it, and compiles first when something the program points into changed since the last compile: a formula added or removed, a parameter or table added, removed or replaced, a node added or removed, or a coupling added. Values can change freely, table values edited in place included. On an unchanged model a solve does no formula work beyond comparing these counters, and `compile_formulas()` can be called ahead of a solve to pay the cost earlier.
 
 Removing a node or a table is never refused, even when formulas use it. The next validation (`validate_for_execution()`, called by `compile_formulas()` and by a solve) checks every formula's target, inputs and tables, and throws `std::runtime_error` with the number of formulas that cannot run and the first few, so a solve never starts on a broken formula. Remove or fix them, then solve again.
+
+## Evaluation
+
+- **Blocks.** A run of 4 or more formulas of one shape, none of which reads another's target, is evaluated 256 formulas at a time: each operation is one loop over the 256 formulas instead of one step per formula. Shorter runs, and runs whose formulas read each other (a chain `QI2 = QI1 + 1`, `QI3 = QI2 + 1`, ...), are evaluated one formula at a time. Both give the same values.
+- **Formulas that read only parameters** (the `Parameters` kind) are evaluated again only when a parameter or table they read changed since the last apply; otherwise the values stored then are written to their targets again. A change is a value written through `Parameters`: `set_parameter`, `set_internal_parameter`, `set_table_values`, `set_table_x`, and the tables evaluated at a parameter. Writing the same value again is no change.
+- **Threads.** The blocks of the independent formulas may be shared among threads, and so may the blocks of one long run among the other formulas. Whether that pays depends on the formulas and on the machine: waking the other threads costs tens of microseconds per apply, more than a few thousand cheap formulas take on one thread. So the first apply after a compile runs on one thread, the second runs on one thread and is timed, and from the third the blocks use the thread count expected to be fastest from that time and from the pool's own wake-up cost (measured once per thread count), or stay on one thread unless that saves at least a fifth. The values do not depend on the thread count. The count available is the global `pycanha::threads()` (see below), or a solver's `threads` setting during its callbacks. The threads wait without spinning between applies, so they take no time from the solver's own threads.
+
+With formulas on several threads, a table's out-of-range record (see above) still holds the smallest and largest argument, but its "first" query is the first one recorded, not necessarily the first formula in insertion order. A `Throw` table stops the apply with its exception as before.
+
+### Thread count
+
+`pycanha::threads()` is the thread count used wherever a count is left at 0: the solvers (`Settings::threads`) and the formulas. By default it is the count that is usually fastest: MKL's own setting in builds with MKL (`MKL_NUM_THREADS`, else the physical cores), the physical cores otherwise. `pycanha::set_threads(n)` changes it for the whole process and `set_threads(0)` restores the default; `physical_cores()` and `default_threads()` report what the default is based on.
 
 `debug_formulas = true` applies the formulas one at a time and logs each target and value at INFO. It is slower and meant for tracing.

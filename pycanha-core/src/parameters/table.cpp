@@ -1,6 +1,7 @@
 #include "pycanha-core/parameters/table.hpp"
 
 #include <algorithm>
+#include <atomic>
 #include <cmath>
 #include <cstddef>
 #include <format>
@@ -126,25 +127,56 @@ struct Segment {
     return nan_value;
 }
 
+// Writes through atomic references: note() reads the range without the lock.
+// The flag is set last, so a reader that sees it also sees the range.
+void record_query(detail::TableRangeRecord& record, double argument,
+                  const double* time) noexcept {
+    const std::atomic_ref<double> min_argument(record.min_argument);
+    const std::atomic_ref<double> max_argument(record.max_argument);
+    const std::atomic_ref<bool> out_of_range(record.out_of_range);
+    if (!out_of_range.load(std::memory_order_relaxed)) {
+        record.first_time = time == nullptr ? nan_value : *time;
+        record.first_argument = argument;
+        min_argument.store(argument, std::memory_order_relaxed);
+        max_argument.store(argument, std::memory_order_relaxed);
+        out_of_range.store(true, std::memory_order_release);
+        return;
+    }
+    // fmin / fmax ignore a NaN operand, so a NaN query never hides the range.
+    min_argument.store(
+        std::fmin(min_argument.load(std::memory_order_relaxed), argument),
+        std::memory_order_relaxed);
+    max_argument.store(
+        std::fmax(max_argument.load(std::memory_order_relaxed), argument),
+        std::memory_order_relaxed);
+}
+
 }  // namespace
 
 namespace detail {
 
 void TableRangeRecord::note(double argument, const double* time) noexcept {
-    if (!out_of_range) {
-        out_of_range = true;
-        first_time = time == nullptr ? nan_value : *time;
-        first_argument = argument;
-        min_argument = argument;
-        max_argument = argument;
+    // Formulas may be evaluated on several threads, which may all keep
+    // querying outside the range: a query the record already covers writes
+    // nothing and takes no lock.
+    if (std::atomic_ref<bool>(out_of_range).load(std::memory_order_acquire) &&
+        (argument >= std::atomic_ref<double>(min_argument)
+                         .load(std::memory_order_relaxed)) &&
+        (argument <= std::atomic_ref<double>(max_argument)
+                         .load(std::memory_order_relaxed))) {
         return;
     }
-    // fmin / fmax ignore a NaN operand, so a NaN query never hides the range.
-    min_argument = std::fmin(min_argument, argument);
-    max_argument = std::fmax(max_argument, argument);
+    // The others are rare, so one lock for every record is enough.
+    static std::atomic_flag busy;
+    while (busy.test_and_set(std::memory_order_acquire)) {
+        busy.wait(true, std::memory_order_relaxed);
+    }
+    record_query(*this, argument, time);
+    busy.clear(std::memory_order_release);
+    busy.notify_one();
 }
 
-double table_value(const TableView& table, double argument) {
+double table_value_general(const TableView& table, double argument) {
     const auto x = x_of(table);
     // False for a NaN argument too, which then takes the out-of-range branch.
     const bool inside = (argument >= x.front()) && (argument <= x.back());
@@ -178,7 +210,8 @@ double table_slope(const TableView& table, double argument) {
     if ((x.size() == 1U) || (table.interp != InterpolationMethod::Linear)) {
         return 0.0;
     }
-    return segment_slope(x, y_of(table), find_segment(x, argument).lower);
+    const std::span<const double> slopes(table.slopes, x.size() - 1U);
+    return slopes[find_segment(x, argument).lower];
 }
 
 }  // namespace detail
@@ -191,6 +224,18 @@ Table::Table(std::string name, LookupTable1D lookup_table, Origin origin,
       _origin(origin) {
     if (_lookup_table.size() == 0) {
         throw std::invalid_argument("Table '" + _name + "' has no data");
+    }
+    update_slopes();
+}
+
+void Table::update_slopes() {
+    const std::span<const double> x(
+        _lookup_table.x().data(),
+        static_cast<std::size_t>(_lookup_table.size()));
+    const std::span<const double> y(_lookup_table.y().data(), x.size());
+    _slopes.resize(x.size() - 1U);
+    for (std::size_t lower = 0U; lower < _slopes.size(); ++lower) {
+        _slopes[lower] = segment_slope(x, y, lower);
     }
 }
 
@@ -209,6 +254,7 @@ double Table::slope(double argument) const {
 detail::TableView Table::view(const double* time) const noexcept {
     return {.x = _lookup_table.x().data(),
             .y = _lookup_table.y().data(),
+            .slopes = _slopes.data(),
             .size = _lookup_table.size(),
             .interp = _lookup_table.interpolation_method(),
             .extrap = _lookup_table.extrapolation_method(),

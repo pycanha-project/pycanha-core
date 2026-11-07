@@ -145,8 +145,8 @@ std::vector<double> ExpressionFormula::input_values() const {
             values.push_back(entity.get_value());
             continue;
         }
-        const auto* value =
-            _parameters->get_double_ptr(_shape->parameter_indices[input.index]);
+        const auto* value = detail::ParameterAccess::value(
+            *_parameters, _shape->parameter_indices[input.index]);
         if (value == nullptr) {
             throw std::runtime_error("ExpressionFormula lost parameter '" +
                                      _shape->parameter_names[input.index] +

@@ -3,7 +3,6 @@
 #include <spdlog/spdlog.h>
 
 #include <algorithm>
-#include <bit>
 #include <cctype>
 #include <cstddef>
 #include <cstdint>
@@ -121,28 +120,6 @@ constexpr bool is_matrix_type_v = IsMatrixType<T>::value;
 
 }  // namespace
 
-struct Parameters::DataMemoryAddress {
-    template <typename T>
-    void* operator()(T& data) const noexcept {
-        if constexpr (std::is_same_v<T, std::string> || is_matrix_type_v<T>) {
-            return static_cast<void*>(data.data());
-        } else {
-            return static_cast<void*>(std::addressof(data));
-        }
-    }
-};
-
-struct Parameters::ConstDataMemoryAddress {
-    template <typename T>
-    const void* operator()(const T& data) const noexcept {
-        if constexpr (std::is_same_v<T, std::string> || is_matrix_type_v<T>) {
-            return static_cast<const void*>(data.data());
-        } else {
-            return static_cast<const void*>(std::addressof(data));
-        }
-    }
-};
-
 struct Parameters::ParameterSize {
     template <typename T>
     std::size_t operator()(const T& data) const noexcept {
@@ -220,6 +197,10 @@ const Parameters::ParameterSlot* Parameters::find_slot(
 
 void Parameters::invalidate_data_cache() const noexcept {
     _data_cache_dirty = true;
+}
+
+void Parameters::note_change(ParameterSlot& slot) noexcept {
+    slot.changed = ++_changes;
 }
 
 void Parameters::mark_structural_change() noexcept {
@@ -538,11 +519,13 @@ void Parameters::set_parameter(const std::string& name, ThermalValue value) {
         return;
     }
 
+    bool changed = true;
     std::visit(
         [&](auto& existing) {
             using ExistingType = std::decay_t<decltype(existing)>;
             auto* incoming = std::get_if<ExistingType>(&value);
             if (incoming == nullptr) {
+                changed = false;
                 return;
             }
 
@@ -555,10 +538,17 @@ void Parameters::set_parameter(const std::string& name, ThermalValue value) {
                 }
             }
 
+            // A double that keeps its value is not a change.
+            if constexpr (std::is_same_v<ExistingType, double>) {
+                changed = existing != *incoming;
+            }
             existing = std::move(*incoming);
         },
         slot->value);
 
+    if (changed) {
+        note_change(*slot);
+    }
     invalidate_data_cache();
 }
 
@@ -583,11 +573,13 @@ void Parameters::set_internal_parameter(const std::string& name,
         return;
     }
 
+    bool changed = true;
     std::visit(
         [&](auto& existing) {
             using ExistingType = std::decay_t<decltype(existing)>;
             auto* incoming = std::get_if<ExistingType>(&value);
             if (incoming == nullptr) {
+                changed = false;
                 return;
             }
 
@@ -602,27 +594,23 @@ void Parameters::set_internal_parameter(const std::string& name,
                 }
             }
 
+            // A double that keeps its value is not a change.
+            if constexpr (std::is_same_v<ExistingType, double>) {
+                changed = existing != *incoming;
+            }
             existing = std::move(*incoming);
         },
         slot->value);
 
+    if (changed) {
+        note_change(*slot);
+    }
     invalidate_data_cache();
 }
 
 // The print_* helpers below write to stdout rather than through the logger.
 // The caller asked for output, so it must appear whatever the log thresholds
 // are set to, and a dump of a value is not a record of anything happening.
-
-void Parameters::print_memory_address(const std::string& name) const {
-    const auto* slot = find_slot(name);
-    if (slot == nullptr) {
-        std::cout << "Parameter '" << name << "' doesn't exist\n";
-        return;
-    }
-
-    std::cout << "Mem. addr: "
-              << std::visit(ConstDataMemoryAddress{}, slot->value) << '\n';
-}
 
 void Parameters::print_parameter(const std::string& name) const {
     const auto* slot = find_slot(name);
@@ -644,46 +632,6 @@ void Parameters::print_parameter(const std::string& name) const {
     std::cout << '\n';
 }
 
-void* Parameters::get_value_ptr(const std::string& name) {
-    const auto index = get_idx(name);
-    if (!index.has_value()) {
-        SPDLOG_LOGGER_INFO(pycanha::get_logger(),
-                           "Parameter '{}' doesn't exist", name);
-        return nullptr;
-    }
-
-    return get_value_ptr(*index);
-}
-
-void* Parameters::get_value_ptr(Index idx) {
-    auto* slot = find_slot(idx);
-    if (slot == nullptr) {
-        return nullptr;
-    }
-
-    return std::visit(DataMemoryAddress{}, slot->value);
-}
-
-const void* Parameters::get_value_ptr(const std::string& name) const {
-    const auto index = get_idx(name);
-    if (!index.has_value()) {
-        SPDLOG_LOGGER_INFO(pycanha::get_logger(),
-                           "Parameter '{}' doesn't exist", name);
-        return nullptr;
-    }
-
-    return get_value_ptr(*index);
-}
-
-const void* Parameters::get_value_ptr(Index idx) const {
-    const auto* slot = find_slot(idx);
-    if (slot == nullptr) {
-        return nullptr;
-    }
-
-    return std::visit(ConstDataMemoryAddress{}, slot->value);
-}
-
 double* Parameters::get_double_ptr(Index idx) {
     auto* slot = find_slot(idx);
     if (slot == nullptr) {
@@ -702,13 +650,25 @@ const double* Parameters::get_double_ptr(Index idx) const {
     return std::get_if<double>(&slot->value);
 }
 
-std::uint64_t Parameters::get_memory_address(const std::string& name) const {
-    const void* const address = get_value_ptr(name);
-    if (address == nullptr) {
-        return 0U;
-    }
+const double* detail::ParameterAccess::value(const Parameters& parameters,
+                                             Index idx) {
+    return parameters.get_double_ptr(idx);
+}
 
-    return static_cast<std::uint64_t>(std::bit_cast<std::uintptr_t>(address));
+const std::uint64_t* detail::ParameterAccess::changes(
+    const Parameters& parameters) noexcept {
+    return &parameters._changes;
+}
+
+const std::uint64_t* detail::ParameterAccess::changed(
+    const Parameters& parameters, Index idx) {
+    const auto* slot = parameters.find_slot(idx);
+    return slot == nullptr ? nullptr : &slot->changed;
+}
+
+const std::uint64_t* detail::ParameterAccess::changed(
+    const Table& table) noexcept {
+    return &table._changed;
 }
 
 std::optional<Index> Parameters::find_idx(
@@ -967,12 +927,18 @@ std::vector<std::string> Parameters::table_names() const {
 
 void Parameters::set_table_values(const std::string& name,
                                   std::span<const double> values) {
-    existing_table(name)._lookup_table.assign_y(values);
+    auto& written = existing_table(name);
+    written._lookup_table.assign_y(values);
+    written.update_slopes();
+    written._changed = ++_changes;
 }
 
 void Parameters::set_table_x(const std::string& name,
                              std::span<const double> x) {
-    existing_table(name)._lookup_table.assign_x(x);
+    auto& written = existing_table(name);
+    written._lookup_table.assign_x(x);
+    written.update_slopes();
+    written._changed = ++_changes;
 }
 
 void Parameters::update_evaluated_tables() {
@@ -982,13 +948,20 @@ void Parameters::update_evaluated_tables() {
             continue;
         }
         const double* argument = get_double_ptr(evaluated._argument_idx);
-        double* published = get_double_ptr(evaluated._published_idx);
+        auto* slot = find_slot(evaluated._published_idx);
+        double* published =
+            slot == nullptr ? nullptr : std::get_if<double>(&slot->value);
         if ((argument == nullptr) || (published == nullptr)) {
             throw std::runtime_error(
                 "Table '" + evaluated._name + "' is evaluated at '" +
                 evaluated._evaluated_at + "', which no longer exists");
         }
-        *published = detail::table_value(evaluated.view(time_ptr()), *argument);
+        const double value =
+            detail::table_value(evaluated.view(time_ptr()), *argument);
+        if (value != *published) {
+            *published = value;
+            note_change(*slot);
+        }
     }
 }
 

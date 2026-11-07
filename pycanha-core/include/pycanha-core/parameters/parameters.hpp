@@ -20,6 +20,27 @@
 
 namespace pycanha {
 
+class Parameters;
+
+namespace detail {
+// Pointer access to parameter values for the formula evaluator; not part
+// of the public interface.
+class ParameterAccess {
+  public:
+    [[nodiscard]] static const double* value(const Parameters& parameters,
+                                             Index idx);
+    // Every value change, of any parameter or of a table's data, takes the
+    // next number of one counter. These point at the counter and at the
+    // number of the last change of one parameter or one table.
+    [[nodiscard]] static const std::uint64_t* changes(
+        const Parameters& parameters) noexcept;
+    [[nodiscard]] static const std::uint64_t* changed(
+        const Parameters& parameters, Index idx);
+    [[nodiscard]] static const std::uint64_t* changed(
+        const Table& table) noexcept;
+};
+}  // namespace detail
+
 class Parameters {
   public:
     using MatrixRXb =
@@ -79,17 +100,7 @@ class Parameters {
     void set_parameter(const std::string& name, ThermalValue value);
     void set_internal_parameter(const std::string& name, ThermalValue value);
 
-    void print_memory_address(const std::string& name) const;
     void print_parameter(const std::string& name) const;
-
-    [[nodiscard]] void* get_value_ptr(const std::string& name);
-    [[nodiscard]] void* get_value_ptr(Index idx);
-    [[nodiscard]] const void* get_value_ptr(const std::string& name) const;
-    [[nodiscard]] const void* get_value_ptr(Index idx) const;
-    [[nodiscard]] double* get_double_ptr(Index idx);
-    [[nodiscard]] const double* get_double_ptr(Index idx) const;
-    [[nodiscard]] std::uint64_t get_memory_address(
-        const std::string& name) const;
 
     [[nodiscard]] std::optional<Index> get_idx(const std::string& name) const;
     [[nodiscard]] bool is_internal_parameter(
@@ -162,11 +173,17 @@ class Parameters {
         ThermalValue value;
         bool active{true};
         bool is_internal{false};
+        // The change counter at the last change of the value.
+        std::uint64_t changed{0U};
     };
 
-    struct DataMemoryAddress;
-    struct ConstDataMemoryAddress;
     struct ParameterSize;
+
+    friend class detail::ParameterAccess;
+    // The value of a double parameter, or null. Only the formulas read
+    // values through a pointer; writes go through the setters.
+    [[nodiscard]] double* get_double_ptr(Index idx);
+    [[nodiscard]] const double* get_double_ptr(Index idx) const;
 
     [[nodiscard]] static ThermalValue missing_parameter_value();
     [[nodiscard]] std::optional<Index> find_idx(
@@ -177,6 +194,7 @@ class Parameters {
     [[nodiscard]] ParameterSlot* find_slot(Index idx) noexcept;
     [[nodiscard]] const ParameterSlot* find_slot(Index idx) const noexcept;
     void invalidate_data_cache() const noexcept;
+    void note_change(ParameterSlot& slot) noexcept;
     void mark_structural_change() noexcept;
     void insert_slot(std::string name, ThermalValue value, bool is_internal);
     void deactivate_slot(ParameterSlot& slot);
@@ -196,6 +214,8 @@ class Parameters {
     mutable bool _data_cache_dirty{true};
     bool _structure_locked{false};
     std::uint64_t _structure_version{0U};
+    // Counts value changes (see detail::ParameterAccess::changes).
+    std::uint64_t _changes{0U};
 };
 
 }  // namespace pycanha

@@ -4,6 +4,7 @@
 #include <spdlog/spdlog.h>
 
 #include <algorithm>
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <exception>
@@ -13,6 +14,7 @@
 #include <memory>
 #include <numeric>
 #include <optional>
+#include <ratio>
 #include <span>
 #include <stdexcept>
 #include <string>
@@ -32,6 +34,7 @@
 #include "pycanha-core/parameters/table.hpp"
 #include "pycanha-core/tmm/thermalnetwork.hpp"
 #include "pycanha-core/utils/logger.hpp"
+#include "pycanha-core/utils/thread_pool.hpp"
 
 namespace pycanha {
 
@@ -115,6 +118,35 @@ bool DerivativeParameterRegistry::contains(
 namespace {
 
 constexpr std::uint32_t dropped = std::numeric_limits<std::uint32_t>::max();
+// Shorter runs are evaluated one formula at a time: a block's loops cost
+// more than they save on a few formulas. Measured: blocks lose on runs of
+// 2, break even at 3 and win from 4.
+constexpr std::uint32_t block_run_minimum = 4U;
+
+// The thread count expected to evaluate blocks that take `serial` ns on one
+// thread fastest, among the powers of two up to `threads` and `threads`
+// itself: each count costs the pool's overhead plus its share of the work.
+// More threads must save at least a fifth of the time, else 1. Nullopt
+// when the pool cannot measure its overhead now.
+[[nodiscard]] std::optional<int> fastest_threads(double serial, int threads) {
+    auto& pool = detail::ThreadPool::shared();
+    int best = 1;
+    double best_time = 0.8 * serial;
+    for (int count = 2;; count = std::min(2 * count, threads)) {
+        const auto overhead = pool.overhead_ns(count);
+        if (!overhead.has_value()) {
+            return std::nullopt;
+        }
+        const double time = *overhead + (serial / count);
+        if (time < best_time) {
+            best = count;
+            best_time = time;
+        }
+        if (count >= threads) {
+            return best;
+        }
+    }
+}
 
 [[nodiscard]] std::uint32_t to_u32(std::size_t value) {
     return static_cast<std::uint32_t>(value);
@@ -1098,8 +1130,8 @@ std::optional<std::string> Formulas::problem(detail::FormulaRef formula) const {
     const auto& shape = *batch.shape;
     for (std::size_t input = 0U; input < shape.parameter_indices.size();
          ++input) {
-        if (_parameters->get_double_ptr(shape.parameter_indices[input]) ==
-            nullptr) {
+        if (detail::ParameterAccess::value(
+                *_parameters, shape.parameter_indices[input]) == nullptr) {
             return "it reads '" + shape.parameter_names[input] +
                    "', which does not exist";
         }
@@ -1187,8 +1219,8 @@ detail::FormulaPointers Formulas::collect_pointers(
         const auto nodes = batch.nodes_of(formula.instance);
         for (const auto& input : shape.inputs) {
             if (input.kind == detail::ShapeInput::Kind::Parameter) {
-                pointers.inputs.push_back(_parameters->get_double_ptr(
-                    shape.parameter_indices[input.index]));
+                pointers.inputs.push_back(detail::ParameterAccess::value(
+                    *_parameters, shape.parameter_indices[input.index]));
                 continue;
             }
             auto* value = shape.entities[input.index]
@@ -1243,6 +1275,9 @@ void Formulas::build_program() {
     std::vector<detail::TableView> tables;
     std::size_t begin = 0U;
     while (begin < order.size()) {
+        if (begin == execution.independent) {
+            program.end_independent();
+        }
         const auto formula = _order[order[begin]];
         const auto& batch = _batches[formula.batch];
         if (batch.shape == nullptr) {
@@ -1251,10 +1286,14 @@ void Formulas::build_program() {
             ++begin;
             continue;
         }
-        // The formulas of one shape that run one after another.
+        // The formulas of one shape that run one after another, without
+        // mixing independent formulas with the others.
+        const std::size_t limit = begin < execution.independent
+                                      ? execution.independent
+                                      : order.size();
         std::size_t end = begin + 1U;
-        while ((end < order.size()) && (shape_ids[_order[order[end]].batch] ==
-                                        shape_ids[formula.batch])) {
+        while ((end < limit) && (shape_ids[_order[order[end]].batch] ==
+                                 shape_ids[formula.batch])) {
             ++end;
         }
         const auto run = std::span(order).subspan(begin, end - begin);
@@ -1275,6 +1314,25 @@ void Formulas::build_program() {
                              pointers.first_input[index + 1U] -
                                  pointers.first_input[index]),
                 _batches[member.batch].numbers_of(member.instance));
+        }
+        if (shape.kind == FormulaKind::Parameters) {
+            // Evaluated again only when what it reads changed.
+            std::vector<const std::uint64_t*> changed;
+            changed.reserve(shape.parameter_indices.size() +
+                            shape.lowered.tables.size());
+            std::ranges::transform(shape.parameter_indices,
+                                   std::back_inserter(changed),
+                                   [this](Index index) {
+                                       return detail::ParameterAccess::changed(
+                                           *_parameters, index);
+                                   });
+            std::ranges::transform(shape.lowered.tables,
+                                   std::back_inserter(changed),
+                                   [this](const std::string& name) {
+                                       return detail::ParameterAccess::changed(
+                                           _parameters->table(name));
+                                   });
+            program.watch_run(changed);
         }
         begin = end;
     }
@@ -1309,6 +1367,9 @@ void Formulas::apply_formulas() {
     }
 
     _parameters->update_evaluated_tables();
+    if (!active) {
+        return;
+    }
     if (!is_compiled_current()) {
         compile_formulas();
     }
@@ -1320,13 +1381,157 @@ void Formulas::apply_formulas() {
 }
 
 void Formulas::run_program() {
+    const int threads = detail::active_threads();
+    _program.reserve_workers(static_cast<std::size_t>(threads));
     const auto program = _program.view();
-    for (const auto& run : _program.runs()) {
-        if (run.callable != nullptr) {
-            *program.targets[run.first] = run.callable->call();
+    // Read at each use: a callable formula may set a parameter.
+    const std::uint64_t& changes =
+        *detail::ParameterAccess::changes(*_parameters);
+    const auto runs = _program.runs();
+    const std::size_t independent = _program.independent_runs();
+    if (independent > 0U) {
+        run_group(program, runs.first(independent), _program.plan(0U), changes,
+                  threads);
+    }
+    for (std::size_t index = independent; index < runs.size(); ++index) {
+        const auto& run = runs[index];
+        // Often a formula or two: straight to the evaluator.
+        if (!run.callables && (run.watch == detail::no_watch) &&
+            (!run.blocks || (run.count < block_run_minimum))) {
+            static_cast<void>(detail::run_formulas(program, run));
             continue;
         }
+        // Only a run of several blocks can be shared among threads.
+        if (run.callables || !run.blocks ||
+            (run.count <= detail::block_formulas)) {
+            run_alone(program, run, changes);
+        } else {
+            run_group(program, runs.subspan(index, 1U), _program.plan(index),
+                      changes, threads);
+        }
+    }
+}
+
+void Formulas::call_run(const detail::ProgramView& program,
+                        const detail::ProgramRun& run) {
+    // Local views: read through `program`, they would be read again after
+    // every call, which the compiler cannot see into.
+    const auto targets = program.targets.subspan(run.first, run.count);
+    const auto callables =
+        program.callables.subspan(run.callable_begin, run.count);
+    for (std::size_t formula = 0U; formula < targets.size(); ++formula) {
+        *targets[formula] = callables[formula]->call();
+    }
+}
+
+void Formulas::run_alone(const detail::ProgramView& program,
+                         const detail::ProgramRun& run,
+                         const std::uint64_t& changes) {
+    if (run.callables) {
+        call_run(program, run);
+        return;
+    }
+    const bool watched = run.watch != detail::no_watch;
+    if (watched && _program.replay(run, changes)) {
+        return;
+    }
+    if (run.blocks && (run.count >= block_run_minimum)) {
+        for (std::size_t begin = 0U; begin < run.count;
+             begin += detail::block_formulas) {
+            detail::run_block(program, run, begin,
+                              std::min<std::size_t>(detail::block_formulas,
+                                                    run.count - begin),
+                              program.columns.first(program.column_count),
+                              program.scratch.first(program.scratch_count));
+        }
+    } else {
         static_cast<void>(detail::run_formulas(program, run));
+    }
+    if (watched) {
+        _program.record(run, changes);
+    }
+}
+
+void Formulas::run_group(const detail::ProgramView& program,
+                         std::span<const detail::ProgramRun> runs,
+                         detail::GroupPlan& plan, const std::uint64_t& changes,
+                         int threads) {
+    _block_tasks.clear();
+    _evaluated_watches.clear();
+    for (const auto& run : runs) {
+        if (run.callables) {
+            call_run(program, run);
+            continue;
+        }
+        if (run.watch != detail::no_watch) {
+            if (_program.replay(run, changes)) {
+                continue;
+            }
+            _evaluated_watches.push_back(&run);
+        }
+        if (run.blocks && (run.count >= block_run_minimum)) {
+            for (std::size_t begin = 0U; begin < run.count;
+                 begin += detail::block_formulas) {
+                _block_tasks.push_back(
+                    {.run = &run,
+                     .begin = begin,
+                     .count = std::min<std::size_t>(detail::block_formulas,
+                                                    run.count - begin)});
+            }
+        } else {
+            static_cast<void>(detail::run_formulas(program, run));
+        }
+    }
+    run_block_tasks(program, plan, threads);
+    for (const auto* run : _evaluated_watches) {
+        _program.record(*run, changes);
+    }
+}
+
+void Formulas::run_block_tasks(const detail::ProgramView& program,
+                               detail::GroupPlan& plan, int threads) {
+    const auto run_task = [&program, this](std::size_t index,
+                                           std::size_t worker) {
+        const auto& task = _block_tasks[index];
+        detail::run_block(
+            program, *task.run, task.begin, task.count,
+            program.columns.subspan(worker * program.column_count,
+                                    program.column_count),
+            program.scratch.subspan(worker * program.scratch_count,
+                                    program.scratch_count));
+    };
+    const auto serially = [&run_task, this] {
+        for (std::size_t index = 0U; index < _block_tasks.size(); ++index) {
+            run_task(index, 0U);
+        }
+    };
+    if ((threads < 2) || (_block_tasks.size() < 2U)) {
+        serially();
+        return;
+    }
+    if (plan.decided_for != threads) {
+        plan = detail::GroupPlan{
+            .applies = 0U, .decided_for = threads, .threads = 1};
+    }
+    if (plan.applies == 0U) {
+        // Warms the caches for the timed apply.
+        serially();
+        plan.applies = 1U;
+    } else if (plan.applies == 1U) {
+        const auto start = std::chrono::steady_clock::now();
+        serially();
+        const std::chrono::duration<double, std::nano> serial =
+            std::chrono::steady_clock::now() - start;
+        if (const auto best = fastest_threads(serial.count(), threads);
+            best.has_value()) {
+            plan.threads = *best;
+            plan.applies = 2U;
+        }
+    } else if (plan.threads > 1) {
+        detail::ThreadPool::shared().run(_block_tasks.size(), plan.threads,
+                                         run_task);
+    } else {
+        serially();
     }
 }
 
@@ -1339,9 +1544,12 @@ void Formulas::run_program_logged() {
             _program.value_at(position));
     };
     for (const auto& run : _program.runs()) {
-        if (run.callable != nullptr) {
-            *program.targets[run.first] = run.callable->call();
-            log(run.first);
+        if (run.callables) {
+            for (std::uint32_t formula = 0U; formula < run.count; ++formula) {
+                *program.targets[run.first + formula] =
+                    program.callables[run.callable_begin + formula]->call();
+                log(run.first + formula);
+            }
             continue;
         }
         // One formula at a time.

@@ -76,7 +76,7 @@ constexpr std::string_view pardiso_reason =
     "this build has MKL: PARDISO factorizes in parallel";
 constexpr std::string_view auto_reason =
     "Cholesky where the matrix is symmetric, LU otherwise";
-constexpr std::string_view threads_reason = "MKL's own thread setting";
+constexpr std::string_view threads_reason = "the global thread setting";
 constexpr std::string_view safe_reason =
     "the two-level factorization with nested dissection does not livelock";
 constexpr std::string_view sparse_reason =

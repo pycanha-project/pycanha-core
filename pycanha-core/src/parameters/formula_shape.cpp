@@ -692,7 +692,7 @@ struct SymbolRole {
     if ((parameters != nullptr) && parameters->contains(name)) {
         const auto index = parameters->get_idx(name);
         if (!index.has_value() ||
-            (parameters->get_double_ptr(*index) == nullptr)) {
+            (detail::ParameterAccess::value(*parameters, *index) == nullptr)) {
             throw std::invalid_argument(
                 "ExpressionFormula expects parameter '" + name +
                 "' to store a double");

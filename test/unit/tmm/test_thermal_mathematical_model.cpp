@@ -258,7 +258,7 @@ TEST_CASE("ThermalMathematicalModel callback flags gate every callback family",
 
     reset_c_callback_counts();
 
-    model.internal_callbacks_active = false;
+    model.formulas().active = false;
     model.c_callbacks_active = true;
     model.python_callbacks_active = true;
     model.c_extern_callback_solver_loop = count_solver_callback;

@@ -288,12 +288,10 @@ void ThermalMathematicalModel::callback_solver_loop() {
     SPDLOG_LOGGER_DEBUG(logger,
                         "ThermalMathematicalModel: callback_solver_loop");
 
+    // Time and formulas run whatever the user callbacks do.
+    internal_callback_solver_loop();
     if (!callbacks_active) {
         return;
-    }
-
-    if (internal_callbacks_active) {
-        internal_callback_solver_loop();
     }
     if (c_callbacks_active) {
         c_extern_callback_solver_loop(this);
@@ -308,12 +306,10 @@ void ThermalMathematicalModel::callback_transient_time_change() {
     SPDLOG_LOGGER_DEBUG(
         logger, "ThermalMathematicalModel: callback_transient_time_change");
 
+    // Time and formulas run whatever the user callbacks do.
+    internal_callback_transient_time_change();
     if (!callbacks_active) {
         return;
-    }
-
-    if (internal_callbacks_active) {
-        internal_callback_transient_time_change();
     }
     if (c_callbacks_active) {
         c_extern_callback_transient_time_change(this);
@@ -328,12 +324,10 @@ void ThermalMathematicalModel::callback_transient_after_timestep() {
     SPDLOG_LOGGER_DEBUG(
         logger, "ThermalMathematicalModel: callback_transient_after_timestep");
 
+    // Time and formulas run whatever the user callbacks do.
+    internal_callback_transient_after_timestep();
     if (!callbacks_active) {
         return;
-    }
-
-    if (internal_callbacks_active) {
-        internal_callback_transient_after_timestep();
     }
     if (c_callbacks_active) {
         c_extern_callback_transient_after_timestep(this);
@@ -400,8 +394,8 @@ const EntitiesHelper& ThermalMathematicalModel::entities() const noexcept {
 }
 
 void ThermalMathematicalModel::internal_callback_common() {
-    if (_time_parameter_ptr != nullptr) {
-        *_time_parameter_ptr = time;
+    if (_time_synchronized) {
+        parameters().set_internal_parameter("time", time);
     }
 
     formulas().apply_formulas();
@@ -442,17 +436,10 @@ void ThermalMathematicalModel::initialize_internal_time_parameter() {
                            "Parameter 'time' already exists and is not an "
                            "internal parameter; runtime time synchronization "
                            "is disabled");
-        _time_parameter_ptr = nullptr;
+        _time_synchronized = false;
         return;
     }
-
-    const auto time_idx = parameters().get_idx("time");
-    if (!time_idx.has_value()) {
-        _time_parameter_ptr = nullptr;
-        return;
-    }
-
-    _time_parameter_ptr = parameters().get_double_ptr(*time_idx);
+    _time_synchronized = true;
 }
 
 Entity EntitiesHelper::attribute(std::string_view token,

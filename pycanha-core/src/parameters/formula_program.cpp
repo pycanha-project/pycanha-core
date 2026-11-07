@@ -191,21 +191,26 @@ struct Action {
 // Whether `tree` calls a function the evaluator resolves itself (a table
 // call or its derivative), which SymEngine's evaluator cannot run.
 [[nodiscard]] bool has_table_call(const Basic& tree) {
-    std::vector<const Basic*> pending{&tree};
+    const auto is_call = [](const Basic& node) {
+        const auto type = node.get_type_code();
+        return (type == SymEngine::SYMENGINE_FUNCTIONSYMBOL) ||
+               (type == SymEngine::SYMENGINE_DERIVATIVE) ||
+               (type == SymEngine::SYMENGINE_SUBS);
+    };
+    if (is_call(tree)) {
+        return true;
+    }
+    // Owning pointers: get_args() builds some arguments on the spot (the
+    // powers of a product), which would be gone by the time they are visited.
+    SymEngine::vec_basic pending = tree.get_args();
     while (!pending.empty()) {
-        const Basic* current = pending.back();
+        const auto current = pending.back();
         pending.pop_back();
-        const auto type = current->get_type_code();
-        if ((type == SymEngine::SYMENGINE_FUNCTIONSYMBOL) ||
-            (type == SymEngine::SYMENGINE_DERIVATIVE) ||
-            (type == SymEngine::SYMENGINE_SUBS)) {
+        if (is_call(*current)) {
             return true;
         }
         const auto arguments = current->get_args();
-        std::ranges::transform(arguments, std::back_inserter(pending),
-                               [](const SymEngine::RCP<const Basic>& argument) {
-                                   return argument.get();
-                               });
+        pending.insert(pending.end(), arguments.begin(), arguments.end());
     }
     return false;
 }
@@ -767,17 +772,120 @@ class Lowering {
     }
 }
 
+// `inputs` and `slots` start at the formula's own.
 void run_escape(const ProgramView& program, const EscapeView& escape,
-                std::size_t input_base, std::size_t slot_base, double* out) {
+                std::span<const double* const> inputs,
+                std::span<const double> slots, std::span<double> scratch,
+                double* out) {
     for (std::uint32_t index = 0U; index < escape.input_count; ++index) {
         const std::uint32_t entry =
             program.escape_inputs[escape.first_input + index];
-        program.scratch[index] =
-            (entry & escape_slot_flag) != 0U
-                ? program.slots[slot_base + (entry & ~escape_slot_flag)]
-                : *program.inputs[input_base + entry];
+        scratch[index] = (entry & escape_slot_flag) != 0U
+                             ? slots[entry & ~escape_slot_flag]
+                             : *inputs[entry];
     }
-    escape.visitor->call(out, program.scratch.data());
+    escape.visitor->call(out, scratch.data());
+}
+
+// The one-value operations over a column: the switch is outside the loop.
+void unary_column(OpCode code, std::span<double> values) {
+    const auto each = [values](auto function) {
+        for (auto& value : values) {
+            value = function(value);
+        }
+    };
+    switch (code) {
+        case OpCode::NEGATE:
+            each([](double value) { return -value; });
+            break;
+        case OpCode::SQRT:
+            each([](double value) { return std::sqrt(value); });
+            break;
+        case OpCode::EXP:
+            each([](double value) { return std::exp(value); });
+            break;
+        case OpCode::LOG:
+            each([](double value) { return std::log(value); });
+            break;
+        case OpCode::ABS:
+            each([](double value) { return std::abs(value); });
+            break;
+        default:
+            each([code](double value) { return unary(code, value); });
+            break;
+    }
+}
+
+// Applies `function` to every value of a column.
+template <typename Function>
+void each_value(std::span<double> values, Function function) {
+    std::ranges::transform(values, values.begin(), function);
+}
+
+// values[k] = *inputs[k * stride] for every formula k of a block.
+void load_column(std::span<double> values,
+                 std::span<const double* const> inputs, std::size_t stride) {
+    for (std::size_t formula = 0U; formula < values.size(); ++formula) {
+        values[formula] = *inputs[formula * stride];
+    }
+}
+
+// values[k] = numbers[k * stride] for every formula k of a block.
+void number_column(std::span<double> values, std::span<const double> numbers,
+                   std::size_t stride) {
+    for (std::size_t formula = 0U; formula < values.size(); ++formula) {
+        values[formula] = numbers[formula * stride];
+    }
+}
+
+// left[k] = left[k] op right[k]: the switch is outside the loop.
+void binary_columns(OpCode code, std::span<double> left,
+                    std::span<const double> right) {
+    const auto each = [left, right](auto function) {
+        std::ranges::transform(left, right, left.begin(), function);
+    };
+    switch (code) {
+        case OpCode::ADD:
+            each([](double a, double b) { return a + b; });
+            break;
+        case OpCode::SUBTRACT:
+            each([](double a, double b) { return a - b; });
+            break;
+        case OpCode::MULTIPLY:
+            each([](double a, double b) { return a * b; });
+            break;
+        case OpCode::DIVIDE:
+            each([](double a, double b) { return a / b; });
+            break;
+        default:
+            each([code](double a, double b) { return binary(code, a, b); });
+            break;
+    }
+}
+
+// values[k] = values[k] op numbers[k * stride], for the *_SLOT operations.
+void slot_columns(OpCode code, std::span<double> values,
+                  std::span<const double> numbers, std::size_t stride) {
+    const auto each = [values, numbers, stride](auto function) {
+        for (std::size_t formula = 0U; formula < values.size(); ++formula) {
+            values[formula] =
+                function(values[formula], numbers[formula * stride]);
+        }
+    };
+    switch (code) {
+        case OpCode::ADD_SLOT:
+            each([](double a, double b) { return a + b; });
+            break;
+        case OpCode::SUBTRACT_SLOT:
+            each([](double a, double b) { return a - b; });
+            break;
+        case OpCode::MULTIPLY_SLOT:
+            each([](double a, double b) { return a * b; });
+            break;
+        default:
+            each([](double a, double b) { return a / b; });
+            break;
+    }
 }
 
 }  // namespace
@@ -790,108 +898,214 @@ LoweredExpression lower_expression(
 }
 
 double run_formulas(const ProgramView& program, const ProgramRun& run) {
-    const auto ops =
-        program.ops.subspan(run.op_begin, run.op_end - run.op_begin);
+    // Few values stay live through the loop, so the calls inside it (math
+    // functions, a table lookup's slow path) have little to save around
+    // them: the top of the stack is a local, the values under it are in
+    // `below`, and each formula's inputs, numbers and target are reached
+    // through views that STORE moves on to the next formula.
+    const auto ops = program.ops.subspan(run.op_begin);
     const auto numbers = program.numbers;
-    const auto inputs = program.inputs;
-    const auto slots = program.slots;
-    const auto stack = program.stack;
-    const auto targets = program.targets;
-    const auto tables = program.tables;
-    // Locals, so the calls inside the loop do not make them reloaded.
-    const std::size_t input_stride = run.input_stride;
-    const std::size_t slot_stride = run.slot_stride;
-    std::size_t input_base = run.input_begin;
-    std::size_t slot_base = run.slot_begin;
-    std::size_t formula = run.first;
-    const std::size_t end = std::size_t{run.first} + run.count;
-    std::size_t top = 0U;
+    const auto below = program.stack;
+    auto inputs = program.inputs.subspan(run.input_begin);
+    auto slots = program.slots.subspan(run.slot_begin);
+    auto targets = program.targets.subspan(run.first, run.count);
+    double top = nan_value;
+    std::size_t depth = 0U;
     // One dispatch loop for the whole run: STORE moves on to the next
     // formula and starts the operations again.
     std::size_t position = 0U;
-    while (position < ops.size()) {
+    while (true) {
         const Op op = ops[position++];
         switch (op.code) {
             case OpCode::NUMBER:
-                stack[top++] = numbers[op.arg];
+                below[depth++] = top;
+                top = numbers[op.arg];
                 break;
             case OpCode::LOAD:
-                stack[top++] = *inputs[input_base + op.arg];
+                below[depth++] = top;
+                top = *inputs[op.arg];
                 break;
             case OpCode::SLOT:
-                stack[top++] = slots[slot_base + op.arg];
+                below[depth++] = top;
+                top = slots[op.arg];
                 break;
             case OpCode::ADD:
-                --top;
-                stack[top - 1U] += stack[top];
+                top = below[--depth] + top;
                 break;
             case OpCode::SUBTRACT:
-                --top;
-                stack[top - 1U] -= stack[top];
+                top = below[--depth] - top;
                 break;
             case OpCode::MULTIPLY:
-                --top;
-                stack[top - 1U] *= stack[top];
+                top = below[--depth] * top;
                 break;
             case OpCode::DIVIDE:
-                --top;
-                stack[top - 1U] /= stack[top];
+                top = below[--depth] / top;
                 break;
             case OpCode::POWER:
             case OpCode::ATAN2:
             case OpCode::MAX:
             case OpCode::MIN:
-                --top;
-                stack[top - 1U] = binary(op.code, stack[top - 1U], stack[top]);
+                top = binary(op.code, below[--depth], top);
                 break;
             case OpCode::ADD_NUMBER:
-                stack[top - 1U] += numbers[op.arg];
+                top += numbers[op.arg];
                 break;
             case OpCode::MULTIPLY_NUMBER:
-                stack[top - 1U] *= numbers[op.arg];
+                top *= numbers[op.arg];
                 break;
             case OpCode::ADD_SLOT:
-                stack[top - 1U] += slots[slot_base + op.arg];
+                top += slots[op.arg];
                 break;
             case OpCode::SUBTRACT_SLOT:
-                stack[top - 1U] -= slots[slot_base + op.arg];
+                top -= slots[op.arg];
                 break;
             case OpCode::MULTIPLY_SLOT:
-                stack[top - 1U] *= slots[slot_base + op.arg];
+                top *= slots[op.arg];
                 break;
             case OpCode::DIVIDE_SLOT:
-                stack[top - 1U] /= slots[slot_base + op.arg];
+                top /= slots[op.arg];
                 break;
             case OpCode::POWER_INT:
-                stack[top - 1U] = power_int(
-                    stack[top - 1U], std::bit_cast<std::int32_t>(op.arg));
+                top = power_int(top, std::bit_cast<std::int32_t>(op.arg));
                 break;
             case OpCode::TABLE:
-                stack[top - 1U] = table_value(tables[op.arg], stack[top - 1U]);
+                top = table_value(program.tables[op.arg], top);
                 break;
             case OpCode::TABLE_SLOPE:
-                stack[top - 1U] = table_slope(tables[op.arg], stack[top - 1U]);
+                top = table_slope(program.tables[op.arg], top);
                 break;
             case OpCode::ESCAPE:
-                run_escape(program, program.escapes[op.arg], input_base,
-                           slot_base, &stack[top]);
-                ++top;
+                below[depth++] = top;
+                // The visitor writes into storage the analyzers cannot
+                // bound, rather than into a local.
+                run_escape(program, program.escapes[op.arg], inputs, slots,
+                           program.scratch, &below[depth]);
+                top = below[depth];
                 break;
             case OpCode::STORE:
-                *targets[formula] = stack[--top];
-                ++formula;
-                input_base += input_stride;
-                slot_base += slot_stride;
-                if (formula < end) {
-                    position = 0U;
+                *targets.front() = top;
+                if (targets.size() == 1U) {
+                    return top;
                 }
+                targets = targets.subspan(1U);
+                inputs = inputs.subspan(run.input_stride);
+                slots = slots.subspan(run.slot_stride);
+                position = 0U;
+                depth = 0U;
                 break;
             default:
-                stack[top - 1U] = unary(op.code, stack[top - 1U]);
+                top = unary(op.code, top);
                 break;
         }
     }
-    return top == 0U ? nan_value : stack[top - 1U];
+}
+
+void run_block(const ProgramView& program, const ProgramRun& run,
+               std::size_t begin, std::size_t count, std::span<double> columns,
+               std::span<double> scratch) {
+    const auto ops = program.ops.subspan(run.op_begin);
+    const std::size_t input_stride = run.input_stride;
+    const std::size_t slot_stride = run.slot_stride;
+    const auto inputs =
+        program.inputs.subspan(run.input_begin + (begin * input_stride));
+    const auto slots =
+        program.slots.subspan(run.slot_begin + (begin * slot_stride));
+    const auto targets = program.targets.subspan(run.first + begin, count);
+    // Column i holds stack level i of every formula of the block.
+    const auto column = [columns, count](std::size_t level) {
+        return columns.subspan(level * block_formulas, count);
+    };
+    std::size_t depth = 0U;
+    for (std::size_t position = 0U;; ++position) {
+        const Op op = ops[position];
+        switch (op.code) {
+            case OpCode::NUMBER:
+                std::ranges::fill(column(depth++), program.numbers[op.arg]);
+                break;
+            case OpCode::LOAD:
+                load_column(column(depth++), inputs.subspan(op.arg),
+                            input_stride);
+                break;
+            case OpCode::SLOT:
+                number_column(column(depth++), slots.subspan(op.arg),
+                              slot_stride);
+                break;
+            case OpCode::ADD:
+            case OpCode::SUBTRACT:
+            case OpCode::MULTIPLY:
+            case OpCode::DIVIDE:
+            case OpCode::POWER:
+            case OpCode::ATAN2:
+            case OpCode::MAX:
+            case OpCode::MIN:
+                --depth;
+                binary_columns(op.code, column(depth - 1U), column(depth));
+                break;
+            case OpCode::ADD_NUMBER: {
+                const double number = program.numbers[op.arg];
+                each_value(column(depth - 1U),
+                           [number](double value) { return value + number; });
+                break;
+            }
+            case OpCode::MULTIPLY_NUMBER: {
+                const double number = program.numbers[op.arg];
+                each_value(column(depth - 1U),
+                           [number](double value) { return value * number; });
+                break;
+            }
+            case OpCode::ADD_SLOT:
+            case OpCode::SUBTRACT_SLOT:
+            case OpCode::MULTIPLY_SLOT:
+            case OpCode::DIVIDE_SLOT:
+                slot_columns(op.code, column(depth - 1U), slots.subspan(op.arg),
+                             slot_stride);
+                break;
+            case OpCode::POWER_INT: {
+                const auto exponent = std::bit_cast<std::int32_t>(op.arg);
+                each_value(column(depth - 1U), [exponent](double value) {
+                    return power_int(value, exponent);
+                });
+                break;
+            }
+            case OpCode::TABLE: {
+                // A copy: the stores to the column would otherwise make the
+                // compiler read the view again for every formula.
+                const TableView table = program.tables[op.arg];
+                each_value(column(depth - 1U), [table](double value) {
+                    return table_value(table, value);
+                });
+                break;
+            }
+            case OpCode::TABLE_SLOPE: {
+                const TableView table = program.tables[op.arg];
+                each_value(column(depth - 1U), [table](double value) {
+                    return table_slope(table, value);
+                });
+                break;
+            }
+            case OpCode::ESCAPE: {
+                const auto values = column(depth++);
+                const auto& escape = program.escapes[op.arg];
+                for (std::size_t formula = 0U; formula < count; ++formula) {
+                    run_escape(program, escape,
+                               inputs.subspan(formula * input_stride),
+                               slots.subspan(formula * slot_stride), scratch,
+                               &values[formula]);
+                }
+                break;
+            }
+            case OpCode::STORE: {
+                const auto values = column(depth - 1U);
+                for (std::size_t formula = 0U; formula < count; ++formula) {
+                    *targets[formula] = values[formula];
+                }
+                return;
+            }
+            default:
+                unary_column(op.code, column(depth - 1U));
+                break;
+        }
+    }
 }
 
 double evaluate_lowered(const LoweredExpression& lowered,
@@ -899,9 +1113,14 @@ double evaluate_lowered(const LoweredExpression& lowered,
                         std::span<const double> slot_values,
                         std::span<const TableView> tables) {
     std::vector<double> values(input_values.begin(), input_values.end());
-    std::vector<double*> inputs(values.size());
+    std::vector<const double*> inputs(values.size());
     std::ranges::transform(values, inputs.begin(),
                            [](double& value) { return &value; });
+    std::vector<Op> ops(lowered.ops.begin(), lowered.ops.end());
+    ops.push_back(make_op(OpCode::STORE));
+    // STORE writes through targets; the result lands in the vector.
+    std::vector<double> result(1U, nan_value);
+    const std::vector<double*> targets{result.data()};
 
     std::vector<EscapeView> escapes;
     std::vector<std::uint32_t> escape_inputs;
@@ -915,27 +1134,33 @@ double evaluate_lowered(const LoweredExpression& lowered,
         widest = std::max(widest, escape.inputs.size());
     }
 
-    std::vector<double> stack(std::max<std::size_t>(lowered.stack_depth, 1U));
+    std::vector<double> stack(std::size_t{lowered.stack_depth} + 1U);
     std::vector<double> scratch(widest);
-    const ProgramView program{.ops = lowered.ops,
+    const ProgramView program{.ops = ops,
                               .numbers = lowered.numbers,
                               .inputs = inputs,
                               .slots = slot_values,
-                              .targets = {},
+                              .targets = targets,
                               .tables = tables,
                               .escapes = escapes,
                               .escape_inputs = escape_inputs,
+                              .callables = {},
                               .stack = stack,
-                              .scratch = scratch};
+                              .scratch = scratch,
+                              .columns = {},
+                              .scratch_count = scratch.size(),
+                              .column_count = 0U};
     const ProgramRun run{.op_begin = 0U,
-                         .op_end = to_u32(lowered.ops.size()),
                          .first = 0U,
                          .count = 1U,
                          .input_begin = 0U,
                          .input_stride = 0U,
                          .slot_begin = 0U,
                          .slot_stride = 0U,
-                         .callable = nullptr};
+                         .callable_begin = 0U,
+                         .callables = false,
+                         .blocks = false,
+                         .watch = no_watch};
     return run_formulas(program, run);
 }
 
@@ -1047,6 +1272,7 @@ void FormulaProgram::open_run(const LoweredExpression& lowered,
                               std::uint32_t input_count,
                               std::span<const std::optional<double>> shared,
                               std::span<const TableView> tables) {
+    close_run();
     // An escape reads its numbers from the formula's own, so those stay
     // stored even when shared.
     std::vector<bool> escaped(shared.size(), false);
@@ -1092,15 +1318,17 @@ void FormulaProgram::open_run(const LoweredExpression& lowered,
         _widest = std::max(_widest, escape.inputs.size());
     }
 
-    ProgramRun run{.op_begin = to_u32(_ops.size()),
-                   .op_end = 0U,
-                   .first = to_u32(_targets.size()),
-                   .count = 0U,
-                   .input_begin = to_u32(_inputs.size()),
-                   .input_stride = input_count,
-                   .slot_begin = to_u32(_slots.size()),
-                   .slot_stride = to_u32(_stored_slots.size()),
-                   .callable = nullptr};
+    const ProgramRun run{.op_begin = to_u32(_ops.size()),
+                         .first = to_u32(_targets.size()),
+                         .count = 0U,
+                         .input_begin = to_u32(_inputs.size()),
+                         .input_stride = input_count,
+                         .slot_begin = to_u32(_slots.size()),
+                         .slot_stride = to_u32(_stored_slots.size()),
+                         .callable_begin = 0U,
+                         .callables = false,
+                         .blocks = false,
+                         .watch = no_watch};
     for (auto op : lowered.ops) {
         switch (op.code) {
             case OpCode::NUMBER:
@@ -1128,13 +1356,12 @@ void FormulaProgram::open_run(const LoweredExpression& lowered,
         push_op(op, run.op_begin);
     }
     _ops.push_back(make_op(OpCode::STORE));
-    run.op_end = to_u32(_ops.size());
     _runs.push_back(run);
     _depth = std::max<std::size_t>(_depth, lowered.stack_depth);
 }
 
 void FormulaProgram::add_formula(FormulaRef formula, double* target,
-                                 std::span<double* const> inputs,
+                                 std::span<const double* const> inputs,
                                  std::span<const double> slots) {
     _targets.push_back(target);
     _formulas.push_back(formula);
@@ -1146,22 +1373,136 @@ void FormulaProgram::add_formula(FormulaRef formula, double* target,
 
 void FormulaProgram::add_callable(CallableFormula& callable, FormulaRef formula,
                                   double* target) {
-    _runs.push_back(ProgramRun{.op_begin = to_u32(_ops.size()),
-                               .op_end = to_u32(_ops.size()),
-                               .first = to_u32(_targets.size()),
-                               .count = 1U,
-                               .input_begin = to_u32(_inputs.size()),
-                               .input_stride = 0U,
-                               .slot_begin = to_u32(_slots.size()),
-                               .slot_stride = 0U,
-                               .callable = &callable});
+    if (_runs.empty() || !_runs.back().callables) {
+        close_run();
+        _runs.push_back(ProgramRun{.op_begin = to_u32(_ops.size()),
+                                   .first = to_u32(_targets.size()),
+                                   .count = 0U,
+                                   .input_begin = to_u32(_inputs.size()),
+                                   .input_stride = 0U,
+                                   .slot_begin = to_u32(_slots.size()),
+                                   .slot_stride = 0U,
+                                   .callable_begin = to_u32(_callables.size()),
+                                   .callables = true,
+                                   .blocks = false,
+                                   .watch = no_watch});
+    }
+    ++_runs.back().count;
+    _callables.push_back(&callable);
     _targets.push_back(target);
     _formulas.push_back(formula);
 }
 
+void FormulaProgram::close_run() {
+    if (_runs.empty() || _runs.back().callables) {
+        return;
+    }
+    auto& run = _runs.back();
+    // Independent formulas read no formula target: nothing to check.
+    if (!_independent.has_value() || (_runs.size() <= *_independent)) {
+        run.blocks = true;
+        return;
+    }
+    // A formula reading the target of another formula of the run must see
+    // it written first, which a block (all loads before all stores) would
+    // not do. Its own target is fine: it is read before it is written
+    // either way.
+    const auto targets = std::span(_targets).subspan(run.first, run.count);
+    std::vector<const double*> sorted(targets.begin(), targets.end());
+    std::ranges::sort(sorted);
+    const auto inputs = std::span(_inputs).subspan(
+        run.input_begin, std::size_t{run.count} * run.input_stride);
+    run.blocks = true;
+    for (std::size_t formula = 0U; formula < run.count; ++formula) {
+        const auto own =
+            inputs.subspan(formula * run.input_stride, run.input_stride);
+        const bool reads_other =
+            std::ranges::any_of(own, [&](const double* input) {
+                return (input != targets[formula]) &&
+                       std::ranges::binary_search(sorted, input);
+            });
+        if (reads_other) {
+            run.blocks = false;
+            return;
+        }
+    }
+}
+
+void FormulaProgram::watch_run(std::span<const std::uint64_t* const> changed) {
+    auto& run = _runs.back();
+    run.watch = to_u32(_watches.size());
+    _watches.push_back({.first_changed = to_u32(_changed.size()),
+                        .changed_count = to_u32(changed.size()),
+                        .first_value = to_u32(_values.size()),
+                        .evaluated = false,
+                        .seen = 0U});
+    _changed.insert(_changed.end(), changed.begin(), changed.end());
+    _values.resize(_values.size() + run.count, 0.0);
+}
+
+bool FormulaProgram::replay(const ProgramRun& run, std::uint64_t changes) {
+    auto& watch = _watches[run.watch];
+    if (!watch.evaluated) {
+        return false;
+    }
+    if (changes != watch.seen) {
+        // Something changed since; the run only cares about what it reads.
+        const auto changed = std::span(_changed).subspan(watch.first_changed,
+                                                         watch.changed_count);
+        const auto seen = watch.seen;
+        if (std::ranges::any_of(changed, [seen](const std::uint64_t* last) {
+                return *last > seen;
+            })) {
+            return false;
+        }
+        watch.seen = changes;
+    }
+    const auto values =
+        std::span(_values).subspan(watch.first_value, run.count);
+    const auto targets = std::span(_targets).subspan(run.first, run.count);
+    for (std::size_t formula = 0U; formula < run.count; ++formula) {
+        *targets[formula] = values[formula];
+    }
+    return true;
+}
+
+void FormulaProgram::record(const ProgramRun& run, std::uint64_t changes) {
+    auto& watch = _watches[run.watch];
+    const auto values =
+        std::span(_values).subspan(watch.first_value, run.count);
+    const auto targets = std::span(_targets).subspan(run.first, run.count);
+    for (std::size_t formula = 0U; formula < run.count; ++formula) {
+        values[formula] = *targets[formula];
+    }
+    watch.seen = changes;
+    watch.evaluated = true;
+}
+
 void FormulaProgram::finish() {
-    _stack.assign(_depth, 0.0);
-    _scratch.assign(_widest, 0.0);
+    close_run();
+    // One more than the deepest expression: an escape writes its result
+    // just above the values under the top.
+    _stack.assign(_depth + 1U, 0.0);
+    _scratch.assign(scratch_stride(), 0.0);
+    _plans.assign(_runs.size(), GroupPlan{});
+    _columns.assign((_depth + 1U) * block_formulas, 0.0);
+}
+
+void FormulaProgram::end_independent() { _independent = _runs.size(); }
+
+void FormulaProgram::reserve_workers(std::size_t workers) {
+    const std::size_t columns = (_depth + 1U) * block_formulas;
+    if (_columns.size() < workers * columns) {
+        _columns.resize(workers * columns, 0.0);
+        _scratch.resize(workers * scratch_stride(), 0.0);
+    }
+}
+
+std::size_t FormulaProgram::scratch_stride() const noexcept {
+    // A cache line of padding after each worker's values, so two workers
+    // never write to the same line.
+    constexpr std::size_t line = 64U / sizeof(double);
+    return _widest == 0U ? 0U : (((_widest + line - 1U) / line) + 1U) * line;
 }
 
 ProgramView FormulaProgram::view() {
@@ -1173,8 +1514,12 @@ ProgramView FormulaProgram::view() {
             .tables = _tables,
             .escapes = _escapes,
             .escape_inputs = _escape_inputs,
+            .callables = _callables,
             .stack = _stack,
-            .scratch = _scratch};
+            .scratch = _scratch,
+            .columns = _columns,
+            .scratch_count = scratch_stride(),
+            .column_count = (_depth + 1U) * block_formulas};
 }
 
 }  // namespace pycanha::detail

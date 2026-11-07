@@ -69,6 +69,7 @@ set(UNIT_TEST_SOURCES
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/parameters/test_generated_formulas.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/parameters/test_formula_templates.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/parameters/test_formula_staleness.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/parameters/test_formula_blocks.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/solvers/test_steady_state.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/solvers/test_crank_nicolson.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/solvers/test_crank_nicolson_outputs.cpp"
@@ -102,6 +103,8 @@ set(UNIT_TEST_SOURCES
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/tmm/thermaldata/test_sparse_time_series.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/tmm/thermaldata/test_thermaldata.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/test_logger.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/test_threads.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/utils/test_thread_pool.cpp"
 )
 
 set(API_TEST_SOURCES

@@ -1,8 +1,12 @@
 #pragma once
 
+#include <atomic>
+#include <cstddef>
 #include <cstdint>
 #include <limits>
+#include <span>
 #include <string>
+#include <vector>
 
 #include "pycanha-core/globals.hpp"
 #include "pycanha-core/parameters/origin.hpp"
@@ -37,14 +41,21 @@ enum class TableGeneration : std::uint8_t {
 
 namespace detail {
 
+class ParameterAccess;
+
 // The queries of one table that fell outside its range since the last reset.
-// Written only on the out-of-range branch of a lookup.
+// Written only on the out-of-range branch of a lookup. Formulas may be
+// evaluated on several threads: note() reads the flag and the range through
+// atomic references and writes under a lock, and "first" is the first query
+// recorded.
 struct TableRangeRecord {
-    bool out_of_range{false};
+    alignas(std::atomic_ref<bool>::required_alignment) bool out_of_range{false};
     double first_time{std::numeric_limits<double>::quiet_NaN()};
     double first_argument{std::numeric_limits<double>::quiet_NaN()};
-    double min_argument{std::numeric_limits<double>::quiet_NaN()};
-    double max_argument{std::numeric_limits<double>::quiet_NaN()};
+    alignas(std::atomic_ref<double>::required_alignment) double min_argument{
+        std::numeric_limits<double>::quiet_NaN()};
+    alignas(std::atomic_ref<double>::required_alignment) double max_argument{
+        std::numeric_limits<double>::quiet_NaN()};
 
     void note(double argument, const double* time) noexcept;
     void reset() noexcept { *this = TableRangeRecord{}; }
@@ -56,6 +67,8 @@ struct TableRangeRecord {
 struct TableView {
     const double* x{nullptr};
     const double* y{nullptr};
+    // slopes[i] is the slope of the segment [x[i], x[i + 1]].
+    const double* slopes{nullptr};
     Index size{0};
     InterpolationMethod interp{InterpolationMethod::Linear};
     ExtrapolationMethod extrap{ExtrapolationMethod::Constant};
@@ -67,11 +80,42 @@ struct TableView {
     const std::string* name{nullptr};
 };
 
+// table_value for every case: the stepped interpolations, one-point tables
+// and the queries outside the range.
+[[nodiscard]] double table_value_general(const TableView& table,
+                                         double argument);
+
 // The interpolated value at `argument`. Outside the range: `Linear`
 // extrapolates silently, `Constant` holds the end value and records the
 // query, `Throw` throws std::out_of_range. A NaN argument is recorded and
 // gives NaN.
-[[nodiscard]] double table_value(const TableView& table, double argument);
+//
+// Inline for the formula evaluator: linear interpolation inside the range
+// runs here with no call, everything else in table_value_general.
+[[nodiscard]] inline double table_value(const TableView& table,
+                                        double argument) {
+    const std::span<const double> x(table.x,
+                                    static_cast<std::size_t>(table.size));
+    // False for a NaN argument too, which takes the general path.
+    if ((table.interp != InterpolationMethod::Linear) || (x.size() < 2U) ||
+        !(argument >= x.front()) || !(argument <= x.back())) {
+        return table_value_general(table, argument);
+    }
+    // The segment [lower, lower + 1] holding the argument: the last point
+    // not above it, at most the second to last. Conditional moves rather
+    // than branches, since the arguments of consecutive lookups differ.
+    std::size_t lower = 0U;
+    std::size_t count = x.size() - 1U;
+    while (count > 1U) {
+        const std::size_t half = count / 2U;
+        lower = (x[lower + half] <= argument) ? lower + half : lower;
+        count -= half;
+    }
+    const std::span<const double> y(table.y, x.size());
+    const std::span<const double> slopes(table.slopes, x.size() - 1U);
+    return y[lower] + ((argument - x[lower]) * slopes[lower]);
+}
+
 // The derivative of table_value with respect to `argument`: the segment
 // slope for `Linear` interpolation, zero for the stepped methods and for
 // `Constant` extrapolation. At a breakpoint it is the slope of the segment
@@ -111,14 +155,24 @@ class Table {
 
   private:
     friend class Parameters;
+    friend class detail::ParameterAccess;
+
+    // Computes _slopes from the data; called whenever the data is written.
+    void update_slopes();
 
     std::string _name;
     LookupTable1D _lookup_table;
+    // The slope of every segment, so a lookup multiplies instead of
+    // dividing. Written in place, so views keep pointing at it.
+    std::vector<double> _slopes;
     std::string _evaluated_at;
     mutable detail::TableRangeRecord _range;
     // Resolved by Parameters for a table evaluated at a parameter.
     Index _argument_idx{-1};
     Index _published_idx{-1};
+    // When the data was last written in place (set_table_values,
+    // set_table_x), on the parameters' change counter.
+    std::uint64_t _changed{0U};
     Origin _origin{Origin::user};
 };
 

@@ -189,6 +189,12 @@ class Formulas {
         return _parameters_with_derivatives;
     }
 
+    // Turns the formulas off: apply_formulas() then only publishes the
+    // tables evaluated at a parameter. Can be changed at any time, also in a
+    // callback during a solve; the solve still validates and compiles the
+    // formulas, so turning them on again needs no compile in the solve.
+    bool active{true};
+
     // Logs every formula's target and value at INFO as it is applied.
     // Opt-in tracing: INFO so that it also works in builds where DEBUG
     // records are compiled away. Applying formulas one at a time is slower.
@@ -279,8 +285,9 @@ class Formulas {
     // compiles nothing. Call it ahead of a solve to pay the compile cost
     // earlier.
     void compile_formulas();
-    // Publishes the tables evaluated at a parameter, compiles if anything
-    // changed since the last compile, and runs the program.
+    // Publishes the tables evaluated at a parameter, then, while `active`,
+    // compiles if anything changed since the last compile and runs the
+    // program.
     void apply_formulas();
     // Builds the derivatives of every shape that reads only parameters, so
     // that a shape without derivatives is reported now.
@@ -430,6 +437,23 @@ class Formulas {
         std::span<const std::size_t> run) const;
     void build_program();
     void run_program();
+    // Calls every callable formula of a callable run.
+    static void call_run(const detail::ProgramView& program,
+                         const detail::ProgramRun& run);
+    // Evaluates one run on the calling thread.
+    void run_alone(const detail::ProgramView& program,
+                   const detail::ProgramRun& run, const std::uint64_t& changes);
+    // Evaluates `runs`, which may run in any order: the blocks of all of
+    // them on up to `threads` threads when that is expected to be faster
+    // (see detail::GroupPlan).
+    void run_group(const detail::ProgramView& program,
+                   std::span<const detail::ProgramRun> runs,
+                   detail::GroupPlan& plan, const std::uint64_t& changes,
+                   int threads);
+    // Runs the block tasks run_group collected, on one thread or several as
+    // `plan` decides (and records).
+    void run_block_tasks(const detail::ProgramView& program,
+                         detail::GroupPlan& plan, int threads);
     void run_program_logged();
 
     std::shared_ptr<ThermalNetwork> _network;
@@ -453,6 +477,9 @@ class Formulas {
     std::optional<Stamp> _validated;
     std::optional<Stamp> _compiled;
     detail::FormulaProgram _program;
+    // Reused by every run_group call.
+    std::vector<detail::BlockTask> _block_tasks;
+    std::vector<const detail::ProgramRun*> _evaluated_watches;
 };
 
 }  // namespace pycanha

@@ -136,8 +136,10 @@ class ThermalMathematicalModel {
     [[nodiscard]] double flow_radiative(Index node_num_1, Index node_num_2);
     [[nodiscard]] double flow_radiative(const std::vector<Index>& node_nums_1,
                                         const std::vector<Index>& node_nums_2);
+    // Turns the user callbacks (C and Python) on or off. The model time and
+    // the formulas are updated in every callback regardless; the formulas
+    // have their own switch, Formulas::active.
     bool callbacks_active = true;
-    bool internal_callbacks_active = true;
     bool c_callbacks_active = false;
     bool python_callbacks_active = false;
 
@@ -181,7 +183,8 @@ class ThermalMathematicalModel {
     solvers::SolverRegistry* _solvers{nullptr};
     solvers::Solver* _current_callback_solver{nullptr};
     EntitiesHelper _entities{*this};
-    double* _time_parameter_ptr{nullptr};
+    // Whether the internal "time" parameter follows `time`.
+    bool _time_synchronized{false};
 
     void associate_resources();
     void initialize_internal_time_parameter();

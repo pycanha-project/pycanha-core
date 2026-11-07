@@ -451,7 +451,8 @@ std::string threads_reason(const Settings& settings,
                            const ResolvedSettings& /*resolved*/,
                            const ResolveContext& /*context*/) {
     return settings.threads.value_or(0) == 0
-               ? "0: MKL's own setting (MKL_NUM_THREADS or the physical cores)"
+               ? "0: the global setting, pycanha::threads() (by default "
+                 "MKL_NUM_THREADS or the physical cores)"
                : std::string{};
 }
 
@@ -730,8 +731,8 @@ constexpr std::array<FieldEntry, field_count> field_table{
           &non_negative_count>({.name = "threads",
                                 .group = "",
                                 .doc = "Threads of the PARDISO and LAPACK "
-                                       "calls; 0 keeps MKL's setting "
-                                       "(MKL_NUM_THREADS).",
+                                       "calls; 0 uses the global setting, "
+                                       "pycanha::threads().",
                                 .mutability = Mutability::LIVE,
                                 .solver_types = all_types},
                                &uses_mkl, only_mkl, &threads_reason),
