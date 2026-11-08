@@ -123,31 +123,6 @@ constexpr std::uint32_t dropped = std::numeric_limits<std::uint32_t>::max();
 // 2, break even at 3 and win from 4.
 constexpr std::uint32_t block_run_minimum = 4U;
 
-// The thread count expected to evaluate blocks that take `serial` ns on one
-// thread fastest, among the powers of two up to `threads` and `threads`
-// itself: each count costs the pool's overhead plus its share of the work.
-// More threads must save at least a fifth of the time, else 1. Nullopt
-// when the pool cannot measure its overhead now.
-[[nodiscard]] std::optional<int> fastest_threads(double serial, int threads) {
-    auto& pool = detail::ThreadPool::shared();
-    int best = 1;
-    double best_time = 0.8 * serial;
-    for (int count = 2;; count = std::min(2 * count, threads)) {
-        const auto overhead = pool.overhead_ns(count);
-        if (!overhead.has_value()) {
-            return std::nullopt;
-        }
-        const double time = *overhead + (serial / count);
-        if (time < best_time) {
-            best = count;
-            best_time = time;
-        }
-        if (count >= threads) {
-            return best;
-        }
-    }
-}
-
 [[nodiscard]] std::uint32_t to_u32(std::size_t value) {
     return static_cast<std::uint32_t>(value);
 }
@@ -1505,34 +1480,69 @@ void Formulas::run_block_tasks(const detail::ProgramView& program,
             run_task(index, 0U);
         }
     };
-    if ((threads < 2) || (_block_tasks.size() < 2U)) {
+    const std::size_t tasks = _block_tasks.size();
+    if ((threads < 2) || (tasks < 2U)) {
         serially();
         return;
-    }
-    if (plan.decided_for != threads) {
-        plan = detail::GroupPlan{
-            .applies = 0U, .decided_for = threads, .threads = 1};
     }
     if (plan.applies == 0U) {
         // Warms the caches for the timed apply.
         serially();
         plan.applies = 1U;
-    } else if (plan.applies == 1U) {
+        return;
+    }
+    if (plan.applies == 1U) {
         const auto start = std::chrono::steady_clock::now();
         serially();
         const std::chrono::duration<double, std::nano> serial =
             std::chrono::steady_clock::now() - start;
-        if (const auto best = fastest_threads(serial.count(), threads);
-            best.has_value()) {
-            plan.threads = *best;
-            plan.applies = 2U;
-        }
-    } else if (plan.threads > 1) {
-        detail::ThreadPool::shared().run(_block_tasks.size(), plan.threads,
-                                         run_task);
+        plan.block_ns = serial.count() / static_cast<double>(tasks);
+        plan.applies = 2U;
+        return;
+    }
+    const int count =
+        fastest_threads(plan.block_ns * static_cast<double>(tasks), threads);
+    if (count > 1) {
+        detail::ThreadPool::shared().run(tasks, count, run_task);
     } else {
         serially();
     }
+}
+
+int Formulas::fastest_threads(double serial_ns, int threads) {
+    // The counts weighed are the powers of two up to `threads` and `threads`
+    // itself, each costing the pool's overhead plus its share of the work.
+    if (_thread_costs_for != threads) {
+        _thread_costs.clear();
+        auto& pool = detail::ThreadPool::shared();
+        for (int count = 2;; count = std::min(2 * count, threads)) {
+            const auto overhead = pool.overhead_ns(count);
+            if (!overhead.has_value()) {
+                // The pool runs another job: one thread now, and the
+                // overheads are fetched again at the next apply.
+                _thread_costs_for = 0;
+                return 1;
+            }
+            _thread_costs.push_back(
+                {.threads = count, .overhead_ns = *overhead});
+            if (count >= threads) {
+                break;
+            }
+        }
+        _thread_costs_for = threads;
+    }
+    // More threads must save at least a fifth of the time.
+    int best = 1;
+    double best_ns = 0.8 * serial_ns;
+    for (const auto& cost : _thread_costs) {
+        const double time_ns =
+            cost.overhead_ns + (serial_ns / static_cast<double>(cost.threads));
+        if (time_ns < best_ns) {
+            best = cost.threads;
+            best_ns = time_ns;
+        }
+    }
+    return best;
 }
 
 void Formulas::run_program_logged() {

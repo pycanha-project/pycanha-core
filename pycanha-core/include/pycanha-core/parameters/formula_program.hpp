@@ -252,15 +252,22 @@ struct BlockTask {
     std::size_t count{0U};
 };
 
-// How the blocks of a group of runs (runs that may be evaluated at the same
-// time) are shared among threads. Decided from one timed apply on the
-// calling thread, after one apply that warms the caches.
+// What decides how the blocks of a group of runs (runs that may be
+// evaluated at the same time) are shared among threads: the time one block
+// takes on one thread, from one timed apply on the calling thread after one
+// apply that warms the caches. Each apply predicts its own time from it,
+// because the parameter-only runs that replay their values leave a varying
+// number of blocks to evaluate.
 struct GroupPlan {
     std::uint8_t applies{0U};
-    // The thread count available when it was decided, and the count chosen
-    // (1: the calling thread alone).
-    int decided_for{0};
+    double block_ns{0.0};
+};
+
+// What running a job on `threads` threads of the pool costs on top of its
+// tasks (ThreadPool::overhead_ns).
+struct ThreadCost {
     int threads{1};
+    double overhead_ns{0.0};
 };
 
 // Formulas compiled into runs, in execution order. The operations of a run

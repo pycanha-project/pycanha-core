@@ -451,9 +451,12 @@ class Formulas {
                    detail::GroupPlan& plan, const std::uint64_t& changes,
                    int threads);
     // Runs the block tasks run_group collected, on one thread or several as
-    // `plan` decides (and records).
+    // `plan` predicts is fastest (and records the time it predicts from).
     void run_block_tasks(const detail::ProgramView& program,
                          detail::GroupPlan& plan, int threads);
+    // The thread count, up to `threads`, expected to evaluate blocks that
+    // take `serial_ns` on one thread fastest.
+    [[nodiscard]] int fastest_threads(double serial_ns, int threads);
     void run_program_logged();
 
     std::shared_ptr<ThermalNetwork> _network;
@@ -480,6 +483,10 @@ class Formulas {
     // Reused by every run_group call.
     std::vector<detail::BlockTask> _block_tasks;
     std::vector<const detail::ProgramRun*> _evaluated_watches;
+    // The pool's overhead for each count fastest_threads() weighs with
+    // `_thread_costs_for` threads available; 0 while not fetched.
+    std::vector<detail::ThreadCost> _thread_costs;
+    int _thread_costs_for{0};
 };
 
 }  // namespace pycanha

@@ -17,7 +17,14 @@
 #include "pycanha-core/tmm/node.hpp"
 #include "pycanha-core/tmm/thermalmathematicalmodel.hpp"
 #include "pycanha-core/tmm/thermalnetwork.hpp"
+#include "pycanha-core/utils/thread_pool.hpp"
 #include "pycanha-core/utils/threads.hpp"
+
+#ifdef __linux__
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
+#endif
 
 using namespace pycanha;  // NOLINT(build/namespaces)
 
@@ -92,6 +99,25 @@ double block_difference(const std::string& pattern) {
     }
     return largest;
 }
+
+// `count` nodes at temperatures spread over [200, 400] K, the parameter
+// `tk` = 250 and the table `cp`.
+struct ThreadedModel {
+    std::shared_ptr<ThermalNetwork> network =
+        std::make_shared<ThermalNetwork>();
+    std::shared_ptr<Parameters> parameters = std::make_shared<Parameters>();
+    Formulas formulas{network, parameters};
+
+    explicit ThreadedModel(int count) {
+        for (int number = 1; number <= count; ++number) {
+            Node node(number);
+            node.set_T(200.0 + std::fmod(61.8 * number, 200.0));
+            network->add_node(node);
+        }
+        parameters->add_parameter("tk", 250.0);
+        parameters->add_table("cp", cp_table());
+    }
+};
 
 }  // namespace
 
@@ -277,6 +303,95 @@ TEST_CASE("A table that throws stops formulas evaluated on several threads",
     REQUIRE_THROWS_AS(formulas.apply_formulas(), std::out_of_range);
     set_threads(0);
 }
+
+TEST_CASE("The thread count follows the blocks each apply evaluates",
+          "[formulas][blocks][threads]") {
+    // One group: a long run that reads only parameters and a run of two
+    // blocks that reads temperatures, of cheap formulas. The timed apply
+    // replays the long run, so it evaluates only the two blocks, which take
+    // less time than waking a thread.
+    constexpr int many = 200000;
+    constexpr int few = 512;
+    ThreadedModel model(many);
+    for (int node = 1; node <= many; ++node) {
+        model.formulas.add_formula(
+            "QS" + std::to_string(node),
+            expand("@ * cp(tk)", node, 0.5 + (1e-6 * node)));
+    }
+    for (int node = 1; node <= few; ++node) {
+        model.formulas.add_formula(
+            "QI" + std::to_string(node),
+            expand("@ * cp(T#)", node, 0.5 + (1e-3 * node)));
+    }
+    auto& pool = detail::ThreadPool::shared();
+    // Measured now, so that the applies below run no measuring jobs.
+    REQUIRE(pool.overhead_ns(2).has_value());
+    REQUIRE(pool.overhead_ns(4).has_value());
+
+    set_threads(4);
+    model.formulas.apply_formulas();
+    model.formulas.apply_formulas();
+    // Every block of the long run is evaluated again: they are worth
+    // sharing although the timed apply was not.
+    model.parameters->set_parameter("tk", 260.0);
+    const auto jobs = pool.jobs();
+    model.formulas.apply_formulas();
+    const auto threaded_jobs = pool.jobs() - jobs;
+    set_threads(0);
+    REQUIRE(threaded_jobs == 1U);
+    REQUIRE(model.network->nodes().get_qs(many) ==
+            Catch::Approx((0.5 + (1e-6 * many)) * 930.0));
+}
+
+#ifdef __linux__
+TEST_CASE("A child process evaluates formulas on threads after fork",
+          "[formulas][blocks][threads]") {
+    // Formulas costly enough (an escaped gamma function) that these are
+    // worth sharing among threads.
+    constexpr int many = 20000;
+    ThreadedModel model(many);
+    for (int node = 1; node <= many; ++node) {
+        model.formulas.add_formula(
+            "QI" + std::to_string(node),
+            expand("@ * gamma(T# / 100)", node, 0.5 + (1e-3 * node)));
+    }
+    // From the third apply the blocks are shared among threads, so the pool
+    // has workers when the process is copied.
+    set_threads(2);
+    model.formulas.apply_formulas();
+    model.formulas.apply_formulas();
+    model.formulas.apply_formulas();
+    set_threads(0);
+    auto& nodes = model.network->nodes();
+    const double expected = nodes.get_qi(many);
+    nodes.set_qi(many, 0.0);
+
+    const pid_t child = fork();
+    REQUIRE(child >= 0);
+    if (child == 0) {
+        // The child reports through its exit code alone: 0 when its apply
+        // ran on threads and gave the parent's value. A child that hangs is
+        // ended by its alarm.
+        alarm(60U);
+        int code = 1;
+        try {
+            set_threads(2);
+            model.formulas.apply_formulas();
+            const bool threaded = detail::ThreadPool::shared().jobs() == 1U;
+            code = (threaded && (nodes.get_qi(many) == expected)) ? 0 : 1;
+        } catch (...) {
+            code = 2;
+        }
+        _exit(code);
+    }
+
+    int status = -1;
+    REQUIRE(waitpid(child, &status, 0) == child);
+    // 0 only for a normal exit with code 0; not for a child ended by its
+    // alarm.
+    REQUIRE(status == 0);
+}
+#endif
 
 TEST_CASE("A parameter set by a callable formula reaches later formulas",
           "[formulas][parameters]") {

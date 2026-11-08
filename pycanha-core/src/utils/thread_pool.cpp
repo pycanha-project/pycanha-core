@@ -3,16 +3,25 @@
 #include <algorithm>
 #include <atomic>
 #include <chrono>
+#include <condition_variable>
 #include <cstddef>
 #include <cstdint>
 #include <exception>
+#include <memory>
 #include <mutex>
 #include <optional>
 #include <ratio>
 #include <thread>
 #include <utility>
+#include <vector>
 
 #include "pycanha-core/utils/threads.hpp"
+
+#ifndef _WIN32
+#include <pthread.h>
+
+#include <stdexcept>
+#endif
 
 namespace pycanha::detail {
 
@@ -31,7 +40,142 @@ ThreadCountScope::ThreadCountScope(int threads) noexcept : _previous(_current) {
 
 ThreadCountScope::~ThreadCountScope() { _current = _previous; }
 
+class ThreadPool::State {
+  public:
+    State() = default;
+    // Stops and joins the workers.
+    ~State();
+    State(const State&) = delete;
+    State& operator=(const State&) = delete;
+    State(State&&) = delete;
+    State& operator=(State&&) = delete;
+
+    void run(std::size_t tasks, int threads, const Task& task);
+    [[nodiscard]] std::optional<double> overhead_ns(int threads);
+    [[nodiscard]] std::uint64_t jobs();
+
+  private:
+    // Runs a job with `helpers` workers besides the calling thread, which
+    // holds _busy.
+    void run_job(std::size_t tasks, std::size_t helpers, const Task& task);
+    void work(std::size_t worker);
+    // Runs tasks of the current job until none is left.
+    void take_tasks(std::size_t worker);
+
+    // Held by the job that is running.
+    std::mutex _busy;
+    // overhead_ns() by thread count; 0 while not measured.
+    std::mutex _overhead_mutex;
+    std::vector<double> _overhead;
+    // Guards everything below but _next and _cancel.
+    std::mutex _mutex;
+    std::condition_variable _start;
+    std::condition_variable _done;
+    std::vector<std::thread> _workers;
+    const Task* _task{nullptr};
+    std::size_t _tasks{0U};
+    // Tasks handed out at once.
+    std::size_t _chunk{1U};
+    std::atomic<std::size_t> _next{0U};
+    // Set when a task threw.
+    std::atomic<bool> _cancel{false};
+    // Workers 1 to _helpers take part in the current job; _running of them
+    // have not finished it.
+    std::size_t _helpers{0U};
+    std::size_t _running{0U};
+    std::uint64_t _job{0U};
+    std::exception_ptr _error;
+    bool _stop{false};
+};
+
+#ifndef _WIN32
+// fork() copies a process with only the thread that called it. A pool
+// inherited by the child keeps the parent's worker list, so a job would wait
+// forever for workers that do not exist; its locks and condition variables
+// may also be held or waited on by those threads. The child handler gives
+// every pool a new state while the child still has a single thread.
+class ThreadPool::Registry {
+  public:
+    Registry(const Registry&) = delete;
+    Registry& operator=(const Registry&) = delete;
+    Registry(Registry&&) = delete;
+    Registry& operator=(Registry&&) = delete;
+    ~Registry() = default;
+
+    static void add(ThreadPool* pool) {
+        // Registered once, for the life of the process.
+        static const bool registered =
+            pthread_atfork(&before_fork, &after_fork_in_parent,
+                           &after_fork_in_child) == 0;
+        if (!registered) {
+            throw std::runtime_error(
+                "The thread pool could not register its fork handlers");
+        }
+        auto& registry = instance();
+        const std::scoped_lock lock(registry._mutex);
+        registry._pools.push_back(pool);
+    }
+
+    static void remove(ThreadPool* pool) {
+        auto& registry = instance();
+        const std::scoped_lock lock(registry._mutex);
+        std::erase(registry._pools, pool);
+    }
+
+  private:
+    Registry() = default;
+
+    static Registry& instance() {
+        static Registry registry;
+        return registry;
+    }
+
+    // Keeps the list from changing while the process is copied.
+    static void before_fork() noexcept { instance()._mutex.lock(); }
+    static void after_fork_in_parent() noexcept { instance()._mutex.unlock(); }
+    static void after_fork_in_child() noexcept {
+        auto& registry = instance();
+        for (auto* const pool : registry._pools) {
+            pool->_abandoned.push_back(pool->_state.release());
+            pool->_state = std::make_unique<State>();
+        }
+        // Locked by this thread, the one that called fork().
+        registry._mutex.unlock();
+    }
+
+    std::mutex _mutex;
+    std::vector<ThreadPool*> _pools;
+};
+#endif
+
+ThreadPool::ThreadPool() : _state(std::make_unique<State>()) {
+#ifndef _WIN32
+    Registry::add(this);
+#endif
+}
+
 ThreadPool::~ThreadPool() {
+#ifndef _WIN32
+    Registry::remove(this);
+#endif
+}
+
+ThreadPool& ThreadPool::shared() {
+    static ThreadPool pool;
+    return pool;
+}
+
+void ThreadPool::run(std::size_t tasks, int threads, const Task& task) {
+    _state->run(tasks, threads, task);
+}
+
+std::optional<double> ThreadPool::overhead_ns(int threads) {
+    return _state->overhead_ns(threads);
+}
+
+std::uint64_t ThreadPool::jobs() { return _state->jobs(); }
+
+ThreadPool::State::~State() {
     {
         const std::scoped_lock lock(_mutex);
         _stop = true;
@@ -42,12 +186,7 @@ ThreadPool::~ThreadPool() {
     }
 }
 
-ThreadPool& ThreadPool::shared() {
-    static ThreadPool pool;
-    return pool;
-}
-
-void ThreadPool::run(std::size_t tasks, int threads, const Task& task) {
+void ThreadPool::State::run(std::size_t tasks, int threads, const Task& task) {
     const std::size_t helpers =
         (threads > 1) && (tasks > 1U)
             ? std::min(static_cast<std::size_t>(threads), tasks) - 1U
@@ -62,7 +201,7 @@ void ThreadPool::run(std::size_t tasks, int threads, const Task& task) {
     run_job(tasks, helpers, task);
 }
 
-std::optional<double> ThreadPool::overhead_ns(int threads) {
+std::optional<double> ThreadPool::State::overhead_ns(int threads) {
     if (threads < 2) {
         return 0.0;
     }
@@ -99,8 +238,13 @@ std::optional<double> ThreadPool::overhead_ns(int threads) {
     return fastest;
 }
 
-void ThreadPool::run_job(std::size_t tasks, std::size_t helpers,
-                         const Task& task) {
+std::uint64_t ThreadPool::State::jobs() {
+    const std::scoped_lock lock(_mutex);
+    return _job;
+}
+
+void ThreadPool::State::run_job(std::size_t tasks, std::size_t helpers,
+                                const Task& task) {
     {
         const std::scoped_lock lock(_mutex);
         while (_workers.size() < helpers) {
@@ -135,7 +279,7 @@ void ThreadPool::run_job(std::size_t tasks, std::size_t helpers,
     }
 }
 
-void ThreadPool::work(std::size_t worker) {
+void ThreadPool::State::work(std::size_t worker) {
     std::uint64_t seen = 0U;
     while (true) {
         {
@@ -160,7 +304,7 @@ void ThreadPool::work(std::size_t worker) {
     }
 }
 
-void ThreadPool::take_tasks(std::size_t worker) {
+void ThreadPool::State::take_tasks(std::size_t worker) {
     while (true) {
         const std::size_t first =
             _next.fetch_add(_chunk, std::memory_order_relaxed);
