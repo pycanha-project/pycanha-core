@@ -72,6 +72,7 @@ set(UNIT_TEST_SOURCES
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/parameters/test_formula_blocks.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/solvers/test_steady_state.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/solvers/test_crank_nicolson.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/unit/solvers/test_capacity_scheme.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/solvers/test_crank_nicolson_outputs.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/solvers/test_jacobian_propagation.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/unit/solvers/test_callback_registry.cpp"

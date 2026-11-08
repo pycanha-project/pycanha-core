@@ -395,6 +395,7 @@ void JacobianPropagation::solve() {
             }
         }
         record_step_iterations(time_iter, time, iterations, converged);
+        _inside_step = false;
 
         // K Td + Qd: the network holds -K + 2C/dt after solve_step().
         _network->multiply(Td, _kt_q_n0);
