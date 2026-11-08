@@ -76,9 +76,10 @@ Eigen::VectorXd densify_sparse_vector(const Eigen::SparseVector<double>& sparse,
     return dense;
 }
 
-// The node attribute stored as a sparse vector, null for T and C.
-const Eigen::SparseVector<double>* sparse_attribute(
-    const Nodes& nodes, DataModelAttribute attribute) {
+// The node load behind the attribute (empty or one value per node), null for
+// any other attribute.
+const std::vector<double>* load_attribute(const Nodes& nodes,
+                                          DataModelAttribute attribute) {
     switch (attribute) {
         case DataModelAttribute::QS:
             return &nodes.qs_vector;
@@ -90,6 +91,15 @@ const Eigen::SparseVector<double>* sparse_attribute(
             return &nodes.qi_vector;
         case DataModelAttribute::QR:
             return &nodes.qr_vector;
+        default:
+            return nullptr;
+    }
+}
+
+// The node attribute stored as a sparse vector, null for T, C and the loads.
+const Eigen::SparseVector<double>* sparse_attribute(
+    const Nodes& nodes, DataModelAttribute attribute) {
+    switch (attribute) {
         case DataModelAttribute::A:
             return &nodes.a_vector;
         case DataModelAttribute::APH:
@@ -280,7 +290,8 @@ void CrankNicolson::prepare(bool log_warnings) {
                               .fixed_couplings = _resolved.fixed_couplings});
 
     _rhs = VectorXd::Zero(nd);
-    _heat_flux_n0 = VectorXd::Zero(nd);
+    _capacities_n0 = VectorXd::Zero(nd);
+    _t_n0 = VectorXd::Zero(nd);
     _capacities = VectorXd::Zero(nd);
     _capacities_inverse = VectorXd::Zero(nd);
     _capacity_diagonal = VectorXd::Zero(nd);
@@ -308,8 +319,9 @@ SolverMemory CrankNicolson::memory_now() const {
         memory.exact = _network->factor_bytes_exact();
         memory.matrix = _network->matrix_bytes();
     }
-    memory.matrix += bytes_of(_rhs) + bytes_of(_heat_flux_n0) +
-                     bytes_of(_capacities) + bytes_of(_capacities_inverse) +
+    memory.matrix += bytes_of(_rhs) + bytes_of(_capacities_n0) +
+                     bytes_of(_t_n0) + bytes_of(_capacities) +
+                     bytes_of(_capacities_inverse) +
                      bytes_of(_capacity_diagonal) + bytes_of(_t3_domain) +
                      bytes_of(_t4_domain) + bytes_of(_t4_boundary) +
                      bytes_of(_radiation_linear_term) + bytes_of(_kt_q_n0) +
@@ -390,6 +402,16 @@ void CrankNicolson::save_output_data() {
             set_dense_output(model, attribute, idata_out, time, T);
         } else if (attribute == DataModelAttribute::C) {
             set_dense_output(model, attribute, idata_out, time, C);
+        } else if (const auto* load = load_attribute(tmm.nodes(), attribute);
+                   load != nullptr) {
+            if (std::cmp_equal(load->size(), N)) {
+                set_dense_output(
+                    model, attribute, idata_out, time,
+                    Eigen::Map<const Eigen::VectorXd>(load->data(), N));
+            } else {
+                set_dense_output(model, attribute, idata_out, time,
+                                 Eigen::VectorXd::Zero(N));
+            }
         } else {
             set_dense_output(model, attribute, idata_out, time,
                              densify_sparse_vector(
@@ -434,6 +456,7 @@ void CrankNicolson::restart_solve() {
     }
 
     _converged = false;
+    _inside_step = false;
     time = _resolved.start_time;
     tmm.time = time;
 
@@ -491,6 +514,7 @@ void CrankNicolson::solve() {
             }
         }
         record_step_iterations(time_iter, time, iterations, converged);
+        _inside_step = false;
 
         callback_transient_after_timestep();
         outputs();
@@ -514,10 +538,18 @@ void CrankNicolson::build_capacities() {
     _capacities = Cd;
     _capacities.array() += _resolved.capacity_delta;
     _capacities_inverse = _capacities.cwiseInverse();
-    _capacity_diagonal = (2.0 / _resolved.time_step) * _capacities;
+    if (_inside_step &&
+        _resolved.capacity_scheme == CapacityScheme::AVERAGE_CAPACITY) {
+        // (C^n + C)/2 on the change T - T^n.
+        _capacity_diagonal =
+            (_capacities + _capacities_n0) / _resolved.time_step;
+    } else {
+        _capacity_diagonal = (2.0 / _resolved.time_step) * _capacities;
+    }
 }
 
-// -K + 2C/dt at the current temperatures, couplings and capacities.
+// -K + 2C/dt at the current temperatures, couplings and capacities (with
+// capacity_scheme = AVERAGE_CAPACITY, inside a step, the mean of C and C^n).
 void CrankNicolson::build_conductance_matrix() {
     build_capacities();
     PYCANHA_PROFILE_SCOPE("Linearization");
@@ -530,7 +562,7 @@ void CrankNicolson::build_conductance_matrix() {
 
 void CrankNicolson::build_heat_flux() {
     PYCANHA_PROFILE_SCOPE("Build Q");
-    Q = QI_sp + QS_sp + QA_sp + QE_sp + QR_sp;
+    sum_loads();
     new (&Qd) WrappVectorXd(Q.data(), nd);
     Qd += _radiation_linear_term + KLdb * Tb + KRdb * _t4_boundary;
 }
@@ -540,13 +572,32 @@ void CrankNicolson::store_heat_flux_at_n0() {
     // K Td + Qd, with K = -A: the network holds A + 2C/dt.
     _network->multiply(Td, _kt_q_n0);
     _kt_q_n0 = Qd - _kt_q_n0 + _capacity_diagonal.cwiseProduct(Td);
-    _heat_flux_n0 =
-        _kt_q_n0 + (2.0 / _resolved.time_step) * _capacities.cwiseProduct(Td);
+    _capacities_n0 = _capacities;
+    _t_n0 = Td;
+    _inside_step = true;
+}
+
+void CrankNicolson::build_rhs() {
+    PYCANHA_PROFILE_SCOPE("Build rhs");
+    if (_resolved.capacity_scheme == CapacityScheme::AVERAGE_CAPACITY) {
+        // (C^n + C)/dt (T - T^n) = f^n + f, f = K T + Q: the diagonal holds
+        // (C^n + C)/dt.
+        _rhs = Qd + _kt_q_n0 + _capacity_diagonal.cwiseProduct(_t_n0);
+        return;
+    }
+    // 2C/dt (T - T^n) = C (f^n / C^n) + f: the rates of change at both ends,
+    // thesis eq. 4.24. A node without capacity at the start of the step
+    // keeps f^n, as when C is constant.
+    _rhs = Qd + (2.0 / _resolved.time_step) * _capacities.cwiseProduct(_t_n0);
+    _rhs.array() +=
+        (_capacities_n0.array() > 0.0)
+            .select(_capacities.array() / _capacities_n0.array(), 1.0) *
+        _kt_q_n0.array();
 }
 
 void CrankNicolson::solve_step() {
     PYCANHA_PROFILE_SCOPE("Solver Step");
-    _rhs = Qd + _heat_flux_n0;
+    build_rhs();
     if (_resolved.reuse_factors) {
         // Solved for the change from the last inner iteration: the residual
         // of an iteration on old factors then stays in a change that shrinks

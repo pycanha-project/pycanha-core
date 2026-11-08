@@ -27,7 +27,8 @@ namespace pycanha::solvers::transient {
  * required. The factorization is LU, or Cholesky for a model without
  * radiative couplings (see Settings: factorization). Every inner iteration
  * reads the couplings and the capacities again, so formulas and callbacks
- * may change them during the run; with fixed_couplings they are read once
+ * may change them during the run; capacity_scheme sets how a capacity that
+ * changes over a step is integrated. With fixed_couplings they are read once
  * per solve() and the matrix is factorized again only when the temperatures
  * change it. With reuse_factors each inner iteration solves for the
  * temperature change, so the residual of the iteration on old factors does
@@ -91,7 +92,10 @@ class CrankNicolson : public Solver {
     void build_capacities();
     void build_conductance_matrix();
     void build_heat_flux();
+    // K T + Q at the start of the step, with its capacities and temperatures.
     void store_heat_flux_at_n0();
+    // The right-hand side of the step for capacity_scheme.
+    void build_rhs();
     void solve_step();
     void release() noexcept;
 
@@ -110,7 +114,13 @@ class CrankNicolson : public Solver {
     bool _symmetric = false;
     VectorXd _rhs;
 
-    VectorXd _heat_flux_n0;
+    // The capacities and the temperatures at the start of the step.
+    VectorXd _capacities_n0;
+    VectorXd _t_n0;
+    // From store_heat_flux_at_n0() to the end of the step's iterations: with
+    // capacity_scheme = AVERAGE_CAPACITY the diagonal then holds the mean
+    // capacity.
+    bool _inside_step = false;
     VectorXd _capacities;
     VectorXd _capacities_inverse;
     // 2C/dt

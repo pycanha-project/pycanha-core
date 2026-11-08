@@ -22,6 +22,7 @@ namespace {
 using pycanha::DataModelAttribute;
 using pycanha::solvers::AccelerateOrdering;
 using pycanha::solvers::Backend;
+using pycanha::solvers::CapacityScheme;
 using pycanha::solvers::EigenOrdering;
 using pycanha::solvers::Factorization;
 using pycanha::solvers::Mutability;
@@ -141,6 +142,7 @@ Settings fully_set() {
         std::set{DataModelAttribute::T, DataModelAttribute::QI};
     settings.output_name = "run";
     settings.capacity_delta = 1e-6;
+    settings.capacity_scheme = CapacityScheme::AVERAGE_CAPACITY;
     settings.pardiso.ordering = PardisoOrdering::MIN_DEGREE;
     settings.pardiso.level = PardisoLevel::ONE_LEVEL;
     settings.pardiso.iparm = std::map<int, int>{{3, 61}};
@@ -222,6 +224,7 @@ TEST_CASE("Transient defaults", "[solver][settings]") {
     REQUIRE(resolved.output_attributes ==
             std::set<DataModelAttribute>{DataModelAttribute::T});
     REQUIRE(resolved.capacity_delta == Catch::Approx(1e-7));
+    REQUIRE(resolved.capacity_scheme == CapacityScheme::AVERAGE_RATE);
     REQUIRE(resolved.output_interval == 0.0);
     REQUIRE(resolved.storage == Storage::SPARSE);
     // No radiative couplings: the matrix is symmetric.

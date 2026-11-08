@@ -9,17 +9,19 @@ For a concise technical overview of the library itself, start with the introduct
 
 1. [Introduction](introduction.md): current implementation status, subsystem layout, and a minimal end-to-end solver example.
 
-2. [Logging and profiling](logging.md): logger usage, runtime level control, and profiling configuration.
+2. [Formulas](formulas.md): formula kinds, evaluation order, derivatives, and callable formulas.
 
-3. [Intel MKL configuration](mkl-configuration.md): current MKL integration, runtime requirements, and fallback behavior.
+3. [Logging and profiling](logging.md): logger usage, runtime level control, and profiling configuration.
 
-4. [Tools](tools.md): formatting, static analysis, testing, packaging, and documentation tooling.
+4. [Intel MKL configuration](mkl-configuration.md): current MKL integration, runtime requirements, and fallback behavior.
 
-5. [Development workflow](workflow.md): branch, pull request, release, and documentation publishing expectations.
+5. [Tools](tools.md): formatting, static analysis, testing, packaging, and documentation tooling.
 
-6. [CI/CD](cicd.md): current GitHub workflow coverage for build, test, documentation, and deployment.
+6. [Development workflow](workflow.md): branch, pull request, release, and documentation publishing expectations.
 
-7. [FAQ](faq.md)
+7. [CI/CD](cicd.md): current GitHub workflow coverage for build, test, documentation, and deployment.
+
+8. [FAQ](faq.md)
 
 Check also the **Classes** and **Files** sections for API-level browsing.
 

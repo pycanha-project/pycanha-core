@@ -731,3 +731,35 @@ TEST_CASE("Factor reuse never solves with factors of an older matrix",
     REQUIRE(models::max_difference(models::temperatures(model), reference) <
             1e-4);
 }
+
+namespace {
+
+// Sets a solar load, on a model that has none, after the first pass only.
+void set_solar_load_once(pycanha::ThermalMathematicalModel* model) {
+    auto& state = models::callback_state();
+    ++state.calls;
+    if (state.calls == 1) {
+        static_cast<void>(model->nodes().set_qs(1, 5.0));
+    }
+}
+
+}  // namespace
+
+TEST_CASE("SteadyState picks up a load first set during the solve",
+          "[solver][steady][loads]") {
+    const auto model = models::make_settling_model();
+    REQUIRE(model->nodes().qs_vector.empty());
+    models::callback_state() = models::CallbackState{};
+    model->c_extern_callback_solver_loop = set_solar_load_once;
+    model->c_callbacks_active = true;
+
+    SteadyState solver(model);
+    solver.initialize();
+    solver.solve();
+    model->c_callbacks_active = false;
+
+    REQUIRE(solver.converged());
+    REQUIRE(model->nodes().qs_vector.size() == 2U);
+    // 5 W through 1 W/K above the 300 K sink.
+    REQUIRE(model->nodes().get_T(1) == Catch::Approx(305.0));
+}

@@ -105,6 +105,23 @@ enum class AccelerateOrdering : std::uint8_t {
     AMD,
 };
 
+/// How a transient integrates a capacity that changes over a time step (a
+/// formula or a callback that sets it). Both give the same steps when the
+/// capacities are constant.
+enum class CapacityScheme : std::uint8_t {
+    /// The temperature change is the time step times the average of the
+    /// rates of change dT/dt = C^-1 (K T + Q) at the two ends of the step,
+    /// each with its own C (the trapezoidal rule on dT/dt). Second order;
+    /// when C changes over a step the energy balance has an error that also
+    /// shrinks as dt^2.
+    AVERAGE_RATE,
+    /// The average of the capacities at the two ends of the step times the
+    /// temperature change equals the time step times the average heat flow:
+    /// the chord of the enthalpy (the integral of C dT). Second order, and it
+    /// conserves energy exactly when C is linear in T over the step.
+    AVERAGE_CAPACITY,
+};
+
 /// Whether a setting may change while the solver is initialised.
 enum class Mutability : std::uint8_t {
     /// Read at every solve(): it may change at any time.
@@ -128,6 +145,7 @@ enum class Origin : std::uint8_t {
 [[nodiscard]] std::string_view to_string(PardisoLevel level) noexcept;
 [[nodiscard]] std::string_view to_string(EigenOrdering ordering) noexcept;
 [[nodiscard]] std::string_view to_string(AccelerateOrdering ordering) noexcept;
+[[nodiscard]] std::string_view to_string(CapacityScheme scheme) noexcept;
 [[nodiscard]] std::string_view to_string(Mutability mutability) noexcept;
 [[nodiscard]] std::string_view to_string(Origin origin) noexcept;
 
@@ -202,6 +220,7 @@ struct Settings {
     std::optional<std::set<DataModelAttribute>> output_attributes;
     std::optional<std::string> output_name;
     std::optional<double> capacity_delta;
+    std::optional<CapacityScheme> capacity_scheme;
     PardisoSettings pardiso;
     EigenSettings eigen;
     AccelerateSettings accelerate;
@@ -306,6 +325,7 @@ struct ResolvedSettings {
     std::set<DataModelAttribute> output_attributes;
     std::string output_name;
     double capacity_delta = 0.0;
+    CapacityScheme capacity_scheme = CapacityScheme::AVERAGE_RATE;
     ResolvedPardiso pardiso;
     ResolvedEigen eigen;
     ResolvedAccelerate accelerate;

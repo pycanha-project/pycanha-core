@@ -1,12 +1,15 @@
 #include "pycanha-core/solvers/solver.hpp"
 
+#include <spdlog/common.h>
 #include <spdlog/spdlog.h>
 
 #include <algorithm>
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
+#include <exception>
 #include <format>
+#include <initializer_list>
 #include <iterator>
 #include <limits>
 #include <memory>
@@ -31,6 +34,7 @@
 #include "pycanha-core/tmm/thermalnetwork.hpp"
 #include "pycanha-core/utils/logger.hpp"
 #include "pycanha-core/utils/profiling.hpp"
+#include "pycanha-core/utils/thread_pool.hpp"
 
 namespace pycanha::solvers {
 
@@ -145,11 +149,11 @@ Solver::Solver(std::shared_ptr<ThermalMathematicalModel> tmm_shptr,
       C(nullptr, Index{0}),
       Cd(nullptr, Index{0}),
       Cb(nullptr, Index{0}),
-      QI_sp(tmm.nodes().qi_vector),
-      QS_sp(tmm.nodes().qs_vector),
-      QA_sp(tmm.nodes().qa_vector),
-      QE_sp(tmm.nodes().qe_vector),
-      QR_sp(tmm.nodes().qr_vector),
+      QI_load(tmm.nodes().qi_vector),
+      QS_load(tmm.nodes().qs_vector),
+      QA_load(tmm.nodes().qa_vector),
+      QE_load(tmm.nodes().qe_vector),
+      QR_load(tmm.nodes().qr_vector),
       _solver_type(type) {
     _settings.solver_type = type;
 }
@@ -265,6 +269,9 @@ void Solver::callback_transient_time_change() {
     PYCANHA_PROFILE_SCOPE("Callback Time Change");
     {
         const ScopeTimer timer(_report.callback_time);
+        // Formulas applied here use the solver's thread count.
+        const pycanha::detail::ThreadCountScope formula_threads(
+            _resolved.threads);
         const ActiveSolverCallbackScope active_solver_scope(tmm, *this);
         _tmm_shptr->callback_transient_time_change();
     }
@@ -275,6 +282,9 @@ void Solver::callback_solver_loop() {
     PYCANHA_PROFILE_SCOPE("Callback Solver Loop");
     {
         const ScopeTimer timer(_report.callback_time);
+        // Formulas applied here use the solver's thread count.
+        const pycanha::detail::ThreadCountScope formula_threads(
+            _resolved.threads);
         const ActiveSolverCallbackScope active_solver_scope(tmm, *this);
         _tmm_shptr->callback_solver_loop();
     }
@@ -285,6 +295,9 @@ void Solver::callback_transient_after_timestep() {
     PYCANHA_PROFILE_SCOPE("Callback Timestep");
     {
         const ScopeTimer timer(_report.callback_time);
+        // Formulas applied here use the solver's thread count.
+        const pycanha::detail::ThreadCountScope formula_threads(
+            _resolved.threads);
         const ActiveSolverCallbackScope active_solver_scope(tmm, *this);
         _tmm_shptr->callback_transient_after_timestep();
     }
@@ -292,6 +305,7 @@ void Solver::callback_transient_after_timestep() {
 }
 
 void Solver::prepare_formulas_for_execution() {
+    tmm.parameters().reset_table_ranges();
     tmm.formulas().validate_for_execution();
     tmm.formulas().compile_formulas();
     tmm.formulas().lock_parameters_for_execution();
@@ -299,11 +313,63 @@ void Solver::prepare_formulas_for_execution() {
 
 void Solver::release_formulas_after_execution() noexcept {
     tmm.formulas().unlock_parameters();
+    try {
+        report_table_ranges();
+    } catch (const std::exception& exception) {
+        log_noexcept(spdlog::level::err,
+                     std::string("Out-of-range tables not reported: ") +
+                         exception.what());
+    }
+}
+
+// One WARN per solve for every table queried outside its range and held at
+// its end value; extrapolating tables never report.
+void Solver::report_table_ranges() {
+    const auto ranges = tmm.parameters().table_ranges();
+    if (ranges.empty()) {
+        return;
+    }
+    std::string message = "tables queried outside their range, end value held:";
+    for (const auto& range : ranges) {
+        message += std::format(
+            " {} first at time {} with argument {}, arguments {} to {} "
+            "(table range {} to {});",
+            range.table, range.first_time, range.first_argument,
+            range.min_argument, range.max_argument, range.x_min, range.x_max);
+    }
+    message.pop_back();
+    warn(message);
 }
 
 std::int64_t Solver::common_bytes() const noexcept {
     return detail::bytes_of(dTd) + detail::bytes_of(Td_solver) +
            detail::bytes_of(Q);
+}
+
+void Solver::sum_loads() {
+    // Q keeps its storage (Qd and Qb map into it): it is sized N once, and
+    // every assignment below has that size. The first dense load is copied
+    // rather than added to zeros, so one dense load costs one pass over the
+    // nodes, as zeroing Q alone does.
+    Q.resize(N);
+    bool written = false;
+    for (const auto* load :
+         {&QI_load, &QS_load, &QA_load, &QE_load, &QR_load}) {
+        // A load is either empty or holds one value per node.
+        if (!std::cmp_equal(load->size(), N)) {
+            continue;
+        }
+        const Eigen::Map<const VectorXd> values(load->data(), N);
+        if (written) {
+            Q += values;
+        } else {
+            Q = values;
+            written = true;
+        }
+    }
+    if (!written) {
+        Q.setZero();
+    }
 }
 
 void Solver::mark_prepared() {

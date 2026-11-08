@@ -1,3 +1,4 @@
+#include <Eigen/Core>
 #include <catch2/catch_test_macros.hpp>
 #include <cstdint>
 #include <memory>
@@ -5,11 +6,14 @@
 #include <vector>
 
 #include "pycanha-core/config.hpp"
+#include "pycanha-core/parameters/formulas.hpp"
+#include "pycanha-core/parameters/parameters.hpp"
 #include "pycanha-core/solvers/crank_nicolson.hpp"
 #include "pycanha-core/solvers/model_changed_error.hpp"
 #include "pycanha-core/solvers/report.hpp"
 #include "pycanha-core/solvers/settings.hpp"
 #include "pycanha-core/solvers/steady_state.hpp"
+#include "pycanha-core/thermaldata/lookup_table.hpp"
 #include "solver_test_models.hpp"
 
 namespace {
@@ -310,4 +314,33 @@ TEST_CASE("explain() lists contradictions and ignored settings",
     REQUIRE(has_text(text, "Error: reuse_factors = true needs backend"));
     REQUIRE(has_text(text, "Set but not applied to SteadyState"));
     REQUIRE(has_text(text, "end_time"));
+}
+
+TEST_CASE("Tables queried outside their range are reported once per solve",
+          "[solver][report]") {
+    const auto model = models::make_plate(plate_size, /*radiation=*/false);
+    const Eigen::Vector2d x(100.0, 200.0);
+    const Eigen::Vector2d y(2.0, 2.5);
+    model->parameters().add_table("held", pycanha::LookupTable1D(x, y));
+    model->parameters().add_table(
+        "extrapolated",
+        pycanha::LookupTable1D(x, y, pycanha::InterpolationMethod::Linear,
+                               pycanha::ExtrapolationMethod::Linear));
+    model->formulas().add_formula("QI1", "held(T1)");
+    model->formulas().add_formula("QI2", "0 * extrapolated(T2) + 2");
+
+    SteadyState solver(model);
+    solver.initialize();
+    solver.solve();
+    const auto& warnings = solver.report().warnings;
+    REQUIRE(warnings.size() == 1U);
+    REQUIRE(has_text(warnings.front(), "held"));
+    REQUIRE_FALSE(has_text(warnings.front(), "extrapolated"));
+
+    // The next solve starts with a clean record.
+    model->parameters().remove_table("extrapolated");
+    REQUIRE(model->formulas().remove_formula("QI2"));
+    REQUIRE(model->formulas().remove_formula("QI1"));
+    solver.solve();
+    REQUIRE(solver.report().warnings.empty());
 }

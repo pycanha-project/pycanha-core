@@ -17,13 +17,13 @@
 #include <numeric>
 #include <span>
 #include <stdexcept>
-#include <thread>
 #include <utility>
 #include <vector>
 
 #include "csr_assembly.hpp"
 #include "pycanha-core/radiative/results.hpp"
 #include "pycanha-core/radiative/settings.hpp"
+#include "pycanha-core/utils/threads.hpp"
 
 namespace pycanha::radiative::detail {
 
@@ -138,16 +138,16 @@ Weighting::Weighting(const TriangulationConfig& config,
 unsigned worker_count(const AssemblyTuning& tuning, std::size_t work_items,
                       std::size_t cells) {
     constexpr std::size_t parallel_cell_threshold = 1U << 18U;
-    unsigned threads = tuning.threads;
-    if (threads == 0) {
+    unsigned count = tuning.threads;
+    if (count == 0) {
         if (cells < parallel_cell_threshold) {
             return 1;
         }
-        threads = std::thread::hardware_concurrency();
+        count = static_cast<unsigned>(pycanha::threads());
     }
-    threads = std::max(threads, 1U);
+    count = std::max(count, 1U);
     return static_cast<unsigned>(
-        std::min<std::size_t>(threads, std::max<std::size_t>(work_items, 1)));
+        std::min<std::size_t>(count, std::max<std::size_t>(work_items, 1)));
 }
 
 SparseMatrix pack_rows(std::span<const RowEntries> rows, Eigen::Index cols,

@@ -134,13 +134,11 @@ void JacobianPropagation::initialize() {
     }
 
     for (const auto& formula : tmm.formulas().formulas()) {
-        auto* parameter_formula =
-            dynamic_cast<ParameterFormula*>(formula.get());
-        if (parameter_formula == nullptr) {
+        if (formula->kind() != FormulaKind::Parameters) {
             continue;
         }
 
-        parameter_formula->calculate_derivatives();
+        formula->calculate_derivatives();
         const auto* derivatives = formula->get_derivative_values();
         if ((derivatives == nullptr) || derivatives->empty()) {
             continue;
@@ -172,12 +170,21 @@ void JacobianPropagation::collect_parameter_names() {
     _derivative_parameter_names.clear();
 
     std::unordered_set<std::string> seen_parameters;
+    // Parameter -> target of the first formula that reads it together with
+    // entities. Such a formula has no derivatives, so its share of the
+    // sensitivity would be missing without an error.
+    std::unordered_map<std::string, std::string> read_with_entities;
     for (const auto& formula : tmm.formulas().formulas()) {
-        if (dynamic_cast<ParameterFormula*>(formula.get()) == nullptr) {
+        const auto& dependencies = formula->parameter_dependencies();
+        if (formula->kind() != FormulaKind::Parameters) {
+            for (const auto& dependency : dependencies) {
+                if (!read_with_entities.contains(dependency)) {
+                    read_with_entities.emplace(
+                        dependency, formula->entity().string_representation());
+                }
+            }
             continue;
         }
-
-        const auto& dependencies = formula->parameter_dependencies();
 
         std::ranges::copy_if(
             dependencies, std::back_inserter(_parameter_names),
@@ -192,7 +199,14 @@ void JacobianPropagation::collect_parameter_names() {
         if (found == _parameter_names.end()) {
             throw std::invalid_argument(
                 "Derivative parameter '" + parameter_name +
-                "' is not produced by any ParameterFormula");
+                "' is not read by any formula that reads only parameters");
+        }
+        const auto mixed = read_with_entities.find(parameter_name);
+        if (mixed != read_with_entities.end()) {
+            throw std::invalid_argument(
+                "Derivative parameter '" + parameter_name +
+                "' is also read by the formula of " + mixed->second +
+                ", which reads entities and has no derivatives");
         }
         _derivative_parameter_names.push_back(parameter_name);
     }
@@ -381,6 +395,7 @@ void JacobianPropagation::solve() {
             }
         }
         record_step_iterations(time_iter, time, iterations, converged);
+        _inside_step = false;
 
         // K Td + Qd: the network holds -K + 2C/dt after solve_step().
         _network->multiply(Td, _kt_q_n0);

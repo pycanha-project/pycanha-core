@@ -4,6 +4,7 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <initializer_list>
 #include <iterator>
 #include <limits>
 #include <map>
@@ -59,12 +60,12 @@ void require_same_nodes(const Nodes& lhs, const Nodes& rhs) {
     REQUIRE(lhs.get_num_diff_nodes() == rhs.get_num_diff_nodes());
     REQUIRE(lhs.T_vector == rhs.T_vector);
     REQUIRE(lhs.C_vector == rhs.C_vector);
-    const auto sparse_pairs = {std::pair{&lhs.qs_vector, &rhs.qs_vector},
-                               std::pair{&lhs.qa_vector, &rhs.qa_vector},
-                               std::pair{&lhs.qe_vector, &rhs.qe_vector},
-                               std::pair{&lhs.qi_vector, &rhs.qi_vector},
-                               std::pair{&lhs.qr_vector, &rhs.qr_vector},
-                               std::pair{&lhs.a_vector, &rhs.a_vector},
+    for (const auto load :
+         {NodeAttribute::QS, NodeAttribute::QA, NodeAttribute::QE,
+          NodeAttribute::QI, NodeAttribute::QR}) {
+        REQUIRE(lhs.get_values(load) == rhs.get_values(load));
+    }
+    const auto sparse_pairs = {std::pair{&lhs.a_vector, &rhs.a_vector},
                                std::pair{&lhs.fx_vector, &rhs.fx_vector},
                                std::pair{&lhs.fy_vector, &rhs.fy_vector},
                                std::pair{&lhs.fz_vector, &rhs.fz_vector},
@@ -343,8 +344,7 @@ TEST_CASE("couplings follow nodes inserted in the middle of their block",
     }
 }
 
-TEST_CASE("removing a node keeps the sparse attributes aligned",
-          "[nodes][bulk]") {
+TEST_CASE("removing a node keeps the loads aligned", "[nodes][bulk]") {
     Nodes nodes;
     for (const NodeNum number : {1, 2, 3, 4}) {
         Node node(number);
@@ -736,13 +736,23 @@ TEST_CASE("bulk node getters and setters", "[nodes][bulk]") {
     REQUIRE(set.rejected == 1U);
     REQUIRE(nodes.get_qi(2) == 2.5);  // the last value wins
     REQUIRE(nodes.get_qi(4) == 4.0);
-    REQUIRE(nodes.qi_vector.nonZeros() == 2);
+    REQUIRE(nodes.qi_vector.size() == numbers.size());
 
-    // Below the storage threshold a value is removed, not stored.
+    // A load stores every value once dense, however small.
     const std::vector<NodeNum> cleared{4};
     const std::vector<double> tiny{0.5 * ZERO_THR_ATTR};
     REQUIRE(nodes.set_values(NodeAttribute::QI, cleared, tiny).accepted == 1U);
-    REQUIRE(nodes.qi_vector.nonZeros() == 1);
+    REQUIRE(nodes.get_qi(4) == tiny.front());
+    const std::vector<double> zero{0.0};
+    REQUIRE(nodes.set_values(NodeAttribute::QI, cleared, zero).accepted == 1U);
+    REQUIRE(nodes.is_load_dense(NodeAttribute::QI));
+
+    // Zeros leave an empty load empty.
+    const std::vector<double> zeros(numbers.size(), 0.0);
+    REQUIRE(nodes.set_values(NodeAttribute::QS, numbers, zeros).accepted ==
+            numbers.size());
+    REQUIRE_FALSE(nodes.is_load_dense(NodeAttribute::QS));
+    REQUIRE(nodes.get_values(NodeAttribute::QS) == zeros);
 
     REQUIRE(nodes
                 .set_values(NodeAttribute::T, numbers,

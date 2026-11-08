@@ -1,21 +1,28 @@
 #pragma once
 
-#include <symengine/basic.h>
-#include <symengine/lambda_double.h>
-#include <symengine/symbol.h>
-
-#include <cstdint>
+#include <cstddef>
+#include <functional>
+#include <limits>
 #include <memory>
-#include <stdexcept>
 #include <string>
 #include <utility>
 #include <vector>
 
 #include "pycanha-core/parameters/entity.hpp"
+#include "pycanha-core/parameters/formula_kind.hpp"  // IWYU pragma: export
+#include "pycanha-core/parameters/formula_shape.hpp"
+#include "pycanha-core/parameters/origin.hpp"
 #include "pycanha-core/parameters/parameters.hpp"
+#include "pycanha-core/parameters/table.hpp"
+#include "pycanha-core/tmm/thermalnetwork.hpp"
 
 namespace pycanha {
 
+class Formulas;
+
+// A formula sets one target entity. Formulas run in insertion order, so a
+// formula may read what an earlier one set. They are evaluated by the
+// Formulas collection, which compiles all of them into one program.
 class Formula {
   public:
     using DependencyList = std::vector<std::string>;
@@ -38,198 +45,149 @@ class Formula {
         }
     };
 
-    [[nodiscard]] Entity& entity() noexcept { return _entity; }
+    // The target. Read-only: the collection indexes formulas by target.
     [[nodiscard]] const Entity& entity() const noexcept { return _entity; }
 
-    [[nodiscard]] const DependencyList& parameter_dependencies()
-        const noexcept {
-        return _dependencies;
-    }
+    [[nodiscard]] virtual FormulaKind kind() const noexcept = 0;
 
-    void add_parameter_dependency(std::string dependency) {
-        _dependencies.push_back(std::move(dependency));
-    }
+    // Set by the Formulas collection when the formula is added.
+    [[nodiscard]] virtual Origin origin() const noexcept = 0;
 
-    void set_parameter_dependencies(DependencyList dependencies) {
-        _dependencies = std::move(dependencies);
-    }
+    // Names of the parameters the formula reads, in input order.
+    [[nodiscard]] virtual const DependencyList& parameter_dependencies()
+        const noexcept;
 
-    void clear_parameter_dependencies() noexcept { _dependencies.clear(); }
+    // Entities (temperatures, capacities, loads, couplings) the formula reads.
+    [[nodiscard]] virtual const std::vector<Entity>& entity_dependencies()
+        const noexcept;
 
-    virtual void compile_formula() = 0;
-    virtual void apply_formula() = 0;
-    virtual void apply_compiled_formula() = 0;
+    // Names of the tables the formula calls.
+    [[nodiscard]] virtual const std::vector<std::string>& table_dependencies()
+        const noexcept;
+
     virtual void calculate_derivatives() {}
 
     [[nodiscard]] virtual std::unique_ptr<Formula> clone() const = 0;
 
+    // The value the formula gives for the current model values.
     [[nodiscard]] virtual double get_value() const = 0;
+    // Null for a formula without derivatives.
     [[nodiscard]] virtual std::vector<double>* get_derivative_values() = 0;
 
-  protected:
-    DependencyList& mutable_dependencies() noexcept { return _dependencies; }
-
-    [[nodiscard]] double* entity_data_ptr() noexcept { return _entity_data; }
-    void set_entity_data_ptr(double* ptr) noexcept { _entity_data = ptr; }
-
   private:
+    friend class Formulas;
+
+    virtual void set_origin(Origin origin) noexcept = 0;
+
     Entity _entity;
-    DependencyList _dependencies;
-    double* _entity_data{nullptr};
 };
 
-class ParameterFormula final : public Formula {
-  public:
-    ParameterFormula(const Entity& entity, Parameters& parameters,
-                     std::string expression);
-
-    void compile_formula() override;
-    void apply_formula() override;
-    void apply_compiled_formula() override;
-    void calculate_derivatives() override;
-
-    [[nodiscard]] double get_value() const override;
-    [[nodiscard]] std::vector<double>* get_derivative_values() override;
-    [[nodiscard]] std::unique_ptr<Formula> clone() const override;
-    [[nodiscard]] const std::string& expression() const noexcept;
-
-  private:
-    void initialize_expression();
-    [[nodiscard]] SymEngine::vec_basic lambda_inputs() const;
-    [[nodiscard]] double evaluate_expression(
-        const SymEngine::RCP<const SymEngine::Basic>& expr) const;
-
-    Parameters* _parameters;
-    std::string _expression;
-    std::string _normalized_expression;
-    std::vector<Index> _parameter_indices;
-    std::vector<SymEngine::RCP<const SymEngine::Symbol>> _symbols;
-    SymEngine::RCP<const SymEngine::Basic> _parsed_expr;
-    std::vector<SymEngine::RCP<const SymEngine::Basic>> _derivative_exprs;
-    SymEngine::LambdaRealDoubleVisitor _compiled_eval;
-    std::vector<SymEngine::LambdaRealDoubleVisitor> _compiled_derivs;
-    std::vector<double*> _parameter_ptrs;
-    std::uint64_t _compiled_structure_version{0U};
-    double _cached_value{0.0};
-    std::vector<double> _derivatives;
-    std::vector<bool> _compiled_derivs_ready;
-    bool _compiled{false};
-};
-
-class ValueFormula final : public Formula {
-  public:
-    explicit ValueFormula(Entity entity)
-        : Formula(std::move(entity)), _value(this->entity().get_value()) {}
-
-    void compile_formula() override {
-        auto* entity_ptr = entity().get_value_ref();
-        if (entity_ptr == nullptr) {
-            throw std::runtime_error(
-                "ValueFormula could not obtain entity pointer");
-        }
-        set_entity_data_ptr(entity_ptr);
-    }
-
-    void apply_formula() override {
-        if (!entity().set_value(_value)) {
-            throw std::runtime_error("ValueFormula could not assign entity");
-        }
-    }
-
-    void apply_compiled_formula() override {
-        if (entity_data_ptr() == nullptr) {
-            throw std::runtime_error(
-                "ValueFormula needs to be compiled before applying");
-        }
-        *entity_data_ptr() = _value;
-    }
-
-    [[nodiscard]] double get_value() const override { return _value; }
-
-    [[nodiscard]] std::vector<double>* get_derivative_values() override {
-        return &_derivatives;
-    }
-
-    [[nodiscard]] const std::vector<double>& derivative_values()
-        const noexcept {
-        return _derivatives;
-    }
-
-    void add_derivative_value(double value) { _derivatives.push_back(value); }
-
-    void set_derivative_values(std::vector<double> values) {
-        _derivatives = std::move(values);
-    }
-
-    void clear_derivative_values() noexcept { _derivatives.clear(); }
-
-    [[nodiscard]] std::unique_ptr<Formula> clone() const override {
-        return std::make_unique<ValueFormula>(*this);
-    }
-
-    void set_value(double value) noexcept { _value = value; }
-
-  private:
-    double _value{0.0};
-    std::vector<double> _derivatives;
-};
-
+// Any expression of numbers, parameters, table calls and, when given a
+// network, entities. Formulas written the same way apart from their numbers
+// and node numbers share one shape, parsed and lowered to evaluator
+// operations once; a formula keeps only its own numbers and node numbers.
+// Its expression is printed from them on request. Derivatives exist for
+// formulas that read only parameters; they are built on the first
+// calculate_derivatives() call of any formula of the shape.
 class ExpressionFormula final : public Formula {
-  public:
-    ExpressionFormula(const Entity& entity, Parameters& parameters,
-                      std::string expression,
-                      ThermalNetwork* network = nullptr);
-
-    void compile_formula() override;
-    void apply_formula() override;
-    void apply_compiled_formula() override;
-    void calculate_derivatives() override;
-
-    [[nodiscard]] std::unique_ptr<Formula> clone() const override;
-    [[nodiscard]] double get_value() const override;
-    [[nodiscard]] std::vector<double>* get_derivative_values() override;
-    [[nodiscard]] const std::string& expression() const noexcept;
-
-  private:
-    enum class BindingKind : std::uint8_t { Parameter, Entity };
-
-    struct SymbolBinding {
-        std::string symbol_name;
-        BindingKind kind{BindingKind::Parameter};
-        Index parameter_idx{-1};
-        Entity entity;
+    // Restricts the shape constructor to the Formulas collection.
+    class Key {
+        Key() = default;
+        friend class ExpressionFormula;
+        friend class Formulas;
     };
 
-    void initialize_expression();
+  public:
+    // A constant value.
+    ExpressionFormula(const Entity& entity, double value);
+    // Throws std::invalid_argument for an expression that does not parse,
+    // reads an unknown name or calls an unknown function.
+    ExpressionFormula(const Entity& entity, Parameters& parameters,
+                      const std::string& expression,
+                      ThermalNetwork* network = nullptr);
+    // A formula of an existing shape, as the Formulas collection hands it
+    // out.
+    ExpressionFormula(Key /*key*/, const Entity& entity,
+                      std::shared_ptr<const detail::FormulaShape> shape,
+                      detail::ShapeValues values, Parameters* parameters,
+                      ThermalNetwork* network, Origin origin);
 
-    [[nodiscard]] SymEngine::vec_basic lambda_inputs() const;
-    [[nodiscard]] double evaluate_expression(
-        const SymEngine::RCP<const SymEngine::Basic>& expr) const;
-    [[nodiscard]] double evaluate_symbol_value(
-        const SymbolBinding& binding) const;
-    [[nodiscard]] double* resolve_symbol_ptr(
-        const SymbolBinding& binding) const;
+    [[nodiscard]] FormulaKind kind() const noexcept override;
+    [[nodiscard]] const DependencyList& parameter_dependencies()
+        const noexcept override;
+    [[nodiscard]] const std::vector<Entity>& entity_dependencies()
+        const noexcept override;
+    [[nodiscard]] const std::vector<std::string>& table_dependencies()
+        const noexcept override;
 
-    Parameters* _parameters;
+    void calculate_derivatives() override;
+
+    [[nodiscard]] std::unique_ptr<Formula> clone() const override;
+    [[nodiscard]] double get_value() const override;
+    [[nodiscard]] std::vector<double>* get_derivative_values() override;
+    // Printed from the shape and the formula's numbers on the first call.
+    [[nodiscard]] const std::string& expression() const;
+    [[nodiscard]] Origin origin() const noexcept override { return _origin; }
+
+  private:
+    friend class Formulas;
+
+    void set_origin(Origin origin) noexcept override { _origin = origin; }
+    void resolve_inputs();
+    // Throws std::invalid_argument when an entity read does not exist.
+    void check_inputs() const;
+    [[nodiscard]] std::vector<double> input_values() const;
+    [[nodiscard]] std::vector<detail::TableView> table_views(
+        const std::vector<std::string>& tables) const;
+
+    Parameters* _parameters{nullptr};
     ThermalNetwork* _network{nullptr};
-    std::string _expression;
-    std::string _normalized_expression;
-    double _cached_value{0.0};
-    std::vector<double> _derivatives;
-    std::vector<SymbolBinding> _bindings;
+    std::shared_ptr<const detail::FormulaShape> _shape;
+    detail::ShapeValues _values;
+    // The entities read, in the order of the shape's entity inputs.
+    std::vector<Entity> _inputs;
+    mutable std::string _expression;
+    std::unique_ptr<std::vector<double>> _derivatives;
+    Origin _origin{Origin::user};
+};
 
-    SymEngine::RCP<const SymEngine::Basic> _parsed_expr;
-    std::vector<SymEngine::RCP<const SymEngine::Symbol>> _symbols;
-    std::vector<SymEngine::RCP<const SymEngine::Basic>> _derivative_exprs;
+// Runs a C++ callable and writes the value it returns to the target. It runs
+// on every apply, at its position in the insertion order, like any other
+// formula. What it reads cannot be known, so it counts as reading every
+// entity: every formula after it may depend on its result. It lists no
+// dependencies and has no derivatives.
+class CallableFormula final : public Formula {
+  public:
+    using Function = std::function<double()>;
 
-    SymEngine::LambdaRealDoubleVisitor _compiled_eval;
-    std::vector<SymEngine::LambdaRealDoubleVisitor> _compiled_derivs;
+    // Throws std::invalid_argument for an empty function.
+    CallableFormula(const Entity& entity, Function function);
 
-    std::vector<double*> _param_ptrs;
-    std::vector<bool> _compiled_derivs_ready;
-    bool _has_entity_dependencies{false};
-    bool _compiled{false};
-    std::uint64_t _compiled_structure_version{0U};
+    [[nodiscard]] FormulaKind kind() const noexcept override {
+        return FormulaKind::Callable;
+    }
+
+    [[nodiscard]] std::unique_ptr<Formula> clone() const override;
+    // The last value written, without calling the function; NaN before the
+    // first apply.
+    [[nodiscard]] double get_value() const override;
+    [[nodiscard]] std::vector<double>* get_derivative_values() override;
+    [[nodiscard]] const Function& function() const noexcept;
+    [[nodiscard]] Origin origin() const noexcept override { return _origin; }
+
+  private:
+    friend class Formulas;
+
+    void set_origin(Origin origin) noexcept override { _origin = origin; }
+    // Calls the function, keeps the value and returns it.
+    double call() {
+        _value = _function();
+        return _value;
+    }
+
+    Function _function;
+    double _value{std::numeric_limits<double>::quiet_NaN()};
+    Origin _origin{Origin::user};
 };
 
 }  // namespace pycanha

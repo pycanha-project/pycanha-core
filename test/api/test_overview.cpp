@@ -38,9 +38,8 @@ void populate_minimal_model(pycanha::ThermalModel& tm) {
     tm.parameters().add_parameter("heater_power", heater_power);
     tm.parameters().add_parameter("contact_conductance", contact_conductance);
 
-    static_cast<void>(tm.formulas().add_formula("QI1", "heater_power"));
-    static_cast<void>(
-        tm.formulas().add_formula("GL(1,2)", "contact_conductance"));
+    tm.formulas().add_formula("QI1", "heater_power");
+    tm.formulas().add_formula("GL(1,2)", "contact_conductance");
     tm.formulas().apply_formulas();
 }
 

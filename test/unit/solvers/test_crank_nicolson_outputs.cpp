@@ -180,3 +180,32 @@ TEST_CASE("CrankNicolson restart resets runtime state", "[solver][transient]") {
     REQUIRE(solver.current_time_iter() == -1);
     REQUIRE(solver.current_output_index() == 0);
 }
+
+TEST_CASE("CrankNicolson writes empty and dense loads", "[solver][transient]") {
+    auto model = make_probe_model();
+    REQUIRE(model->nodes().set_qi(20, 3.0));
+    ProbeSolver solver(model);
+    configure(
+        solver, "load_output",
+        {pycanha::DataModelAttribute::QS, pycanha::DataModelAttribute::QI});
+    solver.initialize();
+    auto& output = solver.output_model();
+    const auto& solar =
+        output.get_dense_attribute(pycanha::DataModelAttribute::QS);
+    const auto& internal =
+        output.get_dense_attribute(pycanha::DataModelAttribute::QI);
+
+    solver.set_state(0.0, 0, 0);
+    solver.save_first_or_last_output();
+    REQUIRE(model->nodes().qs_vector.empty());
+    REQUIRE(solar.values().row(0).isZero(0.0));
+    REQUIRE(internal.values()(0, 1) == Catch::Approx(3.0));
+
+    // The solar load becomes dense between two outputs.
+    REQUIRE(model->nodes().set_qs(10, 2.0));
+    solver.set_state(2.0, 1, 0);
+    solver.save_regular_output();
+    REQUIRE(solar.values()(1, 0) == Catch::Approx(2.0));
+    REQUIRE(solar.values()(1, 1) == 0.0);
+    REQUIRE(internal.values()(1, 1) == Catch::Approx(3.0));
+}

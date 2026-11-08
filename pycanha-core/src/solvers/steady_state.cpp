@@ -95,12 +95,7 @@ SolverMemory SteadyState::memory_now() const {
 
 void SteadyState::assemble_rhs() {
     PYCANHA_PROFILE_SCOPE("Steady state assemble rhs");
-    Q.setZero();
-    Q += QI_sp;
-    Q += QS_sp;
-    Q += QA_sp;
-    Q += QE_sp;
-    Q += QR_sp;
+    sum_loads();
 
     _b = Q.head(nd);
     _b.noalias() += KLdb * Tb;

@@ -1,5 +1,4 @@
 #include <Eigen/Core>
-#include <bit>
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
 #include <cmath>
@@ -10,7 +9,6 @@
 #include <stdexcept>
 #include <streambuf>
 #include <string>
-#include <utility>
 #include <variant>
 
 #include "pycanha-core/globals.hpp"
@@ -260,22 +258,11 @@ TEST_CASE("Parameters block structural edits while locked", "[parameters]") {
     REQUIRE_FALSE(params.is_structure_locked());
 }
 
-TEST_CASE("Parameters expose memory pointers and sizes", "[parameters]") {
-    // NOLINTNEXTLINE(misc-const-correctness)
+TEST_CASE("Parameters report their sizes", "[parameters]") {
     Parameters params;
 
     params.add_parameter("scalar", 10.0);
     params.add_parameter("label", std::string("alpha"));
-
-    auto* scalar_ptr = static_cast<double*>(params.get_value_ptr("scalar"));
-    REQUIRE(scalar_ptr != nullptr);
-    REQUIRE(*scalar_ptr == Catch::Approx(10.0));
-
-    const auto scalar_address = params.get_memory_address("scalar");
-    REQUIRE(scalar_address != 0U);
-    const auto expected_address =
-        static_cast<std::uint64_t>(std::bit_cast<std::uintptr_t>(scalar_ptr));
-    REQUIRE(scalar_address == expected_address);
 
     const auto scalar_size = params.get_size_of_parameter("scalar");
     REQUIRE(scalar_size == sizeof(double));
@@ -309,11 +296,8 @@ TEST_CASE("Parameters refresh cached data and expose index accessors",
     REQUIRE(params.get_parameter_name(time_idx_value) ==
             std::optional<std::string>{"time"});
 
-    const auto* scalar_ptr = static_cast<const double*>(
-        std::as_const(params).get_value_ptr(scalar_idx_value));
-    REQUIRE(scalar_ptr != nullptr);
-    REQUIRE(*scalar_ptr == Catch::Approx(1.5));
-    REQUIRE(std::as_const(params).get_double_ptr(scalar_idx_value) != nullptr);
+    REQUIRE(detail::ParameterAccess::value(params, scalar_idx_value) !=
+            nullptr);
 
     const auto& snapshot = params.data();
     REQUIRE(snapshot.size() == 2U);
@@ -331,10 +315,7 @@ TEST_CASE("Parameters refresh cached data and expose index accessors",
     REQUIRE(after_remove.size() == 1U);
     REQUIRE(!after_remove.contains("time"));
 
-    REQUIRE(params.get_value_ptr(Index{99}) == nullptr);
-    REQUIRE(std::as_const(params).get_value_ptr(Index{99}) == nullptr);
-    REQUIRE(params.get_double_ptr(Index{99}) == nullptr);
-    REQUIRE(std::as_const(params).get_double_ptr(Index{99}) == nullptr);
+    REQUIRE(detail::ParameterAccess::value(params, Index{99}) == nullptr);
     REQUIRE_FALSE(params.get_parameter_optional(Index{99}).has_value());
     REQUIRE_FALSE(params.get_parameter_name(Index{99}).has_value());
 }
@@ -350,13 +331,28 @@ TEST_CASE("print helpers write to stdout rather than the logger",
     std::streambuf* const original = std::cout.rdbuf(captured.rdbuf());
     params.print_parameter("scalar");
     params.print_parameter("absent");
-    params.print_memory_address("scalar");
     std::cout.rdbuf(original);
 
     const std::string output = captured.str();
     REQUIRE(output.contains("scalar = 42"));
     REQUIRE(output.contains("Parameter 'absent' doesn't exist"));
-    REQUIRE(output.contains("Mem. addr:"));
+}
+
+TEST_CASE("Parameters count value changes, not writes", "[parameters]") {
+    Parameters params;
+    params.add_parameter("scalar", 1.0);
+    params.add_parameter("other", 2.0);
+    const auto index = require_index(params.get_idx("scalar"));
+    const std::uint64_t& changes = *detail::ParameterAccess::changes(params);
+    const std::uint64_t& changed =
+        *detail::ParameterAccess::changed(params, index);
+
+    params.set_parameter("scalar", 1.0);
+    REQUIRE(changed == 0U);
+    params.set_parameter("scalar", 3.0);
+    params.set_parameter("other", 4.0);
+    REQUIRE(changed == 1U);
+    REQUIRE(changes == 2U);
 }
 
 // NOLINTEND(bugprone-chained-comparison)

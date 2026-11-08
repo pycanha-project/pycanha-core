@@ -16,7 +16,7 @@ The public entry point is `pycanha::ThermalModel`. It owns the main subsystems a
 - `tmm()`: thermal network and thermal mathematical model data.
 - `gmm()`: geometry model and geometric helpers.
 - `parameters()`: named scalar parameters.
-- `formulas()`: symbolic expressions that map parameters to model quantities such as heat loads, conductances, and capacities.
+- `formulas()`: expressions and C++ callables that set model quantities such as loads, couplings, and capacities, applied in insertion order (see [Formulas](formulas.md)).
 - `thermal_data()`: lookup tables and solver-generated output models.
 - `solvers()`: solver registry, grouped as `steady()`, `transient()` and `sensitivity()`.
 - `callbacks()`: lifecycle hooks for solver-controlled updates during transient runs.

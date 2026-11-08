@@ -98,7 +98,7 @@ void PardisoSolver::run_phase(MKL_INT phase, const SparseMatrix& matrix,
         phase == phase_analysis || matrix.nonZeros() == _analyzed_non_zeros,
         "The matrix pattern changed after analyze_pattern()");
 
-    const ThreadScope threads(_threads);
+    const ThreadScope thread_scope(_threads);
     auto mtype = static_cast<MKL_INT>(_type);
     _last_phase = phase;
     pardiso(static_cast<void*>(_pt.data()), &one, &one, &mtype, &phase, &_size,

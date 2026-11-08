@@ -58,6 +58,9 @@ constexpr std::array<std::string_view, 2> names_of(EigenOrdering /*tag*/) {
 constexpr std::array<std::string_view, 2> names_of(AccelerateOrdering /*tag*/) {
     return {"METIS", "AMD"};
 }
+constexpr std::array<std::string_view, 2> names_of(CapacityScheme /*tag*/) {
+    return {"AVERAGE_RATE", "AVERAGE_CAPACITY"};
+}
 constexpr std::array<std::string_view, 2> names_of(Mutability /*tag*/) {
     return {"LIVE", "INIT"};
 }
@@ -271,6 +274,7 @@ constexpr bool default_fixed_couplings = false;
 constexpr int default_threads = 0;
 constexpr double default_time = 0.0;
 constexpr double default_capacity_delta = 1e-7;
+constexpr CapacityScheme default_capacity_scheme = CapacityScheme::AVERAGE_RATE;
 constexpr bool default_verbose = false;
 constexpr Factorization default_factorization = Factorization::AUTO;
 constexpr EigenOrdering default_eigen_ordering = EigenOrdering::COLAMD;
@@ -451,7 +455,8 @@ std::string threads_reason(const Settings& settings,
                            const ResolvedSettings& /*resolved*/,
                            const ResolveContext& /*context*/) {
     return settings.threads.value_or(0) == 0
-               ? "0: MKL's own setting (MKL_NUM_THREADS or the physical cores)"
+               ? "0: the global setting, pycanha::threads() (by default "
+                 "MKL_NUM_THREADS or the physical cores)"
                : std::string{};
 }
 
@@ -630,7 +635,7 @@ using R = ResolvedSettings;
 
 // Resolution walks the table in order: a default or an applicability rule
 // may only read fields above it.
-constexpr std::size_t field_count = 22;
+constexpr std::size_t field_count = 23;
 constexpr std::array<FieldEntry, field_count> field_table{
     field<Path<&S::tolerance>, Path<&R::tolerance>,
           &constant<default_tolerance>, &positive>(
@@ -730,8 +735,8 @@ constexpr std::array<FieldEntry, field_count> field_table{
           &non_negative_count>({.name = "threads",
                                 .group = "",
                                 .doc = "Threads of the PARDISO and LAPACK "
-                                       "calls; 0 keeps MKL's setting "
-                                       "(MKL_NUM_THREADS).",
+                                       "calls; 0 uses the global setting, "
+                                       "pycanha::threads().",
                                 .mutability = Mutability::LIVE,
                                 .solver_types = all_types},
                                &uses_mkl, only_mkl, &threads_reason),
@@ -784,6 +789,23 @@ constexpr std::array<FieldEntry, field_count> field_table{
          .doc = "Added to every thermal capacity [J/K], so that nodes "
                 "without capacity can be integrated.",
          .mutability = Mutability::INIT,
+         .solver_types = transient_types}),
+    field<Path<&S::capacity_scheme>, Path<&R::capacity_scheme>,
+          &constant<default_capacity_scheme>, &any_value<CapacityScheme>>(
+        {.name = "capacity_scheme",
+         .group = "",
+         .doc = "How a capacity that changes over a time step (a formula or "
+                "a callback that sets C) is integrated. AVERAGE_RATE: the "
+                "temperature change is the time step times the average of "
+                "the rates of change dT/dt = C^-1 (K T + Q) at the two ends "
+                "of the step, each with its own C. AVERAGE_CAPACITY: the "
+                "average of the two end capacities times the temperature "
+                "change equals the time step times the average heat flow, "
+                "which conserves energy exactly when C is linear in T over "
+                "the step. Both are second order and cost the same; they "
+                "give the same steps for constant capacities. Default: "
+                "AVERAGE_RATE.",
+         .mutability = Mutability::LIVE,
          .solver_types = transient_types}),
     field<Path<&S::pardiso, &PardisoSettings::ordering>,
           Path<&R::pardiso, &ResolvedPardiso::ordering>,
@@ -1169,6 +1191,9 @@ std::string_view to_string(EigenOrdering ordering) noexcept {
 }
 std::string_view to_string(AccelerateOrdering ordering) noexcept {
     return enum_name(ordering);
+}
+std::string_view to_string(CapacityScheme scheme) noexcept {
+    return enum_name(scheme);
 }
 std::string_view to_string(Mutability mutability) noexcept {
     return enum_name(mutability);

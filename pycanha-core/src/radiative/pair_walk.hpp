@@ -108,7 +108,7 @@ struct AssemblyTuning {
     // 0 selects the plain row-by-row walk instead (Dense only; the sparse
     // path is a linear merge in both cases).
     std::size_t tile = 128;
-    // 0 asks for hardware_concurrency. Small matrices always run inline.
+    // 0 asks for pycanha::threads(). Small matrices always run inline.
     unsigned threads = 0;
     // false selects WeightTable::naive_forward_weight.
     bool tabulated_weight = true;

@@ -2,6 +2,8 @@
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/generators/catch_generators.hpp>
+#include <catch2/matchers/catch_matchers.hpp>
+#include <catch2/matchers/catch_matchers_string.hpp>
 #include <cmath>
 #include <cstddef>
 #include <memory>
@@ -86,8 +88,8 @@ std::shared_ptr<pycanha::ThermalMathematicalModel> make_python_example_model() {
 
     // This is the C++ equivalent of the Python formulas GL(1,2)=k and C1=C.
     // The derivative with respect to the corresponding parameter is 1.
-    static_cast<void>(model->formulas().add_parameter_formula("GL(1,2)", "k"));
-    static_cast<void>(model->formulas().add_parameter_formula("C1", "C"));
+    model->formulas().add_formula("GL(1,2)", "k");
+    model->formulas().add_formula("C1", "C");
     model->formulas().apply_formulas();
     model->formulas().parameters_with_derivatives().add_parameter("k");
     model->formulas().parameters_with_derivatives().add_parameter("C");
@@ -256,4 +258,25 @@ TEST_CASE("JacobianPropagation needs a derivative parameter",
     solver.set_simulation_time(0.0, end_time, time_step, output_stride);
     REQUIRE_THROWS_AS(solver.initialize(), std::invalid_argument);
     REQUIRE_FALSE(solver.initialized());
+}
+
+TEST_CASE("JacobianPropagation refuses a parameter read with entities",
+          "[solver][transient][jacobian]") {
+    // QI1 reads k together with a temperature, so it has no derivatives and
+    // its share of the sensitivity to k would be missing.
+    auto model = make_python_example_model();
+    model->formulas().add_formula("QI1", "k*T1");
+    pycanha::solvers::sensitivity::JacobianPropagation solver(model);
+    solver.set_simulation_time(0.0, end_time, time_step, output_stride);
+    REQUIRE_THROWS_WITH(solver.initialize(),
+                        Catch::Matchers::ContainsSubstring("'k'") &&
+                            Catch::Matchers::ContainsSubstring("QI1"));
+    REQUIRE_FALSE(solver.initialized());
+
+    // Without k in the derivative set the same model solves.
+    static_cast<void>(
+        model->formulas().parameters_with_derivatives().remove_parameter("k"));
+    REQUIRE_NOTHROW(solver.initialize());
+    REQUIRE(solver.derivative_parameter_names().size() == 1);
+    REQUIRE(solver.derivative_parameter_names().at(0) == "C");
 }
