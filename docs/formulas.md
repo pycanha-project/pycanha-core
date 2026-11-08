@@ -181,6 +181,6 @@ With formulas on several threads, a table's out-of-range record (see above) stil
 
 ### Thread count
 
-`pycanha::threads()` is the thread count used wherever a count is left at 0: the solvers (`Settings::threads`) and the formulas. By default it is the count that is usually fastest: MKL's own setting in builds with MKL (`MKL_NUM_THREADS`, else the physical cores), the physical cores otherwise. `pycanha::set_threads(n)` changes it for the whole process and `set_threads(0)` restores the default; `physical_cores()` and `default_threads()` report what the default is based on.
+`pycanha::threads()` is the thread count used wherever a count is left at 0: the solvers (`Settings::threads`), the formulas and the assembly of the radiative matrices. The boolean cuts of the geometry (a cut group's mesh, and the conduction network and node areas built from cut geometry) are the exception: they use every logical CPU, because the cuts run faster with two threads per core. By default it is the count that is usually fastest: MKL's own setting in builds with MKL (`MKL_NUM_THREADS`, else the physical cores), the physical cores otherwise. `pycanha::set_threads(n)` changes it for the whole process and `set_threads(0)` restores the default; `physical_cores()` (the cores with at least one logical CPU in the process's CPU affinity) and `default_threads()` report what the default is based on.
 
 `debug_formulas = true` applies the formulas one at a time and logs each target and value at INFO. It is slower and meant for tracing.

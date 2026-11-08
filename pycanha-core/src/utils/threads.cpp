@@ -48,8 +48,17 @@ std::atomic<int>& global_threads() {
 }
 
 #ifdef _WIN32
-// The physical cores the process can run on, else the logical CPUs.
+// The physical cores with at least one logical CPU in the process's affinity
+// mask, else the logical CPUs. The mask covers one processor group: with more
+// than one group (over 64 logical CPUs) every core counts.
 [[nodiscard]] int count_physical_cores() {
+    DWORD_PTR process_mask = 0;
+    DWORD_PTR system_mask = 0;
+    const bool masked =
+        (GetActiveProcessorGroupCount() == 1) &&
+        (GetProcessAffinityMask(GetCurrentProcess(), &process_mask,
+                                &system_mask) != FALSE) &&
+        (process_mask != 0);
     DWORD length = 0;
     GetLogicalProcessorInformationEx(RelationProcessorCore, nullptr, &length);
     if (length == 0) {
@@ -62,13 +71,17 @@ std::atomic<int>& global_threads() {
                                          &length) == FALSE) {
         return logical_cpus();
     }
-    // Variable-size records, one per core.
+    // Variable-size records, one per core; a core's logical CPUs are all in
+    // one group, so its first group mask holds them.
     int cores = 0;
     for (DWORD offset = 0; offset < length;) {
         const auto* const record =
             static_cast<const SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX*>(
                 static_cast<const void*>(&buffer.at(offset)));
-        ++cores;
+        if (!masked ||
+            ((record->Processor.GroupMask[0].Mask & process_mask) != 0)) {
+            ++cores;
+        }
         offset += record->Size;
     }
     return std::max(cores, 1);
