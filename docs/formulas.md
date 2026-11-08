@@ -126,6 +126,8 @@ Recording costs nothing in range: only the out-of-range branch of a lookup write
 
 Sensitivity solves (`JacobianPropagation`) use the derivatives of the `Parameters` formulas with respect to the parameters they read. They are built once per shape, on the first `calculate_derivatives()` call of one of its formulas, by parsing and differentiating the shape. The values are kept on the `Formula` object the call was made on. `Formulas::calculate_derivatives()` builds the derivatives of every `Parameters` shape, so a shape without derivatives is reported at once; `calculate_derivatives()` on an `Entities` formula throws.
 
+`JacobianPropagation::initialize()` refuses a parameter in `parameters_with_derivatives()` that is read by no `Parameters` formula, or that is also read by an `Entities` formula (e.g. `QI1 = k*T1` with `k` selected): an `Entities` formula has no derivatives, so its share of the sensitivity would be missing. The message names the parameter and the target of the formula. Callable formulas list no dependencies and are not checked.
+
 A table call is differentiated through the table's slope. For `Linear` interpolation that is the slope of the segment that holds the argument, and of the segment above it at a breakpoint, so a derivative jumps where the argument crosses a breakpoint. The stepped interpolations and `Constant` extrapolation have a slope of zero.
 
 ## Callable formulas

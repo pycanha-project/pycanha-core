@@ -170,12 +170,21 @@ void JacobianPropagation::collect_parameter_names() {
     _derivative_parameter_names.clear();
 
     std::unordered_set<std::string> seen_parameters;
+    // Parameter -> target of the first formula that reads it together with
+    // entities. Such a formula has no derivatives, so its share of the
+    // sensitivity would be missing without an error.
+    std::unordered_map<std::string, std::string> read_with_entities;
     for (const auto& formula : tmm.formulas().formulas()) {
+        const auto& dependencies = formula->parameter_dependencies();
         if (formula->kind() != FormulaKind::Parameters) {
+            for (const auto& dependency : dependencies) {
+                if (!read_with_entities.contains(dependency)) {
+                    read_with_entities.emplace(
+                        dependency, formula->entity().string_representation());
+                }
+            }
             continue;
         }
-
-        const auto& dependencies = formula->parameter_dependencies();
 
         std::ranges::copy_if(
             dependencies, std::back_inserter(_parameter_names),
@@ -191,6 +200,13 @@ void JacobianPropagation::collect_parameter_names() {
             throw std::invalid_argument(
                 "Derivative parameter '" + parameter_name +
                 "' is not read by any formula that reads only parameters");
+        }
+        const auto mixed = read_with_entities.find(parameter_name);
+        if (mixed != read_with_entities.end()) {
+            throw std::invalid_argument(
+                "Derivative parameter '" + parameter_name +
+                "' is also read by the formula of " + mixed->second +
+                ", which reads entities and has no derivatives");
         }
         _derivative_parameter_names.push_back(parameter_name);
     }

@@ -65,8 +65,6 @@ void DerivativeParameterRegistry::add_parameter(
         return;
     }
 
-    // TODO(formulas): validate that derivative-selected parameters are read
-    // only by formulas that read parameters alone.
     _parameter_names.push_back(*resolved_name);
 }
 

@@ -20,7 +20,9 @@ namespace pycanha::solvers::sensitivity {
  * same output times as the temperatures. The sensitivity solve uses the
  * factors of the last step's matrix, so reuse_factors does not apply.
  * initialize() throws std::invalid_argument when no derivative parameter is
- * selected.
+ * selected, when a selected parameter is read by no formula that reads only
+ * parameters, and when a formula that also reads entities reads it: that
+ * formula has no derivatives, so its share of the sensitivity would be lost.
  */
 class JacobianPropagation : public transient::CrankNicolson {
   public:
