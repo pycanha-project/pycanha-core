@@ -23,6 +23,7 @@ namespace pycanha::radiative::detail {
 
 class VfAccumImpl;
 class ExchangeAccumImpl;
+class NodeExchangeAccumImpl;
 class SolarAccumImpl;
 
 // Minimal RAII-by-owner buffer: created/destroyed by SceneImpl helpers.
@@ -89,7 +90,7 @@ struct PushConstants {
     float inv_fp_scale;
     float ray_tmin_scale;
     std::array<float, 3> sun_dir;
-    float pad;
+    float blend_exponent;  // exchange node rows only
 };
 static_assert(sizeof(PushConstants) == 64);
 
@@ -110,6 +111,10 @@ class SceneImpl {
     void accumulate_vf(VfAccumImpl& acc, const TraceSettings& settings,
                        std::span<const std::uint32_t> emitters);
     void accumulate_exchange(ExchangeAccumImpl& acc,
+                             const TraceSettings& settings,
+                             std::span<const std::uint32_t> emitters);
+    // The exchange kernel in node rows (NodeExchangeAccumulator).
+    void accumulate_exchange(NodeExchangeAccumImpl& acc,
                              const TraceSettings& settings,
                              std::span<const std::uint32_t> emitters);
     void accumulate_solar(const SolarState& sun, SolarAccumImpl& acc,
@@ -199,6 +204,10 @@ class SceneImpl {
         std::uint32_t flags = 0;
         float fp_scale = 1.0F;
         std::array<float, 3> sun_dir = {0.0F, 0.0F, 0.0F};
+        // Exchange node rows only: the real columns of a row (nodes + 1;
+        // 0 = the scene's faces) and the blend exponent.
+        std::uint32_t columns = 0;
+        float blend_exponent = 0.0F;
     };
     // Traces settings.rays_per_face rays for `emitters` (all within
     // [row_offset, row_offset + accumulator rows)), in batches of at most
@@ -210,6 +219,24 @@ class SceneImpl {
     void dispatch_batch(const KernelDispatch& kernel,
                         std::span<const std::uint32_t> emitters,
                         const TraceSettings& settings);
+    // Uploads an emitter list into _emitters_buf (grown when needed) and
+    // points descriptor 4 at it.
+    void upload_emitters(std::span<const std::uint32_t> emitters);
+    // Tiled exchange: compacts the block just traced on the device and merges
+    // its non-zero cells into the accumulator's host rows (kernels/
+    // compact.slang), instead of reading the whole block back. False when the
+    // block cannot go this way (no compaction kernel, more rows than one
+    // launch takes): the caller then reads
+    // it back whole. The block's cells are left as they were either way.
+    // `rows` are the block's accumulator rows (absolute: the emitter faces,
+    // or in node rows the nodes), `columns` a row's real columns; the
+    // accumulator takes them through absorb_compact. Defined in the .cpp,
+    // which holds every use.
+    template <class Accumulator>
+    [[nodiscard]] bool compact_block(Accumulator& acc,
+                                     std::span<const std::uint32_t> rows,
+                                     std::uint32_t row_offset,
+                                     std::uint32_t columns);
     // Shared argument validation of the accumulate_* entry points; returns
     // the effective emitter list (the default list when `emitters` is
     // empty). An empty return means there is nothing to trace.
@@ -254,6 +281,15 @@ class SceneImpl {
     VkPipeline _vf_pipeline = VK_NULL_HANDLE;
     VkPipeline _exchange_pipeline = VK_NULL_HANDLE;
     VkPipeline _solar_pipeline = VK_NULL_HANDLE;
+    // Tiled block compaction (compact_block): the kernel, a u32 per block row
+    // (counts, then each row's first output pair) on the device and its
+    // mapped copy for both directions, and the (column, cell) output pairs
+    // with their readback, grown on demand.
+    VkPipeline _compact_pipeline = VK_NULL_HANDLE;
+    GpuBuffer _compact_counts;
+    GpuBuffer _compact_counts_io;
+    GpuBuffer _compact_entries;
+    GpuBuffer _compact_entries_rb;
     VkDescriptorPool _descriptor_pool = VK_NULL_HANDLE;
     VkDescriptorSet _descriptor_set = VK_NULL_HANDLE;
 
