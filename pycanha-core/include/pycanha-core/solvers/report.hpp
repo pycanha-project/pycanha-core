@@ -109,6 +109,14 @@ struct SolverReport {
     /// earlier factors.
     int solves = 0;
 
+    /// With a retracer: the traces it made during the solve.
+    int retraces = 0;
+    /// With a retracer: the couplings of its last trace that have no slot in
+    /// the model's radiative matrices and were carried as an internal load.
+    std::int64_t overflow_couplings = 0;
+    /// Their sum over the sum of every coupling of that trace [m^2/m^2].
+    double overflow_share = 0.0;
+
     double initialize_time = 0.0;  ///< Wall time of initialize() [s].
     double solve_time = 0.0;       ///< Wall time of solve() [s].
     double callback_time = 0.0;    ///< Time inside the callbacks [s].

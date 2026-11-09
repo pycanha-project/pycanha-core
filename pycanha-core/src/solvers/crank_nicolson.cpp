@@ -424,9 +424,20 @@ void CrankNicolson::save_output_data() {
             build_full_coupling_matrix(ltcs), eps_time);
     }
     if (attributes.contains(DataModelAttribute::KR)) {
+        auto couplings = build_full_coupling_matrix(rtcs);
+        if (_retracer != nullptr) {
+            // The overflow is part of the radiative couplings of the step.
+            const auto& overflow = _retracer->overflow();
+            if (overflow.nonZeros() > 0) {
+                couplings += overflow;
+                couplings +=
+                    SparseTimeSeries::SparseMatrixType(overflow.transpose());
+                couplings.makeCompressed();
+            }
+        }
         append_or_replace_sparse_sample(
             model.get_sparse_attribute(DataModelAttribute::KR), time,
-            build_full_coupling_matrix(rtcs), eps_time);
+            std::move(couplings), eps_time);
     }
 }
 
@@ -477,6 +488,7 @@ void CrankNicolson::solve() {
     SPDLOG_LOGGER_INFO(get_logger(), "{} solving...", name());
 
     const FormulaExecutionGuard formula_execution(*this);
+    begin_retracer();
 
     callback_transient_time_change();
     callback_solver_loop();
@@ -508,6 +520,9 @@ void CrankNicolson::solve() {
                 PYCANHA_PROFILE_SCOPE("Write Td in TMM");
                 Td = Td_solver;
             }
+            // The retracer judges the temperatures this solve produced
+            // against the trace whose couplings it used.
+            converged = converged && retracer_accepts();
 
             if (converged) {
                 break;
@@ -521,7 +536,9 @@ void CrankNicolson::solve() {
     }
 
     outputs_first_last();
+    record_retracer();
     finish_solve_report(start);
+    end_retracer();
 }
 
 void CrankNicolson::deinitialize() { release(); }

@@ -9,6 +9,7 @@
 #include "pycanha-core/radiative/materials.hpp"     // IWYU pragma: export
 #include "pycanha-core/radiative/memory.hpp"        // IWYU pragma: export
 #include "pycanha-core/radiative/results.hpp"       // IWYU pragma: export
+#include "pycanha-core/radiative/retracer.hpp"      // IWYU pragma: export
 #include "pycanha-core/radiative/scene.hpp"         // IWYU pragma: export
 #include "pycanha-core/radiative/scene_part.hpp"    // IWYU pragma: export
 #include "pycanha-core/radiative/settings.hpp"      // IWYU pragma: export
