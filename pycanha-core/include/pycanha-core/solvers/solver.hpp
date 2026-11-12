@@ -11,6 +11,7 @@
 
 #include "pycanha-core/globals.hpp"
 #include "pycanha-core/solvers/report.hpp"
+#include "pycanha-core/solvers/retracer.hpp"
 #include "pycanha-core/solvers/settings.hpp"
 #include "pycanha-core/tmm/couplingmatrices.hpp"
 #include "pycanha-core/tmm/thermalmathematicalmodel.hpp"
@@ -35,6 +36,9 @@ using WrappVectorXd = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>;
  * callback. An iteration loop that stops at max_iterations logs one WARN
  * (and, in a transient, one summary WARN at the end); report() has the
  * details.
+ *
+ * A Retracer attached with set_retracer() recomputes radiative couplings
+ * during the solve (see Retracer for when it is called).
  */
 class Solver {
   public:
@@ -70,6 +74,15 @@ class Solver {
     [[nodiscard]] bool initialized() const noexcept { return _initialized; }
     /// The last solve() converged in every iteration loop.
     [[nodiscard]] bool converged() const noexcept { return _converged; }
+
+    /// Attaches a retracer, or detaches it with nullptr. Throws
+    /// std::invalid_argument for JacobianPropagation, whose sensitivities
+    /// do not include couplings that depend on the temperatures through a
+    /// retracer, and on a solver initialised with fixed_couplings.
+    void set_retracer(std::shared_ptr<Retracer> retracer);
+    [[nodiscard]] const std::shared_ptr<Retracer>& retracer() const noexcept {
+        return _retracer;
+    }
 
     /// What the last solve() did; initialize() clears it.
     [[nodiscard]] const SolverReport& report() const noexcept {
@@ -235,7 +248,8 @@ class Solver {
     /// Bytes of the vectors every solver sizes in initialize_common().
     [[nodiscard]] std::int64_t common_bytes() const noexcept;
 
-    /// Q = QI + QS + QA + QE + QR over every node, skipping the empty loads.
+    /// Q = QI + QS + QA + QE + QR over every node, skipping the empty loads,
+    /// plus the retracer's internal load.
     void sum_loads();
     void mark_prepared();
     /// The last prepare() was not followed by initialize() and still matches
@@ -262,6 +276,7 @@ class Solver {
     void finish_solve_report(Clock::time_point start, bool failed = false);
 
     SolverReport _report;
+    std::shared_ptr<Retracer> _retracer;
     // True from a successful prepare() until initialize() completes or the
     // solver is released.
     bool _prepared = false;
@@ -280,6 +295,17 @@ class Solver {
     void check_model_unchanged(std::string_view callback = {}) const;
 
     [[nodiscard]] bool temperature_convergence_check();
+
+    /// The retracer's begin_solve(), when there is one.
+    void begin_retracer();
+    /// Right after a linear solve: true without a retracer, otherwise
+    /// whether it accepts convergence.
+    [[nodiscard]] bool retracer_accepts() const;
+    /// Copies the retracer's counters into the report.
+    void record_retracer();
+    /// The retracer's end_solve(); deinitializes the solver when it changed
+    /// the model's coupling structure.
+    void end_retracer();
 
     /// The model has radiative couplings (between diffusive nodes or to
     /// boundary nodes).

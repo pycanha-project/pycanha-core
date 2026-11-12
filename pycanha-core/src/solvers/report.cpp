@@ -174,6 +174,13 @@ std::string SolverReport::to_string() const {
     line("factorizations",
          std::format("{} for {} solves ({:.3g} % reused)", factorizations,
                      solves, percent * reuse_rate()));
+    if (retraces > 0 || overflow_couplings > 0) {
+        line("retraces",
+             std::format("{} (overflow {} couplings, {:.3g} % of the last "
+                         "trace)",
+                         retraces, overflow_couplings,
+                         percent * overflow_share));
+    }
     line("times",
          std::format("initialize {}, solve {} (factorize and solve "
                      "{}, callbacks {})",
@@ -236,6 +243,9 @@ ReportDict SolverReport::to_dict() const {
         {"factorizations", std::int64_t{factorizations}},
         {"solves", std::int64_t{solves}},
         {"reuse_rate", reuse_rate()},
+        {"retraces", std::int64_t{retraces}},
+        {"overflow_couplings", overflow_couplings},
+        {"overflow_share", overflow_share},
         {"initialize_time", initialize_time},
         {"solve_time", solve_time},
         {"callback_time", callback_time},

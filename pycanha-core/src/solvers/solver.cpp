@@ -14,6 +14,7 @@
 #include <limits>
 #include <memory>
 #include <optional>
+#include <span>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -28,6 +29,7 @@
 #include "pycanha-core/parameters/formulas.hpp"
 #include "pycanha-core/solvers/model_changed_error.hpp"
 #include "pycanha-core/solvers/report.hpp"
+#include "pycanha-core/solvers/retracer.hpp"
 #include "pycanha-core/solvers/settings.hpp"
 #include "pycanha-core/tmm/nodes.hpp"
 #include "pycanha-core/tmm/thermalmathematicalmodel.hpp"
@@ -178,6 +180,25 @@ void Solver::unset(std::string_view name) {
     set_settings(replacement);
 }
 
+void Solver::set_retracer(std::shared_ptr<Retracer> retracer) {
+    if (retracer != nullptr) {
+        if (_solver_type == SolverType::JACOBIAN_PROPAGATION) {
+            throw std::invalid_argument(std::format(
+                "{}: a retracer cannot be attached; the sensitivities do not "
+                "include radiative couplings that change with the "
+                "temperatures",
+                name()));
+        }
+        if (_initialized && _resolved.fixed_couplings) {
+            throw std::invalid_argument(std::format(
+                "{}: a retracer changes the radiative couplings during the "
+                "solve, which fixed_couplings = true forbids",
+                name()));
+        }
+    }
+    _retracer = std::move(retracer);
+}
+
 ResolvedSettings Solver::resolved_settings() const {
     return resolve(_settings, resolve_context(_solver_type, tmm));
 }
@@ -198,6 +219,12 @@ void Solver::initialize_common(bool log_warnings) {
     // matrices yet.
     tnw.synchronize_structure();
     _resolved = resolve(_settings, resolve_context(_solver_type, tmm));
+    if (_retracer != nullptr && _resolved.fixed_couplings) {
+        throw std::invalid_argument(std::format(
+            "{}: a retracer changes the radiative couplings during the solve, "
+            "which fixed_couplings = true forbids",
+            name()));
+    }
     if (log_warnings) {
         if (!_resolved.not_applied.empty()) {
             warn("settings not applied: " +
@@ -267,6 +294,9 @@ void Solver::check_model_unchanged(std::string_view callback) const {
 
 void Solver::callback_transient_time_change() {
     PYCANHA_PROFILE_SCOPE("Callback Time Change");
+    if (_retracer != nullptr) {
+        _retracer->update();
+    }
     {
         const ScopeTimer timer(_report.callback_time);
         // Formulas applied here use the solver's thread count.
@@ -280,6 +310,9 @@ void Solver::callback_transient_time_change() {
 
 void Solver::callback_solver_loop() {
     PYCANHA_PROFILE_SCOPE("Callback Solver Loop");
+    if (_retracer != nullptr) {
+        _retracer->update();
+    }
     {
         const ScopeTimer timer(_report.callback_time);
         // Formulas applied here use the solver's thread count.
@@ -293,6 +326,9 @@ void Solver::callback_solver_loop() {
 
 void Solver::callback_transient_after_timestep() {
     PYCANHA_PROFILE_SCOPE("Callback Timestep");
+    if (_retracer != nullptr) {
+        _retracer->update();
+    }
     {
         const ScopeTimer timer(_report.callback_time);
         // Formulas applied here use the solver's thread count.
@@ -369,6 +405,12 @@ void Solver::sum_loads() {
     }
     if (!written) {
         Q.setZero();
+    }
+    if (_retracer != nullptr) {
+        const std::span<const double> internal = _retracer->internal_load();
+        if (std::cmp_equal(internal.size(), N)) {
+            Q += Eigen::Map<const VectorXd>(internal.data(), N);
+        }
     }
 }
 
@@ -650,6 +692,39 @@ Settings Solver::auto_configure(std::optional<std::int64_t> max_memory) {
                        detail::describe(resolved, resolved.factorization ==
                                                       Factorization::CHOLESKY));
     return settings();
+}
+
+void Solver::begin_retracer() {
+    if (_retracer != nullptr) {
+        _retracer->begin_solve();
+    }
+}
+
+bool Solver::retracer_accepts() const {
+    return _retracer == nullptr ||
+           _retracer->accepts_convergence(_resolved.tolerance);
+}
+
+void Solver::record_retracer() {
+    if (_retracer == nullptr) {
+        return;
+    }
+    const RetracerCounters counters = _retracer->counters();
+    _report.retraces = counters.retraces;
+    _report.overflow_couplings = counters.overflow_couplings;
+    _report.overflow_share = counters.overflow_share;
+}
+
+void Solver::end_retracer() {
+    if (_retracer == nullptr || !_retracer->end_solve()) {
+        return;
+    }
+    deinitialize();
+    SPDLOG_LOGGER_INFO(get_logger(),
+                       "{}: the retracer added radiative couplings to the "
+                       "model; initialize the retracer and the solver again "
+                       "before the next solve()",
+                       name());
 }
 
 bool Solver::has_radiation() const noexcept {

@@ -200,7 +200,10 @@ radiative::MaterialTable GeometryModel::material_table() const {
 
     table.properties.resize(static_cast<Eigen::Index>(unique_materials.size()),
                             6);
+    table.emissivity_ir_tables.reserve(unique_materials.size());
     for (std::size_t row = 0; row < unique_materials.size(); ++row) {
+        table.emissivity_ir_tables.push_back(
+            unique_materials[row]->emissivity_ir_table());
         const auto& props = unique_materials[row]->get_th_optical_properties();
         for (int dof = 0; dof < 6; ++dof) {
             table.properties(static_cast<Eigen::Index>(row), dof) =
