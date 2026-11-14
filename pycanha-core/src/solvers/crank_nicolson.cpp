@@ -489,6 +489,7 @@ void CrankNicolson::solve() {
 
     const FormulaExecutionGuard formula_execution(*this);
     begin_retracer();
+    begin_relaxation();
 
     callback_transient_time_change();
     callback_solver_loop();
@@ -506,6 +507,7 @@ void CrankNicolson::solve() {
 
         int iterations = 0;
         bool converged = false;
+        begin_relaxation_loop();
         for (solver_iter = 0; solver_iter < _resolved.max_iterations;
              ++solver_iter) {
             iterations = solver_iter + 1;
@@ -514,11 +516,17 @@ void CrankNicolson::solve() {
             build_heat_flux();
             solve_step();
 
+            // On the whole change dTd, whatever the relaxation.
             converged = temperature_convergence_check();
 
             {
                 PYCANHA_PROFILE_SCOPE("Write Td in TMM");
-                Td = Td_solver;
+                const double factor = relaxation_factor(converged);
+                if (factor < 1.0) {
+                    Td += factor * dTd;
+                } else {
+                    Td = Td_solver;
+                }
             }
             // The retracer judges the temperatures this solve produced
             // against the trace whose couplings it used.

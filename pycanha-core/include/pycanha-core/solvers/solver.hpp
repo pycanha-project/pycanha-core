@@ -296,6 +296,19 @@ class Solver {
 
     [[nodiscard]] bool temperature_convergence_check();
 
+    /// Starts the relaxation of a solve(): call after
+    /// refresh_live_settings().
+    void begin_relaxation();
+    /// Starts an iteration loop: the steady state, or one time step.
+    void begin_relaxation_loop() noexcept;
+    /// Sizes the vectors of the adaptive relaxation for relaxation_mode.
+    void size_relaxation();
+    /// The relaxation factor of the current iteration, whose linear solve
+    /// asks for the change dTd. `whole`: the iteration met the tolerance and
+    /// takes the whole change (the factor is then 1). Records the factors
+    /// used in the report.
+    [[nodiscard]] double relaxation_factor(bool whole);
+
     /// The retracer's begin_solve(), when there is one.
     void begin_retracer();
     /// Right after a linear solve: true without a retracer, otherwise
@@ -334,6 +347,13 @@ class Solver {
     std::vector<std::string> _initialize_warnings;
     // The model's structure versions when initialize() last ran.
     StructureVersions _initialized_structure;
+
+    // The adaptive relaxation: the change of the previous iteration of the
+    // loop, a work vector, and the factor that iteration applied.
+    VectorXd _relaxation_previous;
+    VectorXd _relaxation_difference;
+    double _relaxation_applied = 1.0;
+    bool _relaxation_has_previous = false;
 };
 
 }  // namespace pycanha::solvers

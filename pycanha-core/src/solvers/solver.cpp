@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <exception>
@@ -252,6 +253,8 @@ void Solver::initialize_common(bool log_warnings) {
     dTd = VectorXd::Zero(nd);
     Td_solver = VectorXd::Zero(nd);
     Q = VectorXd::Zero(N);
+    // Here, so that estimate_memory() counts them.
+    size_relaxation();
 
     new (&T) WrappVectorXd(nodes.T_vector.data(), N);
     new (&Td) WrappVectorXd(nodes.T_vector.data(), nd);
@@ -379,7 +382,8 @@ void Solver::report_table_ranges() {
 
 std::int64_t Solver::common_bytes() const noexcept {
     return detail::bytes_of(dTd) + detail::bytes_of(Td_solver) +
-           detail::bytes_of(Q);
+           detail::bytes_of(Q) + detail::bytes_of(_relaxation_previous) +
+           detail::bytes_of(_relaxation_difference);
 }
 
 void Solver::sum_loads() {
@@ -736,6 +740,74 @@ bool Solver::temperature_convergence_check() {
     dTd = Td_solver - Td;
     max_dT = dTd.cwiseAbs().maxCoeff();
     return max_dT < _resolved.tolerance;
+}
+
+void Solver::size_relaxation() {
+    const Index size =
+        _resolved.relaxation_mode == RelaxationMode::ADAPTIVE ? nd : 0;
+    _relaxation_previous.resize(size);
+    _relaxation_difference.resize(size);
+}
+
+void Solver::begin_relaxation() {
+    // relaxation_mode is LIVE: it may have changed since initialize().
+    size_relaxation();
+    begin_relaxation_loop();
+}
+
+void Solver::begin_relaxation_loop() noexcept {
+    _relaxation_has_previous = false;
+    _relaxation_applied = 1.0;
+}
+
+double Solver::relaxation_factor(bool whole) {
+    // Below it the iteration would barely move: a loop whose factor of the
+    // error is -100 still converges with it.
+    constexpr double smallest_adaptive = 0.01;
+    // An undamped loop whose change shrinks four times or more per iteration
+    // stays undamped: the T^4 linearisation alone converges quadratically,
+    // with a last change a small negative fraction of the one before, which
+    // Aitken would read as an oscillation and damp (measured: up to 12 % more
+    // iterations in transients of constant couplings). A loop already damped
+    // keeps refining its factor.
+    constexpr double fast_contraction = 0.25;
+    double factor = _resolved.relaxation;
+    if (_resolved.relaxation_mode == RelaxationMode::ADAPTIVE) {
+        if (_relaxation_has_previous) {
+            factor = _relaxation_applied;
+            // Aitken, with r the change of each iteration and w_{k-1} the
+            // factor the previous iteration applied:
+            //   w_k = -w_{k-1} r_{k-1}.(r_k - r_{k-1}) / |r_k - r_{k-1}|^2
+            const double previous_norm = _relaxation_previous.squaredNorm();
+            const double contraction =
+                previous_norm > 0.0
+                    ? dTd.dot(_relaxation_previous) / previous_norm
+                    : 0.0;
+            const bool damped = _relaxation_applied < 1.0;
+            _relaxation_difference = dTd - _relaxation_previous;
+            const double denominator = _relaxation_difference.squaredNorm();
+            if ((damped || std::abs(contraction) >= fast_contraction) &&
+                denominator > 0.0) {
+                const double estimate =
+                    -_relaxation_applied *
+                    _relaxation_previous.dot(_relaxation_difference) /
+                    denominator;
+                if (std::isfinite(estimate)) {
+                    factor = std::clamp(estimate, smallest_adaptive, 1.0);
+                }
+            }
+        }
+        _relaxation_previous = dTd;
+        _relaxation_has_previous = true;
+    }
+    if (whole) {
+        _relaxation_applied = 1.0;
+        return 1.0;
+    }
+    _relaxation_applied = factor;
+    _report.min_relaxation = std::min(_report.min_relaxation, factor);
+    _report.last_relaxation = factor;
+    return factor;
 }
 
 }  // namespace pycanha::solvers

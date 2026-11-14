@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <array>
 #include <catch2/catch_approx.hpp>
+#include <catch2/catch_message.hpp>
 #include <catch2/catch_test_macros.hpp>
 #include <cmath>
 #include <cstddef>
@@ -342,6 +343,67 @@ TEST_CASE("A lone plate follows its emissivity table",
         REQUIRE(model->radiative_couplings().get_coupling_value(1, 50) ==
                 Catch::Approx(0.1));
     }
+}
+
+TEST_CASE("A steep coating needs a relaxed steady state",
+          "[radiative][gpu][retracer][relaxation]") {
+    if (!rad::is_available()) {
+        SUCCEED("no RT-capable GPU device: skipped");
+        return;
+    }
+    rad::Device device = rad::Device::create();
+    const auto gmm = make_lone_plate();
+    // 0.15 at 250 K to 0.75 at 350 K: with 115 W the plate settles near
+    // 280 K, where each plain iteration multiplies the temperature error by
+    // -(T/4) (deps/dT)/eps = -1.27.
+    constexpr double steep_low = 0.15;
+    constexpr double steep_high = 0.75;
+    constexpr double dissipation = 115.0;
+    const auto steep = [&](double temperature) {
+        const double clamped = std::clamp(temperature, 250.0, 350.0);
+        return steep_low +
+               ((steep_high - steep_low) * (clamped - 250.0) / 100.0);
+    };
+    const auto solve = [&](pycanha::solvers::RelaxationMode mode) {
+        const std::array<std::pair<int, double>, 1> nodes{{{1, 300.0}}};
+        auto model = make_tmm(nodes);
+        model->parameters().add_table(
+            "eps_paint",
+            pycanha::LookupTable1D(Eigen::Vector2d(250.0, 350.0),
+                                   Eigen::Vector2d(steep_low, steep_high)));
+        model->nodes().set_qi(1, dissipation);
+        auto retracer = std::make_shared<rad::RadiativeRetracer>(
+            device, *gmm, model, space_node, few_rays());
+        retracer->initialize();
+        SteadyState solver(model);
+        // Above the noise of the traced couplings (float sums, about 1e-6
+        // relative, 1e-4 K here), which the steep coating amplifies.
+        Settings settings = converging(40, 1e-4);
+        settings.relaxation_mode = mode;
+        solver.set_settings(settings);
+        solver.set_retracer(retracer);
+        solver.initialize();
+        solver.solve();
+        return std::make_pair(solver.report(), model->nodes().get_T(1));
+    };
+
+    const auto [plain, plain_t] =
+        solve(pycanha::solvers::RelaxationMode::FIXED);
+    REQUIRE_FALSE(plain.converged());
+
+    const auto [relaxed, temperature] =
+        solve(pycanha::solvers::RelaxationMode::ADAPTIVE);
+    INFO(relaxed.to_string());
+    INFO("plain: " << plain.to_string());
+    REQUIRE(relaxed.converged());
+    REQUIRE(relaxed.min_relaxation < 1.0);
+    // One retrace per iteration at most (retrace_dT = 0, the last one after
+    // the converged solve).
+    REQUIRE(relaxed.retraces <= relaxed.iterations);
+    const double emitted =
+        pycanha::STF_BOLTZ * steep(temperature) *
+        (std::pow(temperature, 4) - std::pow(space_temperature, 4));
+    REQUIRE(emitted == Catch::Approx(dissipation).epsilon(1e-5));
 }
 
 TEST_CASE("Retraced couplings of a closed box match the Gebhart method",

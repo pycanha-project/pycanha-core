@@ -171,6 +171,10 @@ std::string SolverReport::to_string() const {
              std::format("{:.3g} K (estimated: reuse_tolerance x max. dT)",
                          reuse_error));
     }
+    if (min_relaxation < 1.0) {
+        line("relaxation", std::format("smallest {:.3g}, last {:.3g}",
+                                       min_relaxation, last_relaxation));
+    }
     line("factorizations",
          std::format("{} for {} solves ({:.3g} % reused)", factorizations,
                      solves, percent * reuse_rate()));
@@ -240,6 +244,8 @@ ReportDict SolverReport::to_dict() const {
         {"nonconverged.node", nodes},
         {"max_dT", max_dT},
         {"reuse_error", reuse_error},
+        {"min_relaxation", min_relaxation},
+        {"last_relaxation", last_relaxation},
         {"factorizations", std::int64_t{factorizations}},
         {"solves", std::int64_t{solves}},
         {"reuse_rate", reuse_rate()},

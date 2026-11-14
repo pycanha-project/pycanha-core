@@ -103,6 +103,13 @@ struct SolverReport {
     /// errors, the same as a direct solve's, come on top.
     double reuse_error = 0.0;
 
+    /// The smallest relaxation factor an iteration used (see the setting
+    /// relaxation), and the factor of the last iteration that did not take
+    /// the whole change; 1 when every iteration took the whole change. A
+    /// small factor means the loops needed strong damping to converge.
+    double min_relaxation = 1.0;
+    double last_relaxation = 1.0;
+
     /// Numerical factorizations.
     int factorizations = 0;
     /// Linear solves; those beyond the factorizations used existing or
