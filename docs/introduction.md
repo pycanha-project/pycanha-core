@@ -25,7 +25,7 @@ The currently implemented public modules include:
 
 - Thermal network primitives: nodes, couplings, conductive and radiative coupling containers, and thermal network/model wrappers.
 - Parameter and formula infrastructure: entities, variables, formulas, parameter collections, and derivative-aware parameter registration.
-- Solver types: `steady::SteadyState`, `transient::CrankNicolson` and `sensitivity::JacobianPropagation`, all configured through one `solvers::Settings`.
+- Solver types: `steady::SteadyState`, `transient::CrankNicolson` and `sensitivity::JacobianPropagation`, all configured through one `solvers::Settings`. The first two accept a `radiative::RadiativeRetracer` that retraces the radiative couplings when IR emissivities depend on temperature (see [Temperature-dependent IR emissivity](retracer.md)).
 - Thermal data containers: lookup tables, dense and sparse time series, data models, and stores.
 - Geometry support under `gmm`: primitives, transformations, meshes, triangulation, materials, and geometry model wrappers.
 - Utilities: logging, profiling support, sparse matrix helpers, random generators, and package metadata.
