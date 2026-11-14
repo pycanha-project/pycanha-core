@@ -103,11 +103,26 @@ struct SolverReport {
     /// errors, the same as a direct solve's, come on top.
     double reuse_error = 0.0;
 
+    /// The smallest relaxation factor an iteration used (see the setting
+    /// relaxation), and the factor of the last iteration that did not take
+    /// the whole change; 1 when every iteration took the whole change. A
+    /// small factor means the loops needed strong damping to converge.
+    double min_relaxation = 1.0;
+    double last_relaxation = 1.0;
+
     /// Numerical factorizations.
     int factorizations = 0;
     /// Linear solves; those beyond the factorizations used existing or
     /// earlier factors.
     int solves = 0;
+
+    /// With a retracer: the traces it made during the solve.
+    int retraces = 0;
+    /// With a retracer: the couplings of its last trace that have no slot in
+    /// the model's radiative matrices and were carried as an internal load.
+    std::int64_t overflow_couplings = 0;
+    /// Their sum over the sum of every coupling of that trace [m^2/m^2].
+    double overflow_share = 0.0;
 
     double initialize_time = 0.0;  ///< Wall time of initialize() [s].
     double solve_time = 0.0;       ///< Wall time of solve() [s].

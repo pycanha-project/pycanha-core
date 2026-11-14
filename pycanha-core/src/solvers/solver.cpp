@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <exception>
@@ -14,6 +15,7 @@
 #include <limits>
 #include <memory>
 #include <optional>
+#include <span>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -28,6 +30,7 @@
 #include "pycanha-core/parameters/formulas.hpp"
 #include "pycanha-core/solvers/model_changed_error.hpp"
 #include "pycanha-core/solvers/report.hpp"
+#include "pycanha-core/solvers/retracer.hpp"
 #include "pycanha-core/solvers/settings.hpp"
 #include "pycanha-core/tmm/nodes.hpp"
 #include "pycanha-core/tmm/thermalmathematicalmodel.hpp"
@@ -178,6 +181,25 @@ void Solver::unset(std::string_view name) {
     set_settings(replacement);
 }
 
+void Solver::set_retracer(std::shared_ptr<Retracer> retracer) {
+    if (retracer != nullptr) {
+        if (_solver_type == SolverType::JACOBIAN_PROPAGATION) {
+            throw std::invalid_argument(std::format(
+                "{}: a retracer cannot be attached; the sensitivities do not "
+                "include radiative couplings that change with the "
+                "temperatures",
+                name()));
+        }
+        if (_initialized && _resolved.fixed_couplings) {
+            throw std::invalid_argument(std::format(
+                "{}: a retracer changes the radiative couplings during the "
+                "solve, which fixed_couplings = true forbids",
+                name()));
+        }
+    }
+    _retracer = std::move(retracer);
+}
+
 ResolvedSettings Solver::resolved_settings() const {
     return resolve(_settings, resolve_context(_solver_type, tmm));
 }
@@ -198,6 +220,12 @@ void Solver::initialize_common(bool log_warnings) {
     // matrices yet.
     tnw.synchronize_structure();
     _resolved = resolve(_settings, resolve_context(_solver_type, tmm));
+    if (_retracer != nullptr && _resolved.fixed_couplings) {
+        throw std::invalid_argument(std::format(
+            "{}: a retracer changes the radiative couplings during the solve, "
+            "which fixed_couplings = true forbids",
+            name()));
+    }
     if (log_warnings) {
         if (!_resolved.not_applied.empty()) {
             warn("settings not applied: " +
@@ -225,6 +253,8 @@ void Solver::initialize_common(bool log_warnings) {
     dTd = VectorXd::Zero(nd);
     Td_solver = VectorXd::Zero(nd);
     Q = VectorXd::Zero(N);
+    // Here, so that estimate_memory() counts them.
+    size_relaxation();
 
     new (&T) WrappVectorXd(nodes.T_vector.data(), N);
     new (&Td) WrappVectorXd(nodes.T_vector.data(), nd);
@@ -267,6 +297,9 @@ void Solver::check_model_unchanged(std::string_view callback) const {
 
 void Solver::callback_transient_time_change() {
     PYCANHA_PROFILE_SCOPE("Callback Time Change");
+    if (_retracer != nullptr) {
+        _retracer->update();
+    }
     {
         const ScopeTimer timer(_report.callback_time);
         // Formulas applied here use the solver's thread count.
@@ -280,6 +313,9 @@ void Solver::callback_transient_time_change() {
 
 void Solver::callback_solver_loop() {
     PYCANHA_PROFILE_SCOPE("Callback Solver Loop");
+    if (_retracer != nullptr) {
+        _retracer->update();
+    }
     {
         const ScopeTimer timer(_report.callback_time);
         // Formulas applied here use the solver's thread count.
@@ -293,6 +329,9 @@ void Solver::callback_solver_loop() {
 
 void Solver::callback_transient_after_timestep() {
     PYCANHA_PROFILE_SCOPE("Callback Timestep");
+    if (_retracer != nullptr) {
+        _retracer->update();
+    }
     {
         const ScopeTimer timer(_report.callback_time);
         // Formulas applied here use the solver's thread count.
@@ -343,7 +382,8 @@ void Solver::report_table_ranges() {
 
 std::int64_t Solver::common_bytes() const noexcept {
     return detail::bytes_of(dTd) + detail::bytes_of(Td_solver) +
-           detail::bytes_of(Q);
+           detail::bytes_of(Q) + detail::bytes_of(_relaxation_previous) +
+           detail::bytes_of(_relaxation_difference);
 }
 
 void Solver::sum_loads() {
@@ -369,6 +409,12 @@ void Solver::sum_loads() {
     }
     if (!written) {
         Q.setZero();
+    }
+    if (_retracer != nullptr) {
+        const std::span<const double> internal = _retracer->internal_load();
+        if (std::cmp_equal(internal.size(), N)) {
+            Q += Eigen::Map<const VectorXd>(internal.data(), N);
+        }
     }
 }
 
@@ -652,6 +698,39 @@ Settings Solver::auto_configure(std::optional<std::int64_t> max_memory) {
     return settings();
 }
 
+void Solver::begin_retracer() {
+    if (_retracer != nullptr) {
+        _retracer->begin_solve();
+    }
+}
+
+bool Solver::retracer_accepts() const {
+    return _retracer == nullptr ||
+           _retracer->accepts_convergence(_resolved.tolerance);
+}
+
+void Solver::record_retracer() {
+    if (_retracer == nullptr) {
+        return;
+    }
+    const RetracerCounters counters = _retracer->counters();
+    _report.retraces = counters.retraces;
+    _report.overflow_couplings = counters.overflow_couplings;
+    _report.overflow_share = counters.overflow_share;
+}
+
+void Solver::end_retracer() {
+    if (_retracer == nullptr || !_retracer->end_solve()) {
+        return;
+    }
+    deinitialize();
+    SPDLOG_LOGGER_INFO(get_logger(),
+                       "{}: the retracer added radiative couplings to the "
+                       "model; initialize the retracer and the solver again "
+                       "before the next solve()",
+                       name());
+}
+
 bool Solver::has_radiation() const noexcept {
     return KRdd.nonZeros() != 0 || KRdb.nonZeros() != 0;
 }
@@ -661,6 +740,74 @@ bool Solver::temperature_convergence_check() {
     dTd = Td_solver - Td;
     max_dT = dTd.cwiseAbs().maxCoeff();
     return max_dT < _resolved.tolerance;
+}
+
+void Solver::size_relaxation() {
+    const Index size =
+        _resolved.relaxation_mode == RelaxationMode::ADAPTIVE ? nd : 0;
+    _relaxation_previous.resize(size);
+    _relaxation_difference.resize(size);
+}
+
+void Solver::begin_relaxation() {
+    // relaxation_mode is LIVE: it may have changed since initialize().
+    size_relaxation();
+    begin_relaxation_loop();
+}
+
+void Solver::begin_relaxation_loop() noexcept {
+    _relaxation_has_previous = false;
+    _relaxation_applied = 1.0;
+}
+
+double Solver::relaxation_factor(bool whole) {
+    // Below it the iteration would barely move: a loop whose factor of the
+    // error is -100 still converges with it.
+    constexpr double smallest_adaptive = 0.01;
+    // An undamped loop whose change shrinks four times or more per iteration
+    // stays undamped: the T^4 linearisation alone converges quadratically,
+    // with a last change a small negative fraction of the one before, which
+    // Aitken would read as an oscillation and damp (measured: up to 12 % more
+    // iterations in transients of constant couplings). A loop already damped
+    // keeps refining its factor.
+    constexpr double fast_contraction = 0.25;
+    double factor = _resolved.relaxation;
+    if (_resolved.relaxation_mode == RelaxationMode::ADAPTIVE) {
+        if (_relaxation_has_previous) {
+            factor = _relaxation_applied;
+            // Aitken, with r the change of each iteration and w_{k-1} the
+            // factor the previous iteration applied:
+            //   w_k = -w_{k-1} r_{k-1}.(r_k - r_{k-1}) / |r_k - r_{k-1}|^2
+            const double previous_norm = _relaxation_previous.squaredNorm();
+            const double contraction =
+                previous_norm > 0.0
+                    ? dTd.dot(_relaxation_previous) / previous_norm
+                    : 0.0;
+            const bool damped = _relaxation_applied < 1.0;
+            _relaxation_difference = dTd - _relaxation_previous;
+            const double denominator = _relaxation_difference.squaredNorm();
+            if ((damped || std::abs(contraction) >= fast_contraction) &&
+                denominator > 0.0) {
+                const double estimate =
+                    -_relaxation_applied *
+                    _relaxation_previous.dot(_relaxation_difference) /
+                    denominator;
+                if (std::isfinite(estimate)) {
+                    factor = std::clamp(estimate, smallest_adaptive, 1.0);
+                }
+            }
+        }
+        _relaxation_previous = dTd;
+        _relaxation_has_previous = true;
+    }
+    if (whole) {
+        _relaxation_applied = 1.0;
+        return 1.0;
+    }
+    _relaxation_applied = factor;
+    _report.min_relaxation = std::min(_report.min_relaxation, factor);
+    _report.last_relaxation = factor;
+    return factor;
 }
 
 }  // namespace pycanha::solvers

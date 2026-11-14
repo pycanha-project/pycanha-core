@@ -173,6 +173,8 @@ add_library(${LIB_NAME} STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/radiative/exchange_assemble.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/radiative/gebhart.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/radiative/pair_walk.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/radiative/retracer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/radiative/retracer_network.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/radiative/vf_assemble.cpp
     ${PYCANHA_RADIATIVE_SOURCES}
 )

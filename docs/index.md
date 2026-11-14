@@ -11,17 +11,19 @@ For a concise technical overview of the library itself, start with the introduct
 
 2. [Formulas](formulas.md): formula kinds, evaluation order, derivatives, and callable formulas.
 
-3. [Logging and profiling](logging.md): logger usage, runtime level control, and profiling configuration.
+3. [Temperature-dependent IR emissivity](retracer.md): emissivity tables, the radiative retracer, retrace thresholds, and steady-state relaxation.
 
-4. [Intel MKL configuration](mkl-configuration.md): current MKL integration, runtime requirements, and fallback behavior.
+4. [Logging and profiling](logging.md): logger usage, runtime level control, and profiling configuration.
 
-5. [Tools](tools.md): formatting, static analysis, testing, packaging, and documentation tooling.
+5. [Intel MKL configuration](mkl-configuration.md): current MKL integration, runtime requirements, and fallback behavior.
 
-6. [Development workflow](workflow.md): branch, pull request, release, and documentation publishing expectations.
+6. [Tools](tools.md): formatting, static analysis, testing, packaging, and documentation tooling.
 
-7. [CI/CD](cicd.md): current GitHub workflow coverage for build, test, documentation, and deployment.
+7. [Development workflow](workflow.md): branch, pull request, release, and documentation publishing expectations.
 
-8. [FAQ](faq.md)
+8. [CI/CD](cicd.md): current GitHub workflow coverage for build, test, documentation, and deployment.
+
+9. [FAQ](faq.md)
 
 Check also the **Classes** and **Files** sections for API-level browsing.
 

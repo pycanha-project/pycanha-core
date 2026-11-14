@@ -72,6 +72,9 @@ doxygen_add_docs(
     ${PROJECT_SOURCE_DIR}/docs/introduction.md
     ${PROJECT_SOURCE_DIR}/docs/index.md
     ${PROJECT_SOURCE_DIR}/docs/formulas.md
+    ${PROJECT_SOURCE_DIR}/docs/retracer.md
+    ${PROJECT_SOURCE_DIR}/docs/logging.md
+    ${PROJECT_SOURCE_DIR}/docs/mkl-configuration.md
     ${PROJECT_SOURCE_DIR}/docs/tools.md
     ${PROJECT_SOURCE_DIR}/docs/workflow.md
     ${PROJECT_SOURCE_DIR}/docs/cicd.md

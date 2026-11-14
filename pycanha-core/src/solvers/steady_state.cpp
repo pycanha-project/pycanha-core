@@ -163,6 +163,10 @@ void SteadyState::solve() {
     SPDLOG_LOGGER_INFO(get_logger(), "{} solving...", name());
 
     const FormulaExecutionGuard formula_execution(*this);
+    // No callback runs before the first linear solve: the retracer provides
+    // the starting couplings and internal load here.
+    begin_retracer();
+    begin_relaxation();
 
     _converged = false;
     int iterations_done = 0;
@@ -204,16 +208,29 @@ void SteadyState::solve() {
 
         if (_resolved.reuse_factors) {
             dTd = Td_solver;
-            Td += dTd;
         } else {
             dTd = Td_solver - Td;
+        }
+        // Tested on the whole change, whatever the relaxation: a small
+        // factor would otherwise pass the tolerance on a loop far from its
+        // solution.
+        max_dT = dTd.cwiseAbs().maxCoeff();
+        const bool within_tolerance = max_dT < _resolved.tolerance;
+        const double factor = relaxation_factor(within_tolerance);
+        if (factor < 1.0) {
+            Td += factor * dTd;
+        } else if (_resolved.reuse_factors) {
+            Td += dTd;
+        } else {
             Td = Td_solver;
         }
-        max_dT = dTd.cwiseAbs().maxCoeff();
+        // Judged now, against the trace this solve used: the callback below
+        // may trace again at the new temperatures.
+        const bool accepted = within_tolerance && retracer_accepts();
 
         this->callback_solver_loop();
 
-        if (max_dT < _resolved.tolerance) {
+        if (accepted) {
             SPDLOG_LOGGER_INFO(get_logger(),
                                "{} converged. Num. iters: {}. Max. dT = {} K. "
                                "Factorizations: {}.",
@@ -225,7 +242,9 @@ void SteadyState::solve() {
     }
 
     record_steady_iterations(iterations_done, converged);
+    record_retracer();
     finish_solve_report(start);
+    end_retracer();
 }
 
 void SteadyState::deinitialize() { release(); }
