@@ -524,6 +524,16 @@ TEST_CASE("The retracer checks the model and the tables",
         rad::RadiativeRetracer retracer(device, *gmm, model, space_node);
         REQUIRE_THROWS_AS(retracer.initialize(), std::invalid_argument);
     }
+    SECTION("a table that is periodic in the temperature") {
+        model->parameters().add_table(
+            "eps_paint",
+            pycanha::LookupTable1D(Eigen::Vector2d(t_low, t_high),
+                                   Eigen::Vector2d(eps_low, eps_low),
+                                   pycanha::InterpolationMethod::Linear,
+                                   pycanha::ExtrapolationMethod::Periodic));
+        rad::RadiativeRetracer retracer(device, *gmm, model, space_node);
+        REQUIRE_THROWS_AS(retracer.initialize(), std::invalid_argument);
+    }
     SECTION("IR properties adding up to more than 1") {
         add_paint_table(*model);
         auto shiny = std::make_unique<GeometryModel>("shiny");

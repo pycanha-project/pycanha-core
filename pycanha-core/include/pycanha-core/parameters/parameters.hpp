@@ -150,8 +150,9 @@ class Parameters {
     // Throws std::out_of_range when there is no such table.
     [[nodiscard]] const Table& table(const std::string& name) const;
     [[nodiscard]] std::vector<std::string> table_names() const;
-    // Overwrite the y or x values in place. The size must not change and x
-    // must stay strictly increasing; nothing is written when a check fails.
+    // Overwrite the y or x values in place. The size must not change, x must
+    // stay strictly increasing and the first and last y of a `Periodic` table
+    // equal; nothing is written when a check fails.
     // Not a structural change, so they are safe in a callback during a
     // solve: the next lookup reads the new values.
     void set_table_values(const std::string& name,

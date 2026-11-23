@@ -13,6 +13,7 @@
 #include <utility>
 
 #include "pycanha-core/parameters/origin.hpp"
+#include "pycanha-core/thermaldata/interpolation_utils.hpp"
 #include "pycanha-core/thermaldata/lookup_table.hpp"
 
 namespace pycanha {
@@ -68,6 +69,15 @@ struct Segment {
                     argument, x.front(), x.back()));
 }
 
+// The argument a periodic table is looked up at; other tables keep theirs.
+[[nodiscard]] double wrap_argument(const detail::TableView& table,
+                                   double argument) {
+    const auto x = x_of(table);
+    return table.extrap == ExtrapolationMethod::Periodic
+               ? detail::wrap_periodic(argument, x.front(), x.back())
+               : argument;
+}
+
 // The out-of-range branch of table_value, kept apart from the lookup.
 [[nodiscard]] double value_outside(const detail::TableView& table,
                                    double argument) {
@@ -98,6 +108,9 @@ struct Segment {
             return argument < x.front() ? y.front() : y.back();
         case ExtrapolationMethod::Throw:
             throw_out_of_range(table, argument);
+        case ExtrapolationMethod::Periodic:
+            // Wrapped before the lookup, so never outside the range.
+            break;
     }
     return nan_value;
 }
@@ -123,6 +136,9 @@ struct Segment {
             return 0.0;
         case ExtrapolationMethod::Throw:
             throw_out_of_range(table, argument);
+        case ExtrapolationMethod::Periodic:
+            // Wrapped before the lookup, so never outside the range.
+            break;
     }
     return nan_value;
 }
@@ -178,20 +194,24 @@ void TableRangeRecord::note(double argument, const double* time) noexcept {
 
 double table_value_general(const TableView& table, double argument) {
     const auto x = x_of(table);
+    const double wrapped = wrap_argument(table, argument);
     // False for a NaN argument too, which then takes the out-of-range branch.
-    const bool inside = (argument >= x.front()) && (argument <= x.back());
+    const bool inside = (wrapped >= x.front()) && (wrapped <= x.back());
     if (!inside) {
-        return value_outside(table, argument);
+        return value_outside(table, wrapped);
     }
     const auto y = y_of(table);
     if (x.size() == 1U) {
         return y.front();
     }
 
-    const auto [lower, fraction] = find_segment(x, argument);
+    const auto [lower, fraction] = find_segment(x, wrapped);
     switch (table.interp) {
-        case InterpolationMethod::Linear:
-            return y[lower] + (fraction * (y[lower + 1U] - y[lower]));
+        case InterpolationMethod::Linear: {
+            // As in table_value, so both paths give the same bits.
+            const std::span<const double> slopes(table.slopes, x.size() - 1U);
+            return y[lower] + ((wrapped - x[lower]) * slopes[lower]);
+        }
         case InterpolationMethod::NearestLower:
         case InterpolationMethod::Step:
             return fraction >= 1.0 ? y[lower + 1U] : y[lower];
@@ -203,15 +223,16 @@ double table_value_general(const TableView& table, double argument) {
 
 double table_slope(const TableView& table, double argument) {
     const auto x = x_of(table);
-    const bool inside = (argument >= x.front()) && (argument <= x.back());
+    const double wrapped = wrap_argument(table, argument);
+    const bool inside = (wrapped >= x.front()) && (wrapped <= x.back());
     if (!inside) {
-        return slope_outside(table, argument);
+        return slope_outside(table, wrapped);
     }
     if ((x.size() == 1U) || (table.interp != InterpolationMethod::Linear)) {
         return 0.0;
     }
     const std::span<const double> slopes(table.slopes, x.size() - 1U);
-    return slopes[find_segment(x, argument).lower];
+    return slopes[find_segment(x, wrapped).lower];
 }
 
 }  // namespace detail
@@ -275,6 +296,8 @@ std::string_view to_string(Origin origin) noexcept {
             return "esatan_tmm_reader";
         case Origin::steptas_gmm_reader:
             return "steptas_gmm_reader";
+        case Origin::orbital_loads:
+            return "orbital_loads";
     }
     return "unknown";
 }

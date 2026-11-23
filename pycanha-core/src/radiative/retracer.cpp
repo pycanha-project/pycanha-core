@@ -314,6 +314,12 @@ void RadiativeRetracer::resolve_tables() {
                 "linearly, which can leave [0, 1]; use Constant or Throw",
                 material.emissivity_table));
         }
+        if (lookup.extrapolation_method() == ExtrapolationMethod::Periodic) {
+            throw std::invalid_argument(std::format(
+                "RadiativeRetracer: the emissivity table '{}' is periodic in "
+                "the temperature; use Constant or Throw",
+                material.emissivity_table));
+        }
         // Between breakpoints a table stays within its breakpoint values,
         // and outside them it holds the end values or throws, so checking
         // the breakpoints checks every temperature.

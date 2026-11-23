@@ -63,6 +63,19 @@ void report_cross_part_cutters(const detail::ResolvedTarget& target) {
     }
 }
 
+// TODO(radiative): leave the active faces without a material out of the trace
+// instead of tracing them as black bodies.
+void warn_black_sides(const GeometryItem& item, bool side1, bool side2) {
+    if (!side1 && !side2) {
+        return;
+    }
+    SPDLOG_LOGGER_WARN(pycanha::get_logger(),
+                       "material_table: item '{}' has no optical "
+                       "material on active side {} (faces treated as "
+                       "blackbody)",
+                       item.name(), side1 ? (side2 ? "1/2" : "1") : "2");
+}
+
 }  // namespace
 
 std::vector<radiative::ScenePart> GeometryModel::mesh_parts(
@@ -175,15 +188,12 @@ radiative::MaterialTable GeometryModel::material_table() const {
         const ThermalMesh& thermal_mesh = item->thermal_mesh();
         const int side1_row = row_of(thermal_mesh.get_side1_optical());
         const int side2_row = row_of(thermal_mesh.get_side2_optical());
-        if (side1_row < 0 || side2_row < 0) {
-            SPDLOG_LOGGER_WARN(
-                pycanha::get_logger(),
-                "material_table: item '{}' has no optical "
-                "material on side {} (faces treated as "
-                "blackbody)",
-                item->name(),
-                side1_row < 0 ? (side2_row < 0 ? "1/2" : "1") : "2");
-        }
+        // The raytracer table is radiative-only: a conductive-only side is
+        // inactive here even though it still carries a node.
+        const bool side1_active = thermal_mesh.is_radiative_active(1U);
+        const bool side2_active = thermal_mesh.is_radiative_active(2U);
+        warn_black_sides(*item, side1_active && side1_row < 0,
+                         side2_active && side2_row < 0);
 
         const auto first = static_cast<Eigen::Index>(range.first_face_id);
         const auto last = std::min(
@@ -191,10 +201,8 @@ radiative::MaterialTable GeometryModel::material_table() const {
         for (Eigen::Index face = first; face <= last; face += 2) {
             table.face_material[face] = side1_row;
             table.face_material[face + 1] = side2_row;
-            // The raytracer table is radiative-only: a conductive-only side is
-            // inactive here even though it still carries a node.
-            table.face_active[face] = thermal_mesh.is_radiative_active(1U);
-            table.face_active[face + 1] = thermal_mesh.is_radiative_active(2U);
+            table.face_active[face] = side1_active;
+            table.face_active[face + 1] = side2_active;
         }
     }
 

@@ -1,3 +1,4 @@
+#include <Eigen/Core>
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
 #include <memory>
@@ -7,9 +8,13 @@
 #include <vector>
 
 #include "pycanha-core/globals.hpp"
+#include "pycanha-core/parameters/formulas.hpp"
+#include "pycanha-core/parameters/parameters.hpp"
 #include "pycanha-core/solvers/crank_nicolson.hpp"
+#include "pycanha-core/solvers/report.hpp"
 #include "pycanha-core/solvers/settings.hpp"
 #include "pycanha-core/thermaldata/data_model.hpp"
+#include "pycanha-core/thermaldata/lookup_table.hpp"
 #include "pycanha-core/tmm/node.hpp"
 #include "pycanha-core/tmm/thermalmathematicalmodel.hpp"
 
@@ -208,4 +213,45 @@ TEST_CASE("CrankNicolson writes empty and dense loads", "[solver][transient]") {
     REQUIRE(solar.values()(1, 0) == Catch::Approx(2.0));
     REQUIRE(solar.values()(1, 1) == 0.0);
     REQUIRE(internal.values()(1, 1) == Catch::Approx(3.0));
+}
+
+TEST_CASE("A periodic table repeats a load over a transient",
+          "[solver][transient]") {
+    constexpr double period = 8.0;
+    constexpr double dt = 0.5;
+    constexpr int periods = 3;
+    constexpr auto per_period = static_cast<pycanha::Index>(period / dt);
+
+    auto model = make_probe_model();
+    model->parameters().add_table(
+        "load",
+        pycanha::LookupTable1D(Eigen::Vector4d(0.0, 1.3, 4.7, period),
+                               Eigen::Vector4d(1.0, 9.0, 2.0, 1.0),
+                               pycanha::InterpolationMethod::Linear,
+                               pycanha::ExtrapolationMethod::Periodic),
+        "time");
+    model->formulas().add_formula("QI10", "load");
+    model->formulas().add_formula("QI20", "2 * load(time - 3)");
+
+    pycanha::solvers::transient::CrankNicolson solver(model);
+    pycanha::solvers::Settings settings;
+    settings.output_name = "periodic_load";
+    settings.output_attributes = {pycanha::DataModelAttribute::QI};
+    settings.max_iterations = 50;
+    solver.set_settings(settings);
+    solver.set_simulation_time(0.0, period * periods, dt, dt);
+    solver.initialize();
+    solver.solve();
+
+    const auto& loads = solver.output_model().get_dense_attribute(
+        pycanha::DataModelAttribute::QI);
+    REQUIRE(loads.num_timesteps() == (per_period * periods) + 1);
+    // Not a constant: the peak of the table is at 9.
+    REQUIRE(loads.values().col(0).head(per_period).maxCoeff() > 7.0);
+    // Bit for bit, one period later.
+    const pycanha::Index compared = (per_period * (periods - 1)) + 1;
+    REQUIRE((loads.values().topRows(compared) ==
+             loads.values().middleRows(per_period, compared)));
+    REQUIRE(model->parameters().table_ranges().empty());
+    REQUIRE(solver.report().warnings.empty());
 }

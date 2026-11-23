@@ -161,7 +161,7 @@ TEST_CASE("radiative gebhart: matrix path agrees with the MCRT kernel",
                               make_materials(rows, pair_rows));
 
     rad::TraceSettings settings;
-    settings.rays_per_face = 20'000;
+    settings.rays_per_face = 100'000;
     settings.seed = 61;
 
     // Path A: MCRT exchange factors, traced directly with materials.
@@ -169,7 +169,9 @@ TEST_CASE("radiative gebhart: matrix path agrees with the MCRT kernel",
     scene.accumulate_exchange(exchange_acc, settings);
     const rad::ExchangeResult mcrt = exchange_acc.result();
 
-    // Path B: geometric VF matrix + CPU Gebhart solve (D4 cross-check).
+    // Path B: geometric VF matrix + CPU Gebhart solve. Its own seed: with the
+    // same one both paths follow the same first hits and share their noise.
+    settings.seed = 62;
     rad::VfAccumulator vf_acc(scene);
     scene.accumulate_vf(vf_acc, settings);
     const rad::VfResult vf = vf_acc.result();
@@ -182,7 +184,10 @@ TEST_CASE("radiative gebhart: matrix path agrees with the MCRT kernel",
     // the intensive B, so the emissive area comes back out before comparing.
     const double emissive = scene.face_areas()[0] * eps;
     REQUIRE(csr_value(mcrt.factors, 0, 2) / emissive ==
-            Catch::Approx(csr_value(gebhart, 0, 2)).margin(0.02));
+            Catch::Approx(csr_value(gebhart, 0, 2)).epsilon(0.02));
+    // B00 is about 0.01: only 1 ray in 100 comes back to its plate, so it is
+    // the noisier one. The Gebhart method also takes the radiosity of a plate
+    // as uniform, which makes it 1.3 % low here (and B02 only 0.02 %).
     REQUIRE(csr_value(mcrt.factors, 0, 0) / emissive ==
-            Catch::Approx(csr_value(gebhart, 0, 0)).margin(0.02));
+            Catch::Approx(csr_value(gebhart, 0, 0)).epsilon(0.1));
 }

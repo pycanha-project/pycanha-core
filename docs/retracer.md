@@ -23,7 +23,7 @@ paint->set_emissivity_ir_table("eps_paint");   // "" removes it
 
 - Only the IR emissivity can be a table. Solar properties and the IR specular reflectance and transmissivity stay numbers.
 - The material keeps its number (`emissivity_ir()`), and everything except the retracer reads it: a plain trace, the material table of the geometry model, the solar and view-factor paths. `GeometryModel::material_table()` lists the table names in `MaterialTable::emissivity_ir_tables`, one per row (empty without a table).
-- The table must extrapolate with `Constant` (the default) or `Throw`. `Linear` extrapolation is refused, because it can leave [0, 1].
+- The table must extrapolate with `Constant` (the default) or `Throw`. `Linear` extrapolation is refused, because it can leave [0, 1], and so is `Periodic`.
 - At every breakpoint the emissivity must be in [0, 1] and, with the IR specular reflectance and transmissivity of the material, add up to at most 1.
 - The table is looked up and checked by `RadiativeRetracer::initialize()`, not when it is named. A lookup outside the table during a solve is reported with the other out-of-range table calls of that solve (a WARN and `SolverReport::warnings`).
 
@@ -50,7 +50,7 @@ RadiativeRetracer(Device& device, const gmm::GeometryModel& gmm,
 | `retrace_dT` | Temperature change [K] that triggers a new trace: one value for every node owning an active face, or a `std::map<NodeNum, double>` checked on the listed nodes only. `0` traces again on any change. Must not be negative. |
 | `write_back` | Whether the couplings that had no place in the model are inserted into it after the solve. |
 
-A face takes the optical properties of its material, with the IR emissivity read from the table at the temperature of the face's node. An active face without a node is taken at 273.15 K and its couplings are dropped (one WARN). A face without a material is a black body. Only the IR band is traced: solar loads are not touched.
+A face takes the optical properties of its material, with the IR emissivity read from the table at the temperature of the face's node. An active face without a node is taken at 273.15 K and its couplings are dropped (one WARN). An active face without a material is a black body (one WARN per item). Only the IR band is traced: solar loads are not touched.
 
 ## What it owns
 

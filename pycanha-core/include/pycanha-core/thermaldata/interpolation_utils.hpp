@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <cmath>
 #include <stdexcept>
 
 #include "pycanha-core/globals.hpp"
@@ -13,6 +14,23 @@ struct InterpLocation {
     bool below_range = false;
     bool above_range = false;
 };
+
+// The equivalent of `value` in [first, last), for data that repeats with the
+// period last - first. NaN when `value` is not finite.
+[[nodiscard]] inline double wrap_periodic(double value, double first,
+                                          double last) {
+    if ((value >= first) && (value < last)) {
+        return value;
+    }
+    const double period = last - first;
+    double offset = std::fmod(value - first, period);
+    if (offset < 0.0) {
+        offset += period;
+    }
+    const double wrapped = first + offset;
+    // The additions can round up to `last`, which is `first` again.
+    return wrapped >= last ? first : wrapped;
+}
 
 [[nodiscard]] inline InterpLocation locate(const double* x_data, Index size,
                                            double query) {

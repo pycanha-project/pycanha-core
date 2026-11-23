@@ -102,7 +102,8 @@ tm.formulas().add_formula("GL(1,2)", "2.5e-3 * k_al((T1 + T2) / 2)");
 ```
 
 - The argument is any expression of entities and parameters.
-- Interpolation: `Linear`, `NearestLower`, `NearestUpper` or `Step`. Extrapolation: `Constant` holds the end value, `Linear` extends the end segment, `Throw` throws `std::out_of_range`.
+- Interpolation: `Linear`, `NearestLower`, `NearestUpper` or `Step`. Extrapolation: `Constant` holds the end value, `Linear` extends the end segment, `Throw` throws `std::out_of_range`, `Periodic` repeats the table.
+- `Periodic`: the period is `x_last - x_first`, and the argument is wrapped into `[x_first, x_last)`. The table needs at least two points and its first and last values must be exactly equal: writing values that break this, or selecting `Periodic` for such a table, throws `std::invalid_argument`. A table evaluated at `time` repeats a load over a transient this way.
 - Table names share the parameters' name space, ignoring case: a table cannot take the name of a parameter, an entity token (`T`, `C`, `QS`, `QA`, `QE`, `QI`, `QR`, `GL`, `GR`), `time`, or a built-in function or constant.
 - Adding, removing or replacing a table is a change of the parameters' structure, refused while a solve runs.
 - `set_table_values(name, y)` and `set_table_x(name, x)` overwrite the values in place: the size stays and `x` must stay strictly increasing. They change no structure, so a callback may edit a table during a solve and the next lookup reads the new values.
@@ -117,8 +118,9 @@ tm.formulas().add_formula("GL(1,2)", "2.5e-3 * k_al((T1 + T2) / 2)");
 A query outside a table's range is recorded per table: the time of the first one (from the `time` parameter), its argument, and the smallest and largest argument seen. After each solve, one WARN lists every table queried outside its range and the same line is added to the solver report's `warnings`. `Parameters::table_ranges()` returns the records until the next solve starts.
 
 - `Linear` extrapolation never reports: extrapolating was asked for.
+- `Periodic` tables have no outside: no finite argument is reported.
 - `Throw` throws at the first such query.
-- A NaN argument is reported and gives NaN.
+- A NaN argument is reported and gives NaN, and so does an infinite one to a `Periodic` table.
 
 Recording costs nothing in range: only the out-of-range branch of a lookup writes the record.
 
@@ -128,7 +130,7 @@ Sensitivity solves (`JacobianPropagation`) use the derivatives of the `Parameter
 
 `JacobianPropagation::initialize()` refuses a parameter in `parameters_with_derivatives()` that is read by no `Parameters` formula, or that is also read by an `Entities` formula (e.g. `QI1 = k*T1` with `k` selected): an `Entities` formula has no derivatives, so its share of the sensitivity would be missing. The message names the parameter and the target of the formula. Callable formulas list no dependencies and are not checked.
 
-A table call is differentiated through the table's slope. For `Linear` interpolation that is the slope of the segment that holds the argument, and of the segment above it at a breakpoint, so a derivative jumps where the argument crosses a breakpoint. The stepped interpolations and `Constant` extrapolation have a slope of zero.
+A table call is differentiated through the table's slope. For `Linear` interpolation that is the slope of the segment that holds the argument, and of the segment above it at a breakpoint, so a derivative jumps where the argument crosses a breakpoint. The stepped interpolations and `Constant` extrapolation have a slope of zero. A `Periodic` table takes the slope at the wrapped argument, so its last point has the slope of the first segment.
 
 ## Callable formulas
 
@@ -154,6 +156,7 @@ Every formula and table records who wrote it, `origin()`:
 | `etms_reader` | the `.erg` / `.etms` geometry reader |
 | `esatan_tmm_reader` | the thermal model input (`.d`) reader |
 | `steptas_gmm_reader` | the STEP-TAS geometry reader |
+| `orbital_loads` | the writer of the loads of an orbit |
 
 A formula added one at a time is always a `user` formula, also when it is a copy of a generated one. Generators add their formulas with `add_generated_formulas(origin, formulas)` (a list of targets and expressions) or with a template (see above); both return a `GenerationReport`. On a target that already has a formula:
 

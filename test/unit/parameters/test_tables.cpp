@@ -4,6 +4,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <cmath>
 #include <cstdint>
+#include <limits>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -23,6 +24,29 @@ LookupTable1D linear_table(
     InterpolationMethod interp = InterpolationMethod::Linear) {
     return {Eigen::Vector3d(1.0, 2.0, 3.0), Eigen::Vector3d(10.0, 20.0, 30.0),
             interp, extrap};
+}
+
+// A load over a period of 100 s starting at x = 0, uneven steps.
+LookupTable1D periodic_table(
+    ExtrapolationMethod extrap = ExtrapolationMethod::Periodic,
+    InterpolationMethod interp = InterpolationMethod::Linear) {
+    return {Eigen::Vector4d(0.0, 25.0, 60.0, 100.0),
+            Eigen::Vector4d(3.0, 8.0, -1.0, 3.0), interp, extrap};
+}
+
+// `x` in [0, 100), by the remainder of the standard library.
+double wrapped_by_hand(double x) {
+    const double remainder = std::fmod(x, 100.0);
+    return remainder < 0.0 ? remainder + 100.0 : remainder;
+}
+
+// Inside, on every breakpoint, on the seam, several periods away and at
+// negative x.
+const std::vector<double>& periodic_arguments() {
+    static const std::vector<double> arguments{
+        0.0,   12.5,  25.0,   60.0,  99.75,  100.0, 100.5,  125.0,
+        160.0, 200.0, 712.25, -0.25, -100.0, -40.0, -337.5, -1000.0};
+    return arguments;
 }
 
 double published(const Parameters& parameters, const std::string& name) {
@@ -242,4 +266,119 @@ TEST_CASE("Out-of-range queries are recorded per table", "[tables]") {
 
     parameters.reset_table_ranges();
     REQUIRE(parameters.table_ranges().empty());
+}
+
+TEST_CASE("A periodic table equals a table called with the remainder",
+          "[tables]") {
+    for (const auto interp :
+         {InterpolationMethod::Linear, InterpolationMethod::NearestLower,
+          InterpolationMethod::NearestUpper, InterpolationMethod::Step}) {
+        const Table periodic(
+            "periodic", periodic_table(ExtrapolationMethod::Periodic, interp),
+            Origin::user, "");
+        const Table held("held",
+                         periodic_table(ExtrapolationMethod::Constant, interp),
+                         Origin::user, "");
+        const auto view = periodic.view(nullptr);
+        REQUIRE(std::ranges::all_of(periodic_arguments(), [&](double x) {
+            const double by_hand = wrapped_by_hand(x);
+            // Bit for bit, through the inline lookup and the stored table.
+            return (periodic.evaluate(x) == held.evaluate(by_hand)) &&
+                   (detail::table_value(view, x) == held.evaluate(by_hand)) &&
+                   (periodic.lookup_table().evaluate(x) ==
+                    held.lookup_table().evaluate(by_hand)) &&
+                   (periodic.slope(x) == held.slope(by_hand));
+        }));
+    }
+}
+
+TEST_CASE("A periodic table has the values and slopes of its segments",
+          "[tables]") {
+    const Table table("load", periodic_table(), Origin::user, "");
+    // A fifth of the first segment, two periods later and three before.
+    REQUIRE(table.evaluate(205.0) == Catch::Approx(4.0));
+    REQUIRE(table.evaluate(-295.0) == Catch::Approx(4.0));
+    REQUIRE(table.slope(205.0) == Catch::Approx(0.2));
+    REQUIRE(table.slope(-10.0) == Catch::Approx(0.1));
+    // The seam is the first point: its value, and the slope above it.
+    REQUIRE(table.evaluate(100.0) == 3.0);
+    REQUIRE(table.evaluate(-100.0) == 3.0);
+    REQUIRE(table.slope(100.0) == Catch::Approx(0.2));
+    REQUIRE(table.slope(0.0) == Catch::Approx(0.2));
+
+    const Table strict("strict", linear_table(ExtrapolationMethod::Constant),
+                       Origin::user, "");
+    // The last point of the other tables keeps the slope below it.
+    REQUIRE(strict.slope(3.0) == Catch::Approx(10.0));
+}
+
+TEST_CASE("The argument of a periodic table stays below the last point",
+          "[tables]") {
+    // Period 0.7 from x = 0.1: neither the ends nor the period is exact.
+    const LookupTable1D data(
+        Eigen::Vector3d(0.1, 0.3, 0.8), Eigen::Vector3d(1.0, 2.0, 1.0),
+        InterpolationMethod::Linear, ExtrapolationMethod::Periodic);
+    const Table table("load", data, Origin::user, "");
+    for (int period = -50; period <= 50; ++period) {
+        const double seam = 0.1 + (0.7 * period);
+        for (const double x :
+             {std::nextafter(seam, -1e3), seam, std::nextafter(seam, 1e3)}) {
+            REQUIRE(table.evaluate(x) == Catch::Approx(1.0));
+        }
+    }
+    // Far below the first point the sum rounds up to a whole period.
+    REQUIRE(table.evaluate(std::nextafter(0.1, 0.0)) == Catch::Approx(1.0));
+    REQUIRE(table.evaluate(-std::numeric_limits<double>::denorm_min()) ==
+            Catch::Approx(1.2));
+}
+
+TEST_CASE("Periodic tables are never out of range", "[tables]") {
+    Parameters parameters;
+    parameters.add_internal_parameter("time", 0.0);
+    parameters.add_table("load", periodic_table());
+    const auto view = parameters.table("load").view(parameters.time_ptr());
+    for (const double x : periodic_arguments()) {
+        static_cast<void>(detail::table_value(view, x));
+        static_cast<void>(detail::table_slope(view, x));
+    }
+    REQUIRE(parameters.table_ranges().empty());
+
+    // No remainder exists for these.
+    REQUIRE(std::isnan(detail::table_value(view, std::nan(""))));
+    REQUIRE(parameters.table_ranges().size() == 1U);
+    parameters.reset_table_ranges();
+    constexpr double infinity = std::numeric_limits<double>::infinity();
+    REQUIRE(std::isnan(detail::table_value(view, infinity)));
+    REQUIRE(std::isnan(detail::table_slope(view, -infinity)));
+    REQUIRE(parameters.table_ranges().size() == 1U);
+}
+
+TEST_CASE("Editing a periodic table keeps it closed", "[tables]") {
+    Parameters parameters;
+    parameters.add_table("load", periodic_table());
+    const std::vector<double> open{3.0, 8.0, -1.0, 4.0};
+    REQUIRE_THROWS_AS(parameters.set_table_values("load", open),
+                      std::invalid_argument);
+    REQUIRE(parameters.table("load").evaluate(100.0) == 3.0);
+
+    const std::vector<double> closed{4.0, 8.0, -1.0, 4.0};
+    parameters.set_table_values("load", closed);
+    REQUIRE(parameters.table("load").evaluate(300.0) == 4.0);
+
+    // The period follows x.
+    const std::vector<double> x{0.0, 10.0, 20.0, 50.0};
+    parameters.set_table_x("load", x);
+    REQUIRE(parameters.table("load").evaluate(110.0) == Catch::Approx(8.0));
+    REQUIRE(parameters.table("load").slope(50.0) == Catch::Approx(0.4));
+}
+
+TEST_CASE("Orbital load tables have their own origin", "[tables]") {
+    Parameters parameters;
+    parameters.add_internal_parameter("time", 225.0);
+    REQUIRE(parameters.add_generated_table(Origin::orbital_loads, "qs_1",
+                                           periodic_table(),
+                                           "time") == TableGeneration::added);
+    REQUIRE(parameters.table("qs_1").origin() == Origin::orbital_loads);
+    REQUIRE(to_string(Origin::orbital_loads) == "orbital_loads");
+    REQUIRE(published(parameters, "qs_1") == 8.0);
 }
