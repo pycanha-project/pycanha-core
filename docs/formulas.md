@@ -102,7 +102,8 @@ tm.formulas().add_formula("GL(1,2)", "2.5e-3 * k_al((T1 + T2) / 2)");
 ```
 
 - The argument is any expression of entities and parameters.
-- Interpolation: `Linear`, `NearestLower`, `NearestUpper` or `Step`. Extrapolation: `Constant` holds the end value, `Linear` extends the end segment, `Throw` throws `std::out_of_range`.
+- Interpolation: `Linear`, `NearestLower`, `NearestUpper` or `Step`. Extrapolation: `Constant` holds the end value, `Linear` extends the end segment, `Throw` throws `std::out_of_range`, `Periodic` repeats the table.
+- `Periodic`: the period is `x_last - x_first`, and the argument is wrapped into `[x_first, x_last)`. The table needs at least two points and its first and last values must be exactly equal: writing values that break this, or selecting `Periodic` for such a table, throws `std::invalid_argument`. A table evaluated at `time` repeats a load over a transient this way.
 - Table names share the parameters' name space, ignoring case: a table cannot take the name of a parameter, an entity token (`T`, `C`, `QS`, `QA`, `QE`, `QI`, `QR`, `GL`, `GR`), `time`, or a built-in function or constant.
 - Adding, removing or replacing a table is a change of the parameters' structure, refused while a solve runs.
 - `set_table_values(name, y)` and `set_table_x(name, x)` overwrite the values in place: the size stays and `x` must stay strictly increasing. They change no structure, so a callback may edit a table during a solve and the next lookup reads the new values.
@@ -117,8 +118,9 @@ tm.formulas().add_formula("GL(1,2)", "2.5e-3 * k_al((T1 + T2) / 2)");
 A query outside a table's range is recorded per table: the time of the first one (from the `time` parameter), its argument, and the smallest and largest argument seen. After each solve, one WARN lists every table queried outside its range and the same line is added to the solver report's `warnings`. `Parameters::table_ranges()` returns the records until the next solve starts.
 
 - `Linear` extrapolation never reports: extrapolating was asked for.
+- `Periodic` tables have no outside: no finite argument is reported.
 - `Throw` throws at the first such query.
-- A NaN argument is reported and gives NaN.
+- A NaN argument is reported and gives NaN, and so does an infinite one to a `Periodic` table.
 
 Recording costs nothing in range: only the out-of-range branch of a lookup writes the record.
 
@@ -128,7 +130,7 @@ Sensitivity solves (`JacobianPropagation`) use the derivatives of the `Parameter
 
 `JacobianPropagation::initialize()` refuses a parameter in `parameters_with_derivatives()` that is read by no `Parameters` formula, or that is also read by an `Entities` formula (e.g. `QI1 = k*T1` with `k` selected): an `Entities` formula has no derivatives, so its share of the sensitivity would be missing. The message names the parameter and the target of the formula. Callable formulas list no dependencies and are not checked.
 
-A table call is differentiated through the table's slope. For `Linear` interpolation that is the slope of the segment that holds the argument, and of the segment above it at a breakpoint, so a derivative jumps where the argument crosses a breakpoint. The stepped interpolations and `Constant` extrapolation have a slope of zero.
+A table call is differentiated through the table's slope. For `Linear` interpolation that is the slope of the segment that holds the argument, and of the segment above it at a breakpoint, so a derivative jumps where the argument crosses a breakpoint. The stepped interpolations and `Constant` extrapolation have a slope of zero. A `Periodic` table takes the slope at the wrapped argument, so its last point has the slope of the first segment.
 
 ## Callable formulas
 
@@ -154,6 +156,7 @@ Every formula and table records who wrote it, `origin()`:
 | `etms_reader` | the `.erg` / `.etms` geometry reader |
 | `esatan_tmm_reader` | the thermal model input (`.d`) reader |
 | `steptas_gmm_reader` | the STEP-TAS geometry reader |
+| `orbital_loads` | the writer of the loads of an orbit |
 
 A formula added one at a time is always a `user` formula, also when it is a copy of a generated one. Generators add their formulas with `add_generated_formulas(origin, formulas)` (a list of targets and expressions) or with a template (see above); both return a `GenerationReport`. On a target that already has a formula:
 
@@ -177,12 +180,17 @@ Removing a node or a table is never refused, even when formulas use it. The next
 
 - **Blocks.** A run of 4 or more formulas of one shape, none of which reads another's target, is evaluated 256 formulas at a time: each operation is one loop over the 256 formulas instead of one step per formula. Shorter runs, and runs whose formulas read each other (a chain `QI2 = QI1 + 1`, `QI3 = QI2 + 1`, ...), are evaluated one formula at a time. Both give the same values.
 - **Formulas that read only parameters** (the `Parameters` kind) are evaluated again only when a parameter or table they read changed since the last apply; otherwise the values stored then are written to their targets again. A change is a value written through `Parameters`: `set_parameter`, `set_internal_parameter`, `set_table_values`, `set_table_x`, and the tables evaluated at a parameter. Writing the same value again is no change.
-- **Threads.** The blocks of the independent formulas may be shared among threads, and so may the blocks of one long run among the other formulas. Whether that pays depends on the formulas and on the machine: waking the other threads costs tens of microseconds per apply, more than a few thousand cheap formulas take on one thread. So the first apply after a compile runs on one thread, and the second runs on one thread and is timed, which gives the time of one block. From the third, each apply predicts its time on one thread from the number of blocks it has to evaluate, which changes from apply to apply as formulas that read only parameters replay their values, and uses the thread count expected to be fastest from that prediction and the pool's own wake-up cost (measured once per thread count), or stays on one thread unless that saves at least a fifth. The values do not depend on the thread count. The count available is the global `pycanha::threads()` (see below), or a solver's `threads` setting during its callbacks. The threads wait without spinning between applies, so they take no time from the solver's own threads. A child process created by `fork()` (Python's `multiprocessing` on Linux by default up to Python 3.13) starts with new threads of its own: the parent's threads do not exist in it.
+- **Threads.** The blocks of the independent formulas may be shared among threads, and so may the blocks of one long run among the other formulas. Whether that pays depends on the formulas and on the machine: waking the other threads costs tens of microseconds per apply, more than a few thousand cheap formulas take on one thread. So the first apply after a compile runs on one thread, and the second runs on one thread and is timed, which gives the time of one block. From the third, each apply predicts its time on one thread from the number of blocks it has to evaluate, which changes from apply to apply as formulas that read only parameters replay their values, and uses the thread count expected to be fastest from that prediction and the pool's own wake-up cost (measured once per thread count), or stays on one thread unless that saves at least a fifth. The values do not depend on the thread count. The count available is the global `pycanha::solver_threads()` (see below), or a solver's `threads` setting during its callbacks. The threads wait without spinning between applies, so they take no time from the solver's own threads. A child process created by `fork()` (Python's `multiprocessing` on Linux by default up to Python 3.13) starts with new threads of its own: the parent's threads do not exist in it.
 
 With formulas on several threads, a table's out-of-range record (see above) still holds the smallest and largest argument, but its "first" query is the first one recorded, not necessarily the first formula in insertion order. A `Throw` table stops the apply with its exception as before.
 
 ### Thread count
 
-`pycanha::threads()` is the thread count used wherever a count is left at 0: the solvers (`Settings::threads`), the formulas and the assembly of the radiative matrices. The boolean cuts of the geometry (a cut group's mesh, and the conduction network and node areas built from cut geometry) are the exception: they use every logical CPU, because the cuts run faster with two threads per core. By default it is the count that is usually fastest: MKL's own setting in builds with MKL (`MKL_NUM_THREADS`, else the physical cores), the physical cores otherwise. `pycanha::set_threads(n)` changes it for the whole process and `set_threads(0)` restores the default; `physical_cores()` (the cores with at least one logical CPU in the process's CPU affinity) and `default_threads()` report what the default is based on.
+pycanha has two process-wide thread counts:
+
+- `pycanha::solver_threads()`: the solvers (where `Settings::threads` is 0) and the formulas. By default MKL's own setting in builds with MKL (`MKL_NUM_THREADS`, else the physical cores), the physical cores otherwise.
+- `pycanha::application_threads()`: the boolean cuts of the geometry, the conduction network and node areas built from it, and the assembly of the radiative matrices. By default every logical CPU, because the cuts run faster with two threads per core.
+
+`pycanha::set_threads(n)` sets both for the whole process and `set_threads(0)` restores both defaults. `set_solver_threads(n)` and `set_application_threads(n)` set one of them, whatever `set_threads` did before. `physical_cores()` reports the cores with at least one logical CPU in the process's CPU affinity.
 
 `debug_formulas = true` applies the formulas one at a time and logs each target and value at INFO. It is slower and meant for tracing.

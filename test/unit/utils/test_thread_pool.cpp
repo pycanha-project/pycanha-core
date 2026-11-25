@@ -62,7 +62,7 @@ TEST_CASE("A job started from a task of the pool runs on its thread",
 
 TEST_CASE("A thread count scope overrides the global count on its thread",
           "[threads]") {
-    REQUIRE(detail::active_threads() == threads());
+    REQUIRE(detail::active_threads() == solver_threads());
     {
         const detail::ThreadCountScope outer(3);
         REQUIRE(detail::active_threads() == 3);
@@ -74,5 +74,5 @@ TEST_CASE("A thread count scope overrides the global count on its thread",
         }
         REQUIRE(detail::active_threads() == 3);
     }
-    REQUIRE(detail::active_threads() == threads());
+    REQUIRE(detail::active_threads() == solver_threads());
 }

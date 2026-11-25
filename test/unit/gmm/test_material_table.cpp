@@ -11,6 +11,7 @@
 #include "pycanha-core/gmm/primitives/rectangle.hpp"
 #include "pycanha-core/gmm/scene/geometry_item.hpp"
 #include "pycanha-core/radiative/materials.hpp"
+#include "pycanha-core/utils/logger.hpp"
 
 namespace {
 
@@ -135,4 +136,33 @@ TEST_CASE("material_table: table tracks the mesh", "[gmm][materials]") {
     REQUIRE(table.face_material.rows() == num_faces);
     REQUIRE(table.face_active.rows() == num_faces);
     REQUIRE(num_faces == 6);
+}
+
+TEST_CASE("material_table: only active sides without a material are warned of",
+          "[gmm][materials]") {
+    const auto paint = std::make_shared<OpticalMaterial>("paint", 0.9, 0.9);
+    GeometryModel model("sides");
+
+    // Nothing is missing where it is traced.
+    ThermalMesh one_sided;
+    one_sided.set_side1_optical(paint);
+    one_sided.set_radiative_active_side(ActiveSide::Side1);
+    model.add(make_panel("one_sided", std::move(one_sided)));
+    ThermalMesh inactive;
+    inactive.set_radiative_active_side(ActiveSide::None);
+    model.add(make_panel("inactive", std::move(inactive)));
+
+    ThermalMesh half;
+    half.set_side1_optical(paint);
+    model.add(make_panel("half", std::move(half)));
+    model.add(make_panel("bare", ThermalMesh{}));
+
+    pycanha::clear_log_records();
+    static_cast<void>(model.material_table());
+    const auto warnings = pycanha::log_records(10);
+    REQUIRE(warnings.size() == 2U);
+    REQUIRE(warnings.front().message.contains("'half'"));
+    REQUIRE(warnings.front().message.contains("active side 2 "));
+    REQUIRE(warnings.back().message.contains("'bare'"));
+    REQUIRE(warnings.back().message.contains("active side 1/2 "));
 }

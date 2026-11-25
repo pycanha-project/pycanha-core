@@ -61,6 +61,9 @@ constexpr std::array<std::string_view, 2> names_of(AccelerateOrdering /*tag*/) {
 constexpr std::array<std::string_view, 2> names_of(CapacityScheme /*tag*/) {
     return {"AVERAGE_RATE", "AVERAGE_CAPACITY"};
 }
+constexpr std::array<std::string_view, 2> names_of(RelaxationMode /*tag*/) {
+    return {"FIXED", "ADAPTIVE"};
+}
 constexpr std::array<std::string_view, 2> names_of(Mutability /*tag*/) {
     return {"LIVE", "INIT"};
 }
@@ -245,6 +248,10 @@ std::string_view at_least_one(const int& value) {
 std::string_view non_negative_count(const int& value) {
     return value >= 0 ? std::string_view{} : "must not be negative";
 }
+std::string_view in_unit_interval(const double& value) {
+    return value > 0.0 && value <= 1.0 ? std::string_view{}
+                                       : "must be greater than 0 and at most 1";
+}
 std::string_view below_one(const double& value) {
     return value > 0.0 && value < 1.0 ? std::string_view{}
                                       : "must be between 0 and 1";
@@ -268,7 +275,9 @@ std::string_view iparm_indices(const std::map<int, int>& value) {
 // ---------------------------------------------------------------------------
 
 constexpr double default_tolerance = 1e-3;
-constexpr int default_max_iterations = 5;
+constexpr int default_max_iterations = 10;
+constexpr double default_relaxation = 1.0;
+constexpr RelaxationMode default_relaxation_mode = RelaxationMode::ADAPTIVE;
 constexpr bool default_reuse_factors = false;
 constexpr bool default_fixed_couplings = false;
 constexpr int default_threads = 0;
@@ -455,8 +464,8 @@ std::string threads_reason(const Settings& settings,
                            const ResolvedSettings& /*resolved*/,
                            const ResolveContext& /*context*/) {
     return settings.threads.value_or(0) == 0
-               ? "0: the global setting, pycanha::threads() (by default "
-                 "MKL_NUM_THREADS or the physical cores)"
+               ? "0: the global setting, pycanha::solver_threads() (by "
+                 "default MKL_NUM_THREADS or the physical cores)"
                : std::string{};
 }
 
@@ -626,6 +635,8 @@ constexpr auto transient_types = static_cast<std::uint8_t>(
 // derivatives, so they must belong to the current matrix.
 constexpr auto reuse_types = static_cast<std::uint8_t>(
     bit(SolverType::STEADY_STATE) | bit(SolverType::CRANK_NICOLSON));
+// The sensitivities of the Jacobian propagation follow the plain iteration.
+constexpr auto relaxation_types = reuse_types;
 
 constexpr std::string_view only_pardiso = "only with backend = PARDISO";
 constexpr std::string_view only_mkl = "only with backend = PARDISO or LAPACK";
@@ -635,7 +646,7 @@ using R = ResolvedSettings;
 
 // Resolution walks the table in order: a default or an applicability rule
 // may only read fields above it.
-constexpr std::size_t field_count = 23;
+constexpr std::size_t field_count = 25;
 constexpr std::array<FieldEntry, field_count> field_table{
     field<Path<&S::tolerance>, Path<&R::tolerance>,
           &constant<default_tolerance>, &positive>(
@@ -651,9 +662,44 @@ constexpr std::array<FieldEntry, field_count> field_table{
         {.name = "max_iterations",
          .group = "",
          .doc = "Maximum iterations of the steady state, or of each time "
-                "step.",
+                "step. Default: 10. A model whose couplings or loads depend "
+                "steeply on the temperatures may need more, in particular a "
+                "relaxed iteration (relaxation).",
          .mutability = Mutability::LIVE,
          .solver_types = all_types}),
+    field<Path<&S::relaxation>, Path<&R::relaxation>,
+          &constant<default_relaxation>, &in_unit_interval>(
+        {.name = "relaxation",
+         .group = "",
+         .doc = "Relaxation factor w in (0, 1]: each iteration of the steady "
+                "state, or of a time step, moves the temperatures by w times "
+                "the change its linear solve asks for; the iteration that "
+                "meets the tolerance takes the whole change. With "
+                "relaxation_mode = FIXED the factor of every iteration, with "
+                "ADAPTIVE the factor of the first iteration of each loop. A "
+                "factor below 1 makes a loop converge that oscillates because "
+                "a coupling or load depends steeply on the temperatures (a "
+                "temperature-dependent emissivity, for instance); the "
+                "converged temperatures do not depend on it. Default: 1.",
+         .mutability = Mutability::LIVE,
+         .solver_types = relaxation_types}),
+    field<Path<&S::relaxation_mode>, Path<&R::relaxation_mode>,
+          &constant<default_relaxation_mode>, &any_value<RelaxationMode>>(
+        {.name = "relaxation_mode",
+         .group = "",
+         .doc = "FIXED: every iteration uses relaxation. ADAPTIVE: the first "
+                "iteration of each loop uses relaxation, the next ones a "
+                "factor estimated from the last two changes (Aitken's "
+                "dynamic relaxation), within [0.01, 1]; an undamped loop "
+                "stays undamped while its changes shrink four times or more "
+                "per iteration. It approaches the fastest factor of an "
+                "oscillating loop and stays at 1 on a loop that converges by "
+                "itself. The report gives the smallest and the last "
+                "factor used. Default: ADAPTIVE, which on models that "
+                "converge without relaxation gives the same iterations and "
+                "temperatures as FIXED with relaxation = 1.",
+         .mutability = Mutability::LIVE,
+         .solver_types = relaxation_types}),
     field<Path<&S::storage>, Path<&R::storage>, &default_storage,
           &any_value<Storage>>(
         {.name = "storage",
@@ -736,7 +782,7 @@ constexpr std::array<FieldEntry, field_count> field_table{
                                 .group = "",
                                 .doc = "Threads of the PARDISO and LAPACK "
                                        "calls; 0 uses the global setting, "
-                                       "pycanha::threads().",
+                                       "pycanha::solver_threads().",
                                 .mutability = Mutability::LIVE,
                                 .solver_types = all_types},
                                &uses_mkl, only_mkl, &threads_reason),
@@ -1194,6 +1240,9 @@ std::string_view to_string(AccelerateOrdering ordering) noexcept {
 }
 std::string_view to_string(CapacityScheme scheme) noexcept {
     return enum_name(scheme);
+}
+std::string_view to_string(RelaxationMode mode) noexcept {
+    return enum_name(mode);
 }
 std::string_view to_string(Mutability mutability) noexcept {
     return enum_name(mutability);

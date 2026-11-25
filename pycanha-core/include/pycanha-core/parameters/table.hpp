@@ -87,18 +87,20 @@ struct TableView {
 
 // The interpolated value at `argument`. Outside the range: `Linear`
 // extrapolates silently, `Constant` holds the end value and records the
-// query, `Throw` throws std::out_of_range. A NaN argument is recorded and
-// gives NaN.
+// query, `Throw` throws std::out_of_range, `Periodic` wraps the argument
+// into [x_first, x_last). A NaN argument, or an infinite one to a `Periodic`
+// table, is recorded and gives NaN.
 //
-// Inline for the formula evaluator: linear interpolation inside the range
-// runs here with no call, everything else in table_value_general.
+// Inline for the formula evaluator: linear interpolation below the last
+// point runs here with no call, everything else in table_value_general. The
+// last point is left out because a `Periodic` table wraps it to the first.
 [[nodiscard]] inline double table_value(const TableView& table,
                                         double argument) {
     const std::span<const double> x(table.x,
                                     static_cast<std::size_t>(table.size));
     // False for a NaN argument too, which takes the general path.
     if ((table.interp != InterpolationMethod::Linear) || (x.size() < 2U) ||
-        !(argument >= x.front()) || !(argument <= x.back())) {
+        !(argument >= x.front()) || !(argument < x.back())) {
         return table_value_general(table, argument);
     }
     // The segment [lower, lower + 1] holding the argument: the last point
@@ -119,7 +121,7 @@ struct TableView {
 // The derivative of table_value with respect to `argument`: the segment
 // slope for `Linear` interpolation, zero for the stepped methods and for
 // `Constant` extrapolation. At a breakpoint it is the slope of the segment
-// above it.
+// above it, which for the last point of a `Periodic` table is the first one.
 [[nodiscard]] double table_slope(const TableView& table, double argument);
 
 }  // namespace detail

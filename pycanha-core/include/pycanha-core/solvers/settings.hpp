@@ -122,6 +122,38 @@ enum class CapacityScheme : std::uint8_t {
     AVERAGE_CAPACITY,
 };
 
+/// How an iteration of the steady state, or of a time step, moves the
+/// temperatures towards the solution of its linear solve:
+/// T <- T + w (T_solve - T), with the relaxation factor w in (0, 1].
+/**
+ * A coupling or load that depends on the temperatures (a formula, a callback,
+ * a retracer) is evaluated at the temperatures of the previous iteration.
+ * Near the solution each iteration then multiplies the temperature error by
+ * a factor l; for a radiative coupling to space whose emissivity rises with
+ * the temperature, l = -(T/4) (deps/dT)/eps, and its magnitude is reduced by
+ * the capacities in a time step, more so for short steps. When l < -1 the
+ * iteration oscillates and never converges. With w the factor becomes
+ * 1 + w (l - 1): the iteration converges for w < 2 / (1 - l), fastest at
+ * w = 1 / (1 - l). The converged temperatures do not depend on w.
+ */
+enum class RelaxationMode : std::uint8_t {
+    /// w = relaxation in every iteration. 1 is the plain
+    /// iteration; a smaller value makes an oscillating loop converge but
+    /// slows the loops that converge without it.
+    FIXED,
+    /// w starts at relaxation in each loop and is then estimated from the
+    /// last two changes (Aitken's dynamic relaxation, also called the
+    /// Irons-Tuck method): with r_k the change the linear solve of iteration
+    /// k asks for, w_k = -w_{k-1} r_{k-1}.(r_k - r_{k-1}) / |r_k - r_{k-1}|^2,
+    /// kept within [0.01, 1]. An undamped loop (w = 1) stays undamped while
+    /// its changes shrink four times or more per iteration
+    /// (r_k.r_{k-1} / |r_{k-1}|^2 within +-0.25). It approaches the fastest w
+    /// of an oscillating loop and stays
+    /// at 1 on a loop that converges by itself. Costs two
+    /// vectors of the diffusive nodes and a few dot products per iteration.
+    ADAPTIVE,
+};
+
 /// Whether a setting may change while the solver is initialised.
 enum class Mutability : std::uint8_t {
     /// Read at every solve(): it may change at any time.
@@ -146,6 +178,7 @@ enum class Origin : std::uint8_t {
 [[nodiscard]] std::string_view to_string(EigenOrdering ordering) noexcept;
 [[nodiscard]] std::string_view to_string(AccelerateOrdering ordering) noexcept;
 [[nodiscard]] std::string_view to_string(CapacityScheme scheme) noexcept;
+[[nodiscard]] std::string_view to_string(RelaxationMode mode) noexcept;
 [[nodiscard]] std::string_view to_string(Mutability mutability) noexcept;
 [[nodiscard]] std::string_view to_string(Origin origin) noexcept;
 
@@ -206,6 +239,8 @@ struct Settings {
 
     std::optional<double> tolerance;
     std::optional<int> max_iterations;
+    std::optional<double> relaxation;
+    std::optional<RelaxationMode> relaxation_mode;
     std::optional<Storage> storage;
     std::optional<Backend> backend;
     std::optional<Factorization> factorization;
@@ -311,6 +346,8 @@ struct ResolvedSettings {
 
     double tolerance = 0.0;
     int max_iterations = 0;
+    double relaxation = 1.0;
+    RelaxationMode relaxation_mode = RelaxationMode::ADAPTIVE;
     Storage storage = Storage::SPARSE;
     Backend backend = Backend::EIGEN;
     Factorization factorization = Factorization::AUTO;

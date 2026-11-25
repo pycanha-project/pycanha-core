@@ -30,6 +30,7 @@ using pycanha::solvers::NotApplied;
 using pycanha::solvers::Origin;
 using pycanha::solvers::PardisoLevel;
 using pycanha::solvers::PardisoOrdering;
+using pycanha::solvers::RelaxationMode;
 using pycanha::solvers::ResolveContext;
 using pycanha::solvers::ResolvedSettings;
 using pycanha::solvers::Settings;
@@ -127,6 +128,8 @@ Settings fully_set() {
     settings.solver_type = SolverType::CRANK_NICOLSON;
     settings.tolerance = 1e-4;
     settings.max_iterations = 20;
+    settings.relaxation = 0.5;
+    settings.relaxation_mode = RelaxationMode::FIXED;
     settings.storage = Storage::DENSE;
     settings.backend = Backend::EIGEN;
     settings.factorization = Factorization::LU;
@@ -163,14 +166,13 @@ TEST_CASE("Every setting is documented once", "[solver][settings]") {
     REQUIRE(std::ranges::all_of(solvers::setting_fields(), is_documented));
     REQUIRE(solvers::setting_field("pardiso.level").mutability ==
             Mutability::INIT);
-    REQUIRE_THROWS_AS(solvers::setting_field("relaxation"),
-                      std::invalid_argument);
+    REQUIRE_THROWS_AS(solvers::setting_field("damping"), std::invalid_argument);
 }
 
 TEST_CASE("Unset settings resolve to the defaults", "[solver][settings]") {
     const ResolvedSettings with_mkl = solvers::resolve({}, steady());
     REQUIRE(with_mkl.tolerance == Catch::Approx(1e-3));
-    REQUIRE(with_mkl.max_iterations == 5);
+    REQUIRE(with_mkl.max_iterations == 10);
     REQUIRE(with_mkl.backend == Backend::PARDISO);
     REQUIRE(with_mkl.pardiso.level == PardisoLevel::TWO_LEVEL);
     REQUIRE(with_mkl.pardiso.ordering == PardisoOrdering::NESTED_DISSECTION);
@@ -567,7 +569,7 @@ TEST_CASE("Bad names and values are refused and change nothing",
     Settings settings;
     settings.tolerance = 1e-3;
     const Settings before = settings;
-    REQUIRE_THROWS_AS(settings.set("relaxation", SettingValue{1.0}),
+    REQUIRE_THROWS_AS(settings.set("damping", SettingValue{1.0}),
                       std::invalid_argument);
     REQUIRE_THROWS_AS(settings.set("tolerance", SettingValue{true}),
                       std::invalid_argument);
@@ -590,7 +592,7 @@ TEST_CASE("Settings round-trip through a dictionary", "[solver][settings]") {
     REQUIRE(Settings::from_dict(dict) == settings);
     REQUIRE(Settings{}.to_dict().empty());
 
-    const solvers::SettingsDict unknown{{"relaxation", SettingValue{0.5}}};
+    const solvers::SettingsDict unknown{{"damping", SettingValue{0.5}}};
     REQUIRE_THROWS_AS(Settings::from_dict(unknown), std::invalid_argument);
 }
 
@@ -615,7 +617,7 @@ TEST_CASE("Printing with a solver type shows every field that applies",
     settings.reuse_factors = true;
     const std::string text = settings.to_string();
     REQUIRE(contains(text, "Settings for JACOBIAN_PROPAGATION"));
-    REQUIRE(contains(text, "max_iterations     5  (default)"));
+    REQUIRE(contains(text, "max_iterations     10  (default)"));
     REQUIRE(contains(text, "Set but not applied to JACOBIAN_PROPAGATION"));
     REQUIRE(contains(text, "reuse_factors      true  not used by"));
 

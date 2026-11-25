@@ -3,6 +3,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
+#include <cmath>
 #include <cstddef>
 #include <stdexcept>
 #include <vector>
@@ -45,6 +46,36 @@ constexpr std::array<double, 4> unit_areas{1.0, 1.0, 1.0, 1.0};
 
 [[nodiscard]] rad::SparseMatrix two_surface_vf() {
     return make_csr(4, {{0, 2, 0.4}});
+}
+
+// GR per unit depth between two facing strips of length 8 at distance 1,
+// infinite in the third direction, with emissivity 0.1. Each strip is one node
+// split into `faces` equal faces. The view factors are exact (crossed strings).
+[[nodiscard]] double facing_strips_gr(int faces) {
+    const double width = 8.0 / faces;
+    // Length of the string between the edges `offset` face widths apart.
+    const auto string_length = [width](int offset) {
+        return std::hypot(offset * width, 1.0);
+    };
+    std::vector<Eigen::Triplet<double>> entries;
+    for (int lower = 0; lower < faces; ++lower) {
+        for (int upper = 0; upper < faces; ++upper) {
+            const int offset = upper - lower;
+            const double area_view_factor =
+                0.5 * (string_length(offset + 1) + string_length(offset - 1) -
+                       (2.0 * string_length(offset)));
+            entries.emplace_back(lower, faces + upper, area_view_factor);
+        }
+    }
+    const auto count = static_cast<std::size_t>(faces);
+    std::vector<NodeNum> node_numbers(count, 1);
+    node_numbers.insert(node_numbers.end(), count, 2);
+    const std::vector<double> areas(2 * count, width);
+    const Eigen::Index size = 2 * static_cast<Eigen::Index>(faces);
+    const rad::SparseMatrix node_gr = rad::gebhart_node_factors(
+        make_csr(size, entries), Eigen::VectorXd::Constant(size, 0.1),
+        node_numbers, areas);
+    return csr_value(node_gr, 0, 1);
 }
 
 // In-place row scaling: GR aggregation needs A_i * eps_i * B_ij.
@@ -111,6 +142,26 @@ TEST_CASE("radiative gebhart: node factors equal the aggregated dense path",
     REQUIRE(csr_value(node_gr, 0, 1) == Catch::Approx(0.1 / 0.96));
 }
 
+TEST_CASE("radiative gebhart: refining the faces removes the shortfall",
+          "[radiative][gebhart]") {
+    // The limit of infinitely small faces: the integral equation of the
+    // radiosity along the strips, solved by Gauss-Legendre quadrature.
+    const double limit = 0.214393085293;
+    const auto shortfall = [limit](int faces) {
+        return 1.0 - (facing_strips_gr(faces) / limit);
+    };
+    REQUIRE(shortfall(1) > 0.1);
+    const double faces_4 = shortfall(4);
+    const double faces_8 = shortfall(8);
+    const double faces_16 = shortfall(16);
+    const double faces_32 = shortfall(32);
+    REQUIRE(faces_8 < 0.5 * faces_4);
+    REQUIRE(faces_16 < 0.5 * faces_8);
+    REQUIRE(faces_32 < 0.5 * faces_16);
+    REQUIRE(faces_32 > 0.0);
+    REQUIRE(faces_32 < 0.002);
+}
+
 TEST_CASE("radiative gebhart: the dense path guards its size",
           "[radiative][gebhart]") {
     const Eigen::Index huge = 20'001;
@@ -161,7 +212,7 @@ TEST_CASE("radiative gebhart: matrix path agrees with the MCRT kernel",
                               make_materials(rows, pair_rows));
 
     rad::TraceSettings settings;
-    settings.rays_per_face = 20'000;
+    settings.rays_per_face = 100'000;
     settings.seed = 61;
 
     // Path A: MCRT exchange factors, traced directly with materials.
@@ -169,7 +220,9 @@ TEST_CASE("radiative gebhart: matrix path agrees with the MCRT kernel",
     scene.accumulate_exchange(exchange_acc, settings);
     const rad::ExchangeResult mcrt = exchange_acc.result();
 
-    // Path B: geometric VF matrix + CPU Gebhart solve (D4 cross-check).
+    // Path B: geometric VF matrix + CPU Gebhart solve. Its own seed: with the
+    // same one both paths follow the same first hits and share their noise.
+    settings.seed = 62;
     rad::VfAccumulator vf_acc(scene);
     scene.accumulate_vf(vf_acc, settings);
     const rad::VfResult vf = vf_acc.result();
@@ -182,7 +235,10 @@ TEST_CASE("radiative gebhart: matrix path agrees with the MCRT kernel",
     // the intensive B, so the emissive area comes back out before comparing.
     const double emissive = scene.face_areas()[0] * eps;
     REQUIRE(csr_value(mcrt.factors, 0, 2) / emissive ==
-            Catch::Approx(csr_value(gebhart, 0, 2)).margin(0.02));
+            Catch::Approx(csr_value(gebhart, 0, 2)).epsilon(0.02));
+    // B00 is about 0.01: only 1 ray in 100 comes back to its plate, so it is
+    // the noisier one. The Gebhart method also takes the radiosity of a plate
+    // as uniform, which makes it 1.3 % low here (and B02 only 0.02 %).
     REQUIRE(csr_value(mcrt.factors, 0, 0) / emissive ==
-            Catch::Approx(csr_value(gebhart, 0, 0)).margin(0.02));
+            Catch::Approx(csr_value(gebhart, 0, 0)).epsilon(0.1));
 }

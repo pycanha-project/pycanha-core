@@ -143,7 +143,7 @@ unsigned worker_count(const AssemblyTuning& tuning, std::size_t work_items,
         if (cells < parallel_cell_threshold) {
             return 1;
         }
-        count = static_cast<unsigned>(pycanha::threads());
+        count = static_cast<unsigned>(pycanha::application_threads());
     }
     count = std::max(count, 1U);
     return static_cast<unsigned>(

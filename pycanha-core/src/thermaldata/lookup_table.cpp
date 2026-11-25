@@ -1,7 +1,9 @@
 #include "pycanha-core/thermaldata/lookup_table.hpp"
 
 #include <algorithm>
+#include <cmath>
 #include <functional>
+#include <limits>
 #include <span>
 #include <stdexcept>
 #include <utility>
@@ -26,6 +28,40 @@ void validate_x_data(const Eigen::VectorXd& x) {
     }
 }
 
+// Throws when data of this size and ends cannot be periodic. A table without
+// data yet is checked when it gets some.
+void validate_periodic(ExtrapolationMethod extrap, Index size, bool closed) {
+    if ((extrap != ExtrapolationMethod::Periodic) || (size == 0)) {
+        return;
+    }
+    if (size == 1) {
+        throw std::invalid_argument(
+            "A periodic lookup table needs at least two points");
+    }
+    if (!closed) {
+        throw std::invalid_argument(
+            "The first and last values of a periodic lookup table must be "
+            "equal");
+    }
+}
+
+[[nodiscard]] bool ends_equal(const Eigen::VectorXd& y) {
+    return (y.size() > 0) && (y(0) == y(y.size() - 1));
+}
+
+[[nodiscard]] bool ends_equal(const LookupTableVec1D::MatrixType& y) {
+    return (y.rows() > 0) && (y.row(0) == y.row(y.rows() - 1));
+}
+
+// The query a periodic table is looked up at; other tables keep theirs.
+[[nodiscard]] double wrap_query(const Eigen::VectorXd& x_data, double query,
+                                ExtrapolationMethod extrap) {
+    return extrap == ExtrapolationMethod::Periodic
+               ? detail::wrap_periodic(query, x_data(0),
+                                       x_data(x_data.size() - 1))
+               : query;
+}
+
 double evaluate_scalar_impl(const Eigen::VectorXd& x_data,
                             const Eigen::VectorXd& y_data, double query,
                             InterpolationMethod interp,
@@ -44,8 +80,12 @@ double evaluate_scalar_impl(const Eigen::VectorXd& x_data,
         return y_data(0);
     }
 
+    const double wrapped = wrap_query(x_data, query, extrap);
+    if ((extrap == ExtrapolationMethod::Periodic) && std::isnan(wrapped)) {
+        return std::numeric_limits<double>::quiet_NaN();
+    }
     const detail::InterpLocation location =
-        detail::locate(x_data.data(), x_data.size(), query);
+        detail::locate(x_data.data(), x_data.size(), wrapped);
     const Index lower_index = location.lower_index;
     const Index upper_index = lower_index + 1;
 
@@ -60,6 +100,9 @@ double evaluate_scalar_impl(const Eigen::VectorXd& x_data,
             case ExtrapolationMethod::Throw:
                 throw std::out_of_range(
                     "Lookup table query is outside the table range");
+            case ExtrapolationMethod::Periodic:
+                // Wrapped above, so never outside the range.
+                break;
         }
     }
 
@@ -102,8 +145,13 @@ Eigen::VectorXd evaluate_vector_impl(const Eigen::VectorXd& x_data,
         return y_data.row(0).transpose();
     }
 
+    const double wrapped = wrap_query(x_data, query, extrap);
+    if ((extrap == ExtrapolationMethod::Periodic) && std::isnan(wrapped)) {
+        return Eigen::VectorXd::Constant(
+            y_data.cols(), std::numeric_limits<double>::quiet_NaN());
+    }
     const detail::InterpLocation location =
-        detail::locate(x_data.data(), x_data.size(), query);
+        detail::locate(x_data.data(), x_data.size(), wrapped);
     const Index lower_index = location.lower_index;
     const Index upper_index = lower_index + 1;
 
@@ -121,6 +169,9 @@ Eigen::VectorXd evaluate_vector_impl(const Eigen::VectorXd& x_data,
             case ExtrapolationMethod::Throw:
                 throw std::out_of_range(
                     "Lookup table query is outside the table range");
+            case ExtrapolationMethod::Periodic:
+                // Wrapped above, so never outside the range.
+                break;
         }
     }
 
@@ -190,8 +241,8 @@ void LookupTable1D::set_interpolation_method(
     _interp = method;
 }
 
-void LookupTable1D::set_extrapolation_method(
-    ExtrapolationMethod method) noexcept {
+void LookupTable1D::set_extrapolation_method(ExtrapolationMethod method) {
+    validate_periodic(method, size(), ends_equal(_y));
     _extrap = method;
 }
 
@@ -201,6 +252,7 @@ void LookupTable1D::set_data(Eigen::VectorXd x, Eigen::VectorXd y) {
     }
 
     validate_x_data(x);
+    validate_periodic(_extrap, x.size(), ends_equal(y));
     _x = std::move(x);
     _y = std::move(y);
 }
@@ -222,6 +274,7 @@ void LookupTable1D::assign_y(std::span<const double> y) {
         throw std::invalid_argument(
             "Lookup table y must keep its size when assigned in place");
     }
+    validate_periodic(_extrap, size(), !y.empty() && (y.front() == y.back()));
     std::ranges::copy(y, _y.begin());
 }
 
@@ -268,8 +321,8 @@ void LookupTableVec1D::set_interpolation_method(
     _interp = method;
 }
 
-void LookupTableVec1D::set_extrapolation_method(
-    ExtrapolationMethod method) noexcept {
+void LookupTableVec1D::set_extrapolation_method(ExtrapolationMethod method) {
+    validate_periodic(method, size(), ends_equal(_y));
     _extrap = method;
 }
 
@@ -279,6 +332,7 @@ void LookupTableVec1D::set_data(Eigen::VectorXd x, MatrixType y) {
     }
 
     validate_x_data(x);
+    validate_periodic(_extrap, x.size(), ends_equal(y));
     _x = std::move(x);
     _y = std::move(y);
 }

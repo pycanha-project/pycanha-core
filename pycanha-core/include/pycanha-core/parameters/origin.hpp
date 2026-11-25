@@ -18,6 +18,8 @@ enum class Origin : std::uint8_t {
     esatan_tmm_reader,
     // The reader of geometry models in the STEP-TAS format.
     steptas_gmm_reader,
+    // The writer of the loads of an orbit, as tables against time.
+    orbital_loads,
 };
 
 // The enumerator name, e.g. "conduction_builder".

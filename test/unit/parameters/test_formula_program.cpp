@@ -273,3 +273,40 @@ TEST_CASE("Derivatives go through table slopes", "[formulas][program]") {
     REQUIRE(direct->get_derivative_values()->at(0) == Catch::Approx(10.0));
     REQUIRE(direct->get_value() == Catch::Approx(130.0));
 }
+
+TEST_CASE("Formulas and derivatives go through periodic tables",
+          "[formulas][program]") {
+    ProgramModel model;
+    // A triangle of period 10: up 4 per unit to x = 5, down again to x = 10.
+    model.parameters->add_table("load",
+                                LookupTable1D(Eigen::Vector3d(0.0, 5.0, 10.0),
+                                              Eigen::Vector3d(0.0, 20.0, 0.0),
+                                              InterpolationMethod::Linear,
+                                              ExtrapolationMethod::Periodic));
+    model.check("load(T3)", 12.0);
+    model.check("load(T3 + 30)", 12.0);
+    model.check("load(-T3)", 12.0);
+    model.check("load(10 * T2)", 0.0);
+    REQUIRE(model.parameters->table_ranges().empty());
+
+    model.parameters->add_parameter("shift", 23.0);
+    model.formulas.add_formula("QI2", "a * load(shift)");
+    const auto formula = model.formulas.find("QI2");
+    model.formulas.calculate_derivatives();
+    formula->calculate_derivatives();
+    const auto* derivatives = formula->get_derivative_values();
+    REQUIRE(derivatives != nullptr);
+    // Inputs in name order: a, shift.
+    REQUIRE(derivatives->at(0) == Catch::Approx(12.0));
+    REQUIRE(derivatives->at(1) == Catch::Approx(0.3 * 4.0));
+
+    // On the seam the slope is the one above it; past the peak it is falling.
+    model.parameters->set_parameter("shift", 20.0);
+    formula->calculate_derivatives();
+    REQUIRE(formula->get_derivative_values()->at(1) ==
+            Catch::Approx(0.3 * 4.0));
+    model.parameters->set_parameter("shift", -2.0);
+    formula->calculate_derivatives();
+    REQUIRE(formula->get_derivative_values()->at(1) ==
+            Catch::Approx(0.3 * -4.0));
+}

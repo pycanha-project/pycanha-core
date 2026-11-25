@@ -4,7 +4,6 @@
 #include <cstddef>
 #include <span>
 #include <string_view>
-#include <thread>
 #include <utility>
 #include <vector>
 
@@ -86,12 +85,6 @@ struct CutSurvival {
     return survival;
 }
 
-[[nodiscard]] unsigned workers_for(std::size_t tasks) {
-    return tasks > 1U ? std::min<unsigned>(std::thread::hardware_concurrency(),
-                                           static_cast<unsigned>(tasks))
-                      : 1U;
-}
-
 }  // namespace
 
 std::string_view to_string(DiagnosticCode code) noexcept {
@@ -152,7 +145,7 @@ TmmBuildReport build_tmm_from_gmm(ThermalModel& model,
             }
         }
         utils::parallel_for_index(
-            cut_targets.size(), workers_for(cut_targets.size()),
+            cut_targets.size(), utils::workers_for(cut_targets.size()),
             [&](std::size_t entry) {
                 survival[cut_targets[entry]] =
                     cut_survival(targets[cut_targets[entry]]);
@@ -164,7 +157,7 @@ TmmBuildReport build_tmm_from_gmm(ThermalModel& model,
     {
         PYCANHA_PROFILE_SCOPE("build_tmm_from_gmm: parts");
         utils::parallel_for_index(
-            targets.size(), workers_for(targets.size()),
+            targets.size(), utils::workers_for(targets.size()),
             [&](std::size_t target) {
                 parts[target] = build_network_part(
                     targets[target].item, targets[target].to_root, options,

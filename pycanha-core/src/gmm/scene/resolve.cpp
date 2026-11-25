@@ -7,7 +7,6 @@
 #include <memory>
 #include <ranges>
 #include <span>
-#include <thread>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -267,12 +266,8 @@ TriMeshD resolve_subtree(const Geometry& root) {
     // The boolean cuts are where essentially all the time goes, they do not
     // touch each other, and each writes only its own face -- so the worker
     // count cannot change the result, only how long it takes.
-    const unsigned workers =
-        cut_targets.size() > 1U
-            ? std::min<unsigned>(std::thread::hardware_concurrency(),
-                                 static_cast<unsigned>(cut_targets.size()))
-            : 1U;
-    utils::parallel_for_index(cut_targets.size(), workers,
+    utils::parallel_for_index(cut_targets.size(),
+                              utils::workers_for(cut_targets.size()),
                               [&](std::size_t index) {
                                   pieces[cut_targets[index]] =
                                       mesh_target(targets[cut_targets[index]]);

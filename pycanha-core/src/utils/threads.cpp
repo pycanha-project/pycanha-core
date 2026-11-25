@@ -37,12 +37,25 @@ namespace pycanha {
 namespace {
 
 // 0 while the default is in use.
-std::atomic<int>& global_threads() {
+std::atomic<int>& chosen_solver_threads() {
     static std::atomic<int> count{0};
     return count;
 }
 
-// The fallback when the system does not tell the physical cores.
+std::atomic<int>& chosen_application_threads() {
+    static std::atomic<int> count{0};
+    return count;
+}
+
+void store_threads(std::atomic<int>& chosen, int threads) {
+    if (threads < 0) {
+        throw std::invalid_argument("The thread count cannot be negative");
+    }
+    chosen.store(threads, std::memory_order_relaxed);
+}
+
+// The default application threads, and the fallback when the system does not
+// tell the physical cores.
 [[nodiscard]] int logical_cpus() noexcept {
     return std::max(static_cast<int>(std::thread::hardware_concurrency()), 1);
 }
@@ -147,7 +160,11 @@ int physical_cores() noexcept {
     return cores;
 }
 
-int default_threads() noexcept {
+int solver_threads() noexcept {
+    const int chosen = chosen_solver_threads().load(std::memory_order_relaxed);
+    if (chosen > 0) {
+        return chosen;
+    }
 #if PYCANHA_USE_MKL
     // MKL_NUM_THREADS when set, else the physical cores.
     return std::max(mkl_get_max_threads(), 1);
@@ -156,16 +173,23 @@ int default_threads() noexcept {
 #endif
 }
 
-int threads() noexcept {
-    const int chosen = global_threads().load(std::memory_order_relaxed);
-    return chosen > 0 ? chosen : default_threads();
+int application_threads() noexcept {
+    const int chosen =
+        chosen_application_threads().load(std::memory_order_relaxed);
+    return chosen > 0 ? chosen : logical_cpus();
 }
 
 void set_threads(int threads) {
-    if (threads < 0) {
-        throw std::invalid_argument("The thread count cannot be negative");
-    }
-    global_threads().store(threads, std::memory_order_relaxed);
+    set_solver_threads(threads);
+    set_application_threads(threads);
+}
+
+void set_solver_threads(int threads) {
+    store_threads(chosen_solver_threads(), threads);
+}
+
+void set_application_threads(int threads) {
+    store_threads(chosen_application_threads(), threads);
 }
 
 }  // namespace pycanha

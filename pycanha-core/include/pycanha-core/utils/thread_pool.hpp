@@ -10,7 +10,7 @@
 namespace pycanha::detail {
 
 // The thread count for work started on the calling thread: the count of the
-// innermost ThreadCountScope that set one, else pycanha::threads().
+// innermost ThreadCountScope that set one, else pycanha::solver_threads().
 [[nodiscard]] int active_threads() noexcept;
 
 // Sets active_threads() on the calling thread while it lives; a count of 0

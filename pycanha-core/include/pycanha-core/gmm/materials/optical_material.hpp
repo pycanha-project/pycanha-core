@@ -23,6 +23,11 @@ namespace pycanha::gmm {
  * Named convenience accessors (emissivity_ir / absorptivity_solar) and the
  * two-argument constructor address indices [0] and [3]; the remaining four
  * degrees of freedom default to 0 unless set via the full array API.
+ *
+ * The IR emissivity may also name a table of the model's Parameters, giving
+ * it as a function of the temperature [K] of the face's node. Only a
+ * radiative::RadiativeRetracer reads the table; every other user of the
+ * material, the material table of a plain trace included, reads the number.
  */
 class OpticalMaterial {
   public:
@@ -51,7 +56,17 @@ class OpticalMaterial {
         return _properties[3];
     }
 
+    /// The table giving the IR emissivity against temperature, or empty.
+    [[nodiscard]] const std::string& emissivity_ir_table() const noexcept {
+        return _emissivity_ir_table;
+    }
+
     void set_name(std::string name) noexcept { _name = std::move(name); }
+    /// Names the table of the IR emissivity; empty removes it. The table is
+    /// looked up and checked when a RadiativeRetracer is initialised.
+    void set_emissivity_ir_table(std::string table_name) noexcept {
+        _emissivity_ir_table = std::move(table_name);
+    }
     void set_th_optical_properties(const Properties& properties);
     void set_emissivity_ir(double emissivity_ir);
     void set_absorptivity_solar(double absorptivity_solar);
@@ -61,6 +76,7 @@ class OpticalMaterial {
 
     std::string _name;
     Properties _properties{1.0, 0.0, 0.0, 1.0, 0.0, 0.0};
+    std::string _emissivity_ir_table;
 };
 
 }  // namespace pycanha::gmm

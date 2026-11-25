@@ -2,6 +2,8 @@
 
 #include <Eigen/Dense>
 #include <cstdint>
+#include <string>
+#include <vector>
 
 namespace pycanha::radiative {
 
@@ -18,6 +20,11 @@ struct MaterialTable {
     // [eps_ir, spec_ir, tau_ir, alpha_sol, spec_sol, tau_sol] — matches
     // gmm::OpticalMaterial::Properties exactly.
     Eigen::Matrix<float, Eigen::Dynamic, 6> properties;
+    // Per row of `properties`: the table of the model's Parameters that gives
+    // the IR emissivity against temperature, or empty. The scene ignores it
+    // (a trace reads the numbers above); RadiativeRetracer reads it. Empty,
+    // or one entry per row.
+    std::vector<std::string> emissivity_ir_tables;
     // Per face (global, both sides): row index into `properties`, or -1
     // for "no material assigned" (treated as blackbody; warned at build).
     Eigen::VectorXi face_material;

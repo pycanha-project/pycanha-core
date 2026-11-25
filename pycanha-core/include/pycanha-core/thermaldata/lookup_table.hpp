@@ -19,6 +19,11 @@ enum class ExtrapolationMethod : std::uint8_t {
     Constant,
     Linear,
     Throw,
+    // The data repeats with the period x_last - x_first. The table needs at
+    // least two points, and its first and last values must be equal: writing
+    // data that breaks this, or selecting Periodic for such data, throws
+    // std::invalid_argument and changes nothing.
+    Periodic,
 };
 
 class LookupTable1D {
@@ -40,12 +45,13 @@ class LookupTable1D {
     [[nodiscard]] InterpolationMethod interpolation_method() const noexcept;
     [[nodiscard]] ExtrapolationMethod extrapolation_method() const noexcept;
     void set_interpolation_method(InterpolationMethod method) noexcept;
-    void set_extrapolation_method(ExtrapolationMethod method) noexcept;
+    void set_extrapolation_method(ExtrapolationMethod method);
 
     void set_data(Eigen::VectorXd x, Eigen::VectorXd y);
     // Overwrite the values in the existing storage, so pointers into the
-    // data stay valid. The size must not change and x must stay strictly
-    // increasing; nothing is written when a check fails.
+    // data stay valid. The size must not change, x must stay strictly
+    // increasing and the first and last y of a Periodic table equal; nothing
+    // is written when a check fails.
     void assign_x(std::span<const double> x);
     void assign_y(std::span<const double> y);
 
@@ -78,7 +84,7 @@ class LookupTableVec1D {
     [[nodiscard]] InterpolationMethod interpolation_method() const noexcept;
     [[nodiscard]] ExtrapolationMethod extrapolation_method() const noexcept;
     void set_interpolation_method(InterpolationMethod method) noexcept;
-    void set_extrapolation_method(ExtrapolationMethod method) noexcept;
+    void set_extrapolation_method(ExtrapolationMethod method);
 
     void set_data(Eigen::VectorXd x, MatrixType y);
 
