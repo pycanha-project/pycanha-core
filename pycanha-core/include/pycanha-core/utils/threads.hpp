@@ -2,24 +2,28 @@
 
 namespace pycanha {
 
-// The number of threads pycanha uses wherever a thread count is left at 0
-// (the default): the solvers (MKL and OpenMP inside them), the parallel
-// formula evaluation and the radiative matrix assembly. A solver's `threads`
-// setting overrides it for that solver. The boolean cuts of the geometry use
-// every logical CPU instead: the cuts run faster with two threads per core.
+// pycanha has two process-wide thread counts. Each is at its default, the count
+// that is usually fastest for its work, until it is set:
 //
-// The default is the count that is usually fastest on the machine: MKL's
-// own setting in builds with MKL (MKL_NUM_THREADS, else the physical cores),
-// the physical cores otherwise. Logical cores beyond the physical ones share
-// a core's arithmetic units and memory bandwidth, so they add little here:
-// nothing for memory-bound work such as table lookups, 10-25 % for formulas
-// heavy in arithmetic.
-[[nodiscard]] int threads() noexcept;
-// Sets the global count; 0 restores the default. Throws
-// std::invalid_argument for a negative count.
+// - The solver threads: the solvers (MKL and OpenMP inside them) and the
+//   formulas. A solver's `threads` setting overrides it for that solver. The
+//   default is MKL's own setting in builds with MKL (MKL_NUM_THREADS, else the
+//   physical cores), the physical cores otherwise: logical cores beyond the
+//   physical ones share a core's arithmetic units and memory bandwidth, so they
+//   add little here.
+// - The application threads: the rest, which is the boolean cuts of the
+//   geometry, the conduction network built from it, the node areas and the
+//   assembly of the radiative matrices. The default is every logical CPU: the
+//   cuts run faster with two threads per core.
+[[nodiscard]] int solver_threads() noexcept;
+[[nodiscard]] int application_threads() noexcept;
+// Sets both counts; 0 restores both defaults. Throws std::invalid_argument for
+// a negative count.
 void set_threads(int threads);
-// The default count described above, whatever set_threads() did.
-[[nodiscard]] int default_threads() noexcept;
+// Set one count, whatever set_threads() did before; 0 restores its default.
+// Throw std::invalid_argument for a negative count.
+void set_solver_threads(int threads);
+void set_application_threads(int threads);
 // The physical cores the process may run on: those with at least one logical
 // CPU in its CPU affinity. On Windows with more than one processor group
 // (over 64 logical CPUs) every core counts. The logical CPUs when the system

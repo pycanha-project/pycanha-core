@@ -15,6 +15,7 @@
 #include "pycanha-core/gmm/scene/geometry_group.hpp"
 #include "pycanha-core/gmm/scene/geometry_group_cutted.hpp"
 #include "pycanha-core/gmm/scene/geometry_item.hpp"
+#include "pycanha-core/utils/threads.hpp"
 
 namespace {
 
@@ -41,6 +42,14 @@ using pycanha::gmm::TriMeshD;
             ThermalMesh{}));
     }
     return GeometryGroup{"row", std::move(children)};
+}
+
+void require_same_mesh(const TriMeshD& mesh, const TriMeshD& expected) {
+    REQUIRE(mesh.vertices.rows() == expected.vertices.rows());
+    REQUIRE(mesh.nf() == expected.nf());
+    REQUIRE(mesh.vertices == expected.vertices);
+    REQUIRE(mesh.triangles == expected.triangles);
+    REQUIRE(mesh.face_ids == expected.face_ids);
 }
 
 }  // namespace
@@ -109,12 +118,13 @@ TEST_CASE("Resolving the same subtree twice gives the same mesh",
 
     // Deliberate copies: mesh() hands back a reference to storage the next
     // call overwrites, so holding references would compare a result to itself.
-    TriMeshD first = cut.mesh();
-    TriMeshD second = cut.mesh();
+    std::vector<TriMeshD> meshes;
+    meshes.push_back(cut.mesh());
+    meshes.push_back(cut.mesh());
+    pycanha::set_application_threads(1);
+    meshes.push_back(cut.mesh());
+    pycanha::set_application_threads(0);
 
-    REQUIRE(first.vertices.rows() == second.vertices.rows());
-    REQUIRE(first.nf() == second.nf());
-    REQUIRE(first.vertices == second.vertices);
-    REQUIRE(first.triangles == second.triangles);
-    REQUIRE(first.face_ids == second.face_ids);
+    require_same_mesh(meshes.at(1), meshes.at(0));
+    require_same_mesh(meshes.at(2), meshes.at(0));
 }

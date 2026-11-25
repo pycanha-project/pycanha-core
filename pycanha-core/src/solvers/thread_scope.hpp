@@ -16,11 +16,11 @@ namespace pycanha::solvers::detail {
 /// Sets the threads of the calling thread for one MKL call and restores the
 /// previous setting afterwards. MKL's LAPACK follows MKL's setting, but the
 /// two-level PARDISO factorization follows OpenMP's, which defaults to every
-/// logical CPU: both are set. 0 uses the global setting, pycanha::threads().
+/// logical CPU: both are set. 0 uses pycanha::solver_threads().
 class ThreadScope {
   public:
     explicit ThreadScope(int threads)
-        : _count(threads > 0 ? threads : pycanha::threads()),
+        : _count(threads > 0 ? threads : pycanha::solver_threads()),
           _previous_mkl(mkl_set_num_threads_local(_count)),
           _previous_openmp(omp_get_max_threads()) {
         omp_set_num_threads(_count);

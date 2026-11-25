@@ -13,7 +13,6 @@
 #include <span>
 #include <stdexcept>
 #include <string>
-#include <thread>
 #include <utility>
 #include <vector>
 
@@ -1168,13 +1167,9 @@ BulkReport assign_node_areas(ThermalModel& model) {
             cut_targets.push_back(target);
         }
     }
-    const unsigned workers =
-        cut_targets.size() > 1U
-            ? std::min<unsigned>(std::thread::hardware_concurrency(),
-                                 static_cast<unsigned>(cut_targets.size()))
-            : 1U;
     utils::parallel_for_index(
-        cut_targets.size(), workers, [&](std::size_t entry) {
+        cut_targets.size(), utils::workers_for(cut_targets.size()),
+        [&](std::size_t entry) {
             cut_meshes[cut_targets[entry]] =
                 gmm::detail::mesh_target(targets[cut_targets[entry]]);
         });

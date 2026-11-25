@@ -10,9 +10,13 @@ namespace pycanha::radiative {
 
 // CPU Gebhart services (no Vulkan, built unconditionally): re-derive
 // radiative exchange factors from a geometric VF matrix and per-face
-// band emissivities without re-tracing — the diffuse-gray fast path. The
-// MCRT exchange kernel computes the same quantity directly, so the two
-// paths are cross-checkable within Monte-Carlo tolerance.
+// band emissivities without re-tracing — the diffuse-gray fast path.
+//
+// The solve assumes each face re-emits what it reflects uniformly over its
+// area, while the MCRT exchange kernel re-emits from each hit point. On faces
+// that are large compared with how fast their irradiation varies, the two
+// differ by more than the ray noise. Refining the faces brings this result to
+// the trace; the nodes can stay the same (node1_step = node2_step = 0).
 
 // Both solves read the VF matrix in the form VfResult stores it: the UPPER
 // TRIANGLE of the symmetric, extensive G_ij = A_i F_ij. Face areas are

@@ -1,11 +1,21 @@
 #pragma once
 
+#include <algorithm>
 #include <atomic>
 #include <cstddef>
 #include <thread>
 #include <vector>
 
+#include "pycanha-core/utils/threads.hpp"
+
 namespace pycanha::utils {
+
+// The workers for `tasks` independent tasks: the application threads, at most
+// one per task.
+[[nodiscard]] inline unsigned workers_for(std::size_t tasks) noexcept {
+    return static_cast<unsigned>(
+        std::min(static_cast<std::size_t>(application_threads()), tasks));
+}
 
 // Runs `body(index)` for every index in [0, count) across `threads` workers,
 // handing indices out dynamically so uneven work items balance themselves.

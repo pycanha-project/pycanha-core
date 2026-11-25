@@ -29,7 +29,7 @@ thread_local int ThreadCountScope::_current = 0;
 
 int active_threads() noexcept {
     return ThreadCountScope::_current > 0 ? ThreadCountScope::_current
-                                          : pycanha::threads();
+                                          : pycanha::solver_threads();
 }
 
 ThreadCountScope::ThreadCountScope(int threads) noexcept : _previous(_current) {
