@@ -10,8 +10,8 @@ unmodified from its repository at the version listed.
 | Library | Version | License | Files |
 |---|---|---|---|
 | [Eigen](https://gitlab.com/libeigen/eigen) | 5.0.1 | MPL-2.0 (some files Apache-2.0, BSD-3-Clause, Minpack) | [eigen/](eigen/) |
-| [HDF5](https://github.com/HDFGroup/hdf5) | 1.14.6 | BSD-3-Clause | [hdf5/](hdf5/) |
-| [zlib](https://github.com/madler/zlib) (used by HDF5) | 1.3.1 | Zlib | [zlib/](zlib/) |
+| [HDF5](https://github.com/HDFGroup/hdf5) | 2.2.0 | BSD-3-Clause | [hdf5/](hdf5/) |
+| [zlib](https://github.com/madler/zlib) (used by HDF5) | 1.4 | Zlib | [zlib/](zlib/) |
 | [SymEngine](https://github.com/symengine/symengine) | 0.15.0 | MIT, plus the BSD/MIT code it bundles | [symengine/](symengine/) |
 | [Boost](https://github.com/boostorg/boost) (Multiprecision, used by SymEngine) | 1.86.0 | BSL-1.0 | [boost/](boost/) |
 | [fast_float](https://github.com/fastfloat/fast_float) (used by SymEngine) | 6.1.5 | MIT or Apache-2.0 or BSL-1.0 | [fast_float/](fast_float/) |

@@ -42,9 +42,9 @@ class Recipe_pycanha_core(ConanFile):
     DEPENDENCY_VERSIONS = {
         "eigen": "5.0.1",
         "manifold": "3.5.1",
-        "mkl": "2026.2.0",
-        "catch2": "3.16.0",
-        "hdf5": "1.14.6",
+        "mkl": "2026.2.1",
+        "catch2": "3.16.1",
+        "hdf5": "2.2.0",
         "symengine": "0.15.0",
         "spdlog": "1.17.0",
         # Raytracing (PYCANHA_OPTION_RAYTRACING). One coherent SDK version:
@@ -54,7 +54,7 @@ class Recipe_pycanha_core(ConanFile):
         "spirv-tools": "1.4.357.0",  # tool_requires: spirv-val build check
         # slangc prebuilt release fetched by CMake (no Conan recipe exists;
         # the per-version SHA256 pins live in cmake/Slang.cmake):
-        "slang": "2026.20",
+        "slang": "2026.22.1",
         "doxygen": "1.15.0",  # Tested version, but this is just a hint for CMake
         "doxygen_awesome_css": "v2.5.0",
     }
