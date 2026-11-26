@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "pycanha-core/globals.hpp"
+#include "pycanha-core/gmm/cutting/cutter.hpp"
 #include "pycanha-core/gmm/mesh/mesh_options.hpp"
 #include "pycanha-core/gmm/mesh/trimesh.hpp"
 #include "pycanha-core/gmm/primitives/primitive.hpp"
@@ -34,11 +35,12 @@ namespace pycanha::gmm::detail {
 // One cutter that applies to a target, in the resolution's output frame.
 struct ResolvedCutter {
     Primitive primitive;
+    // What it keeps of the target.
+    CutSense sense = CutSense::KeepOutside;
     // The part in force where the cut group sits. A cutter whose part differs
-    // from the target's straddles a rigid-part boundary: the subtraction is
-    // baked into the part at resolution time, so moving that part afterwards
-    // leaves the hole behind. mesh_parts reports it rather than pretending
-    // otherwise.
+    // from the target's straddles a rigid-part boundary: the cut is baked into
+    // the part at resolution time, so moving that part afterwards does not
+    // change it. mesh_parts reports it rather than pretending otherwise.
     std::size_t part = 0;
 };
 

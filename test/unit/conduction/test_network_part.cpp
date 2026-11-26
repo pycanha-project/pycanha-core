@@ -18,6 +18,7 @@
 #include "pycanha-core/conduction/network_part.hpp"
 #include "pycanha-core/conduction/options.hpp"
 #include "pycanha-core/globals.hpp"
+#include "pycanha-core/gmm/cutting/cutter.hpp"
 #include "pycanha-core/gmm/geometrymodel.hpp"
 #include "pycanha-core/gmm/materials/bulk_material.hpp"
 #include "pycanha-core/gmm/mesh/thermal_mesh.hpp"
@@ -53,6 +54,7 @@ using pycanha::gmm::ActiveSide;
 using pycanha::gmm::BulkMaterial;
 using pycanha::gmm::CoordinateTransformation;
 using pycanha::gmm::Cube;
+using pycanha::gmm::CutSense;
 using pycanha::gmm::Cylinder;
 using pycanha::gmm::GeometryGroup;
 using pycanha::gmm::GeometryGroupCutted;
@@ -306,6 +308,43 @@ TEST_CASE("cut items: whole face pairs cut away leave the rest untouched",
             std::ranges::find(removed, pair.first) != removed.end() ||
             std::ranges::find(removed, pair.second) != removed.end();
         REQUIRE(couplings(holed->tmm()).contains(pair) == !touches);
+    }
+}
+
+TEST_CASE("cut items: a trim leaves whole face pairs untouched",
+          "[conduction][network_part][cut]") {
+    // The box of the central 2 x 2 face pairs, which are now what is left.
+    ThermalModel whole("whole");
+    whole.gmm().add(unit_plate("plate", shared_shell(4, 4, 1)));
+    static_cast<void>(whole.build_tmm_from_gmm());
+
+    ThermalModel trimmed("trimmed");
+    auto cut = std::make_shared<GeometryGroupCutted>(
+        "cut",
+        std::vector<std::shared_ptr<pycanha::gmm::Geometry>>{
+            unit_plate("plate", shared_shell(4, 4, 1))},
+        std::vector<std::shared_ptr<GeometryItem>>{});
+    cut->cut_with(
+        std::make_shared<GeometryItem>(
+            "box", Cube({0.5, 0.5, 0.0}, {0.5, 0.5, 1.0}), ThermalMesh{}),
+        CutSense::KeepInside);
+    trimmed.gmm().add(cut);
+    const TmmBuildReport report = trimmed.build_tmm_from_gmm();
+
+    REQUIRE(report.face_pairs_removed == 12U);
+    REQUIRE(report.face_pairs_cut == 0U);
+    const std::vector<NodeNum> left{6, 7, 10, 11};
+    REQUIRE(trimmed.tmm().nodes().node_numbers() == left);
+    for (const NodeNum node : left) {
+        REQUIRE(trimmed.tmm().nodes().get_C(node) ==
+                Catch::Approx(whole.tmm().nodes().get_C(node)).epsilon(1e-12));
+    }
+    // The four links between them, and no other.
+    const PairValues links = couplings(trimmed.tmm());
+    REQUIRE(links.size() == 4U);
+    const PairValues all_links = couplings(whole.tmm());
+    for (const auto& [pair, value] : links) {
+        REQUIRE(value == Catch::Approx(all_links.at(pair)).epsilon(1e-12));
     }
 }
 

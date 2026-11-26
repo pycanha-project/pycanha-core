@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "pycanha-core/globals.hpp"
+#include "pycanha-core/gmm/cutting/cutter.hpp"
 #include "pycanha-core/gmm/cutting/manifold_cut_backend.hpp"
 #include "pycanha-core/gmm/geometrymodel.hpp"
 #include "pycanha-core/gmm/ids.hpp"
@@ -19,7 +20,6 @@
 #include "pycanha-core/gmm/mesh/node_numbering.hpp"
 #include "pycanha-core/gmm/mesh/trimesh.hpp"
 #include "pycanha-core/gmm/ops/transform.hpp"
-#include "pycanha-core/gmm/primitives/primitive.hpp"
 #include "pycanha-core/gmm/scene/coordinate_transformation.hpp"
 #include "pycanha-core/gmm/scene/geometry.hpp"
 #include "pycanha-core/gmm/scene/geometry_group_cutted.hpp"
@@ -117,12 +117,15 @@ std::vector<ResolvedTarget> collect_targets(
             std::vector<ResolvedCutter> cutters = std::move(frame.cutters);
             cutters.reserve(cutters.size() + cut_group->cutters().size());
             static_cast<void>(std::ranges::transform(
-                cut_group->cutters(), std::back_inserter(cutters),
-                [&frame](const std::shared_ptr<GeometryItem>& cutter) {
+                cut_group->cutters(), cut_group->cut_senses(),
+                std::back_inserter(cutters),
+                [&frame](const std::shared_ptr<GeometryItem>& cutter,
+                         const CutSense sense) {
                     return ResolvedCutter{
                         .primitive = ops::transform(
                             cutter->primitive(),
                             cutter->transform().compose(frame.to_root)),
+                        .sense = sense,
                         .part = frame.part};
                 }));
             // The cutters themselves emit no faces: they are tools.
@@ -155,14 +158,16 @@ TriMeshD mesh_target(const ResolvedTarget& target) {
         apply_transform_in_place(piece,
                                  item.transform().inverse().compose(to_frame));
     } else {
-        std::vector<Primitive> cutters;
+        std::vector<cutting::Cutter> cutters;
         cutters.reserve(target.cutters.size());
         static_cast<void>(std::ranges::transform(
             target.cutters, std::back_inserter(cutters),
             [&target, &into_frame](const ResolvedCutter& cutter) {
-                return target.part == 0
-                           ? cutter.primitive
-                           : ops::transform(cutter.primitive, into_frame);
+                return cutting::Cutter{
+                    .solid = target.part == 0
+                                 ? cutter.primitive
+                                 : ops::transform(cutter.primitive, into_frame),
+                    .sense = cutter.sense};
             }));
         const cutting::ManifoldCutBackend backend;
         piece = backend.cut(item, cutters, to_frame, options_for(item));

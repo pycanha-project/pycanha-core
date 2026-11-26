@@ -44,9 +44,9 @@ struct PartBuild {
     bool encountered = false;
 };
 
-// A cutter reaching across a rigid-part boundary is subtracted at resolution
-// time, so the hole travels with the part it was cut into and moving the parts
-// apart will not close it. Legitimate for a fixed configuration, wrong for an
+// A cutter reaching across a rigid-part boundary is applied at resolution time,
+// so the cut travels with the part it was made in and moving the parts apart
+// will not undo it. Legitimate for a fixed configuration, wrong for an
 // articulated one, and invisible unless said out loud.
 void report_cross_part_cutters(const detail::ResolvedTarget& target) {
     const bool crosses = std::ranges::any_of(
@@ -57,8 +57,8 @@ void report_cross_part_cutters(const detail::ResolvedTarget& target) {
         SPDLOG_LOGGER_WARN(
             pycanha::get_logger(),
             "mesh_parts: '{}' is cut by a cutter belonging to another rigid "
-            "part; the subtraction is baked in, so moving the parts apart "
-            "will not close the hole",
+            "part; the cut is baked in, so moving the parts apart will not "
+            "undo it",
             target.item.get().name());
     }
 }

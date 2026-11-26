@@ -12,6 +12,7 @@
 #include "pycanha-core/conduction/network_part.hpp"
 #include "pycanha-core/conduction/options.hpp"
 #include "pycanha-core/globals.hpp"
+#include "pycanha-core/gmm/cutting/cutter.hpp"
 #include "pycanha-core/gmm/geometrymodel.hpp"
 #include "pycanha-core/gmm/materials/bulk_material.hpp"
 #include "pycanha-core/gmm/mesh/thermal_mesh.hpp"
@@ -39,6 +40,7 @@ using pycanha::gmm::ActiveSide;
 using pycanha::gmm::BulkMaterial;
 using pycanha::gmm::CoordinateTransformation;
 using pycanha::gmm::Cube;
+using pycanha::gmm::CutSense;
 using pycanha::gmm::Cylinder;
 using pycanha::gmm::GeometryGroupCutted;
 using pycanha::gmm::GeometryItem;
@@ -314,6 +316,68 @@ TEST_CASE("builder: cut geometry keeps its nodes, scaled by what survives",
     REQUIRE(model.tmm().nodes().get_C(2) == Catch::Approx(1.0));
     // The node area is the triangulated surviving area.
     REQUIRE(triangulated_area(model, 1) == Catch::Approx(capacity));
+}
+
+TEST_CASE("builder: a trim scales what stays and drops what goes",
+          "[conduction][builder]") {
+    ThermalModel model("trimmed");
+    // A unit plate in four strips along x, nodes 1 to 4, of 0.25 J/K each. The
+    // box keeps x in [0, 0.375]: the first strip whole, half of the second.
+    model.gmm().add(std::make_shared<GeometryGroupCutted>(
+        "cut",
+        std::vector<std::shared_ptr<pycanha::gmm::Geometry>>{make_plate(
+            "target",
+            side1_shell({0.0, 0.25, 0.5, 0.75, 1.0}, {0.0, 1.0}, 1, 1))},
+        std::vector<std::shared_ptr<GeometryItem>>{
+            std::make_shared<GeometryItem>(
+                "trim", Cube({-0.3125, 0.5, 0.0}, {1.375, 2.0, 2.0}),
+                ThermalMesh{})},
+        CoordinateTransformation{},
+        std::vector<CutSense>{CutSense::KeepInside}));
+
+    const TmmBuildReport report = model.build_tmm_from_gmm();
+    REQUIRE(report.items_processed == 1U);
+    REQUIRE(has_code(report, DiagnosticCode::CutFacePairs));
+    REQUIRE(report.face_pairs_cut == 1U);
+    REQUIRE(report.face_pairs_removed == 2U);
+    // The strips that are gone have no node.
+    REQUIRE(report.nodes_created == 2U);
+    REQUIRE(model.tmm().nodes().get_num_nodes() == 2);
+    REQUIRE(model.tmm().nodes().get_C(1) == Catch::Approx(0.25).epsilon(1e-6));
+    REQUIRE(model.tmm().nodes().get_C(2) == Catch::Approx(0.125).epsilon(1e-6));
+    REQUIRE(triangulated_area(model, 1) == Catch::Approx(0.25).epsilon(1e-6));
+    REQUIRE(model.tmm().nodes().get_a(2) == Catch::Approx(0.125).epsilon(1e-6));
+}
+
+TEST_CASE("builder: a round trim and a round hole share the capacity",
+          "[conduction][builder]") {
+    // What one cutter leaves of a unit plate of 1 J/K.
+    const auto capacity_left = [](CutSense sense) {
+        ThermalModel model("cut_group");
+        auto cut = std::make_shared<GeometryGroupCutted>(
+            "cut",
+            std::vector<std::shared_ptr<pycanha::gmm::Geometry>>{make_plate(
+                "target", side1_shell({0.0, 1.0}, {0.0, 1.0}, 1, 0))},
+            std::vector<std::shared_ptr<GeometryItem>>{});
+        cut->cut_with(
+            std::make_shared<GeometryItem>(
+                "cutter",
+                Cylinder({0.5, 0.5, -1.0}, {0.5, 0.5, 1.0}, {0.8, 0.5, -1.0},
+                         0.3, 0.0, 2.0 * std::numbers::pi),
+                ThermalMesh{}),
+            sense);
+        model.gmm().add(cut);
+        const TmmBuildReport report = model.build_tmm_from_gmm();
+        REQUIRE(report.face_pairs_cut == 1U);
+        return model.tmm().nodes().get_C(1);
+    };
+    const double circle = std::numbers::pi * 0.3 * 0.3;
+    const double enclosed = capacity_left(CutSense::KeepInside);
+    // The cutter is a polygon inscribed in the circle.
+    REQUIRE(enclosed < circle);
+    REQUIRE(enclosed == Catch::Approx(circle).epsilon(2e-3));
+    REQUIRE(enclosed + capacity_left(CutSense::KeepOutside) ==
+            Catch::Approx(1.0).epsilon(1e-6));
 }
 
 TEST_CASE("builder: a cube is reported and skipped", "[conduction][builder]") {

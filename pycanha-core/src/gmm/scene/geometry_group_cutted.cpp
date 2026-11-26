@@ -1,6 +1,7 @@
 #include "pycanha-core/gmm/scene/geometry_group_cutted.hpp"
 
 #include <algorithm>
+#include <cstddef>
 #include <memory>
 #include <span>
 #include <stdexcept>
@@ -9,6 +10,7 @@
 #include <variant>
 #include <vector>
 
+#include "pycanha-core/gmm/cutting/cutter.hpp"
 #include "pycanha-core/gmm/mesh/trimesh.hpp"
 #include "pycanha-core/gmm/primitives/cone.hpp"
 #include "pycanha-core/gmm/primitives/cube.hpp"
@@ -53,8 +55,13 @@ void validate_cutter(const std::shared_ptr<GeometryItem>& cutter) {
 GeometryGroupCutted::GeometryGroupCutted(
     std::string name, std::vector<std::shared_ptr<Geometry>> targets,
     std::vector<std::shared_ptr<GeometryItem>> cutters,
-    CoordinateTransformation transform)
+    CoordinateTransformation transform, const std::vector<CutSense>& cut_senses)
     : Geometry(std::move(name), std::move(transform)) {
+    if (!cut_senses.empty() && cut_senses.size() != cutters.size()) {
+        throw std::invalid_argument(
+            "GeometryGroupCutted: cut_senses must have one entry per "
+            "cutter or be empty");
+    }
     for (auto& target : targets) {
         if (target == nullptr) {
             throw std::invalid_argument("GeometryGroupCutted: null target");
@@ -66,18 +73,22 @@ GeometryGroupCutted::GeometryGroupCutted(
         _targets.push_back(target);
         _all_children.push_back(std::move(target));
     }
-    for (auto& cutter : cutters) {
-        cut_with(std::move(cutter));
+    for (std::size_t index = 0; index < cutters.size(); ++index) {
+        cut_with(std::move(cutters[index]), cut_senses.empty()
+                                                ? CutSense::KeepOutside
+                                                : cut_senses[index]);
     }
 }
 
-void GeometryGroupCutted::cut_with(std::shared_ptr<GeometryItem> cutter) {
+void GeometryGroupCutted::cut_with(std::shared_ptr<GeometryItem> cutter,
+                                   const CutSense sense) {
     validate_cutter(cutter);
     if (std::ranges::find(_cutters, cutter) != _cutters.end()) {
         throw std::invalid_argument("GeometryGroupCutted: duplicate cutter");
     }
     _all_children.push_back(cutter);
     _cutters.push_back(std::move(cutter));
+    _cut_senses.push_back(sense);
     on_geometry_mutated();
 }
 
@@ -89,6 +100,10 @@ std::span<const std::shared_ptr<Geometry>> GeometryGroupCutted::targets()
 std::span<const std::shared_ptr<GeometryItem>> GeometryGroupCutted::cutters()
     const noexcept {
     return _cutters;
+}
+
+std::span<const CutSense> GeometryGroupCutted::cut_senses() const noexcept {
+    return _cut_senses;
 }
 
 std::span<const std::shared_ptr<Geometry>> GeometryGroupCutted::children()

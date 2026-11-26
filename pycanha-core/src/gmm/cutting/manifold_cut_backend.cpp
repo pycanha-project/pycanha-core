@@ -7,7 +7,6 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
-#include <iterator>
 #include <limits>
 #include <span>
 #include <stdexcept>
@@ -16,6 +15,7 @@
 
 #include "pycanha-core/globals.hpp"
 #include "pycanha-core/gmm/cutting/cut_mesh_ops.hpp"
+#include "pycanha-core/gmm/cutting/cutter.hpp"
 #include "pycanha-core/gmm/cutting/cutter_proxy.hpp"
 #include "pycanha-core/gmm/cutting/proxy_shell.hpp"
 #include "pycanha-core/gmm/mesh/mesh_options.hpp"
@@ -111,6 +111,31 @@ namespace {
     return tri_mesh;
 }
 
+// Trims with the KeepInside cutters, then takes off the union of the
+// KeepOutside ones.
+[[nodiscard]] manifold::Manifold apply_cutters(
+    const manifold::Manifold& proxy, std::span<const Cutter> cutters) {
+    manifold::Manifold result = proxy;
+    std::vector<manifold::Manifold> holes;
+    holes.reserve(cutters.size());
+    for (const Cutter& cutter : cutters) {
+        if (cutter.sense == CutSense::KeepInside) {
+            result = result.Boolean(build_cutter(cutter.solid),
+                                    manifold::OpType::Intersect);
+        } else {
+            holes.push_back(build_cutter(cutter.solid));
+        }
+    }
+    if (holes.empty()) {
+        return result;
+    }
+    const manifold::Manifold hole_union =
+        holes.size() == 1U
+            ? holes.front()
+            : manifold::Manifold::BatchBoolean(holes, manifold::OpType::Add);
+    return result.Boolean(hole_union, manifold::OpType::Subtract);
+}
+
 [[nodiscard]] double proxy_thickness(const TriMeshD& mesh,
                                      const MeshOptions& options) {
     const auto bbox = mesh::ops::bounding_box(mesh);
@@ -122,7 +147,7 @@ namespace {
 }  // namespace
 
 TriMeshD ManifoldCutBackend::cut(
-    const GeometryItem& target, std::span<const Primitive> cutters,
+    const GeometryItem& target, std::span<const Cutter> cutters,
     const CoordinateTransformation& world_transform,
     const MeshOptions& options) const {
     const Primitive world_target =
@@ -141,19 +166,7 @@ TriMeshD ManifoldCutBackend::cut(
                   .thickness = proxy_thickness(target_mesh, options),
                   .outer_original_id = outer_original_id});
 
-    std::vector<manifold::Manifold> cutter_manifolds;
-    cutter_manifolds.reserve(cutters.size());
-    std::ranges::transform(
-        cutters, std::back_inserter(cutter_manifolds),
-        [](const Primitive& cutter) { return build_cutter(cutter); });
-
-    const manifold::Manifold cut_union =
-        cutter_manifolds.size() == 1U
-            ? cutter_manifolds.front()
-            : manifold::Manifold::BatchBoolean(cutter_manifolds,
-                                               manifold::OpType::Add);
-    const manifold::Manifold result =
-        proxy.Boolean(cut_union, manifold::OpType::Subtract);
+    const manifold::Manifold result = apply_cutters(proxy, cutters);
     if (result.Status() != manifold::Manifold::Error::NoError) {
         throw std::runtime_error("Manifold Boolean cut failed");
     }

@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "pycanha-core/globals.hpp"
+#include "pycanha-core/gmm/cutting/cutter.hpp"
 #include "pycanha-core/gmm/cutting/cutter_proxy.hpp"
 #include "pycanha-core/gmm/mesh/mesh_options.hpp"
 #include "pycanha-core/gmm/mesh/ops/compute_areas.hpp"
@@ -23,6 +24,7 @@
 namespace {
 
 using pycanha::Point3D;
+using pycanha::gmm::CutSense;
 using pycanha::gmm::Geometry;
 using pycanha::gmm::GeometryGroupCutted;
 using pycanha::gmm::GeometryItem;
@@ -152,4 +154,22 @@ TEST_CASE("A prism chamfers the corner of a plate", "[gmm][cutting]") {
 
     REQUIRE(mesh_ops::compute_areas(cut.mesh()).sum() ==
             Catch::Approx(3.5).margin(1e-6));
+}
+
+TEST_CASE("A prism leaves only the corner of a plate", "[gmm][cutting]") {
+    // The chamfer the other way round: the corner is what is left.
+    auto plate = std::make_shared<GeometryItem>(
+        "plate", Rectangle({0.0, 0.0, 0.0}, {2.0, 0.0, 0.0}, {0.0, 2.0, 0.0}),
+        ThermalMesh{});
+    GeometryGroupCutted cut("cut",
+                            std::vector<std::shared_ptr<Geometry>>{plate}, {});
+    cut.cut_with(std::make_shared<GeometryItem>(
+                     "corner",
+                     TriangularPrism({0.0, 0.0, -1.0}, {1.0, 0.0, -1.0},
+                                     {0.0, 1.0, -1.0}, {0.0, 0.0, 1.0}),
+                     ThermalMesh{}),
+                 CutSense::KeepInside);
+
+    REQUIRE(mesh_ops::compute_areas(cut.mesh()).sum() ==
+            Catch::Approx(0.5).margin(1e-6));
 }

@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
 #include <cstddef>
 #include <memory>
@@ -9,20 +10,28 @@
 #include <vector>
 
 #include "pycanha-core/globals.hpp"
+#include "pycanha-core/gmm/cutting/cutter.hpp"
 #include "pycanha-core/gmm/geometrymodel.hpp"
+#include "pycanha-core/gmm/mesh/ops/compute_areas.hpp"
 #include "pycanha-core/gmm/mesh/thermal_mesh.hpp"
 #include "pycanha-core/gmm/mesh/trimesh.hpp"
+#include "pycanha-core/gmm/primitives/cube.hpp"
 #include "pycanha-core/gmm/primitives/rectangle.hpp"
 #include "pycanha-core/gmm/scene/coordinate_transformation.hpp"
 #include "pycanha-core/gmm/scene/geometry.hpp"
 #include "pycanha-core/gmm/scene/geometry_group.hpp"
+#include "pycanha-core/gmm/scene/geometry_group_cutted.hpp"
 #include "pycanha-core/gmm/scene/geometry_item.hpp"
 #include "pycanha-core/radiative/scene_part.hpp"
 
 namespace {
 
 using pycanha::gmm::CoordinateTransformation;
+using pycanha::gmm::Cube;
+using pycanha::gmm::CutSense;
+using pycanha::gmm::Geometry;
 using pycanha::gmm::GeometryGroup;
+using pycanha::gmm::GeometryGroupCutted;
 using pycanha::gmm::GeometryItem;
 using pycanha::gmm::GeometryModel;
 using pycanha::gmm::Rectangle;
@@ -188,4 +197,49 @@ TEST_CASE("mesh_parts: item as split target", "[gmm][parts]") {
                 .transform.apply({0.0, 0.0, 0.0})
                 .isApprox(pycanha::Point3D{2.0, 0.0, 0.0}));
     REQUIRE(parts[1].mesh.vertices.col(0).maxCoeff() <= 1.0F + 1e-6F);
+}
+
+// The cut group sits in the body and its target holds the split wing, so the
+// cutter reaches across the part boundary. Each part must come out trimmed
+// exactly as the model is.
+TEST_CASE("mesh_parts: a trim reaches across a part boundary", "[gmm][parts]") {
+    GeometryModel model("scene");
+    const auto wing = std::make_shared<GeometryGroup>(
+        "wing", std::vector<std::shared_ptr<Geometry>>{make_panel("panel")},
+        CoordinateTransformation::from_translation({5.0, 0.0, 0.0}));
+    const auto body = make_panel("body");
+    const auto all = std::make_shared<GeometryGroup>(
+        "all", std::vector<std::shared_ptr<Geometry>>{body, wing});
+    // Keeps x in [0.75, 5.25]: the last quarter of the body panel and the
+    // first quarter of the wing's.
+    const auto cutter = std::make_shared<GeometryItem>(
+        "trim", Cube({3.0, 0.5, 0.0}, {4.5, 2.0, 2.0}), ThermalMesh{});
+    model.add(std::make_shared<GeometryGroupCutted>(
+        "cut", std::vector<std::shared_ptr<Geometry>>{all},
+        std::vector<std::shared_ptr<GeometryItem>>{cutter},
+        CoordinateTransformation{},
+        std::vector<CutSense>{CutSense::KeepInside}));
+
+    const std::vector<std::string> split{"wing"};
+    const auto parts = model.mesh_parts(split);
+    REQUIRE(parts.size() == 2);
+
+    auto combined = sorted_face_ids(parts[0].mesh);
+    const auto wing_ids = sorted_face_ids(parts[1].mesh);
+    combined.insert(combined.end(), wing_ids.begin(), wing_ids.end());
+    std::ranges::sort(combined);
+    REQUIRE(combined == sorted_face_ids(model.mesh()));
+
+    const auto area_of = [](const TriMeshF& mesh) {
+        return pycanha::gmm::mesh::ops::compute_areas(mesh).sum();
+    };
+    REQUIRE(area_of(parts[0].mesh) == Catch::Approx(0.25).epsilon(1e-5));
+    REQUIRE(area_of(parts[1].mesh) == Catch::Approx(0.25).epsilon(1e-5));
+    // In the wing's own frame the surviving strip starts at its edge.
+    REQUIRE(parts[0].mesh.vertices.col(0).minCoeff() ==
+            Catch::Approx(0.75).epsilon(1e-5));
+    REQUIRE(parts[1].mesh.vertices.col(0).minCoeff() ==
+            Catch::Approx(0.0).margin(1e-5));
+    REQUIRE(parts[1].mesh.vertices.col(0).maxCoeff() ==
+            Catch::Approx(0.25).epsilon(1e-5));
 }
